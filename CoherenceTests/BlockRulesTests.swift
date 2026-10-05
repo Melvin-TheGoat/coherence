@@ -475,6 +475,23 @@ final class InterventionPickerTests: XCTestCase {
         XCTAssertEqual(seen, Set(InterventionKind.inUse))
     }
 
+    /// Every screen's reply to "Not now" (2026-10-04): no em dash, short
+    /// enough for his bubble, and true to the moment (the streak's number,
+    /// the friend's name).
+    func test_everyNotNowReplyFitsAndStaysTrue() {
+        let ctx = InterventionContext(hour: 9, streak: 6, aura: .steady, friendWhoSat: "Sam")
+        for kind in InterventionKind.inUse {
+            let line = kind.notNowReply(ctx)
+            XCTAssertFalse(line.contains("\u{2014}"), "\(kind): no em dash")
+            XCTAssertLessThanOrEqual(line.count, 90, "\(kind): fits his bubble")
+        }
+        XCTAssertTrue(InterventionKind.streak.notNowReply(ctx).contains("6-day"))
+        XCTAssertTrue(InterventionKind.friend.notNowReply(ctx).contains("Sam"))
+        var nobody = ctx
+        nobody.friendWhoSat = nil
+        XCTAssertFalse(InterventionKind.friend.notNowReply(nobody).contains("join"))
+    }
+
     /// A retired screen is never picked, at any hour.
     func test_aRetiredScreenIsNeverPicked() {
         var rng = SystemRandomNumberGenerator()

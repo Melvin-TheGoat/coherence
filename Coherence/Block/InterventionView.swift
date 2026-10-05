@@ -55,7 +55,7 @@ struct InterventionView: View {
             case .howLong:
                 HowLongScreen(block: block, onMeditate: { onMeditate(nil) }, onClose: onClose,
                               rehearsal: rehearsal,
-                              line: HowLongScreen.line(after: kind),
+                              line: HowLongScreen.line(after: kind, context: context),
                               meditateLabel: HowLongScreen.meditateLabel(after: kind),
                               pose: HowLongScreen.pose(after: kind))
                     .transition(.opacity)
@@ -1298,19 +1298,19 @@ private struct HowLongScreen: View {
 
     /// The standing screen asks "Are you sure?", so its "Not now" gets a
     /// reply to that (Aziz, 2026-10-04). Every other screen gets the usual.
-    static func line(after kind: InterventionKind) -> String {
-        switch kind {
-        case .standing: return "Fine... I'll allow it, but I'm disappointed."
-        // The morning screen lets it go kindly (Aziz, 2026-10-04).
-        case .wakingOtto: return "Okay, the day is early. Make sure to meditate later today."
-        default: return "Fine... how much time do you need?"
-        }
+    /// Each screen's reply to "Not now" lives with the screens
+    /// (`InterventionKind.notNowReply`, Shared, tested).
+    static func line(after kind: InterventionKind, context: InterventionContext) -> String {
+        kind.notNowReply(context)
     }
 
-    /// Frustrated after most screens; awake and easy after the morning one,
+    /// Frustrated after most screens; awake and easy after the gentle ones,
     /// whose reply is not a complaint.
     static func pose(after kind: InterventionKind) -> String {
-        kind == .wakingOtto ? "OttoAwake" : "OttoFrustratedSit"
+        switch kind {
+        case .wakingOtto, .affirmation, .valley, .askWhy, .bedtime: return "OttoAwake"
+        default: return "OttoFrustratedSit"
+        }
     }
 
     static func meditateLabel(after kind: InterventionKind) -> String {

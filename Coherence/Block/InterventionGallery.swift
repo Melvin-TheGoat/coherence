@@ -70,9 +70,13 @@ struct InterventionGalleryView: View {
                                  onClose: { showing = nil },
                                  rehearsal: true)
             case .howLong:
-                // .standing is never seen: startOnHowLong skips straight
-                // past the "ask" step to HowLongScreen.
-                InterventionView(kind: .standing, context: Self.demoContext, block: block,
+                // The screen itself is never seen: startOnHowLong skips
+                // straight past the "ask" step. It decides only which reply
+                // Otto gives; `PREVIEW_HOWLONG_AFTER=<kind>` picks one, and
+                // the default is the video call's plain "how much time".
+                InterventionView(kind: ProcessInfo.processInfo.environment["PREVIEW_HOWLONG_AFTER"]
+                                    .flatMap(InterventionKind.init(rawValue:)) ?? .faceTime,
+                                 context: Self.demoContext, block: block,
                                  onMeditate: { _ in showing = nil },
                                  onClose: { showing = nil },
                                  rehearsal: true, startOnHowLong: true)
@@ -202,8 +206,10 @@ private struct UnblockPreviewCover: View {
         case .howLong:
             // Otto's own "Not now" flow, jumped straight to the how-long step:
             // nothing here is real, same as the gallery's rows.
-            InterventionView(kind: .standing,
-                             context: InterventionContext(hour: 9, streak: 6, aura: .steady, friendWhoSat: nil),
+            // `PREVIEW_HOWLONG_AFTER=<kind>` picks which screen's reply.
+            InterventionView(kind: ProcessInfo.processInfo.environment["PREVIEW_HOWLONG_AFTER"]
+                                .flatMap(InterventionKind.init(rawValue:)) ?? .faceTime,
+                             context: InterventionContext(hour: 9, streak: 6, aura: .steady, friendWhoSat: "Sam"),
                              block: block,
                              onMeditate: { _ in onDone() },
                              onClose: onDone,

@@ -23,6 +23,39 @@ enum InterventionKind: String, CaseIterable, Codable {
     static var inUse: [InterventionKind] { allCases.filter { !retired.contains($0) } }
 }
 
+extension InterventionKind {
+    /// Each screen gets its own reply to "Not now", answering what it said
+    /// (Aziz, 2026-10-04: "make complementary screens... telling ppl to
+    /// meditate"). Under two lines in his bubble; true to the moment (the
+    /// streak's number, the friend's name); never a scolding. The video call
+    /// and the breath keep the plain one, which Aziz chose for them.
+    func notNowReply(_ context: InterventionContext) -> String {
+        switch self {
+        case .standing: return "Fine... I'll allow it, but I'm disappointed."
+        // The morning screen lets it go kindly.
+        case .wakingOtto: return "Okay, the day is early. Make sure to meditate later today."
+        case .sign: return "Fine... but the sign stays up. Meditate later today."
+        case .streak:
+            return "Okay... just don't let your \(context.streak)-day streak slip. Meditate later today."
+        // True: a "Not now" whose window passes with no session costs glow.
+        case .glow: return "Okay... that'll cost me a little glow. Meditate later today?"
+        case .twoDoors: return "The scroll wins this time. Calm will be here when you're ready."
+        case .countdown: return "You waited it out. Fine... how much time do you need?"
+        case .affirmation: return "Okay. Choose to meditate later today, then."
+        case .bedtime: return "Okay... don't scroll too late. Meditate before you sleep."
+        case .sticker: return "No sticker back? Fine... meditate later today."
+        case .valley: return "Okay. The valley will still be here. Come sit before the day ends."
+        case .friend:
+            return context.friendWhoSat.map { "Okay. There's still time to join \($0) today." }
+                ?? "Okay. There's still time today."
+        case .oneMinute: return "Not even five? Fine... make sure to meditate later today."
+        case .askWhy: return "Fair enough. Make sure you meditate later today."
+        default: return "Fine... how much time do you need?"
+        }
+    }
+
+}
+
 /// What Otto knows about the moment, so he only says what is true.
 struct InterventionContext: Equatable {
     var hour: Int
