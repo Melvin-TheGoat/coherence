@@ -6843,7 +6843,17 @@ sent (a 2.0 s loop; the walker creeps for most of it, rushes the last third
 of a second, and fits the outline for about one frame). Holds start at 0.44 s
 and each is 79% of the last, down to 0.033 s; Nirvana shows 0.05 s, then it
 loops. Driven by a `TimelineView` off the clock, because sleeps drift at
-holds this short. Green is chroma green for keying. Record with `simctl io
+holds this short. **Two Ottos, never one that changes shape**: `OttoAuraFigure`
+switches its frame from wide to tall at look 9 and the Rive view draws one
+stretched frame whenever it does (squeezed at 8 to 9, stretched at the wrap
+back to 1). The reel mounts a dim and a bright figure, swaps them by opacity,
+parks the hidden one at 0.2% (a Rive view at 0 stops drawing and shows its
+old look for a frame when it returns), and parks it on the look it shows
+next. Otto stands where the valley seats him on both backgrounds, so ONE red
+outline, traced from the green Nirvana frame (Vision subject mask, opened
+with a 12 px morphology so the rings drop out, smoothed), fits both clips.
+The outline and the four repeated loops were added in post with
+AVFoundation, not in the app. Green is chroma green for keying. Record with `simctl io
 recordVideo`, find a loop's start from the frame differences, and cut one
 loop. A recording of the app's own rig, not generated video, so the "never
 generate video" rule is untouched.

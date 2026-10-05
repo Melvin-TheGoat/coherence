@@ -72,7 +72,8 @@ struct HatReel: View {
 struct StageReel: View {
     let onGreen: Bool
     @State private var start: Date? = nil
-    @StateObject private var rig = OttoRigHolder()
+    @StateObject private var dimRig = OttoRigHolder()
+    @StateObject private var brightRig = OttoRigHolder()
 
     /// Seconds each of looks 1 to 12 holds before the next, matched to the
     /// "only 1% can pause at the right time" reel Aziz sent: a 2 s loop that
@@ -83,23 +84,42 @@ struct StageReel: View {
     /// How long Nirvana shows before the loop starts again.
     static let flash = 0.05
     static var loop: Double { holds.reduce(0, +) + flash }
+    /// The parked Otto stays a hair above zero: a Rive view at opacity 0
+    /// stops drawing, so it would show its old look for a frame or two when
+    /// it swapped back in. At 0.2% it keeps up and nobody can see it.
+    static let parked = 0.002
 
     var body: some View {
         TimelineView(.animation) { context in
             let look = lookAt(context.date)
-            let stage = OttoAura.Stage(rawValue: (look + 1) / 2) ?? .steady
             ZStack {
                 if onGreen {
-                    Color(red: 0, green: 1, blue: 0).ignoresSafeArea()
-                    OttoAuraFigure(stage: stage, look: look, size: 330, rig: rig, snap: true)
-                        .frame(width: 330, height: 330)
-                        .offset(y: 60)
+                    Color(red: 0, green: 1, blue: 0)
                 } else {
-                    ValleyScene(progress: 0, aura: stage, auraLook: look,
-                                auraSnap: true, life: false)
-                        .ignoresSafeArea()
+                    // The valley and his cushion, with its own Otto hidden.
+                    ValleyScene(progress: 0, aura: .steady, figureHidden: true, life: false)
+                }
+                // Exactly where and how big the valley draws him, so one
+                // outline traced on green fits both clips.
+                GeometryReader { geo in
+                    let seated = SitLayout.ottoHeight(in: geo.size)
+                    let spot = CGPoint(x: geo.size.width / 2, y: geo.size.height * 0.76 - seated / 2)
+                    // Two Ottos, never one that changes shape: the figure's
+                    // frame turns from wide to tall at look 9, and the Rive
+                    // view draws one stretched frame whenever it does. Each
+                    // of these keeps its shape and they swap by opacity.
+                    // The parked one waits on the look it will show next
+                    // (1 after Nirvana, 9 after look 8), because a look
+                    // change takes the rig a frame or two to draw.
+                    figure(look < OttoAuraFigure.tallFromLook ? look : 1, seated, dimRig)
+                        .position(spot)
+                        .opacity(look < OttoAuraFigure.tallFromLook ? 1 : Self.parked)
+                    figure(max(look, OttoAuraFigure.tallFromLook), seated, brightRig)
+                        .position(spot)
+                        .opacity(look >= OttoAuraFigure.tallFromLook ? 1 : Self.parked)
                 }
             }
+            .ignoresSafeArea()
         }
         .statusBarHidden()
         .task {
@@ -107,6 +127,11 @@ struct StageReel: View {
             try? await Task.sleep(for: .seconds(2.5))
             start = Date()
         }
+    }
+
+    private func figure(_ look: Int, _ size: CGFloat, _ rig: OttoRigHolder) -> some View {
+        OttoAuraFigure(stage: OttoAura.Stage(rawValue: (look + 1) / 2) ?? .steady,
+                       look: look, size: size, rig: rig, snap: true)
     }
 
     /// Driven by the clock, not by sleeps, so tiny holds land on time. It
