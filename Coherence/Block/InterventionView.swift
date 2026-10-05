@@ -817,11 +817,13 @@ private struct VoiceNoteScene: View {
     let doors: InterventionDoors
     let meditatedToday: Bool
 
-    /// The note, then a P.S. when there is no session today (Aziz,
-    /// 2026-10-04: "P.S., you still haven't meditated today -Otto").
+    /// Just the P.S. (Aziz, 2026-10-04: "P.S., you still haven't meditated
+    /// today -Otto", and the "hey, it's me... promise." note above it cut).
+    /// With a session today that would be untrue, so it asks instead.
     private var lines: [String] {
-        let note = ["hey, it's me.", "five minutes,", "then it's all yours.", "promise."]
-        return meditatedToday ? note : note + ["P.S. you still", "haven't meditated", "today."]
+        meditatedToday
+            ? ["P.S. five minutes", "with me first?"]
+            : ["P.S. you still", "haven't meditated", "today."]
     }
 
     var body: some View {
