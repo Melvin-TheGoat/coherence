@@ -63,4 +63,49 @@ struct HatReel: View {
         return step == 13 ? "\(hat) · Ready (waving)" : "\(hat) · The sit"
     }
 }
+/// Otto climbing from Withered to Nirvana for a marketing clip (Aziz,
+/// 2026-10-05: "Otto cycles through his different stages and it speeds up at
+/// the end when he's enlightened"). Each look holds a little shorter than the
+/// one before, then Nirvana holds. Launch with `PREVIEW_STAGE_REEL=green`
+/// (Otto alone on chroma green, to key out in an editor) or `=valley` (in the
+/// valley as Home draws him), and screen-record the simulator.
+struct StageReel: View {
+    let onGreen: Bool
+    @State private var look = 1
+    @StateObject private var rig = OttoRigHolder()
+
+    /// Seconds each of looks 1 to 12 holds before the next.
+    static let holds: [Double] = {
+        var out: [Double] = [], d = 0.95
+        for _ in 1...12 { out.append(max(0.12, d)); d *= 0.78 }
+        return out
+    }()
+
+    var body: some View {
+        ZStack {
+            if onGreen {
+                Color(red: 0, green: 1, blue: 0).ignoresSafeArea()
+                OttoAuraFigure(stage: stage, look: look, size: 330, rig: rig, snap: true)
+                    .frame(width: 330, height: 330)
+                    .offset(y: 60)
+            } else {
+                ValleyScene(progress: 0, aura: stage, auraLook: look,
+                            auraSnap: true, life: false)
+                    .ignoresSafeArea()
+            }
+        }
+        .statusBarHidden()
+        .task {
+            // Room for the recording to start before he moves.
+            try? await Task.sleep(for: .seconds(2.5))
+            for hold in Self.holds {
+                try? await Task.sleep(for: .seconds(hold))
+                guard !Task.isCancelled else { return }
+                look += 1
+            }
+        }
+    }
+
+    private var stage: OttoAura.Stage { OttoAura.Stage(rawValue: (look + 1) / 2) ?? .steady }
+}
 #endif

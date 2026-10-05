@@ -6834,6 +6834,15 @@ because a product carries one introductory offer. The answer was sent in
 Connect, no build change. If Apple insists, the alternative is promotional
 offers on Monthly and Yearly (needs a signing key and code).
 
+## OTTO'S CLIMB FOR MARKETING CLIPS (2026-10-05, Aziz)
+
+`PREVIEW_STAGE_REEL=green|valley` (DEBUG, `StageReel` in
+`Coherence/Shop/HatReel.swift`) steps Otto from look 1 to 13, each hold 22%
+shorter than the last (0.95 s down to 0.12 s), then holds Nirvana. Green is
+chroma green for keying in an editor. Record it with `simctl io recordVideo`
+and trim the first ~2.6 s (the launch). It is a recording of the app's own
+rig, not generated video, so the "never generate video" rule is untouched.
+
 ## THE WEBSITE IS BRAINROT'S SHAPE; ~45 BUGS FIXED; LEGAL SYNCED (2026-09-28, Aziz)
 
 - **meditate808.com rebuilt** after thebrainrotapp.com, in the app's valley
