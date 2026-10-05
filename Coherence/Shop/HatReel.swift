@@ -71,40 +71,54 @@ struct HatReel: View {
 /// valley as Home draws him), and screen-record the simulator.
 struct StageReel: View {
     let onGreen: Bool
-    @State private var look = 1
+    @State private var start: Date? = nil
     @StateObject private var rig = OttoRigHolder()
 
-    /// Seconds each of looks 1 to 12 holds before the next: 1 s, then each
-    /// 81% of the one before, down to 0.1 s, so the climb is 4.9 s and
-    /// Nirvana only flashes (Aziz: "hard to actually tap when he's fully
-    /// enlightened"). Trim the clip about 0.1 s after Nirvana lands.
-    static let holds: [Double] = (0..<12).map { pow(0.811, Double($0)) }
+    /// Seconds each of looks 1 to 12 holds before the next, matched to the
+    /// "only 1% can pause at the right time" reel Aziz sent: a 2 s loop that
+    /// creeps for most of its length and then rushes, the target on screen
+    /// for about one frame. 0.44 s, then each 79% of the last, down to
+    /// 0.033 s, so the climb is 1.97 s and Nirvana lands with one frame to go.
+    static let holds: [Double] = (0..<12).map { 0.44 * pow(0.79, Double($0)) }
+    /// How long Nirvana shows before the loop starts again.
+    static let flash = 0.05
+    static var loop: Double { holds.reduce(0, +) + flash }
 
     var body: some View {
-        ZStack {
-            if onGreen {
-                Color(red: 0, green: 1, blue: 0).ignoresSafeArea()
-                OttoAuraFigure(stage: stage, look: look, size: 330, rig: rig, snap: true)
-                    .frame(width: 330, height: 330)
-                    .offset(y: 60)
-            } else {
-                ValleyScene(progress: 0, aura: stage, auraLook: look,
-                            auraSnap: true, life: false)
-                    .ignoresSafeArea()
+        TimelineView(.animation) { context in
+            let look = lookAt(context.date)
+            let stage = OttoAura.Stage(rawValue: (look + 1) / 2) ?? .steady
+            ZStack {
+                if onGreen {
+                    Color(red: 0, green: 1, blue: 0).ignoresSafeArea()
+                    OttoAuraFigure(stage: stage, look: look, size: 330, rig: rig, snap: true)
+                        .frame(width: 330, height: 330)
+                        .offset(y: 60)
+                } else {
+                    ValleyScene(progress: 0, aura: stage, auraLook: look,
+                                auraSnap: true, life: false)
+                        .ignoresSafeArea()
+                }
             }
         }
         .statusBarHidden()
         .task {
             // Room for the recording to start before he moves.
             try? await Task.sleep(for: .seconds(2.5))
-            for hold in Self.holds {
-                try? await Task.sleep(for: .seconds(hold))
-                guard !Task.isCancelled else { return }
-                look += 1
-            }
+            start = Date()
         }
     }
 
-    private var stage: OttoAura.Stage { OttoAura.Stage(rawValue: (look + 1) / 2) ?? .steady }
+    /// Driven by the clock, not by sleeps, so tiny holds land on time. It
+    /// loops, like the reel it copies.
+    private func lookAt(_ now: Date) -> Int {
+        guard let start else { return 1 }
+        var t = now.timeIntervalSince(start).truncatingRemainder(dividingBy: Self.loop)
+        for (i, hold) in Self.holds.enumerated() {
+            if t < hold { return i + 1 }
+            t -= hold
+        }
+        return 13
+    }
 }
 #endif
