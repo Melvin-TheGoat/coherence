@@ -6773,6 +6773,52 @@ notification now presents nothing, so the two never sound together. It
 follows the MEDIA volume, so a phone with media volume at zero hears
 nothing. `SessionBellTests` pins no clipping and silence at both ends.
 
+## OTTO'S SCREENS, REVIEWED ONE BY ONE (2026-10-04, Aziz)
+
+Every one of Otto's Block screens was walked with Aziz and each now has a
+paired "Not now" screen. All in `Coherence/Block/InterventionView.swift`.
+
+- **Every "Not now" lands on Otto's reply, then 5 / 10 / 30 min and a way
+  back to meditating.** The reply is per screen,
+  `InterventionKind.notNowReply(_:)` in `Shared/Block/Interventions.swift`
+  (Shared so it is testable), e.g. streak names the streak, friend names the
+  friend, glow says it will cost him a little glow, waking Otto says "Okay,
+  the day is early. Make sure to meditate later today." The default is
+  "Fine... how much time do you need?". `HowLongScreen.options = [5, 10, 30]`.
+  Otto sits in his usual spot on it, frustrated (`OttoFrustratedSit`, new
+  image set) or, on the gentler screens (waking Otto, affirmation, valley,
+  ask why, bedtime), awake (`HowLongScreen.pose(after:)`).
+- **Text thread:** blue Otto bubbles, your replies in sand under his last
+  message, his messages arrive one at a time after typing dots with a tick
+  each. "Yeah you're right, let's meditate" or "I'm busy right now, I need
+  the app", which leads to 5 / 10 / 30 min or "actually nvm, I'll meditate".
+- **Breathe with me:** the 4, 2, 4 breath, a fade to white, then Otto
+  sitting in the valley: "You haven't meditated yet today. Is this app
+  really that important right now?" (`BreathExerciseScreen(onFinished:)`).
+  Fading through white is what stops two Ottos cross-fading.
+- **Standing ("Remember" is gone):** "Are you sure? You haven't meditated
+  yet." Its "Not now" says "Fine... I'll allow it, but I'm disappointed."
+  with "Nvm, let's meditate".
+- **FaceTime:** answered, he asks "Are you sure you need this right now?
+  You haven't meditated yet today." with "Okay, let's meditate" / "Yes, I
+  really do". The front camera runs while it rings ONLY when camera access is
+  already granted; the permission prompt still comes on Accept, never while
+  ringing and never at the end of onboarding (Aziz agreed).
+- **The note is the P.S. only** ("P.S. you still haven't meditated today.
+  -Otto"); its "Not now" is a second note, "slightly disappointed, but if
+  you insist. -Otto" (`NoteHowLongScreen`). **The fridge note** says
+  "Reminder: meditate today", its "Not now" a second sticky, "Make sure to
+  meditate later" (`StickyHowLongScreen`).
+- **"Still there" is retired** (`InterventionKind.retired`; pickers and the
+  gallery use `inUse`): it repeated another screen.
+- **Typing ticks on every Otto screen** (`.environment(\.typingHaptics,
+  true)` on `InterventionView`), as onboarding already had.
+- `PREVIEW_HOWLONG_AFTER=<kind>` (DEBUG) opens the "Not now" screen that
+  follows a given kind, beside `PREVIEW_UNBLOCK_KIND`.
+- **Left as they are, Aziz's call:** the yellow marks by Otto's raised hand
+  on the standing and sign screens, the blue marks on FaceTime's talking
+  pose, and the glow reply ending on a question mark.
+
 ## THE WEBSITE IS BRAINROT'S SHAPE; ~45 BUGS FIXED; LEGAL SYNCED (2026-09-28, Aziz)
 
 - **meditate808.com rebuilt** after thebrainrotapp.com, in the app's valley
