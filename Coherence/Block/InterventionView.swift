@@ -44,6 +44,10 @@ struct InterventionView: View {
             switch step {
             case .ask:
                 InterventionScene(kind: kind, context: context, doors: doors)
+            case .howLong where kind == .fridgeNote:
+                StickyHowLongScreen(block: block, onMeditate: { onMeditate(nil) }, onClose: onClose,
+                                    rehearsal: rehearsal)
+                    .transition(.opacity)
             case .howLong where kind == .voiceNote:
                 NoteHowLongScreen(block: block, onMeditate: { onMeditate(nil) }, onClose: onClose,
                                   rehearsal: rehearsal)
@@ -169,7 +173,7 @@ private struct InterventionScene: View {
         case .voiceNote:
             VoiceNoteScene(doors: doors, meditatedToday: context.meditatedToday)
         case .fridgeNote:
-            FridgeNoteScene(doors: doors)
+            FridgeNoteScene(doors: doors, meditatedToday: context.meditatedToday)
         case .stillThere:
             ValleyStage(pose: "OttoAwake", line: "It'll all still be there in five minutes.", doors: doors)
         case .wakingOtto:
@@ -958,39 +962,110 @@ private struct LinedNote<Peek: View>: View {
 
 // MARK: - 6. A note on the fridge
 
+/// A sticky note (Aziz, 2026-10-04): "Reminder: meditate today", and when
+/// there is a session today, "Reminder: five minutes first". Its "Not now"
+/// is a second sticky note (`StickyHowLongScreen`).
 private struct FridgeNoteScene: View {
     let doors: InterventionDoors
+    let meditatedToday: Bool
 
     var body: some View {
         VStack(spacing: 0) {
             Spacer()
-            ZStack(alignment: .bottomTrailing) {
-                VStack(spacing: 6) {
-                    Text("Sit first,\nscroll after.")
-                        .font(.custom("MarkerFelt-Wide", size: 36))
-                        .multilineTextAlignment(.center)
-                    Text("O.")
-                        .font(.custom("MarkerFelt-Wide", size: 28))
-                }
-                .foregroundStyle(AppColor.textPrimary)
-                .frame(width: 250, height: 250)
-                .background(AppColor.accentGold.opacity(0.55))
-                .background(AppColor.backgroundPrimary)
-                .shadow(color: .black.opacity(0.14), radius: 14, y: 10)
-                .rotationEffect(.degrees(-3))
-                Image("OttoHead")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 96, height: 96)
-                    .rotationEffect(.degrees(10))
-                    .offset(x: 46, y: 40)
-            }
+            StickyNote(text: meditatedToday ? "Reminder:\nfive minutes\nfirst" : "Reminder:\nmeditate\ntoday")
             Spacer()
             DoorButtons(doors: doors)
         }
         .frame(maxWidth: .infinity)
         .background(AppColor.backgroundSecondary.ignoresSafeArea())
         .keepsDarkStatusBar()
+    }
+}
+
+/// "Not now" after the sticky note: a second one, "Make sure to meditate
+/// later", over the usual 5, 10, 30 and "let's meditate" (Aziz, 2026-10-04).
+private struct StickyHowLongScreen: View {
+    @ObservedObject var block: BlockController
+    let onMeditate: () -> Void
+    let onClose: () -> Void
+    var rehearsal = false
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Spacer()
+            StickyNote(text: "Make sure to\nmeditate\nlater")
+            Spacer()
+            PassOptions(block: block, onMeditate: onMeditate, onClose: onClose, rehearsal: rehearsal)
+        }
+        .frame(maxWidth: .infinity)
+        .background(AppColor.backgroundSecondary.ignoresSafeArea())
+        .keepsDarkStatusBar()
+    }
+}
+
+/// A yellow sticky note, tilted, with Otto peeking from behind its corner.
+private struct StickyNote: View {
+    let text: String
+
+    var body: some View {
+        ZStack(alignment: .bottomTrailing) {
+            Text(text)
+                .font(.custom("MarkerFelt-Wide", size: 34))
+                .multilineTextAlignment(.center)
+                .foregroundStyle(AppColor.textPrimary)
+                .frame(width: 250, height: 250)
+                .background(AppColor.accentGold.opacity(0.55))
+                .background(AppColor.backgroundPrimary)
+                .shadow(color: .black.opacity(0.14), radius: 14, y: 10)
+                .rotationEffect(.degrees(-3))
+            Image("OttoHead")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 96, height: 96)
+                .rotationEffect(.degrees(10))
+                .offset(x: 46, y: 40)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("A sticky note from Otto: " + text.replacingOccurrences(of: "\n", with: " "))
+    }
+}
+
+/// The usual answers to "Not now", for the note screens that keep their own
+/// look: 5, 10 or 30 min, each opening the apps at once, and "let's meditate".
+private struct PassOptions: View {
+    @ObservedObject var block: BlockController
+    let onMeditate: () -> Void
+    let onClose: () -> Void
+    var rehearsal = false
+
+    var body: some View {
+        VStack(spacing: 10) {
+            HStack(spacing: 8) {
+                ForEach(HowLongScreen.options, id: \.self) { m in
+                    Button {
+                        // The gallery rehearses with nothing real happening.
+                        if !rehearsal { block.takePass(minutes: m) }
+                        onClose()
+                    } label: {
+                        Text("\(m) min")
+                            .font(DisplayFont.display(16, .bold))
+                            .lineLimit(1)
+                            .foregroundStyle(AppColor.textPrimary)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 13)
+                            .background(AppColor.backgroundPrimary, in: Capsule())
+                            .shadow(color: .black.opacity(0.12), radius: 6, y: 2)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Open my apps for \(m) minutes")
+                }
+            }
+            .padding(.bottom, 4)
+            Button("Nah, actually let's meditate", action: onMeditate)
+                .buttonStyle(PrimaryButtonStyle())
+        }
+        .padding(.horizontal, AppMetrics.screenPadding)
+        .padding(.bottom, 12)
     }
 }
 
