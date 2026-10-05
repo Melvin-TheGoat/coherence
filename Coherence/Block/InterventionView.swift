@@ -45,7 +45,9 @@ struct InterventionView: View {
                 InterventionScene(kind: kind, context: context, doors: doors)
             case .howLong:
                 HowLongScreen(block: block, onMeditate: { onMeditate(nil) }, onClose: onClose,
-                              rehearsal: rehearsal)
+                              rehearsal: rehearsal,
+                              line: HowLongScreen.line(after: kind),
+                              meditateLabel: HowLongScreen.meditateLabel(after: kind))
                     .transition(.opacity)
             }
         }
@@ -63,6 +65,10 @@ struct InterventionView: View {
         }
         .statusBarHidden(false)
         .followsStatusBarRule()
+        // Otto's words tick as they type, as they do in onboarding (Aziz,
+        // 2026-10-04: "make sure the typing animation and haptics are here").
+        // Home and a sit stay silent; this is a screen he is talking on.
+        .environment(\.typingHaptics, true)
     }
 
     /// "Not now" always goes straight to how long: there is no strict mode,
@@ -143,7 +149,12 @@ private struct InterventionScene: View {
     var body: some View {
         switch kind {
         case .standing:
-            ValleyStage(pose: "OttoWave", line: "Got five minutes for me first?", doors: doors)
+            // Aziz, 2026-10-04: "Are you sure? You haven't meditated yet",
+            // the second half only when it is true.
+            ValleyStage(pose: "OttoWave",
+                        line: context.meditatedToday ? "Are you sure? Five minutes first?"
+                                                     : "Are you sure? You haven't meditated yet.",
+                        doors: doors)
         case .textThread:
             TextThreadScene(doors: doors, meditatedToday: context.meditatedToday)
         case .faceTime:
@@ -424,6 +435,8 @@ private struct TextThreadScene: View {
             typing = false
             messages.append(Message(mine: false, text: text))
         }
+        // A tap as each text lands, the way a message arriving feels.
+        WelcomeHaptics.tick()
     }
 
     private func show(_ next: Replies) {
@@ -1113,6 +1126,20 @@ private struct HowLongScreen: View {
     let onClose: () -> Void
     /// The unblock-screens gallery: skip the real pass and Screen Time call.
     var rehearsal = false
+    /// What Otto says, and the meditate button, after the screen that led
+    /// here (`line(after:)`).
+    var line = "Fine... how much time do you need?"
+    var meditateLabel = "Nah, actually let's meditate"
+
+    /// The standing screen asks "Are you sure?", so its "Not now" gets a
+    /// reply to that (Aziz, 2026-10-04). Every other screen gets the usual.
+    static func line(after kind: InterventionKind) -> String {
+        kind == .standing ? "Fine... I'll allow it, but I'm disappointed." : "Fine... how much time do you need?"
+    }
+
+    static func meditateLabel(after kind: InterventionKind) -> String {
+        kind == .standing ? "Nvm, let's meditate" : "Nah, actually let's meditate"
+    }
 
     /// One row, three choices, each opening the apps for that long at once
     /// (Aziz, 2026-10-04: 5, 10, 30, matching the text thread; it was 10, 20,
@@ -1137,7 +1164,7 @@ private struct HowLongScreen: View {
                 ValleyScene(progress: 0, showsFigure: false, clock: true)
                 VStack {
                     Spacer(minLength: 0)
-                    OttoLine(text: "Fine... how much time do you need?", progress: DayLight.clockProgress())
+                    OttoLine(text: line, progress: DayLight.clockProgress())
                 }
                 .frame(width: min(size.width - 56, 330), height: max(0, ottoTop - 8 - 110))
                 .position(x: size.width / 2, y: 110 + max(0, ottoTop - 8 - 110) / 2)
@@ -1174,7 +1201,7 @@ private struct HowLongScreen: View {
                         }
                     }
                     .padding(.bottom, 4)
-                    Button("Nah, actually let's meditate", action: onMeditate)
+                    Button(meditateLabel, action: onMeditate)
                         .buttonStyle(PrimaryButtonStyle())
                 }
                 .padding(.horizontal, AppMetrics.screenPadding)
