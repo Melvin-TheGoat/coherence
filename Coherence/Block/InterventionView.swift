@@ -1125,24 +1125,16 @@ private struct HowLongScreen: View {
     private static let pose = "OttoFrustratedSit"
 
     var body: some View {
-        let ink = DayLight.now.ink
         GeometryReader { geo in
             let size = geo.size
-            let ottoHeight = min(170, size.height * 0.19)
-            let ottoBottom = size.height * 0.60
+            // His usual place and size, as every other Otto screen draws him
+            // (`ValleyStage`), sitting in the meadow rather than small and
+            // high in front of the mountains (Aziz, 2026-10-04).
+            let ottoHeight = min(230, size.height * 0.28)
+            let ottoBottom = size.height - 150
             let ottoTop = ottoBottom - ottoHeight
-            // The valley's grass begins at 66% of its frame, below his feet,
-            // which left him afloat in front of the mountains. Drawing the
-            // scene taller and letting the extra run off the top raises the
-            // grass to just under him, on this screen only.
-            // The drawing has air under him, so the grass rises past his
-            // frame's bottom to his lap: seated in the meadow, not on its edge.
-            let grassTop = ottoBottom - ottoHeight * 0.22
-            let rise = max(0, (size.height * 0.66 - grassTop) / 0.34)
             ZStack {
                 ValleyScene(progress: 0, showsFigure: false, clock: true)
-                    .frame(width: size.width, height: size.height + rise)
-                    .frame(width: size.width, height: size.height, alignment: .bottom)
                 VStack {
                     Spacer(minLength: 0)
                     OttoLine(text: "Fine... how much time do you need?", progress: DayLight.clockProgress())
