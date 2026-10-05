@@ -1,4 +1,5 @@
 import SwiftUI
+import AVFoundation
 
 /// One of Otto's twenty screens (`mockups/block-v1.html`, section 3, approved
 /// 2026-09-22), opened by the "Otto wants a word" notification the shield's
@@ -597,6 +598,12 @@ private struct FaceTimeScene: View {
         _answered = State(initialValue: startAnswered)
     }
 
+    /// Whether this person already said yes to the camera, so it may run
+    /// while the call rings without asking.
+    private static var cameraAllowed: Bool {
+        AVCaptureDevice.authorizationStatus(for: .video) == .authorized
+    }
+
     /// The self-view's size once answered, FaceTime's own shape.
     private static let pip = CGSize(width: 100, height: 136)
 
@@ -629,18 +636,24 @@ private struct FaceTimeScene: View {
             }
         }
         .ignoresSafeArea()
-        // Keyed to `answered`, so the camera (and its permission prompt)
-        // starts on Accept and never while ringing; the task is cancelled
-        // if the screen goes away first, and `start()` checks that.
-        .task(id: answered) {
-            if answered { await camera.start() }
+        // Your face is on while it rings, like a real call (Aziz,
+        // 2026-10-04), but only once the camera is already allowed: the
+        // permission prompt is never raised by a screen that opened from a
+        // notification before anything was tapped (App Review 5.1.1,
+        // 2026-09-29). The first call asks on Accept; every call after it
+        // rings with your face. Keyed so an allowed camera started while
+        // ringing is not restarted by Accept; `start()` is idempotent
+        // anyway, and checks for a cancelled task.
+        .task(id: answered || Self.cameraAllowed) {
+            if answered || Self.cameraAllowed { await camera.start() }
         }
         .onDisappear { camera.stop() }
     }
 
-    /// A soft dark card while ringing (the camera is off until Accept);
-    /// once answered, your live mirrored camera, or a neutral placeholder
-    /// while it starts or when it cannot run.
+    /// Your live mirrored camera, full screen while ringing (once allowed)
+    /// and small once answered; a soft dark card while ringing before the
+    /// camera is allowed, and a neutral placeholder once answered while it
+    /// starts or when it cannot run.
     @ViewBuilder
     private var cameraView: some View {
         if camera.ready {
