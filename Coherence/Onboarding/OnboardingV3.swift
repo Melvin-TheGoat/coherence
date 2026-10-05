@@ -1473,6 +1473,9 @@ struct BreathExerciseScreen: View {
     private var title: String?
     /// What arrives once the breath is done, in Continue's place.
     private var actions: AnyView?
+    /// Called once the breath is done, for a screen that moves on by itself
+    /// (Otto's "Breathe with me" settles into the valley, 2026-10-04).
+    private var onFinished: (() -> Void)?
 
     init(breathing: Bool, onReady: @escaping () -> Void, onContinue: @escaping () -> Void) {
         self.breathing = breathing
@@ -1484,12 +1487,13 @@ struct BreathExerciseScreen: View {
     /// end. Otto's "Breathe with me" Block screen is this one now (Melvin,
     /// 2026-09-29: "replace that with the one from the onboarding, that ones
     /// a lot better"); its circle and looping in / out words are gone.
-    init(title: String, @ViewBuilder actions: () -> some View) {
+    init(title: String, onFinished: (() -> Void)? = nil, @ViewBuilder actions: () -> some View) {
         self.breathing = true
         self.onReady = {}
         self.onContinue = {}
         self.title = title
         self.actions = AnyView(actions())
+        self.onFinished = onFinished
     }
 
     var body: some View {
@@ -1624,6 +1628,7 @@ struct BreathExerciseScreen: View {
         // screen would claim "Nicely done" the moment it was left.
         guard !Task.isCancelled else { return }
         withAnimation(.easeOut(duration: 0.3)) { finished = true }
+        onFinished?()
     }
 }
 

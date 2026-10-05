@@ -149,7 +149,7 @@ private struct InterventionScene: View {
         case .faceTime:
             FaceTimeScene(doors: doors)
         case .breatheWithMe:
-            BreatheWithMeScene(doors: doors)
+            BreatheWithMeScene(doors: doors, meditatedToday: context.meditatedToday)
         case .voiceNote:
             VoiceNoteScene(doors: doors)
         case .fridgeNote:
@@ -732,15 +732,55 @@ private struct FaceTimeScene: View {
 /// a circle and looping in / out words in the valley (Melvin, 2026-09-29:
 /// "that ones a lot better"). The doors wait for the breath, as Continue
 /// does in onboarding, and the close button is up the whole time.
+/// One breath with Otto, then he settles into the valley and asks (Aziz,
+/// 2026-10-04): the breath is onboarding's (in 4, hold 2, out 4, the water
+/// rising and falling), and when it ends the white page fades into the
+/// valley with Otto sitting on his cushion, eyes closed, and the question in
+/// his bubble over the two usual doors. "You haven't meditated yet today" is
+/// said only when it is true, as in the text thread.
 private struct BreatheWithMeScene: View {
     let doors: InterventionDoors
+    let meditatedToday: Bool
+    @State private var settled = false
+    /// The breath fades to white first, THEN the valley comes up: fading one
+    /// into the other drew two Ottos at once, the big breathing one and the
+    /// smaller one on his cushion (2026-10-04).
+    @State private var breathGone = false
+
+    private var line: String {
+        meditatedToday
+            ? "Is this app really that important right now?"
+            : "You haven't meditated yet today. Is this app really that important right now?"
+    }
 
     var body: some View {
-        BreathExerciseScreen(title: "One breath with me, then decide.") {
-            DoorButtons(doors: doors)
+        ZStack {
+            Color.white.ignoresSafeArea()
+            if settled {
+                ValleyStage(pose: "OttoSit", line: line, doors: doors)
+                    .transition(.opacity)
+            } else {
+                BreathExerciseScreen(title: "One breath with me, then decide.", onFinished: {
+                    // A beat on "Nicely done" before the valley comes up.
+                    Task { @MainActor in
+                        try? await Task.sleep(for: .seconds(1.1))
+                        guard !Task.isCancelled else { return }
+                        withAnimation(.easeIn(duration: 0.35)) { breathGone = true }
+                        try? await Task.sleep(for: .seconds(0.4))
+                        guard !Task.isCancelled else { return }
+                        withAnimation(.easeOut(duration: 0.7)) { settled = true }
+                    }
+                }) {
+                    EmptyView()
+                }
+                .opacity(breathGone ? 0 : 1)
+                // A white page: keep the status bar dark after dark
+                // (2026-09-30). On this branch only, so the valley after it
+                // follows the hour again.
+                .keepsDarkStatusBar()
+                .transition(.opacity)
+            }
         }
-        // A white page: keep the status bar dark after dark (2026-09-30).
-        .keepsDarkStatusBar()
     }
 }
 
