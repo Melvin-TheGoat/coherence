@@ -277,12 +277,15 @@ hidden.
 **Subscription group.** Every auto-renewable, all three ladder plans included,
 sits in ONE group so a person can move between them without double-paying.
 
-- Reference name (internal): `808 Membership` (can stay).
-- **Group display name (USER VISIBLE, in Manage Subscriptions): recommend
-  `808 Premium`.** The app calls the subscription "808 Premium" (the paywall's
-  "808 Premium is $7.99 a month or $29.99 a year" line, the share-card lock,
-  the Block screen), and the 1.0 group was named `808 Membership`. One name
-  everywhere a customer sees it. The group's localization can be edited.
+- Reference name (internal): `808 Membership`.
+- **Group display name (USER VISIBLE, in Manage Subscriptions): `808
+  Membership`** (Aziz, 2026-10-05: "its 808 membership not 808 premium"). It
+  is what the group is called in App Store Connect and what the 1.1 review
+  reply names. **The app's own strings still say "808 Premium"** (the
+  paywall's "808 Premium is $7.99 a month or $29.99 a year" and "808 Premium:
+  full access to..." lines, the share-card lock, the Block screen), so they
+  should move to "808 Membership" in the next build: one name everywhere a
+  customer sees it.
 - Custom App Name: leave BLANK, so the sheet uses "808 Meditate".
 
 **Rank (level) in the group**, top to bottom. Rank decides upgrade, downgrade
@@ -406,8 +409,8 @@ a phone session. Replace them:
 | monthly50 | `Monthly, half price` | `All of 808 at half the monthly price.` (37) |
 | lifetime | `Lifetime` | `All of 808 with one payment.` (28) |
 
-With the group named `808 Premium`, Manage Subscriptions reads "808 Premium,
-Monthly". monthly50's name matches its card in the app (2026-09-29), and so do
+With the group named `808 Membership`, Manage Subscriptions reads "808
+Membership, Monthly". monthly50's name matches its card in the app (2026-09-29), and so do
 the trial plans': their paywall cards are titled "Monthly" and "Yearly", the
 trial stated on the cadence line. `808.storekit` uses the same names except
 `Half price` for monthly50 and `Monthly with free trial` for monthlytrial;

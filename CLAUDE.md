@@ -6819,6 +6819,21 @@ paired "Not now" screen. All in `Coherence/Block/InterventionView.swift`.
   on the standing and sign screens, the blue marks on FaceTime's talking
   pose, and the glow reply ending on a question mark.
 
+## THE SUBSCRIPTION IS "808 MEMBERSHIP" (2026-10-05, Aziz)
+
+"its 808 membership not 808 premium." The subscription group's customer-facing
+name in App Store Connect is **808 Membership**, and every note now says so
+(`APP_STORE.md`, `RELEASE_CHECKLIST.md` R8, `marketing/APP_STORE_PASTE.md`).
+**The app's strings still say "808 Premium"** (`OnboardingOffer.swift` twice,
+`ShareCard.swift`, `BlockIntroScreen.swift`, and `PaywallLadderTests` checks
+the prefix); they change to "808 Membership" in the next build, since 1.1 is
+already in review. Same day, App Review asked under 2.1 why the plans look
+like "identical subscription groups for the same products". All six plans sit
+in ONE group; the trial and half-price plans are separate products only
+because a product carries one introductory offer. The answer was sent in
+Connect, no build change. If Apple insists, the alternative is promotional
+offers on Monthly and Yearly (needs a signing key and code).
+
 ## THE WEBSITE IS BRAINROT'S SHAPE; ~45 BUGS FIXED; LEGAL SYNCED (2026-09-28, Aziz)
 
 - **meditate808.com rebuilt** after thebrainrotapp.com, in the app's valley

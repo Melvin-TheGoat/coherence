@@ -603,8 +603,9 @@ every archive.
   (both trial cards, Yearly selected) and rung 2's screen, once those
   products exist in the sandbox (step 0 lists which shot goes with which
   product). All values in `APP_STORE.md`, "In-app purchases".
-- [ ] **R8. Subscription group display name**: recommend `808 Premium`, the
-  name the app uses, instead of the 1.0 `808 Membership`. Set the rank per
+- [ ] **R8. Subscription group display name**: `808 Membership` (Aziz,
+  2026-10-05), not "808 Premium". The app's strings still say "808 Premium"
+  and move to "808 Membership" in the next build. Set the rank per
   `APP_STORE.md`.
 - [ ] **R9. App Privacy label from the manifest in the archive.** The table
   in `APP_STORE.md` was written from the decided list while the manifest was
@@ -995,7 +996,7 @@ items were done the same day and are marked where they are.
       there is no Block row, and why.)
 - [ ] Review notes: how to try Block (the Block tab, Mindful day, Ask Otto
       on a held app), that it is individual Screen Time authorization and not
-      parental control, and that Block is part of 808 Premium. (2026-09-29:
+      parental control, and that Block is part of 808 Membership. (2026-09-29:
       written, the BLOCK paragraph in `marketing/APP_STORE_PASTE.md`; it
       offers a screen recording, so make one on a phone, R27.)
 - [ ] Camera usage string now also names Otto's ~~FaceTime~~ video call

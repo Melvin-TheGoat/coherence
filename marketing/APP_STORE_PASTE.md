@@ -167,9 +167,9 @@ The Watch readings are grounded in peer reviewed research on wrist worn motion s
 808 is a membership, and every feature is included in it.
 
 SUBSCRIPTION INFORMATION
-808 Premium Monthly: $7.99 per month.
-808 Premium Yearly: $29.99 per year.
-808 Premium Lifetime: $99.99, a single payment that never renews.
+808 Membership Monthly: $7.99 per month.
+808 Membership Yearly: $29.99 per year.
+808 Membership Lifetime: $99.99, a single payment that never renews.
 If you decline the plans above, the app may offer Monthly or Yearly with a 3 day free trial, then $7.99 per month or $29.99 per year, and after that Monthly, half price: a 3 day free trial, then $3.99 per month.
 A free trial is available once per Apple Account across 808's subscriptions. Payment is charged to your Apple Account when you confirm the purchase, or when a free trial ends. Subscriptions renew automatically unless cancelled at least 24 hours before the end of the current period or free trial, and your account is charged for the renewal within the 24 hours before the period ends. Manage or cancel any time in your App Store account settings. Any unused part of a free trial ends when you buy a subscription.
 Restore, on the paywall or in Settings, brings a purchase back on a new device.
@@ -315,7 +315,7 @@ One free trial per account: an account that already had one skips the trial offe
 "Plans aren't loading" means the sandbox returned no products; Try again retries.
 People updating from 1.0 without a subscription meet the paywall at launch, with an Account link (Manage subscription, Redeem a code, Restore, Sign out, Delete account). Subscribers and Lifetime owners keep full access.
 
-BLOCK (part of 808 Premium)
+BLOCK (part of 808 Membership)
 Family Controls with individual authorization: a person manages their own iPhone, not a parental control. After the paywall, onboarding (or later the Block tab) asks for Screen Time permission, then apps are picked with Apple's picker. A held app shows Apple's shield. "Ask Otto" sends a notification that opens a short screen from Otto, ending in a meditation (five minutes or more opens the apps for the rest of that window) or "Not now" for 10, 20 or 30 minutes. If notifications are off, the shield says to open 808, and Otto appears there. Nothing from Screen Time leaves the device. A screen recording is available on request.
 
 SESSIONS
@@ -351,7 +351,7 @@ that is a rejection. Change them together, always.
 
 ## Pricing and in-app purchases
 
-The app is **free** to download; everything inside it is in 808 Premium.
+The app is **free** to download; everything inside it is in 808 Membership.
 Products, prices, display names, descriptions and which ones to attach to 1.1
 are in `APP_STORE.md` ("In-app purchases"). In short (corrected later on
 2026-09-29): `monthly` and `yearly` with **NO introductory offer** (remove any
