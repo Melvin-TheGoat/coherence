@@ -56,7 +56,8 @@ struct InterventionView: View {
                 HowLongScreen(block: block, onMeditate: { onMeditate(nil) }, onClose: onClose,
                               rehearsal: rehearsal,
                               line: HowLongScreen.line(after: kind),
-                              meditateLabel: HowLongScreen.meditateLabel(after: kind))
+                              meditateLabel: HowLongScreen.meditateLabel(after: kind),
+                              pose: HowLongScreen.pose(after: kind))
                     .transition(.opacity)
             }
         }
@@ -1293,11 +1294,23 @@ private struct HowLongScreen: View {
     /// here (`line(after:)`).
     var line = "Fine... how much time do you need?"
     var meditateLabel = "Nah, actually let's meditate"
+    var pose = "OttoFrustratedSit"
 
     /// The standing screen asks "Are you sure?", so its "Not now" gets a
     /// reply to that (Aziz, 2026-10-04). Every other screen gets the usual.
     static func line(after kind: InterventionKind) -> String {
-        kind == .standing ? "Fine... I'll allow it, but I'm disappointed." : "Fine... how much time do you need?"
+        switch kind {
+        case .standing: return "Fine... I'll allow it, but I'm disappointed."
+        // The morning screen lets it go kindly (Aziz, 2026-10-04).
+        case .wakingOtto: return "Okay, the day is early. Make sure to meditate later today."
+        default: return "Fine... how much time do you need?"
+        }
+    }
+
+    /// Frustrated after most screens; awake and easy after the morning one,
+    /// whose reply is not a complaint.
+    static func pose(after kind: InterventionKind) -> String {
+        kind == .wakingOtto ? "OttoAwake" : "OttoFrustratedSit"
     }
 
     static func meditateLabel(after kind: InterventionKind) -> String {
@@ -1309,10 +1322,9 @@ private struct HowLongScreen: View {
     /// 30 with a separate "Open my apps" button).
     static let options = [5, 10, 30]
 
-    /// Otto put out by the "Not now" (Aziz, 2026-10-04): sitting, arms
-    /// down, a sideways look and a small frown. The drawing is the one from
-    /// `mockups/otto-v3/otto-frustrated.png`.
-    private static let pose = "OttoFrustratedSit"
+    // Otto put out by the "Not now" (Aziz, 2026-10-04): sitting, arms down,
+    // a sideways look and a small frown, the drawing from
+    // `mockups/otto-v3/otto-frustrated.png` (`pose`, by the screen before).
 
     var body: some View {
         GeometryReader { geo in
@@ -1331,7 +1343,7 @@ private struct HowLongScreen: View {
                 }
                 .frame(width: min(size.width - 56, 330), height: max(0, ottoTop - 8 - 110))
                 .position(x: size.width / 2, y: 110 + max(0, ottoTop - 8 - 110) / 2)
-                Image(Self.pose)
+                Image(pose)
                     .resizable()
                     .scaledToFit()
                     .frame(height: ottoHeight)
