@@ -44,6 +44,10 @@ struct InterventionView: View {
             switch step {
             case .ask:
                 InterventionScene(kind: kind, context: context, doors: doors)
+            case .howLong where kind == .voiceNote:
+                NoteHowLongScreen(block: block, onMeditate: { onMeditate(nil) }, onClose: onClose,
+                                  rehearsal: rehearsal)
+                    .transition(.opacity)
             case .howLong:
                 HowLongScreen(block: block, onMeditate: { onMeditate(nil) }, onClose: onClose,
                               rehearsal: rehearsal,
@@ -163,7 +167,7 @@ private struct InterventionScene: View {
         case .breatheWithMe:
             BreatheWithMeScene(doors: doors, meditatedToday: context.meditatedToday)
         case .voiceNote:
-            VoiceNoteScene(doors: doors)
+            VoiceNoteScene(doors: doors, meditatedToday: context.meditatedToday)
         case .fridgeNote:
             FridgeNoteScene(doors: doors)
         case .stillThere:
@@ -811,65 +815,142 @@ private struct BreatheWithMeScene: View {
 /// name, `voiceNote`, so saved state and the gallery still line up.
 private struct VoiceNoteScene: View {
     let doors: InterventionDoors
+    let meditatedToday: Bool
 
-    private static let lines = ["hey, it's me.", "five minutes,", "then it's all yours.", "promise."]
-    private static let rule: CGFloat = 38
+    /// The note, then a P.S. when there is no session today (Aziz,
+    /// 2026-10-04: "P.S., you still haven't meditated today -Otto").
+    private var lines: [String] {
+        let note = ["hey, it's me.", "five minutes,", "then it's all yours.", "promise."]
+        return meditatedToday ? note : note + ["P.S. you still", "haven't meditated", "today."]
+    }
 
     var body: some View {
         VStack(spacing: 0) {
             Spacer()
-            ZStack(alignment: .topLeading) {
-                // The paper: cream, ruled, a red margin line.
-                VStack(spacing: 0) {
-                    ForEach(0..<7, id: \.self) { _ in
-                        Rectangle().fill(AppColor.skyDeep.opacity(0.28))
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 1)
-                            .padding(.top, Self.rule - 1)
-                    }
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.top, 20)
-                Rectangle().fill(Color(red: 0.86, green: 0.45, blue: 0.42).opacity(0.5))
-                    .frame(width: 1.5)
-                    .padding(.leading, 44)
-
-                VStack(alignment: .leading, spacing: 0) {
-                    ForEach(Self.lines, id: \.self) { line in
-                        Text(line)
-                            .font(.custom("MarkerFelt-Wide", size: 25))
-                            .frame(height: Self.rule, alignment: .bottom)
-                    }
-                    Text("O.")
-                        .font(.custom("MarkerFelt-Wide", size: 25))
-                        .frame(height: Self.rule, alignment: .bottom)
-                        .frame(maxWidth: .infinity, alignment: .trailing)
-                        .padding(.trailing, 28)
-                }
-                .foregroundStyle(AppColor.textPrimary)
-                .padding(.leading, 58)
-                .padding(.top, 20 - 8)
-            }
-            .frame(width: 290, height: 20 + Self.rule * 7 + 18, alignment: .top)
-            .background(AppColor.backgroundSecondary)
-            .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
-            .shadow(color: .black.opacity(0.14), radius: 14, y: 10)
-            .rotationEffect(.degrees(2))
-            .overlay(alignment: .bottomTrailing) {
+            LinedNote(lines: lines, signature: "-Otto") {
                 Image("OttoHead")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 84, height: 84)
-                    .rotationEffect(.degrees(-8))
-                    .offset(x: 30, y: 30)
             }
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel("A note from Otto: hey, it's me. Five minutes, then it's all yours. Promise.")
             Spacer()
             DoorButtons(doors: doors)
         }
         .background(AppColor.backgroundPrimary.ignoresSafeArea())
         .keepsDarkStatusBar()
+    }
+}
+
+/// "Not now" after the note gets a second note, not the valley (Aziz,
+/// 2026-10-04): "slightly disappointed, but if you insist. -Otto", with
+/// frustrated Otto peeking in and the usual 5, 10, 30 and "let's meditate".
+private struct NoteHowLongScreen: View {
+    @ObservedObject var block: BlockController
+    let onMeditate: () -> Void
+    let onClose: () -> Void
+    var rehearsal = false
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Spacer()
+            LinedNote(lines: ["slightly", "disappointed,", "but if you", "insist."], signature: "-Otto") {
+                // His frustrated sitting drawing, cut to head and shoulders.
+                Image("OttoFrustratedSit")
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 84, height: 84, alignment: .top)
+                    .clipped()
+            }
+            Spacer()
+            VStack(spacing: 10) {
+                HStack(spacing: 8) {
+                    ForEach(HowLongScreen.options, id: \.self) { m in
+                        Button {
+                            // The gallery rehearses with nothing real happening.
+                            if !rehearsal { block.takePass(minutes: m) }
+                            onClose()
+                        } label: {
+                            Text("\(m) min")
+                                .font(DisplayFont.display(16, .bold))
+                                .lineLimit(1)
+                                .foregroundStyle(AppColor.textPrimary)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 13)
+                                .background(AppColor.backgroundSecondary, in: Capsule())
+                                .shadow(color: .black.opacity(0.12), radius: 6, y: 2)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Open my apps for \(m) minutes")
+                    }
+                }
+                .padding(.bottom, 4)
+                Button("Nah, actually let's meditate", action: onMeditate)
+                    .buttonStyle(PrimaryButtonStyle())
+            }
+            .padding(.horizontal, AppMetrics.screenPadding)
+            .padding(.bottom, 12)
+        }
+        .background(AppColor.backgroundPrimary.ignoresSafeArea())
+        .keepsDarkStatusBar()
+    }
+}
+
+/// A note from Otto on ruled paper with a red margin, tilted a little, with
+/// Otto (`peek`) at its corner. Shared by the note screen and its "Not now".
+private struct LinedNote<Peek: View>: View {
+    let lines: [String]
+    let signature: String
+    @ViewBuilder var peek: () -> Peek
+
+    private static var rule: CGFloat { 38 }
+    /// A ruled line for every written one, the signature, and one spare.
+    private var rows: Int { lines.count + 2 }
+
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            // The paper: cream, ruled, a red margin line.
+            VStack(spacing: 0) {
+                ForEach(0..<rows, id: \.self) { _ in
+                    Rectangle().fill(AppColor.skyDeep.opacity(0.28))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 1)
+                        .padding(.top, Self.rule - 1)
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.top, 20)
+            Rectangle().fill(Color(red: 0.86, green: 0.45, blue: 0.42).opacity(0.5))
+                .frame(width: 1.5)
+                .padding(.leading, 44)
+
+            VStack(alignment: .leading, spacing: 0) {
+                ForEach(lines, id: \.self) { line in
+                    Text(line)
+                        .font(.custom("MarkerFelt-Wide", size: 25))
+                        .frame(height: Self.rule, alignment: .bottom)
+                }
+                Text(signature)
+                    .font(.custom("MarkerFelt-Wide", size: 25))
+                    .frame(height: Self.rule, alignment: .bottom)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+                    .padding(.trailing, 28)
+            }
+            .foregroundStyle(AppColor.textPrimary)
+            .padding(.leading, 58)
+            .padding(.top, 20 - 8)
+        }
+        .frame(width: 290, height: 20 + Self.rule * CGFloat(rows) + 18, alignment: .top)
+        .background(AppColor.backgroundSecondary)
+        .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+        .shadow(color: .black.opacity(0.14), radius: 14, y: 10)
+        .rotationEffect(.degrees(2))
+        .overlay(alignment: .bottomTrailing) {
+            peek()
+                .frame(width: 84, height: 84)
+                .rotationEffect(.degrees(-8))
+                .offset(x: 30, y: 30)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("A note from Otto: " + lines.joined(separator: " ") + " " + signature)
     }
 }
 
@@ -1149,7 +1230,7 @@ private struct HowLongScreen: View {
     /// One row, three choices, each opening the apps for that long at once
     /// (Aziz, 2026-10-04: 5, 10, 30, matching the text thread; it was 10, 20,
     /// 30 with a separate "Open my apps" button).
-    private static let options = [5, 10, 30]
+    static let options = [5, 10, 30]
 
     /// Otto put out by the "Not now" (Aziz, 2026-10-04): sitting, arms
     /// down, a sideways look and a small frown. The drawing is the one from
