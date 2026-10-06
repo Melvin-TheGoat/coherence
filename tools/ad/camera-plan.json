@@ -1,0 +1,300 @@
+{
+ "version": 1,
+ "duration": 28.61,
+ "operations": [
+  {
+   "type": "shot_sequence",
+   "start": 0,
+   "shots": [
+    {
+     "subject": {
+      "frame_region": {
+       "x": 0.41,
+       "y": 0.22,
+       "width": 0.18,
+       "height": 0.22
+      }
+     },
+     "framing": "close_up",
+     "transition": "cut",
+     "hold": 0,
+     "camera_move": {
+      "type": "orbit",
+      "yaw_degrees": -14,
+      "pitch_degrees": 7
+     },
+     "maximum_zoom": 1.6,
+     "focus": {
+      "id": "hero",
+      "screen_point": {
+       "x": 0.5,
+       "y": 0.5
+      }
+     }
+    },
+    {
+     "subject": {
+      "frame_region": {
+       "x": 0.41,
+       "y": 0.22,
+       "width": 0.18,
+       "height": 0.22
+      }
+     },
+     "framing": "close_up",
+     "transition": "reframe",
+     "hold": 0,
+     "camera_move": {
+      "type": "orbit",
+      "yaw_degrees": -9,
+      "pitch_degrees": 5
+     },
+     "maximum_zoom": 1.66,
+     "move_duration": 3.6,
+     "easing": "Linear"
+    },
+    {
+     "subject": {
+      "frame_region": {
+       "x": 0.41,
+       "y": 0.22,
+       "width": 0.18,
+       "height": 0.22
+      }
+     },
+     "framing": "close_up",
+     "transition": "reframe",
+     "hold": 0,
+     "camera_move": {
+      "type": "orbit",
+      "yaw_degrees": -3,
+      "pitch_degrees": 3
+     },
+     "maximum_zoom": 1.72,
+     "move_duration": 2.92,
+     "easing": "Out Sine"
+    },
+    {
+     "subject": "device",
+     "framing": "wide",
+     "transition": "reframe",
+     "hold": 0,
+     "camera_move": {
+      "type": "orbit",
+      "yaw_degrees": 0,
+      "pitch_degrees": 0
+     },
+     "move_duration": 0.8,
+     "easing": "In Out Sine"
+    },
+    {
+     "subject": "device",
+     "framing": "wide",
+     "transition": "reframe",
+     "hold": 0,
+     "camera_move": {
+      "type": "orbit",
+      "yaw_degrees": 4,
+      "pitch_degrees": 2
+     },
+     "move_duration": 3.3,
+     "easing": "Linear"
+    },
+    {
+     "subject": {
+      "frame_region": {
+       "x": 0.42,
+       "y": 0.38,
+       "width": 0.16,
+       "height": 0.3
+      }
+     },
+     "framing": "close_up",
+     "transition": "reframe",
+     "hold": 0,
+     "camera_move": {
+      "type": "orbit",
+      "yaw_degrees": 2,
+      "pitch_degrees": 3
+     },
+     "maximum_zoom": 1.55,
+     "move_duration": 0.8,
+     "easing": "In Out Sine"
+    },
+    {
+     "subject": {
+      "frame_region": {
+       "x": 0.42,
+       "y": 0.38,
+       "width": 0.16,
+       "height": 0.3
+      }
+     },
+     "framing": "close_up",
+     "transition": "reframe",
+     "hold": 0,
+     "camera_move": {
+      "type": "orbit",
+      "yaw_degrees": -2,
+      "pitch_degrees": 2
+     },
+     "maximum_zoom": 1.7,
+     "move_duration": 2.52,
+     "easing": "Linear"
+    },
+    {
+     "subject": {
+      "frame_region": {
+       "x": 0.42,
+       "y": 0.24,
+       "width": 0.16,
+       "height": 0.2
+      }
+     },
+     "framing": "close_up",
+     "transition": "reframe",
+     "hold": 0,
+     "camera_move": {
+      "type": "orbit",
+      "yaw_degrees": 0,
+      "pitch_degrees": 0
+     },
+     "maximum_zoom": 1.6,
+     "move_duration": 0.7,
+     "easing": "In Out Sine"
+    },
+    {
+     "subject": {
+      "frame_region": {
+       "x": 0.42,
+       "y": 0.24,
+       "width": 0.16,
+       "height": 0.2
+      }
+     },
+     "framing": "close_up",
+     "transition": "reframe",
+     "hold": 0,
+     "camera_move": {
+      "type": "orbit",
+      "yaw_degrees": 3,
+      "pitch_degrees": 2
+     },
+     "maximum_zoom": 1.7,
+     "move_duration": 1.95,
+     "easing": "Linear"
+    },
+    {
+     "subject": {
+      "frame_region": {
+       "x": 0.41,
+       "y": 0.52,
+       "width": 0.18,
+       "height": 0.24
+      }
+     },
+     "framing": "close_up",
+     "transition": "reframe",
+     "hold": 0,
+     "camera_move": {
+      "type": "orbit",
+      "yaw_degrees": 0,
+      "pitch_degrees": 0
+     },
+     "maximum_zoom": 1.55,
+     "move_duration": 0.7,
+     "easing": "In Out Sine"
+    },
+    {
+     "subject": {
+      "frame_region": {
+       "x": 0.41,
+       "y": 0.52,
+       "width": 0.18,
+       "height": 0.24
+      }
+     },
+     "framing": "close_up",
+     "transition": "reframe",
+     "hold": 0,
+     "camera_move": {
+      "type": "orbit",
+      "yaw_degrees": -3,
+      "pitch_degrees": 2
+     },
+     "maximum_zoom": 1.65,
+     "move_duration": 2.05,
+     "easing": "Linear"
+    },
+    {
+     "subject": {
+      "frame_region": {
+       "x": 0.41,
+       "y": 0.24,
+       "width": 0.18,
+       "height": 0.42
+      }
+     },
+     "framing": "close_up",
+     "transition": "reframe",
+     "hold": 0,
+     "camera_move": {
+      "type": "orbit",
+      "yaw_degrees": 0,
+      "pitch_degrees": 0
+     },
+     "maximum_zoom": 1.35,
+     "move_duration": 0.7,
+     "easing": "In Out Sine"
+    },
+    {
+     "subject": {
+      "frame_region": {
+       "x": 0.41,
+       "y": 0.24,
+       "width": 0.18,
+       "height": 0.42
+      }
+     },
+     "framing": "close_up",
+     "transition": "reframe",
+     "hold": 0,
+     "camera_move": {
+      "type": "orbit",
+      "yaw_degrees": 3,
+      "pitch_degrees": 2
+     },
+     "maximum_zoom": 1.42,
+     "move_duration": 2.88,
+     "easing": "Linear"
+    },
+    {
+     "subject": "device",
+     "framing": "wide",
+     "transition": "reframe",
+     "hold": 0,
+     "camera_move": {
+      "type": "orbit",
+      "yaw_degrees": 16,
+      "pitch_degrees": 6
+     },
+     "move_duration": 1.2,
+     "easing": "In Out Sine"
+    },
+    {
+     "subject": "device",
+     "framing": "wide",
+     "transition": "reframe",
+     "hold": 0,
+     "camera_move": {
+      "type": "orbit",
+      "yaw_degrees": 20,
+      "pitch_degrees": 7
+     },
+     "move_duration": 4.48,
+     "easing": "Out Sine"
+    }
+   ]
+  }
+ ]
+}

@@ -86,6 +86,17 @@ final class BlockController: ObservableObject {
 
     /// Test mode: forget today's releases and passes, so the apps are held
     /// again without waiting for tomorrow.
+    /// Settings > Block (debug): hold every blocker's apps now, regardless of
+    /// schedules and sessions (`BlockState.holdAll`). Turning it on also
+    /// ends any "Not now" running, so the shield shows at once.
+    var holdAll: Bool { state.holdAll }
+
+    func setHoldAll(_ on: Bool, now: Date = Date()) {
+        state.holdAll = on
+        if on { state.passes.removeAll { $0.end > now } }
+        commit(reschedule: false)
+    }
+
     func holdAgain(now: Date = Date()) {
         guard testMode else { return }
         state.releases.removeAll { now.timeIntervalSince($0.at) < 36 * 3600 }

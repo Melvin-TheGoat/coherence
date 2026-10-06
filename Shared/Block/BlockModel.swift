@@ -228,10 +228,15 @@ struct BlockState: Codable, Equatable {
     /// When an Otto screen last opened, so an unanswered "Ask Otto" can be
     /// told apart from one already handled.
     var lastInterventionAt: Date?
+    /// Debug and marketing (Aziz, 2026-10-06): every blocker with apps holds
+    /// them now, whatever its schedule, switch or sessions, so the blocker
+    /// can be shown or tested on demand. A "Not now" pass still opens them,
+    /// so Otto's screens keep working. Settings > Block (debug).
+    var holdAll = false
 
     enum CodingKeys: String, CodingKey {
         case blockers, passes, releases, asks, limitHits, recentInterventions
-        case seededDefault, lastInterventionAt
+        case seededDefault, lastInterventionAt, holdAll
     }
 
     func blocker(_ id: UUID) -> Blocker? { blockers.first { $0.id == id } }
@@ -300,6 +305,7 @@ extension BlockState {
         recentInterventions = (try? c.decodeIfPresent([String].self, forKey: .recentInterventions)) ?? []
         seededDefault = (try? c.decodeIfPresent(Bool.self, forKey: .seededDefault)) ?? !blockers.isEmpty
         lastInterventionAt = try? c.decodeIfPresent(Date.self, forKey: .lastInterventionAt)
+        holdAll = (try? c.decodeIfPresent(Bool.self, forKey: .holdAll)) ?? false
     }
 }
 
@@ -311,6 +317,10 @@ enum BlockRules {
     /// a session in this window, and no "Not now" pass running.
     static func holds(_ blocker: Blocker, in state: BlockState, at now: Date,
                       calendar: Calendar = .current) -> Bool {
+        if state.holdAll {
+            guard blocker.hasApps else { return false }
+            return activePass(blocker.id, in: state, at: now) == nil
+        }
         guard blocker.isOn, blocker.hasApps,
               let window = blocker.openWindow(at: now, calendar: calendar) else { return false }
         if blocker.dailyLimitMinutes != nil {
@@ -454,5 +464,92 @@ enum BlockRules {
         guard let ask = state.asks.last, now.timeIntervalSince(ask) < seconds else { return false }
         guard let shown = state.lastInterventionAt else { return true }
         return shown < ask
+    }
+}
+
+/// What a held app's shield says and how it looks (Aziz, 2026-10-06).
+/// Each time a shield appears it picks one line and one colour, so the
+/// blocker reads like Otto talking rather than a wall, and no two screenshots
+/// of it look the same. The shield can only be one solid colour, an icon,
+/// a title, a subtitle and two buttons (Apple's limit), so the colour and the
+/// words carry all of it. Mockup: `mockups/shield-backgrounds.html`.
+///
+/// `{app}` is the held app's name. Every line carries an emoji (Aziz).
+enum ShieldLines {
+    struct Line: Equatable {
+        let title: String
+        let subtitle: String
+    }
+
+    static let all: [Line] = [
+        Line(title: "bruh. 🤦", subtitle: "{app}? Already? You haven't even meditated today 😑"),
+        Line(title: "caught in 4k 📸", subtitle: "Otto saw that. Meditate first, {app} later."),
+        Line(title: "Are you for real? 🤨", subtitle: "Meditate first. {app} will be there once you're done."),
+        Line(title: "the audacity 😤", subtitle: "Opening {app} before meditating? I'm not liking this 😒"),
+        Line(title: "nah. not yet. ✋", subtitle: "Otto's holding {app} until you meditate."),
+        Line(title: "ok but did you meditate tho 👀", subtitle: "Otto's holding {app} until you do."),
+        Line(title: "{app} can wait 🧘", subtitle: "Your meditation can't. Meditate, then you'll feel so much better."),
+        Line(title: "Otto said no 🙅", subtitle: "He'll open {app} once you've meditated."),
+        Line(title: "we're not doing this rn 🚫", subtitle: "Meditate with Otto, then {app}'s back."),
+        Line(title: "zen first, scroll later 🌿", subtitle: "Otto's holding {app} for you 🔒"),
+        Line(title: "touch grass first 🌱", subtitle: "Meditate first, then scroll all you want."),
+        Line(title: "plot twist: you meditate first 🤯", subtitle: "Then {app} unlocks. Otto's rules."),
+        Line(title: "not the doom scroll 💀", subtitle: "Meditate first. Otto's waiting."),
+    ]
+
+    /// Each line has its own Otto (Aziz, 2026-10-06), cut from one ChatGPT
+    /// sheet (`mockups/shield-ottos/sheet.webp`, `tools/otto_sheet_cut.swift`)
+    /// in the order of `all`: ShieldOtto1 is "bruh.", ShieldOtto13 the doom
+    /// scroll. The image sets live in the Shield extension's catalog and,
+    /// for the app's stand-ins, in Shared's.
+    static func icon(_ line: Line) -> String {
+        "ShieldOtto\((all.firstIndex(of: line) ?? 0) + 1)"
+    }
+
+    /// One solid background with text and button colours that stay readable
+    /// on it, as 0xRRGGBB.
+    struct Palette: Equatable {
+        let background: UInt32
+        let text: UInt32
+        let soft: UInt32
+        let softAlpha: Double
+        let button: UInt32
+        let buttonText: UInt32
+    }
+
+    static let palettes: [Palette] = [
+        Palette(background: 0x1E2440, text: 0xF3EAD8, soft: 0xF3EAD8, softAlpha: 0.72, button: 0xF0C47B, buttonText: 0x2B2117), // night valley
+        Palette(background: 0x111111, text: 0xFFFFFF, soft: 0xFFFFFF, softAlpha: 0.65, button: 0xF0C47B, buttonText: 0x1A1206), // midnight black
+        Palette(background: 0x3B2A6B, text: 0xFFFFFF, soft: 0xFFFFFF, softAlpha: 0.75, button: 0xF6C66B, buttonText: 0x2B2117), // deep purple
+        Palette(background: 0x2F6FD6, text: 0xFFFFFF, soft: 0xFFFFFF, softAlpha: 0.80, button: 0xFFFFFF, buttonText: 0x1F4E9C), // ocean blue
+        Palette(background: 0x8EC3EA, text: 0x2B2117, soft: 0x2B2117, softAlpha: 0.70, button: 0xFFFFFF, buttonText: 0x1F4E70), // sky
+        Palette(background: 0x6FA35B, text: 0xFFFFFF, soft: 0xFFFFFF, softAlpha: 0.85, button: 0xFFF6E6, buttonText: 0x2E4A22), // meadow
+        Palette(background: 0xF0B44C, text: 0x2B2117, soft: 0x2B2117, softAlpha: 0.72, button: 0x2B2117, buttonText: 0xFFF6E6), // otto gold
+        Palette(background: 0xF2803A, text: 0xFFFFFF, soft: 0xFFFFFF, softAlpha: 0.85, button: 0xFFFFFF, buttonText: 0xB5521A), // sunset orange
+        Palette(background: 0xEE6B4D, text: 0xFFFFFF, soft: 0xFFFFFF, softAlpha: 0.85, button: 0xFFFFFF, buttonText: 0xC9472B), // alarm coral
+        Palette(background: 0xF27DB0, text: 0xFFFFFF, soft: 0xFFFFFF, softAlpha: 0.88, button: 0xFFFFFF, buttonText: 0xB33E73), // bubblegum pink
+    ]
+
+    /// `{app}` filled with the held app's name, or "this app" when the shield
+    /// is not told it; capitalised when it opens the sentence.
+    static func fill(_ text: String, app: String?) -> String {
+        let name = app?.isEmpty == false ? app! : "this app"
+        var out = text.replacingOccurrences(of: "{app}", with: name)
+        if text.hasPrefix("{app}"), let first = out.first {
+            out = first.uppercased() + out.dropFirst()
+        }
+        return out
+    }
+
+    /// A fresh pick, never the line or colour just shown.
+    static func next(after previous: (line: Int, palette: Int)?,
+                     random: (Int) -> Int = { Int.random(in: 0..<$0) }) -> (line: Int, palette: Int) {
+        func draw(_ count: Int, avoiding old: Int?) -> Int {
+            guard let old, count > 1 else { return random(count) }
+            let r = random(count - 1)
+            return r >= old ? r + 1 : r
+        }
+        return (draw(all.count, avoiding: previous?.line),
+                draw(palettes.count, avoiding: previous?.palette))
     }
 }

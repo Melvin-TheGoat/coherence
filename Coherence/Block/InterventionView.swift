@@ -162,7 +162,7 @@ private struct InterventionScene: View {
             // Aziz, 2026-10-04: "Are you sure? You haven't meditated yet",
             // the second half only when it is true.
             ValleyStage(pose: "OttoWave",
-                        line: context.meditatedToday ? "Are you sure? Five minutes first?"
+                        line: context.meditatedToday ? "Are you sure? Meditate with me first?"
                                                      : "Are you sure? You haven't meditated yet.",
                         doors: doors)
         case .textThread:
@@ -176,7 +176,7 @@ private struct InterventionScene: View {
         case .fridgeNote:
             FridgeNoteScene(doors: doors, meditatedToday: context.meditatedToday)
         case .stillThere:
-            ValleyStage(pose: "OttoAwake", line: "It'll all still be there in five minutes.", doors: doors)
+            ValleyStage(pose: "OttoAwake", line: "It'll all still be there after you meditate.", doors: doors)
         case .wakingOtto:
             ValleyStage(pose: "OttoSit", line: "Zzz... oh, hey. Morning meditation?", doors: doors) { size, ottoTop in
                 Text("z z")
@@ -188,7 +188,7 @@ private struct InterventionScene: View {
             SignScene(doors: doors)
         case .streak:
             ValleyStage(pose: "OttoSit",
-                        line: "Your streak is at \(context.streak) days. Five minutes keeps it going.",
+                        line: "Your streak is at \(context.streak) days. Meditate first to keep it going.",
                         doors: doors) { size, _ in
                 Label("\(context.streak)", systemImage: "flame.fill")
                     .font(.system(size: 20, weight: .heavy, design: .rounded))
@@ -207,7 +207,7 @@ private struct InterventionScene: View {
             AffirmationScene(doors: doors)
         case .bedtime:
             ValleyStage(progress: 0.96, pose: "OttoSit", dim: 0.6,
-                        line: "Wind down with me? Five minutes, then sleep.",
+                        line: "Wind down with me? Meditate first, then sleep.",
                         doors: doors, primary: "Okay, let's wind down")
         case .sticker:
             StickerScene(doors: doors)
@@ -827,7 +827,7 @@ private struct VoiceNoteScene: View {
     /// With a session today that would be untrue, so it asks instead.
     private var lines: [String] {
         meditatedToday
-            ? ["P.S. five minutes", "with me first?"]
+            ? ["P.S. meditate", "with me first?"]
             : ["P.S. you still", "haven't meditated", "today."]
     }
 
@@ -973,7 +973,7 @@ private struct FridgeNoteScene: View {
     var body: some View {
         VStack(spacing: 0) {
             Spacer()
-            StickyNote(text: meditatedToday ? "Reminder:\nfive minutes\nfirst" : "Reminder:\nmeditate\ntoday")
+            StickyNote(text: meditatedToday ? "Reminder:\nmeditate\nfirst" : "Reminder:\nmeditate\ntoday")
             Spacer()
             DoorButtons(doors: doors)
         }
@@ -1239,12 +1239,12 @@ private struct OneMinuteScene: View {
     let doors: InterventionDoors
     var body: some View {
         let n = doors.shortest
-        let line = n == 1 ? "Just one minute. I'll keep time." : "Just \(n) minutes. I'll keep time."
+        let line = "Meditate first. I'll keep time."
         ValleyStage(pose: "OttoSit", line: line,
                     doors: InterventionDoors(canPass: doors.canPass, shortest: n,
                                              meditate: { doors.meditateFor(n) },
                                              meditateFor: doors.meditateFor, notNow: doors.notNow),
-                    primary: n == 1 ? "One minute, go" : "\(n) minutes, go")
+                    primary: "Let's meditate")
     }
 }
 
@@ -1255,7 +1255,7 @@ private struct AskWhyScene: View {
     @State private var answer: String?
 
     private static let replies: [(String, String)] = [
-        ("Bored", "Bored is a good time to sit. Five minutes?"),
+        ("Bored", "Bored is a good time to sit. Meditate first?"),
         ("Checking something", "It'll still be there after a short session."),
         ("Habit", "Habits are why I'm here. One quick session?"),
     ]

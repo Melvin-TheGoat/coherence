@@ -819,7 +819,7 @@ struct WhyItWorksScreen: View {
         return [
             ("sparkles", orange, "Otto's glow", "Meditate and he glows brighter. Skip days and he fades."),
             ("bell.fill", blue, "A nudge at your time", "One reminder a day, at the time you picked."),
-            ("clock.fill", OnboardingGreen.shade, "Just five minutes", "Short enough to fit into any day."),
+            ("clock.fill", OnboardingGreen.shade, "Meditate first", "Then get on with your day."),
         ]
     }
 

@@ -210,15 +210,51 @@ enum BlockAsk {
 }
 
 /// What a held app's shield says, shared with the test mode's stand-in for it.
+/// The line and colour come from `ShieldLines`, a new pick each time a shield
+/// appears (Aziz, 2026-10-06).
 enum BlockShieldWords {
-    static func title(for name: String?) -> String {
-        name.map { "Otto's holding \($0)" } ?? "Otto's holding this one"
+    /// The shield's own key (each process writes only its own keys): the
+    /// line and colour it picked, and when. Screen Time asks the shield for
+    /// its configuration more than once while it is up (and again after
+    /// "Ask Otto"), so a pick is kept for 90 seconds; past that, opening the
+    /// app again draws a new one.
+    private static let lookKey = "block.shieldLook.v1"
+    static let lookLifetime: TimeInterval = 90
+
+    struct Look: Equatable {
+        let line: ShieldLines.Line
+        let palette: ShieldLines.Palette
     }
 
-    /// With notifications off the notification never comes, so the shield
-    /// sends the person to 808 by hand, where an unanswered ask opens Otto.
-    static func subtitle(asked: Bool, notificationsAllowed: Bool) -> String {
-        guard asked else { return "Meditate first, or ask him for a few minutes." }
+    /// The look to show now. `remember: false` (the app's rehearsal stand-ins)
+    /// draws without writing the shield's key.
+    static func look(now: Date = Date(), remember: Bool = true) -> Look {
+        let d = BlockGroup.defaults
+        let saved = d?.array(forKey: lookKey) as? [Double]
+        var pick: (line: Int, palette: Int)
+        if let saved, saved.count == 3,
+           now.timeIntervalSince1970 - saved[0] < lookLifetime,
+           Int(saved[1]) < ShieldLines.all.count, Int(saved[2]) < ShieldLines.palettes.count {
+            pick = (Int(saved[1]), Int(saved[2]))
+        } else {
+            let previous = (saved?.count == 3) ? (line: Int(saved![1]), palette: Int(saved![2])) : nil
+            pick = ShieldLines.next(after: previous)
+            if remember {
+                d?.set([now.timeIntervalSince1970, Double(pick.line), Double(pick.palette)], forKey: lookKey)
+            }
+        }
+        return Look(line: ShieldLines.all[pick.line], palette: ShieldLines.palettes[pick.palette])
+    }
+
+    static func title(for name: String?, look: Look) -> String {
+        ShieldLines.fill(look.line.title, app: name)
+    }
+
+    /// Once asked, the shield says the notification is on its way. With
+    /// notifications off it never comes, so the shield sends the person to
+    /// 808 by hand, where an unanswered ask opens Otto.
+    static func subtitle(for name: String?, look: Look, asked: Bool, notificationsAllowed: Bool) -> String {
+        guard asked else { return ShieldLines.fill(look.line.subtitle, app: name) }
         return notificationsAllowed
             ? "Otto's on his way. Tap the notification up top."
             : "Open 808 and Otto will meet you there."

@@ -341,6 +341,9 @@ private struct SettingsForm: View {
     let onSignOut: () -> Void
     let onDelete: () -> Void
 
+    #if DEBUG
+    @ObservedObject private var blockForDebug = BlockController.shared
+    #endif
     @State private var confirmDelete = false
     @State private var confirmSignOut = false
     @State private var showManageSubscriptions = false
@@ -749,6 +752,15 @@ private struct SettingsForm: View {
     private var blockDebugSection: some View {
         GrassHeading(title: "Block (debug)")
         settingsCard {
+            // Every blocker's apps held now, for testing and screen
+            // recordings (Aziz, 2026-10-06). "Not now" still opens them.
+            row(icon: "lock.fill", title: "Hold every app now") {
+                Toggle("", isOn: Binding(get: { blockForDebug.holdAll },
+                                         set: { blockForDebug.setHoldAll($0) }))
+                    .labelsHidden()
+                    .tint(AppColor.calmAccent)
+            }
+            divider
             navRow(icon: "bell.badge", title: "Otto's unblock screens", teal: true) {
                 InterventionGalleryView()
             }

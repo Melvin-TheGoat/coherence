@@ -150,4 +150,113 @@ struct StageReel: View {
         return 13
     }
 }
+/// The Screen Time shield and the "Otto wants a word" notification, drawn the
+/// way a phone shows them, for an ad (Aziz, 2026-10-06). The simulator cannot
+/// draw a real shield, and the test-mode stand-in is labelled as one. Same
+/// words (`BlockShieldWords`, the `BlockAsk` notification) and colours (the
+/// Shield extension's assets) as the real thing. `PREVIEW_SHIELD_REEL=1`:
+/// the shield holds, "Ask Otto" is pressed at 1.6 s, the banner drops in.
+struct ShieldReel: View {
+    @State private var start: Date? = nil
+    private static let press = 1.6
+    private static let banner = 2.0
+
+    /// `PREVIEW_SHIELD_LINE` / `PREVIEW_SHIELD_COLOR` pick a line and colour
+    /// by index; otherwise the first of each.
+    private static let look: BlockShieldWords.Look = {
+        let env = ProcessInfo.processInfo.environment
+        let l = Int(env["PREVIEW_SHIELD_LINE"] ?? "") ?? 0
+        let c = Int(env["PREVIEW_SHIELD_COLOR"] ?? "") ?? 0
+        return .init(line: ShieldLines.all[l % ShieldLines.all.count],
+                     palette: ShieldLines.palettes[c % ShieldLines.palettes.count])
+    }()
+    private var paper: Color { Color(shieldHex: Self.look.palette.background) }
+    private var ink: Color { Color(shieldHex: Self.look.palette.text) }
+    private var soft: Color { Color(shieldHex: Self.look.palette.soft).opacity(Self.look.palette.softAlpha) }
+    private var gold: Color { Color(shieldHex: Self.look.palette.button) }
+    private var goldInk: Color { Color(shieldHex: Self.look.palette.buttonText) }
+
+    var body: some View {
+        TimelineView(.animation) { context in
+            let t = start.map { context.date.timeIntervalSince($0) } ?? 0
+            let asked = t >= Self.press
+            ZStack(alignment: .top) {
+                paper.ignoresSafeArea()
+                VStack(spacing: 14) {
+                    Spacer()
+                    Image(ShieldLines.icon(Self.look.line)).resizable().scaledToFit().frame(width: 84, height: 84)
+                        .padding(.bottom, 6)
+                    Text(BlockShieldWords.title(for: "Instagram", look: Self.look))
+                        .font(.system(size: 22, weight: .semibold))
+                        .foregroundStyle(ink)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 30)
+                    Text(BlockShieldWords.subtitle(for: "Instagram", look: Self.look, asked: asked, notificationsAllowed: true))
+                        .font(.system(size: 17))
+                        .foregroundStyle(soft)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 40)
+                    Spacer()
+                    Spacer()
+                    Text(BlockShieldWords.primary(asked: asked))
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(goldInk)
+                        .frame(maxWidth: .infinity).frame(height: 52)
+                        .background(gold, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        .scaleEffect(t > Self.press - 0.12 && t < Self.press + 0.1 ? 0.96 : 1)
+                        .padding(.horizontal, 24)
+                    Text(BlockShieldWords.secondary)
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(soft)
+                        .frame(height: 50)
+                        .padding(.bottom, 20)
+                }
+                banner
+                    .padding(.horizontal, 10)
+                    .padding(.top, 8)
+                    .offset(y: bannerOffset(t))
+                    .opacity(t >= Self.banner ? 1 : 0)
+            }
+        }
+        .task {
+            try? await Task.sleep(for: .seconds(2.5))
+            start = Date()
+        }
+    }
+
+    /// Drops in from above the screen over 0.45 s with a slight overshoot.
+    private func bannerOffset(_ t: Double) -> CGFloat {
+        let p = min(1, max(0, (t - Self.banner) / 0.45))
+        let e = 1 - pow(1 - p, 3) + 0.06 * sin(p * .pi)
+        return CGFloat(-160 * (1 - e))
+    }
+
+    private var banner: some View {
+        HStack(alignment: .center, spacing: 12) {
+            Group {
+                if let icon = UIImage(named: "AppIcon") {
+                    Image(uiImage: icon).resizable()
+                } else {
+                    Image("OttoHead").resizable().padding(4).background(paper)
+                }
+            }
+            .scaledToFit()
+            .frame(width: 38, height: 38)
+            .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
+            VStack(alignment: .leading, spacing: 2) {
+                HStack {
+                    Text("Otto wants a word").font(.system(size: 15, weight: .semibold))
+                    Spacer()
+                    Text("now").font(.system(size: 13)).foregroundStyle(.secondary)
+                }
+                Text("Tap to talk it through.").font(.system(size: 15))
+            }
+            .foregroundStyle(.primary)
+        }
+        .padding(.horizontal, 14).padding(.vertical, 12)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .shadow(color: .black.opacity(0.12), radius: 14, y: 4)
+        .padding(.top, 50)
+    }
+}
 #endif

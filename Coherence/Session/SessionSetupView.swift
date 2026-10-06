@@ -390,7 +390,7 @@ struct SessionSetupView: View {
         // (2026-09-29); the sit screen says it as well.
         guard mentionsWatch else {
             if FeatureFlags.block, !BlockController.shared.holding().isEmpty {
-                return "Ready when you are. \(Blocker.sessionMinutes) minutes opens your apps."
+                return "Ready when you are. Meditate first to open your apps."
             }
             return youtube
         }
