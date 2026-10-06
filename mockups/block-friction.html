@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Block Friction</title>
+<style>
+  :root { --paper:#F7F1E3; --ink:#41301F; --soft:#6F5D4F; --line:#E4D9C3; --green:#5E9B5A; }
+  body { margin:0; background:var(--paper); color:var(--ink);
+         font-family: ui-rounded, "SF Pro Rounded", system-ui, sans-serif; }
+  main { max-width:1180px; margin:0 auto; padding:40px 16px 80px; }
+  h1 { font-size:34px; margin:0 0 8px; }
+  h2 { font-size:24px; margin:48px 0 6px; }
+  p, li { font-size:16px; line-height:1.5; color:var(--soft); max-width:760px; }
+  .row { display:flex; flex-wrap:wrap; gap:24px; margin-top:18px; }
+  figure { margin:0; width:250px; }
+  figure img { width:100%; border-radius:34px; box-shadow:0 8px 24px rgba(65,48,31,.18); display:block; }
+  figcaption { font-size:14px; color:var(--soft); margin-top:10px; line-height:1.4; }
+  figcaption b { color:var(--ink); }
+  .tag { display:inline-block; font-size:12px; font-weight:700; color:var(--green);
+         background:#E6F0E2; border-radius:99px; padding:2px 10px; margin-left:8px; vertical-align:middle; }
+  .decide { background:#FFFBF2; border:1px solid var(--line); border-radius:18px; padding:8px 24px 16px; margin-top:48px; }
+  .decide li { margin:8px 0; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Making it harder to switch Otto off</h1>
+  <p>Today someone can tap the X on Otto's screen, open Block and flip the switch off in two taps. These are rendered from the app on an iPhone 17 Pro.</p>
+
+  <h2>1. Turning a blocker off asks first <span class="tag">Recommended</span></h2>
+  <p>Switching a blocker off, or deleting it, opens Otto's screen first. "Turn it off" waits ten seconds before it can be tapped, counting down on the button. If the blocker is holding apps right now, meditating is the first choice offered.</p>
+  <div class="row">
+    <figure><img src="block-friction/holding.png" alt=""><figcaption><b>Holding apps right now.</b> Counting down: 6 seconds left.</figcaption></figure>
+    <figure><img src="block-friction/ready.png" alt=""><figcaption><b>After ten seconds.</b> "Turn it off" can be tapped.</figcaption></figure>
+    <figure><img src="block-friction/quiet.png" alt=""><figcaption><b>Not holding right now</b> (already meditated, or outside its hours). Still asks and still waits.</figcaption></figure>
+    <figure><img src="block-friction/delete.png" alt=""><figcaption><b>Deleting a blocker.</b> The same screen, with "Delete it".</figcaption></figure>
+  </div>
+
+  <h2>2. Otto's screens lose the X</h2>
+  <p>With no X, someone who lands on Otto's screen has to answer him. "Okay, let's meditate" opens the + screen, which can still be closed. "Not now" goes to how long, which opens the apps for 5, 10 or 30 minutes (and costs glow if the window then passes with no session).</p>
+  <div class="row">
+    <figure><img src="block-friction/x-standing.png" alt=""><figcaption><b>Today.</b> The X sits top left.</figcaption></figure>
+    <figure><img src="block-friction/nox-standing.png" alt=""><figcaption><b>Without it.</b> Nothing else changes.</figcaption></figure>
+  </div>
+
+  <div class="decide">
+    <h2>To decide</h2>
+    <ul>
+      <li><b>Remove the X?</b> Recommended yes. Even so, the confirmation screen is what actually closes the gap: without the X there are still ways into the Block tab.</li>
+      <li><b>Ten seconds?</b> Long enough to change your mind, short enough to be fine for someone genuinely editing their schedule.</li>
+      <li><b>Ask even when it isn't holding anything right now?</b> Recommended yes, so turning it off at night before tomorrow isn't the easy way around it.</li>
+      <li><b>Still open: editing.</b> Someone could open a blocker and remove its apps or shrink its hours instead of switching it off. Should a change that would open apps right now get the same screen?</li>
+    </ul>
+  </div>
+</main>
+</body>
+</html>

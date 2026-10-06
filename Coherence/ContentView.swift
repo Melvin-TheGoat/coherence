@@ -529,6 +529,9 @@ struct ContentView: View {
                let kind = InterventionKind(rawValue: raw) {
                 unblockPreview = .kind(kind)
             }
+            if let v = ProcessInfo.processInfo.environment["PREVIEW_TURNOFF"], unblockPreview == nil {
+                unblockPreview = .turnOff(v)
+            }
             if let which = ProcessInfo.processInfo.environment["PREVIEW_TAB"] {
                 switch which {
                 case "block": tab = FeatureFlags.block ? .block : .guide

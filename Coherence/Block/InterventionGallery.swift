@@ -170,9 +170,11 @@ private extension InterventionKind {
 enum UnblockDebugPreview: Identifiable {
     case gallery, howLong
     case kind(InterventionKind)
+    case turnOff(String)
 
     var id: String {
         switch self {
+        case .turnOff(let v): return "turnOff-\(v)"
         case .gallery: return "gallery"
         case .howLong: return "howLong"
         case .kind(let kind): return "kind-\(kind.rawValue)"
@@ -214,6 +216,13 @@ private struct UnblockPreviewCover: View {
                              onMeditate: { _ in onDone() },
                              onClose: onDone,
                              rehearsal: true, startOnHowLong: true)
+        case .turnOff(let v):
+            // PREVIEW_TURNOFF=holding|quiet|delete|ready (mockup only).
+            BlockTurnOffScreen(blocker: Blocker.preset(.mindfulDay),
+                               action: v == "delete" ? .delete : .turnOff,
+                               holdingNow: v != "quiet",
+                               wait: v == "ready" ? 0 : BlockTurnOffScreen.waitSeconds,
+                               onMeditate: onDone, onKeep: onDone, onConfirm: onDone)
         case .kind(let kind):
             // Exactly what tapping that kind's row in the gallery opens.
             InterventionView(kind: kind,
