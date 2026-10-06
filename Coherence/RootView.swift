@@ -183,7 +183,12 @@ struct RootView: View {
                 ContentView().environment(\.tileDim, ContentView.tileDim)
             }
         }
-        .onChange(of: face, initial: true) { _, now in appOnScreen = now == .app }
+        .onChange(of: face, initial: true) { _, now in
+            appOnScreen = now == .app
+            // The home screen widget shows Otto to members only, so it hears
+            // whenever the root moves between the app and the paywall.
+            OttoWidgetPublisher.publish(context: context, member: now == .app)
+        }
         .task {
             try? await Task.sleep(for: Self.storeWaitLimit)
             // A cancelled sleep throws and falls through; it must not end
@@ -196,7 +201,10 @@ struct RootView: View {
         .environment(\.colorScheme, .light)
         .preferredColorScheme(statusScheme)
         .onChange(of: scenePhase) { _, phase in
-            if phase == .active { nightSky = Self.skyIsDark }
+            if phase == .active {
+                nightSky = Self.skyIsDark
+                OttoWidgetPublisher.publish(context: context, member: face == .app)
+            }
         }
         .task {
             while !Task.isCancelled {

@@ -241,7 +241,14 @@ struct ContentView: View {
             }
         }
         .onAppear(perform: refreshAwards)
-        .onChange(of: sessions.count) { _, _ in refreshAwards(); readDetailsPrompt() }
+        .onChange(of: sessions.count) { _, _ in
+            refreshAwards(); readDetailsPrompt()
+            // A session landed or was deleted: Otto's glow and the streak on
+            // the home screen widget move with it.
+            OttoWidgetPublisher.publish(context: context, member: true)
+        }
+        // The widget's tap (`coherence808://home`).
+        .onReceive(NotificationCenter.default.publisher(for: WidgetLink.openHome)) { _ in tab = .home }
         .modifier(DiscardHook(discard: coordinator.lastDiscard,
                               sessionActive: coordinator.active != nil) { d in
             if sheet == nil { sheet = .discarded(d) } else { pendingSheet = .discarded(d) }
@@ -753,36 +760,10 @@ struct ContentView: View {
         // landed or apps are held, and in his rotation every day.
         let watchLeads = Calendar.current.ordinality(of: .day, in: .era, for: Date()).map { $0 % 2 == 0 } ?? false
         if let nudge = watchNudge, watchLeads { lines.append(nudge) }
-        // His mood leads when it is the news: a sad Otto who says nothing
-        // about it reads as a bug, and a glowing one has earned a word.
-        switch auraStage {
-        case .withered where !practicedToday:
-            lines.append("I've been feeling a bit flat. One session today and I'll perk right up.")
-        case .faded where !practicedToday:
-            lines.append("It's been a few days. One short session and I'll be back on my feet.")
-        case .bright, .radiant:
-            lines.append("Feel that? You keep showing up, and it shows on me.")
-        case .nirvana:
-            lines.append("I'm glowing. That's what showing up day after day does.")
-        default:
-            break
-        }
-        if sessions.isEmpty {
-            lines.append("Your first session starts at the plus. I'll be right here.")
-        } else if practicedToday {
-            lines.append(streak.current > 1 ? "Day \(streak.current). You already sat today, so today is done."
-                                             : "You meditated today. That's the part that counts.")
-            lines.append("Nothing more to do here. Come back tomorrow and we'll keep it going.")
-        } else if streak.restDayUsed {
-            lines.append("Rest day yesterday. Sit today and your \(streak.current)-day streak carries on.")
-        } else if streak.current > 1 {
-            lines.append("Day \(streak.current). Sit whenever you're ready, I'll be here.")
-            if streak.current == streak.longest, streak.current >= 3 {
-                lines.append("\(streak.current) in a row is your longest yet. No rush today either.")
-            }
-        } else {
-            lines.append("Whenever you're ready. One session is all today asks.")
-        }
+        // His mood leads when it is the news, then where today stands. Both
+        // are `OttoLines`, which the home screen widget reads too.
+        if let mood = OttoLines.mood(auraStage, practicedToday: practicedToday) { lines.append(mood) }
+        lines += OttoLines.today(hasSessions: !sessions.isEmpty, practicedToday: practicedToday, streak: streak)
         if let nudge = watchNudge, !watchLeads { lines.append(nudge) }
         return lines + OttoSayings.forDay(Date())
     }

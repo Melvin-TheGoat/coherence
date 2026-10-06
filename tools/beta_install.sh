@@ -20,10 +20,10 @@ TEAM="${TEAM:-WLZQLLHUB3}"
 BAK="$(mktemp -d)"
 ENT="$(grep -m1 'CODE_SIGN_ENTITLEMENTS' project.yml | awk '{print $2}')"
 [ -f "$ENT" ] || { echo "entitlements not found at '$ENT'"; exit 1; }
-# Block's three Screen Time extensions carry their own entitlements (the App
-# Group), and the beta gets its own group so it never shares blockers with
-# the App Store app on the same phone.
-EXT_ENTS="BlockExtensions/Monitor/BlockMonitor.entitlements BlockExtensions/Shield/BlockShield.entitlements BlockExtensions/ShieldAction/BlockShieldAction.entitlements"
+# Block's three Screen Time extensions and the home screen widget carry their
+# own entitlements (the App Group), and the beta gets its own group so it never
+# shares blockers, or Otto, with the App Store app on the same phone.
+EXT_ENTS="BlockExtensions/Monitor/BlockMonitor.entitlements BlockExtensions/Shield/BlockShield.entitlements BlockExtensions/ShieldAction/BlockShieldAction.entitlements OttoWidget/OttoWidget.entitlements"
 cp project.yml "$BAK/project.yml"; cp Coherence/Info.plist "$BAK/ios.plist"; cp CoherenceWatch/Info.plist "$BAK/watch.plist"; cp "$ENT" "$BAK/ents.plist"
 i=0; for e in $EXT_ENTS; do cp "$e" "$BAK/ext$i.plist"; i=$((i+1)); done
 restore() {
@@ -39,10 +39,10 @@ import re
 p='project.yml'; s=open(p).read()
 s=re.sub(r'PRODUCT_BUNDLE_IDENTIFIER: com\.lockout\.meditate808\n','PRODUCT_BUNDLE_IDENTIFIER: com.lockout.meditate808.dev\n',s,count=1)
 s=s.replace('PRODUCT_BUNDLE_IDENTIFIER: com.lockout.meditate808.watchkitapp','PRODUCT_BUNDLE_IDENTIFIER: com.lockout.meditate808.dev.watchkitapp',1)
-for ext in ('monitor','shield','shieldaction'):
+for ext in ('monitor','shield','shieldaction','widget'):
     s=s.replace('PRODUCT_BUNDLE_IDENTIFIER: com.lockout.meditate808.%s\n' % ext,
                 'PRODUCT_BUNDLE_IDENTIFIER: com.lockout.meditate808.dev.%s\n' % ext, 1)
-assert s.count('meditate808.dev')==5, s.count('meditate808.dev'); open(p,'w').write(s)
+assert s.count('meditate808.dev')==6, s.count('meditate808.dev'); open(p,'w').write(s)
 for p,companion in [('Coherence/Info.plist',False),('CoherenceWatch/Info.plist',True)]:
     s=open(p).read()
     s=re.sub(r'(<key>CFBundleDisplayName</key>\s*<string>)808(</string>)', r'\g<1>808 Beta\2', s, count=1)

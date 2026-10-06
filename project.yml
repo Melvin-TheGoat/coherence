@@ -57,6 +57,10 @@ targets:
         embed: true
       - target: BlockShieldAction
         embed: true
+      # The home screen widget (2026-10-05): Otto, his glow and the streak,
+      # from the snapshot the app writes into the App Group.
+      - target: OttoWidget
+        embed: true
       - package: PostHog
       - package: RiveRuntime
     settings:
@@ -149,6 +153,29 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.lockout.meditate808.shieldaction
         INFOPLIST_FILE: BlockExtensions/ShieldAction/Info.plist
         CODE_SIGN_ENTITLEMENTS: BlockExtensions/ShieldAction/BlockShieldAction.entitlements
+        GENERATE_INFOPLIST_FILE: NO
+        TARGETED_DEVICE_FAMILY: "1"
+        SWIFT_VERSION: "5.10"
+        APPLICATION_EXTENSION_API_ONLY: YES
+
+  # THE HOME SCREEN WIDGET (2026-10-05, ships in 1.2). Reads only the
+  # snapshot the app writes (Shared/Widget/OttoWidgetSnapshot.swift) and
+  # paints the valley from the app's own DayLight. Its bundle ID must be
+  # registered under Lock Out Inc. with the App Group before an archive;
+  # `tools/beta_install.sh` swaps it to `.dev.widget` like the others.
+  OttoWidget:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - OttoWidget
+      - Shared/Widget/OttoWidgetSnapshot.swift
+      - Coherence/Session/DayLight.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.lockout.meditate808.widget
+        INFOPLIST_FILE: OttoWidget/Info.plist
+        CODE_SIGN_ENTITLEMENTS: OttoWidget/OttoWidget.entitlements
         GENERATE_INFOPLIST_FILE: NO
         TARGETED_DEVICE_FAMILY: "1"
         SWIFT_VERSION: "5.10"

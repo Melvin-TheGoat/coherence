@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Privacy manifest for the home screen widget (OttoWidget, 2026-10-05).
+  Every bundle that calls a required-reason API needs its own manifest
+  (ITMS-91053), extensions included.
+
+  Accessed APIs: UserDefaults only, reason 1C8F.1. The widget reads the
+  snapshot the app writes into the App Group (`group.com.lockout.meditate808`,
+  key widget.otto.v1, see Shared/Widget/OttoWidgetSnapshot.swift), and never
+  `UserDefaults.standard`, which is why CA92.1 is not declared here.
+
+  Collected data: none. The widget makes no network call and reads no
+  biometric or Screen Time data; it draws what the app already worked out.
+-->
+<plist version="1.0">
+<dict>
+	<key>NSPrivacyTracking</key>
+	<false/>
+	<key>NSPrivacyTrackingDomains</key>
+	<array/>
+	<key>NSPrivacyCollectedDataTypes</key>
+	<array/>
+	<key>NSPrivacyAccessedAPITypes</key>
+	<array>
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>1C8F.1</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>
