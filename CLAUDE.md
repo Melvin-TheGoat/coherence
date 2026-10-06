@@ -6864,6 +6864,47 @@ recordVideo`, find a loop's start from the frame differences, and cut one
 loop. A recording of the app's own rig, not generated video, so the "never
 generate video" rule is untouched.
 
+## THE PHONE AD, MADE WITH ROTATO'S COMMAND LINE (2026-10-06, Aziz)
+
+A 23.4 s vertical ad (1080x1920), features ordered most to least shareable:
+the "bruh. 🤦" blocker and "Otto wants a word" drop-in, Otto's texts, the
+session, Otto climbing to Nirvana, the 7-day streak award, coins, Otto
+trying on hats in the Shop, Home. Captions (lowercase, Aziz's wording):
+"my meditation app won't let me open instagram 😭", "then it texts me 💀",
+"he forces me to meditate 🧘 every day to open my apps", "if I meditate
+every day, he gets happier ✨", "and my streak keeps growing 🔥", "every
+session earns coins 💰", "so I can buy Otto new hats 🎩", and the end card
+"make meditation a habit with 808 Meditate 🧘 / on the App Store today"
+(Aziz: the ad must say 808 is for making meditation habitual).
+
+- **Rotato's CLI ships inside the 158 beta only** (stable 154 has none):
+  `/Applications/Rotato.app/Contents/Resources/rotato`, linked into
+  `~/.local/bin`. Licence is Rotato Pro Standard (Aziz's, paid 2026-10-06);
+  iPhone 17 Pro needs it. `rotato skill show` prints its own agent guide.
+  It talks to the app over a socket, so commands need the sandbox off.
+- **The project-frame sampler lies about camera yaw.** `rotato frame(s)
+  --plan` showed front-on at yaw -90 while the encoded movie was edge-on;
+  front-on in the movie is yaw 0. Judge from a cheap `compose --size 720p`
+  render, never the sampler (Rotato's own guide says the movie wins).
+- Pipeline, all in `tools/ad/`: record each screen on the simulator with
+  DEBUG hooks (`rec.sh`, `PREVIEW_SHIELD_REEL`, `PREVIEW_UNBLOCK_KIND=
+  textThread`, `PREVIEW_BREATHING`, `PREVIEW_STAGE_REEL`, `PREVIEW_AWARD=
+  streak7`, `PREVIEW_REWARD`, `PREVIEW_TAB=shop` with taps on the hats,
+  `PREVIEW_HISTORY=1` + `OTTO_AURA=95` for a demo Home, `DEMO_NAME=Maya`,
+  `VALLEY_HOUR=12`) → `concat.swift` joins the clips at 30 fps → `rotato
+  create --device "iPhone 17 Pro" --screen-media` → `rotato compose
+  --plan camera-plan.json --codec hevc-alpha --size 4k` → `finish.swift`
+  crops 16:9 to 9:16 on cream and draws the captions.
+- **Captions are drawn into bitmaps**: a `CATextLayer` renders blank in an
+  AVFoundation export. Break long captions by hand; the card wraps at
+  ~840 px and an emoji alone on a third line looks broken. Apple's 👒
+  reads as a green blob at caption size.
+- `ShieldReel` (`PREVIEW_SHIELD_REEL=1`) is a stand-in for the Screen Time
+  shield, which the simulator cannot draw, using the shield's own words and
+  colours. Never show a shield the phone cannot draw.
+- The rendered videos and `.rotato` projects live outside the repo (28 MB
+  movie; the repo is public). Rebuild from `tools/ad/`.
+
 ## NO COPY MENTIONS FIVE MINUTES; IT SAYS "MEDITATE FIRST" (2026-10-06, Aziz)
 
 "stop saying the 5 minutes thing ... just say meditate first." The rule
