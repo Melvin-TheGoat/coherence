@@ -63,7 +63,7 @@ final class BlockController: ObservableObject {
         if status == .approved && was != .approved {
             commit(reschedule: true)
         } else if status != .approved && was == .approved {
-            BlockSchedule.stopAll()
+            ScreenTimeWork.run("stop every schedule") { BlockSchedule.stopAll() }
         }
     }
 
@@ -220,7 +220,7 @@ final class BlockController: ObservableObject {
     func delete(_ id: UUID) {
         state.blockers.removeAll { $0.id == id }
         BlockStore.removeSelection(for: id)
-        if authorized { BlockShields.lift(id) }
+        if authorized { ScreenTimeWork.run("lift a deleted blocker") { BlockShields.lift(id) } }
         commit(reschedule: true)
     }
 
@@ -233,9 +233,14 @@ final class BlockController: ObservableObject {
     /// stay held. The state is saved before asking, because an interval that
     /// starts in the past can wake the monitor at once, and it must find the
     /// pass.
+    ///
+    /// Screen Time is asked off the main thread (`ScreenTimeWork`). A shield
+    /// pass already waiting there can open the apps first, as the monitor
+    /// waking could before; a refusal still takes the pass back a moment
+    /// later and the apps are held again. Returns the ids asked for.
     @discardableResult
     func takePass(minutes: Int, now: Date = Date()) -> [UUID] {
-        var opened = BlockRules.takePass(minutes: minutes, in: &state, at: now)
+        let opened = BlockRules.takePass(minutes: minutes, in: &state, at: now)
         #if DEBUG
         if testMode { commit(reschedule: false); return opened }
         #endif
@@ -244,18 +249,29 @@ final class BlockController: ObservableObject {
             return []
         }
         BlockStore.save(state)
-        for id in opened {
+        let ends: [(UUID, Date)] = opened.compactMap { id in
+            state.passes.last(where: { $0.blockerID == id && $0.start == now }).map { (id, $0.end) }
+        }
+        ScreenTimeWork.run("schedule \(ends.count) pass end(s)") {
+            let scheduled = ends.map { ($0.0, BlockSchedule.schedulePassEnd(for: $0.0, at: $0.1, now: now)) }
+            Task { @MainActor [weak self] in self?.applyPassEnds(scheduled, startedAt: now) }
+        }
+        return opened
+    }
+
+    /// What Screen Time said about each pass's end: the end it will wake the
+    /// monitor at, or nil for a refusal, which takes the pass back.
+    private func applyPassEnds(_ scheduled: [(UUID, Date?)], startedAt now: Date) {
+        for (id, end) in scheduled {
             guard let i = state.passes.lastIndex(where: { $0.blockerID == id && $0.start == now }) else { continue }
-            if let end = BlockSchedule.schedulePassEnd(for: id, at: state.passes[i].end, now: now) {
+            if let end {
                 state.passes[i].end = end
             } else {
                 state.passes.remove(at: i)
-                opened.removeAll { $0 == id }
                 problem = "Otto couldn't open your apps just now. Try again in a moment."
             }
         }
         commit(reschedule: false)
-        return opened
     }
 
     /// A session landed: it opens the rest of every window it counts for.
@@ -293,9 +309,14 @@ final class BlockController: ObservableObject {
     }
 
     func noteInterventionShown(_ kind: InterventionKind, at now: Date = Date()) {
+        BlockTrace.step("Otto's \(kind.rawValue) screen is up")
         state.recentInterventions.append(kind.rawValue)
         state.lastInterventionAt = now
-        commit(reschedule: false)
+        // Saved without a pass over the shields: nothing here changes what
+        // is held, and that pass was one more round of Screen Time writes
+        // every time Otto appeared.
+        BlockRules.prune(&state, now: now)
+        BlockStore.save(state)
     }
 
     var recentInterventions: [InterventionKind] {
@@ -304,7 +325,8 @@ final class BlockController: ObservableObject {
 
     /// Re-reads what the extensions wrote (asks, daily limits) and puts the
     /// shields right. On every return to the foreground.
-    func refresh(now: Date = Date()) {
+    func refresh() {
+        BlockTrace.step("refresh")
         let fresh = BlockStore.load()
         state.asks = fresh.asks
         state.limitHits = fresh.limitHits
@@ -318,12 +340,13 @@ final class BlockController: ObservableObject {
             #if DEBUG
             if testMode { return }
             #endif
-            BlockShields.reconcile(now: now)
+            ScreenTimeWork.reconcileShields("808 is back")
         }
     }
 
     /// Asks for an Otto screen, from the notification or an unanswered ask.
     func requestIntervention() {
+        BlockTrace.step("Otto requested (notification tapped)")
         interventionRequest = Date()
     }
 
@@ -354,11 +377,16 @@ final class BlockController: ObservableObject {
         #endif
         guard authorized else { return }
         if reschedule {
-            let refused = BlockSchedule.sync(state)
-            problem = refused.isEmpty ? nil
-                : "Screen Time didn't take \(refused.joined(separator: ", ")). Try saving it again."
+            let saved = state
+            ScreenTimeWork.run("schedules") {
+                let refused = BlockSchedule.sync(saved)
+                Task { @MainActor [weak self] in
+                    self?.problem = refused.isEmpty ? nil
+                        : "Screen Time didn't take \(refused.joined(separator: ", ")). Try saving it again."
+                }
+            }
         }
-        BlockShields.reconcile()
+        ScreenTimeWork.reconcileShields(reschedule ? "blockers changed" : "state saved")
     }
 
     /// Mindful day, set up and waiting, for everyone (Melvin, 2026-09-22).
@@ -368,6 +396,84 @@ final class BlockController: ObservableObject {
         state.blockers.insert(Blocker.preset(.mindfulDay), at: 0)
         state.seededDefault = true
         BlockStore.save(state)
+    }
+}
+
+/// Screen Time's calls, made off the main thread (2026-10-06).
+///
+/// Every shield write (ManagedSettings) and schedule call (DeviceActivity) is
+/// a synchronous trip to a system daemon, and the app made them on the main
+/// thread: two or three rounds of shield writes each time 808 came back from
+/// a held app, at the very moment the shield's "Ask Otto" had those daemons
+/// busy redrawing it, plus one more as Otto appeared. A slow answer stopped
+/// 808 with it, which is the likeliest reading of the fifteen seconds
+/// Melvin's phone froze for on his second "Ask Otto" in a row.
+///
+/// Now they run here, one at a time and in the order asked, each holding a
+/// background-task assertion: the moment after "Not now" is exactly when
+/// somebody leaves 808 for the app it just opened, and the work must not be
+/// suspended halfway. The monitor extension still calls `BlockShields`
+/// directly, on its own thread.
+enum ScreenTimeWork {
+    private static let queue = DispatchQueue(label: "com.lockout.meditate808.block.screen-time",
+                                             qos: .userInitiated)
+    private static let lock = NSLock()
+    /// A shield pass is queued and has not started. Read and written under
+    /// `lock`, from the main thread and the queue.
+    nonisolated(unsafe) private static var shieldPassWaiting = false
+
+    @MainActor
+    static func run(_ what: String, _ work: @escaping @Sendable () -> Void) {
+        let hold = BackgroundHold(what)
+        BlockTrace.step("queued: \(what)")
+        queue.async {
+            BlockTrace.timed(what, work)
+            Task { @MainActor in hold.end() }
+        }
+    }
+
+    /// Brings every shield in line with the saved state. A pass reads the
+    /// state when it starts, so an ask that arrives while one is still
+    /// waiting to run is covered by it and joins it, rather than queueing
+    /// another round of the same writes.
+    @MainActor
+    static func reconcileShields(_ why: String) {
+        lock.lock()
+        let joined = shieldPassWaiting
+        shieldPassWaiting = true
+        lock.unlock()
+        if joined {
+            BlockTrace.step("shields (\(why)): joins the pass already waiting")
+            return
+        }
+        run("shields (\(why))") {
+            lock.lock()
+            shieldPassWaiting = false
+            lock.unlock()
+            let done = BlockShields.reconcile()
+            BlockTrace.step("shields: \(done.held) held, \(done.lifted) lifted")
+        }
+    }
+}
+
+/// Keeps 808 running in the background until a piece of Screen Time work
+/// has finished, or iOS says time is up.
+@MainActor
+private final class BackgroundHold {
+    private var id: UIBackgroundTaskIdentifier = .invalid
+
+    init(_ name: String) {
+        // iOS calls this on the main thread, and the task has to end before
+        // it returns or the app is killed.
+        id = UIApplication.shared.beginBackgroundTask(withName: "Block: \(name)") { [weak self] in
+            MainActor.assumeIsolated { self?.end() }
+        }
+    }
+
+    func end() {
+        guard id != .invalid else { return }
+        UIApplication.shared.endBackgroundTask(id)
+        id = .invalid
     }
 }
 
@@ -403,6 +509,7 @@ final class BlockNotifications: NSObject, UNUserNotificationCenterDelegate {
                                 withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
         let info = notification.request.content.userInfo
         if info["block"] != nil {
+            BlockTrace.step("\"Otto wants a word\" arrived with 808 open")
             completionHandler([.banner, .sound])
         } else if info[SessionEndNotice.userInfoKey] != nil {
             // The sit screen is already saying it is over, and `SessionBell`
@@ -419,6 +526,7 @@ final class BlockNotifications: NSObject, UNUserNotificationCenterDelegate {
                                 withCompletionHandler completionHandler: @escaping () -> Void) {
         let request = response.notification.request
         if request.content.userInfo["block"] != nil {
+            BlockTrace.step("\"Otto wants a word\" tapped")
             Task { @MainActor in BlockController.shared.requestIntervention() }
         } else if let kind = Analytics.notificationKind(identifier: request.identifier,
                                                         userInfo: request.content.userInfo) {

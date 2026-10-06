@@ -24,6 +24,7 @@ struct CoherenceApp: App {
         modelContainer = container
         #if DEBUG
         CloudSyncProbe.start()   // prints the sync story to the launch console
+        MainThreadWatch.shared.start()   // names the step a freeze happened in (2026-10-06)
         #endif
         Persistence.completeRescue(rescued, into: container)
         let setup = ModelContext(container)
