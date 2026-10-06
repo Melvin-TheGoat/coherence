@@ -417,12 +417,44 @@ final class BlockRulesTests: XCTestCase {
     }
 }
 
-/// Otto's twenty screens: only the true ones, and never the same twice running.
+/// Otto's twenty screens: only the true ones; a video call, a text and any
+/// other screen a third of the time each (2026-10-06); and the other screens
+/// never twice running.
 final class InterventionPickerTests: XCTestCase {
 
     private func context(hour: Int = 14, streak: Int = 0, aura: OttoAura.Stage = .stirring,
                          friend: String? = nil) -> InterventionContext {
         InterventionContext(hour: hour, streak: streak, aura: aura, friendWhoSat: friend)
+    }
+
+    /// SplitMix64, so every draw in these tests is the same on every run.
+    private struct Seeded: RandomNumberGenerator {
+        var state: UInt64
+        init(_ seed: UInt64) { state = seed }
+        mutating func next() -> UInt64 {
+            state &+= 0x9E37_79B9_7F4A_7C15
+            var z = state
+            z = (z ^ (z >> 30)) &* 0xBF58_476D_1CE4_E5B9
+            z = (z ^ (z >> 27)) &* 0x94D0_49BB_1331_11EB
+            return z ^ (z >> 31)
+        }
+    }
+
+    /// Picks as the app does: each shown screen is remembered, and the list
+    /// is kept to its last twelve (`BlockRules.prune`).
+    private func run(_ ctx: InterventionContext, draws: Int, seed: UInt64,
+                     check: (InterventionKind, [InterventionKind]) -> Void = { _, _ in }) -> [InterventionKind] {
+        var rng = Seeded(seed)
+        var recent: [InterventionKind] = []
+        var picks: [InterventionKind] = []
+        for _ in 0..<draws {
+            let next = InterventionPicker.pick(ctx, recent: recent, using: &rng)
+            check(next, recent)
+            picks.append(next)
+            recent.append(next)
+            if recent.count > 12 { recent.removeFirst(recent.count - 12) }
+        }
+        return picks
     }
 
     func test_morningScreensOnlyInTheMorning() {
@@ -451,26 +483,105 @@ final class InterventionPickerTests: XCTestCase {
         XCTAssertFalse(InterventionPicker.eligible(context(aura: .nirvana)).contains(.glow))
     }
 
-    func test_neverTheSameScreenTwiceRunning() {
-        var rng = SystemRandomNumberGenerator()
-        var last: InterventionKind?
-        var recent: [InterventionKind] = []
-        for _ in 0..<200 {
-            let next = InterventionPicker.pick(context(), recent: recent, using: &rng)
-            XCTAssertNotEqual(next, last)
-            last = next
-            recent.append(next)
+    /// The texts are the two screens drawn as a chat with Otto. The written
+    /// note (`voiceNote`) is a letter on paper, so it is one of the others.
+    func test_theTextsAreTheTwoChatScreens() {
+        XCTAssertEqual(InterventionPicker.texts, [.textThread, .sticker])
+        XCTAssertEqual(InterventionPicker.bucket(of: .faceTime), .videoCall)
+        XCTAssertEqual(InterventionPicker.bucket(of: .textThread), .texts)
+        XCTAssertEqual(InterventionPicker.bucket(of: .sticker), .texts)
+        XCTAssertEqual(InterventionPicker.bucket(of: .voiceNote), .others)
+        XCTAssertEqual(InterventionPicker.bucket(of: .standing), .others)
+        let others = InterventionKind.inUse.filter { InterventionPicker.bucket(of: $0) == .others }
+        XCTAssertEqual(others.count, InterventionKind.inUse.count - 3)
+    }
+
+    /// Melvin, 2026-10-06: a third a video call, a third a text, a third any
+    /// other screen, at every hour and whatever is true right now.
+    func test_aThirdEachCallTextAndTheRest() {
+        let contexts = [context(), context(hour: 7, streak: 5, friend: "Maya"),
+                        context(hour: 22, aura: .nirvana), context(hour: 2, streak: 3)]
+        for (i, ctx) in contexts.enumerated() {
+            let picks = run(ctx, draws: 6_000, seed: UInt64(41 + i))
+            func share(_ b: InterventionPicker.Bucket) -> Double {
+                Double(picks.filter { InterventionPicker.bucket(of: $0) == b }.count) / Double(picks.count)
+            }
+            for b in InterventionPicker.Bucket.allCases {
+                XCTAssertEqual(share(b), 1.0 / 3, accuracy: 0.03, "\(b) at hour \(ctx.hour)")
+            }
+            // The two texts evenly.
+            let thread = picks.filter { $0 == .textThread }.count
+            let sticker = picks.filter { $0 == .sticker }.count
+            XCTAssertEqual(Double(thread) / Double(thread + sticker), 0.5, accuracy: 0.05)
         }
+    }
+
+    /// Every pick is a screen that is true right now: no morning screen in
+    /// the afternoon, no bedtime by day, no streak without one, no friend
+    /// without one, no glow ask once he is enlightened.
+    func test_gatedScreensStayInsideTheirGates() {
+        let contexts = [context(), context(hour: 7), context(hour: 22, aura: .nirvana),
+                        context(hour: 12, streak: 1), context(hour: 9, streak: 4, friend: "Sam")]
+        for (i, ctx) in contexts.enumerated() {
+            let allowed = Set(InterventionPicker.eligible(ctx))
+            for kind in run(ctx, draws: 1_500, seed: UInt64(7 + i)) {
+                XCTAssertTrue(allowed.contains(kind), "\(kind) at hour \(ctx.hour)")
+            }
+        }
+        let afternoon = Set(run(context(), draws: 1_500, seed: 3))
+        XCTAssertTrue(afternoon.isDisjoint(with: [.wakingOtto, .affirmation, .bedtime, .streak, .friend]))
+        XCTAssertFalse(Set(run(context(aura: .nirvana), draws: 1_500, seed: 4)).contains(.glow))
+    }
+
+    /// The other screens keep the old rotation: never the last of them
+    /// shown, and none seen among their last five while a fresh one is left.
+    /// A call or a text may come twice running; that is the point.
+    func test_onlyTheOtherScreensAvoidRepeats() {
+        var callTwice = false, textTwice = false
+        let picks = run(context(), draws: 1_200, seed: 11) { next, recent in
+            guard InterventionPicker.bucket(of: next) == .others else { return }
+            let shown = recent.filter { InterventionPicker.bucket(of: $0) == .others }
+            XCTAssertFalse(shown.suffix(5).contains(next), "\(next) was among the last five others")
+        }
+        for (a, b) in zip(picks, picks.dropFirst()) where a == b {
+            XCTAssertNotEqual(InterventionPicker.bucket(of: a), .others, "\(a) twice running")
+            if a == .faceTime { callTwice = true }
+            if InterventionPicker.texts.contains(a) { textTwice = true }
+        }
+        XCTAssertTrue(callTwice, "a video call can come twice running")
+        XCTAssertTrue(textTwice, "a text can come twice running")
+    }
+
+    /// A third with nothing true in it is skipped, and the draw is even
+    /// across what is left. No context empties one today, so this feeds
+    /// pools straight to the draw.
+    func test_anEmptyThirdFallsThrough() {
+        var rng = Seeded(5)
+        let noCall = InterventionKind.inUse.filter { $0 != .faceTime }
+        var texts = 0
+        for _ in 0..<3_000 {
+            let kind = InterventionPicker.pick(from: noCall, recent: [], using: &rng)
+            XCTAssertNotEqual(kind, .faceTime)
+            if InterventionPicker.texts.contains(kind) { texts += 1 }
+        }
+        XCTAssertEqual(Double(texts) / 3_000, 0.5, accuracy: 0.04)
+
+        let othersOnly = InterventionKind.inUse.filter { InterventionPicker.bucket(of: $0) == .others }
+        for _ in 0..<500 {
+            XCTAssertEqual(InterventionPicker.bucket(of: InterventionPicker.pick(from: othersOnly, recent: [],
+                                                                             using: &rng)), .others)
+        }
+        for _ in 0..<50 {
+            XCTAssertEqual(InterventionPicker.pick(from: [.faceTime], recent: [.faceTime], using: &rng), .faceTime)
+            XCTAssertEqual(InterventionPicker.pick(from: [.glow], recent: [.glow], using: &rng), .glow)
+        }
+        XCTAssertEqual(InterventionPicker.pick(from: [], recent: [], using: &rng), .standing)
     }
 
     func test_everyScreenCanBeReached() {
         var seen = Set<InterventionKind>()
-        var rng = SystemRandomNumberGenerator()
-        for hour in [7, 14, 22] {
-            for _ in 0..<400 {
-                seen.insert(InterventionPicker.pick(context(hour: hour, streak: 5, friend: "Maya"),
-                                                   recent: [], using: &rng))
-            }
+        for (i, hour) in [7, 14, 22].enumerated() {
+            seen.formUnion(run(context(hour: hour, streak: 5, friend: "Maya"), draws: 1_200, seed: UInt64(20 + i)))
         }
         XCTAssertEqual(seen, Set(InterventionKind.inUse))
     }
@@ -494,7 +605,7 @@ final class InterventionPickerTests: XCTestCase {
 
     /// A retired screen is never picked, at any hour.
     func test_aRetiredScreenIsNeverPicked() {
-        var rng = SystemRandomNumberGenerator()
+        var rng = Seeded(99)
         for hour in [7, 14, 22] {
             let ctx = context(hour: hour, streak: 5, friend: "Maya")
             XCTAssertTrue(Set(InterventionPicker.eligible(ctx)).isDisjoint(with: InterventionKind.retired))

@@ -6819,6 +6819,26 @@ paired "Not now" screen. All in `Coherence/Block/InterventionView.swift`.
   on the standing and sign screens, the blue marks on FaceTime's talking
   pose, and the glow reply ending on a question mark.
 
+### Ask Otto is a call or a text two times in three (2026-10-06, Melvin)
+
+"We want it to feel like you're talking to him more often than not."
+`InterventionPicker.pick` draws a third (`InterventionPicker.Bucket`) first,
+then a screen inside it:
+- **1/3 the video call** (`faceTime`).
+- **1/3 a text**, evenly between the two screens drawn as a chat with Otto
+  (his head over the thread, his blue bubbles): `textThread` and `sticker`
+  (`InterventionPicker.texts`). `voiceNote` is NOT a text: it has been a
+  letter on lined paper since 2026-09-29.
+- **1/3 any other screen in use**, with every gate (morning, night, streak,
+  friend, glow) and the old rotation: never the last OTHER screen shown and
+  preferring one not among the last five others. The rotation reads only the
+  others in the recent list, so calls and texts do not push them out of it.
+- **A call or a text may come twice running; that is the point.** A third
+  with nothing true in it is skipped and the draw is even across the rest.
+  `pick(from:recent:using:)` takes a pool directly so that is testable.
+- The recent list is still kept to its last twelve (`BlockRules.prune`), so
+  the others' rotation remembers about four of them on average.
+
 ## THE SUBSCRIPTION IS "808 MEMBERSHIP" (2026-10-05, Aziz)
 
 "its 808 membership not 808 premium." The subscription group's customer-facing

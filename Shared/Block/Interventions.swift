@@ -90,15 +90,60 @@ enum InterventionPicker {
         }
     }
 
-    /// One of them, never the last one shown, and preferring any not seen in
-    /// the last five, so the same screen does not wear thin.
+    /// The three ways a tap on "Ask Otto" can go, each a third of the time
+    /// (Melvin, 2026-10-06: "We want it to feel like you're talking to him
+    /// more often than not"). So two thirds of the time he is on the other
+    /// end of a call or a text, and the last third is any other screen.
+    enum Bucket: CaseIterable {
+        /// He video-calls you: `faceTime`.
+        case videoCall
+        /// He messages you: the screens drawn as a text thread with Otto,
+        /// his head over the chat and his blue bubbles. `textThread` (his
+        /// texts, your replies) and `sticker` ("sent you a sticker. join
+        /// me?"). `voiceNote` is NOT one: it is a letter on lined paper now.
+        case texts
+        /// Everything else in use.
+        case others
+    }
+
+    /// The screens that count as a text from Otto. Chosen evenly between.
+    static let texts: Set<InterventionKind> = [.textThread, .sticker]
+
+    static func bucket(of kind: InterventionKind) -> Bucket {
+        if kind == .faceTime { return .videoCall }
+        if texts.contains(kind) { return .texts }
+        return .others
+    }
+
+    /// One of them: a video call a third of the time, a text a third, and
+    /// one of the rest a third. Only the rest keep the old rotation, never
+    /// the last of them shown and preferring any not seen in their last five,
+    /// so those screens do not wear thin; a call or a text may come twice
+    /// running, which is the point. A third with nothing true in it right
+    /// now is skipped and the draw is even across the thirds that are left,
+    /// so a pick never fails.
     static func pick<R: RandomNumberGenerator>(_ context: InterventionContext,
                                                recent: [InterventionKind],
                                                using rng: inout R) -> InterventionKind {
-        let pool = eligible(context)
-        let fresh = pool.filter { !recent.suffix(5).contains($0) }
-        let notLast = pool.filter { $0 != recent.last }
-        let choices = !fresh.isEmpty ? fresh : (!notLast.isEmpty ? notLast : pool)
+        pick(from: eligible(context), recent: recent, using: &rng)
+    }
+
+    /// The weighted draw over a pool of screens that are true right now.
+    /// Split from `pick(_:recent:using:)` so a pool missing a whole third can
+    /// be tested; no context today empties one.
+    static func pick<R: RandomNumberGenerator>(from pool: [InterventionKind],
+                                               recent: [InterventionKind],
+                                               using rng: inout R) -> InterventionKind {
+        let filled = Bucket.allCases
+            .map { b in (bucket: b, members: pool.filter { bucket(of: $0) == b }) }
+            .filter { !$0.members.isEmpty }
+        guard let drawn = filled.randomElement(using: &rng) else { return .standing }
+        let members = drawn.members
+        guard drawn.bucket == .others else { return members.randomElement(using: &rng) ?? .standing }
+        let shown = recent.filter { bucket(of: $0) == .others }
+        let fresh = members.filter { !shown.suffix(5).contains($0) }
+        let notLast = members.filter { $0 != shown.last }
+        let choices = !fresh.isEmpty ? fresh : (!notLast.isEmpty ? notLast : members)
         return choices.randomElement(using: &rng) ?? .standing
     }
 
