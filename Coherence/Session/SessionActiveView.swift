@@ -235,14 +235,14 @@ struct SessionActiveView: View {
 
     private var headline: String {
         if finishing { return closingLine }
-        if fiveMinutesDone { return "Five minutes done" }
+        if fiveMinutesDone { return "Nice, keep going" }
         return "Let's start meditating"
     }
 
     private var subhead: String {
         if finishing { return "Same time tomorrow?" }
         if fiveMinutesDone { return "Your apps open when you end" }
-        if holdsApps { return "Meditate \(Blocker.sessionMinutes) minutes to open your apps. Keep 808 open." }
+        if holdsApps { return "Meditate first to open your apps. Keep 808 open." }
         return "Keep 808 open to ensure you are meditating"
     }
 

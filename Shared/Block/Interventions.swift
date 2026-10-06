@@ -48,7 +48,7 @@ extension InterventionKind {
         case .friend:
             return context.friendWhoSat.map { "Okay. There's still time to join \($0) today." }
                 ?? "Okay. There's still time today."
-        case .oneMinute: return "Not even five? Fine... make sure to meditate later today."
+        case .oneMinute: return "Not now? Fine... make sure to meditate later today."
         case .askWhy: return "Fair enough. Make sure you meditate later today."
         default: return "Fine... how much time do you need?"
         }

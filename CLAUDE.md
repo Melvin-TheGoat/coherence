@@ -6864,6 +6864,20 @@ recordVideo`, find a loop's start from the frame differences, and cut one
 loop. A recording of the app's own rig, not generated video, so the "never
 generate video" rule is untouched.
 
+## NO COPY MENTIONS FIVE MINUTES; IT SAYS "MEDITATE FIRST" (2026-10-06, Aziz)
+
+"stop saying the 5 minutes thing ... just say meditate first." The rule
+(`Blocker.sessionMinutes = 5` opens the apps) is unchanged; only the words
+stopped naming it. Swept: the blocker lines, Otto's screens (standing, still
+there, streak, bedtime, the P.S. note, the fridge note, ask-why's "Bored",
+the one-minute screen, now "Meditate first. I'll keep time." with "Let's
+meditate", still starting a timed sit of the shortest length), its "Not now"
+reply, the sit screen ("Meditate first to open your apps"; "Nice, keep
+going" once the length is reached), the Ready line, and onboarding's
+no-Block card. **New copy must not name the length either.** Left alone on
+purpose: the score sheet's "five settled ones" (about scoring, not the
+rule), award names, the video-length limit.
+
 ## THE BLOCKER SAYS SOMETHING DIFFERENT EVERY TIME (2026-10-06, Aziz)
 
 The Screen Time shield picks one of 13 lines and one of 10 colours each time
