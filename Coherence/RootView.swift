@@ -147,6 +147,8 @@ struct RootView: View {
                 HatGallery(firstID: hat)
             } else if ProcessInfo.processInfo.environment["PREVIEW_HAT_REEL"] != nil {
                 HatReel()
+            } else if ProcessInfo.processInfo.environment["PREVIEW_SHIELD_REEL"] != nil {
+                ShieldReel()
             } else if let mode = ProcessInfo.processInfo.environment["PREVIEW_STAGE_REEL"] {
                 StageReel(onGreen: mode != "valley")
             } else {

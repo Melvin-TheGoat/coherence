@@ -31,19 +31,23 @@ final class BlockShieldConfiguration: ShieldConfigurationDataSource {
     private func make(named name: String?) -> ShieldConfiguration {
         // Asked within the last two minutes: the notification is on its way.
         let asked = BlockStore.load().asks.last.map { Date().timeIntervalSince($0) < 120 } ?? false
-        let ink = UIColor(named: "ShieldTextPrimary") ?? .darkText
-        let soft = UIColor(named: "ShieldTextSecondary") ?? .gray
-        let title = BlockShieldWords.title(for: name)
+        let look = BlockShieldWords.look()
+        let p = look.palette
         return ShieldConfiguration(
-            backgroundBlurStyle: .systemUltraThinMaterialLight,
-            backgroundColor: UIColor(named: "ShieldBackgroundPrimary"),
+            backgroundBlurStyle: nil,
+            backgroundColor: color(p.background),
             icon: UIImage(named: "OttoShield"),
-            title: .init(text: title, color: ink),
-            subtitle: .init(text: BlockShieldWords.subtitle(asked: asked,
+            title: .init(text: BlockShieldWords.title(for: name, look: look), color: color(p.text)),
+            subtitle: .init(text: BlockShieldWords.subtitle(for: name, look: look, asked: asked,
                                                             notificationsAllowed: BlockStore.notificationsAllowed),
-                            color: soft),
-            primaryButtonLabel: .init(text: BlockShieldWords.primary(asked: asked), color: ink),
-            primaryButtonBackgroundColor: UIColor(named: "ShieldAccentGold"),
-            secondaryButtonLabel: .init(text: BlockShieldWords.secondary, color: soft))
+                            color: color(p.soft, alpha: p.softAlpha)),
+            primaryButtonLabel: .init(text: BlockShieldWords.primary(asked: asked), color: color(p.buttonText)),
+            primaryButtonBackgroundColor: color(p.button),
+            secondaryButtonLabel: .init(text: BlockShieldWords.secondary, color: color(p.soft, alpha: p.softAlpha)))
+    }
+
+    private func color(_ hex: UInt32, alpha: Double = 1) -> UIColor {
+        UIColor(red: CGFloat((hex >> 16) & 0xFF) / 255, green: CGFloat((hex >> 8) & 0xFF) / 255,
+                blue: CGFloat(hex & 0xFF) / 255, alpha: CGFloat(alpha))
     }
 }

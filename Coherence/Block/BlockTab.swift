@@ -302,23 +302,28 @@ private struct BlockTestShield: View {
     let onClose: () -> Void
 
     @State private var asked = false
+    @State private var look = BlockShieldWords.look(remember: false)
 
     var body: some View {
+        let p = look.palette
         VStack(spacing: 18) {
             Spacer()
             Image("OttoHead")
                 .resizable()
                 .scaledToFit()
                 .frame(width: 92, height: 92)
-            Text(BlockShieldWords.title(for: "Instagram"))
+            Text(BlockShieldWords.title(for: "Instagram", look: look))
                 .font(DisplayFont.display(22))
-                .foregroundStyle(AppColor.textPrimary)
-            Text(BlockShieldWords.subtitle(asked: asked, notificationsAllowed: block.notificationsAllowed))
-                .font(AppFont.callout)
-                .foregroundStyle(AppColor.textSecondary)
+                .foregroundStyle(Color(shieldHex: p.text))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
-            Button(BlockShieldWords.primary(asked: asked)) {
+            Text(BlockShieldWords.subtitle(for: "Instagram", look: look, asked: asked,
+                                           notificationsAllowed: block.notificationsAllowed))
+                .font(AppFont.callout)
+                .foregroundStyle(Color(shieldHex: p.soft).opacity(p.softAlpha))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
+            Button {
                 asked = true
                 BlockAsk.post {
                     Task { @MainActor in
@@ -333,20 +338,33 @@ private struct BlockTestShield: View {
                     try? await Task.sleep(for: .milliseconds(900))
                     onClose()
                 }
+            } label: {
+                Text(BlockShieldWords.primary(asked: asked))
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(Color(shieldHex: p.buttonText))
+                    .frame(maxWidth: .infinity).frame(height: 52)
+                    .background(Color(shieldHex: p.button), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
             }
-            .buttonStyle(PrimaryButtonStyle())
             .padding(.horizontal, 32)
             Button(BlockShieldWords.secondary, action: onClose)
                 .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(AppColor.textSecondary)
+                .foregroundStyle(Color(shieldHex: p.soft).opacity(p.softAlpha))
             Spacer()
             Text("Stand-in shield, test mode")
                 .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(AppColor.textSecondary.opacity(0.7))
+                .foregroundStyle(Color(shieldHex: p.soft).opacity(0.6))
                 .padding(.bottom, 12)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(AppColor.backgroundSecondary.ignoresSafeArea())
+        .background(Color(shieldHex: p.background).ignoresSafeArea())
+    }
+}
+
+extension Color {
+    /// A `ShieldLines.Palette` colour (0xRRGGBB), for the shield stand-ins.
+    init(shieldHex hex: UInt32) {
+        self.init(red: Double((hex >> 16) & 0xFF) / 255, green: Double((hex >> 8) & 0xFF) / 255,
+                  blue: Double(hex & 0xFF) / 255)
     }
 }
 #endif

@@ -6864,6 +6864,33 @@ recordVideo`, find a loop's start from the frame differences, and cut one
 loop. A recording of the app's own rig, not generated video, so the "never
 generate video" rule is untouched.
 
+## THE BLOCKER SAYS SOMETHING DIFFERENT EVERY TIME (2026-10-06, Aziz)
+
+The Screen Time shield picks one of 13 lines and one of 10 colours each time
+it appears (`ShieldLines` in `Shared/Block/BlockModel.swift`, which the app,
+all three extensions and the tests compile). Lines are Aziz's, trendy and
+short ("bruh. 🤦", "caught in 4k 📸", "the audacity 😤", "Otto said no 🙅"),
+every title carries an emoji, `{app}` fills with the held app's name ("This
+app" when the shield is not told it). Colours run night navy to bubblegum
+pink, each with text and button colours that read on it. Mockup and the
+approved list: `mockups/shield-backgrounds.html` (artifact
+https://claude.ai/artifact/Tj4c8VJkgrp1frhMZuEGYB).
+- **Apple's limit decides the design:** a shield is one solid colour, a
+  small icon, a title, a subtitle and two buttons. No images, gradients or
+  motion, so never mock up a shield the phone cannot draw, in an ad least of
+  all. `backgroundBlurStyle` is nil so the colour is solid.
+- **The pick is kept for 90 s** (`BlockShieldWords.look`, App Group key
+  `block.shieldLook.v1`, written only by the shield extension): Screen Time
+  asks for the configuration more than once while the shield is up and
+  again after "Ask Otto", and a pick per call would flicker. Past 90 s a new
+  open draws again, never the line or colour just shown.
+- Once "Ask Otto" is tapped the subtitle still becomes "Otto's on his way.
+  Tap the notification up top."
+- The test-mode stand-in and the ad's `ShieldReel` use the same looks
+  (`PREVIEW_SHIELD_LINE` / `PREVIEW_SHIELD_COLOR` pick one by index).
+  `ShieldLinesTests` pins the emoji, no em dashes, the name fill and the
+  no-repeat rule. Only a phone shows the real shield; check it there.
+
 ## THE WEBSITE IS BRAINROT'S SHAPE; ~45 BUGS FIXED; LEGAL SYNCED (2026-09-28, Aziz)
 
 - **meditate808.com rebuilt** after thebrainrotapp.com, in the app's valley
