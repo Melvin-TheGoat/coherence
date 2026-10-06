@@ -184,7 +184,7 @@ struct ShieldReel: View {
                 paper.ignoresSafeArea()
                 VStack(spacing: 14) {
                     Spacer()
-                    Image("OttoHead").resizable().scaledToFit().frame(width: 84, height: 84)
+                    Image(ShieldLines.icon(Self.look.line)).resizable().scaledToFit().frame(width: 84, height: 84)
                         .padding(.bottom, 6)
                     Text(BlockShieldWords.title(for: "Instagram", look: Self.look))
                         .font(.system(size: 22, weight: .semibold))

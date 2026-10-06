@@ -36,7 +36,7 @@ final class BlockShieldConfiguration: ShieldConfigurationDataSource {
         return ShieldConfiguration(
             backgroundBlurStyle: nil,
             backgroundColor: color(p.background),
-            icon: UIImage(named: "OttoShield"),
+            icon: UIImage(named: ShieldLines.icon(look.line)) ?? UIImage(named: "OttoShield"),
             title: .init(text: BlockShieldWords.title(for: name, look: look), color: color(p.text)),
             subtitle: .init(text: BlockShieldWords.subtitle(for: name, look: look, asked: asked,
                                                             notificationsAllowed: BlockStore.notificationsAllowed),

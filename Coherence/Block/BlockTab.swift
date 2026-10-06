@@ -308,7 +308,7 @@ private struct BlockTestShield: View {
         let p = look.palette
         VStack(spacing: 18) {
             Spacer()
-            Image("OttoHead")
+            Image(ShieldLines.icon(look.line))
                 .resizable()
                 .scaledToFit()
                 .frame(width: 92, height: 92)

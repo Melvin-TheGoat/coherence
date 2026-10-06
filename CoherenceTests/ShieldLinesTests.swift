@@ -1,4 +1,5 @@
 import XCTest
+import UIKit
 
 /// The blocker's lines and colours (Aziz, 2026-10-06).
 final class ShieldLinesTests: XCTestCase {
@@ -47,5 +48,15 @@ final class ShieldLinesTests: XCTestCase {
     func test_thereAreThirteenLinesAndTenColours() {
         XCTAssertEqual(ShieldLines.all.count, 13)
         XCTAssertEqual(ShieldLines.palettes.count, 10)
+    }
+}
+
+extension ShieldLinesTests {
+    func test_eachLineHasItsOwnOtto() {
+        let icons = ShieldLines.all.map(ShieldLines.icon)
+        XCTAssertEqual(Set(icons).count, ShieldLines.all.count)
+        XCTAssertEqual(icons.first, "ShieldOtto1")
+        XCTAssertEqual(icons.last, "ShieldOtto13")
+        for name in icons { XCTAssertNotNil(UIImage(named: name), "missing \(name)") }
     }
 }

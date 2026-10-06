@@ -6884,6 +6884,18 @@ https://claude.ai/artifact/Tj4c8VJkgrp1frhMZuEGYB).
   asks for the configuration more than once while the shield is up and
   again after "Ask Otto", and a pick per call would flicker. Past 90 s a new
   open draws again, never the line or colour just shown.
+- **Each line has its own Otto** (`ShieldLines.icon`, ShieldOtto1 to 13 in
+  the order of `all`): one ChatGPT sheet of 13 chest-up poses
+  (`mockups/shield-ottos/sheet.webp`) cut by `tools/otto_sheet_cut.swift`.
+  Image sets in BOTH the Shield extension's catalog and Shared's (the app's
+  stand-ins). The cutter: finds each figure by ink rows then columns,
+  folding narrow bits (sparkles, a sweat drop) into the nearest figure;
+  anything the white paper cannot reach from the crop's edge is solid
+  Otto; only paper-touching pixels are un-mixed from white, with Apple's
+  subject mask as a floor. **The subject mask alone failed**: it took the
+  camera and missed most of the body behind it, and skipped bright cheek
+  highlights. `CIContext.render(toBitmap:)` rows are TOP-down; flipping
+  them inverts the mask.
 - Once "Ask Otto" is tapped the subtitle still becomes "Otto's on his way.
   Tap the notification up top."
 - The test-mode stand-in and the ad's `ShieldReel` use the same looks

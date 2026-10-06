@@ -487,6 +487,15 @@ enum ShieldLines {
         Line(title: "not the doom scroll 💀", subtitle: "Five minutes of calm first. Otto's waiting."),
     ]
 
+    /// Each line has its own Otto (Aziz, 2026-10-06), cut from one ChatGPT
+    /// sheet (`mockups/shield-ottos/sheet.webp`, `tools/otto_sheet_cut.swift`)
+    /// in the order of `all`: ShieldOtto1 is "bruh.", ShieldOtto13 the doom
+    /// scroll. The image sets live in the Shield extension's catalog and,
+    /// for the app's stand-ins, in Shared's.
+    static func icon(_ line: Line) -> String {
+        "ShieldOtto\((all.firstIndex(of: line) ?? 0) + 1)"
+    }
+
     /// One solid background with text and button colours that stay readable
     /// on it, as 0xRRGGBB.
     struct Palette: Equatable {
