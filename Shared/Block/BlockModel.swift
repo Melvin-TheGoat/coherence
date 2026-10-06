@@ -482,9 +482,9 @@ enum ShieldLines {
         Line(title: "Otto said no 🙅", subtitle: "He'll open {app} once you've meditated."),
         Line(title: "we're not doing this rn 🚫", subtitle: "Meditate with Otto, then {app}'s back."),
         Line(title: "zen first, scroll later 🌿", subtitle: "Otto's holding {app} for you 🔒"),
-        Line(title: "touch grass first 🌱", subtitle: "Five quiet minutes, then scroll all you want."),
+        Line(title: "touch grass first 🌱", subtitle: "Meditate first, then scroll all you want."),
         Line(title: "plot twist: you meditate first 🤯", subtitle: "Then {app} unlocks. Otto's rules."),
-        Line(title: "not the doom scroll 💀", subtitle: "Five minutes of calm first. Otto's waiting."),
+        Line(title: "not the doom scroll 💀", subtitle: "Meditate first. Otto's waiting."),
     ]
 
     /// Each line has its own Otto (Aziz, 2026-10-06), cut from one ChatGPT
