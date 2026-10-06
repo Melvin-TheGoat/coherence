@@ -228,10 +228,15 @@ struct BlockState: Codable, Equatable {
     /// When an Otto screen last opened, so an unanswered "Ask Otto" can be
     /// told apart from one already handled.
     var lastInterventionAt: Date?
+    /// Debug and marketing (Aziz, 2026-10-06): every blocker with apps holds
+    /// them now, whatever its schedule, switch or sessions, so the blocker
+    /// can be shown or tested on demand. A "Not now" pass still opens them,
+    /// so Otto's screens keep working. Settings > Block (debug).
+    var holdAll = false
 
     enum CodingKeys: String, CodingKey {
         case blockers, passes, releases, asks, limitHits, recentInterventions
-        case seededDefault, lastInterventionAt
+        case seededDefault, lastInterventionAt, holdAll
     }
 
     func blocker(_ id: UUID) -> Blocker? { blockers.first { $0.id == id } }
@@ -300,6 +305,7 @@ extension BlockState {
         recentInterventions = (try? c.decodeIfPresent([String].self, forKey: .recentInterventions)) ?? []
         seededDefault = (try? c.decodeIfPresent(Bool.self, forKey: .seededDefault)) ?? !blockers.isEmpty
         lastInterventionAt = try? c.decodeIfPresent(Date.self, forKey: .lastInterventionAt)
+        holdAll = (try? c.decodeIfPresent(Bool.self, forKey: .holdAll)) ?? false
     }
 }
 
@@ -311,6 +317,10 @@ enum BlockRules {
     /// a session in this window, and no "Not now" pass running.
     static func holds(_ blocker: Blocker, in state: BlockState, at now: Date,
                       calendar: Calendar = .current) -> Bool {
+        if state.holdAll {
+            guard blocker.hasApps else { return false }
+            return activePass(blocker.id, in: state, at: now) == nil
+        }
         guard blocker.isOn, blocker.hasApps,
               let window = blocker.openWindow(at: now, calendar: calendar) else { return false }
         if blocker.dailyLimitMinutes != nil {

@@ -6864,6 +6864,17 @@ recordVideo`, find a loop's start from the frame differences, and cut one
 loop. A recording of the app's own rig, not generated video, so the "never
 generate video" rule is untouched.
 
+## "HOLD EVERY APP NOW", A DEBUG SWITCH (2026-10-06, Aziz)
+
+Settings > Block (debug) > "Hold every app now" (`BlockState.holdAll`,
+`BlockController.setHoldAll`): every blocker with apps holds them at once,
+whatever its schedule, its on/off switch or the sessions done today, for
+testing and screen recordings. `BlockRules.holds` checks it first, so the
+app and all three extensions agree. A "Not now" pass still opens the apps
+(Otto's screens stay testable); turning the switch on ends any pass running.
+DEBUG builds only (808 Beta is one); the flag decodes absent as off. Turn it
+off to go back to the real rules.
+
 ## THE PHONE AD, MADE WITH ROTATO'S COMMAND LINE (2026-10-06, Aziz)
 
 A 23.4 s vertical ad (1080x1920), features ordered most to least shareable:

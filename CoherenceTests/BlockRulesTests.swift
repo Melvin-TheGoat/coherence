@@ -506,3 +506,28 @@ final class InterventionPickerTests: XCTestCase {
         XCTAssertTrue(InterventionKind.retired.contains(.stillThere))
     }
 }
+
+extension BlockRulesTests {
+    /// Settings > Block (debug) "Hold every app now" (2026-10-06): every
+    /// blocker with apps holds, off or outside its window or released by a
+    /// session, and a "Not now" pass still opens it.
+    func test_holdAllHoldsEveryBlockerWithAppsButHonoursNotNow() {
+        let now = Date()
+        var off = Blocker.preset(.custom); off.isOn = false; off.hasApps = true
+        var noApps = Blocker.preset(.custom); noApps.isOn = true; noApps.hasApps = false
+        var state = BlockState(); state.blockers = [off, noApps]
+        XCTAssertTrue(BlockRules.holding(state, at: now).isEmpty)
+        state.holdAll = true
+        XCTAssertEqual(BlockRules.holding(state, at: now).map(\.id), [off.id])
+        state.passes = [BlockPass(blockerID: off.id, start: now.addingTimeInterval(-60), end: now.addingTimeInterval(600), window: DateInterval(start: now.addingTimeInterval(-3600), duration: 7200))]
+        XCTAssertTrue(BlockRules.holding(state, at: now).isEmpty)
+    }
+
+    func test_holdAllSurvivesASaveAndOldStatesLoadWithItOff() throws {
+        var state = BlockState(); state.holdAll = true
+        let back = try JSONDecoder().decode(BlockState.self, from: JSONEncoder().encode(state))
+        XCTAssertTrue(back.holdAll)
+        let old = try JSONDecoder().decode(BlockState.self, from: Data("{\"blockers\":[]}".utf8))
+        XCTAssertFalse(old.holdAll)
+    }
+}
