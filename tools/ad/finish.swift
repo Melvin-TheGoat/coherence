@@ -72,16 +72,43 @@ func caption(_ text: String, _ t0: Double, _ t1: Double, top: CGFloat = 250, siz
     box.add(pop, forKey: "pop")
     parent.addSublayer(box)
 }
-caption("my meditation app won't\nlet me open instagram 😭", 0, 2.4)
-caption("then it texts me 💀", 2.4, 5.32)
-caption("he forces me to meditate 🧘\nevery day to open my apps", 5.32, 8.12)
-caption("if I meditate every day,\nhe gets happier ✨", 8.12, 11.44)
-caption("and my streak keeps growing 🔥", 11.44, 14.09)
-caption("every session earns coins 💰", 14.09, 16.84)
-caption("so I can buy Otto\nnew hats 🎩", 16.84, 20.42)
-caption("make meditation a habit\nwith 808 Meditate 🧘", 20.42, dur, top: 200, size: 68, sub: "on the App Store today")
+caption("my meditation app won't\nlet me open instagram 😭", 0, 3.6)
+caption("then it texts me 💀", 3.6, 6.52)
+caption("he forces me to meditate 🧘\nevery day to open my apps", 6.52, 10.62)
+caption("if I meditate every day,\nhe gets happier ✨", 10.62, 13.94)
+caption("and my streak keeps growing 🔥", 13.94, 16.59)
+caption("every session earns coins 💰", 16.59, 19.34)
+caption("so I can buy Otto\nnew hats 🎩", 19.34, 22.92)
+caption("make meditation a habit\nwith 808 Meditate 🧘", 22.92, dur, top: 200, size: 68, sub: "on the App Store today")
 vc.animationTool = AVVideoCompositionCoreAnimationTool(postProcessingAsVideoLayer: video, in: parent)
+
+// Voice lines (01...08.mp3 in a[3]) on their beats, and a quiet bed (a[4]).
+let voiceAt: [Double] = [0.15, 3.75, 6.67, 10.77, 14.09, 16.74, 19.49, 23.07]
+let mix = AVMutableAudioMix()
+var params: [AVMutableAudioMixInputParameters] = []
+for (k, t) in voiceAt.enumerated() {
+    let url = URL(fileURLWithPath: a[3] + String(format: "/%02d.mp3", k + 1))
+    let asset = AVURLAsset(url: url)
+    guard let at = asset.tracks(withMediaType: .audio).first else { continue }
+    let tr = comp.addMutableTrack(withMediaType: .audio, preferredTrackID: kCMPersistentTrackID_Invalid)!
+    let len = min(asset.duration, CMTimeSubtract(comp.duration, CMTime(seconds: t, preferredTimescale: 600)))
+    try! tr.insertTimeRange(CMTimeRange(start: .zero, duration: len), of: at, at: CMTime(seconds: t, preferredTimescale: 600))
+}
+if a.count > 4 {
+    let bed = AVURLAsset(url: URL(fileURLWithPath: a[4]))
+    if let bt = bed.tracks(withMediaType: .audio).first {
+        let tr = comp.addMutableTrack(withMediaType: .audio, preferredTrackID: kCMPersistentTrackID_Invalid)!
+        try! tr.insertTimeRange(CMTimeRange(start: CMTime(seconds: 2, preferredTimescale: 600), duration: comp.duration), of: bt, at: .zero)
+        let p = AVMutableAudioMixInputParameters(track: tr)
+        let total = comp.duration.seconds
+        p.setVolumeRamp(fromStartVolume: 0, toEndVolume: 0.16, timeRange: CMTimeRange(start: .zero, duration: CMTime(seconds: 0.6, preferredTimescale: 600)))
+        p.setVolume(0.16, at: CMTime(seconds: 0.6, preferredTimescale: 600))
+        p.setVolumeRamp(fromStartVolume: 0.16, toEndVolume: 0, timeRange: CMTimeRange(start: CMTime(seconds: total - 1.2, preferredTimescale: 600), duration: CMTime(seconds: 1.2, preferredTimescale: 600)))
+        params.append(p)
+    }
+}
+mix.inputParameters = params
 let ex = AVAssetExportSession(asset: comp, presetName: AVAssetExportPresetHighestQuality)!
-ex.videoComposition = vc; ex.outputURL = URL(fileURLWithPath: a[2]); ex.outputFileType = .mp4
+ex.videoComposition = vc; ex.audioMix = mix; ex.outputURL = URL(fileURLWithPath: a[2]); ex.outputFileType = .mp4
 let sem = DispatchSemaphore(value: 0); ex.exportAsynchronously { sem.signal() }; sem.wait()
 print(ex.status == .completed ? "ok \(dur) src \(ns)" : "fail \(String(describing: ex.error))")

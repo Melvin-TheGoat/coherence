@@ -1,6 +1,6 @@
 {
  "version": 1,
- "duration": 23.4,
+ "duration": 28.61,
  "operations": [
   {
    "type": "shot_sequence",
@@ -50,7 +50,7 @@
       "pitch_degrees": 5
      },
      "maximum_zoom": 1.66,
-     "move_duration": 2.4,
+     "move_duration": 3.6,
      "easing": "Linear"
     },
     {
@@ -71,7 +71,7 @@
       "pitch_degrees": 3
      },
      "maximum_zoom": 1.72,
-     "move_duration": 2.9,
+     "move_duration": 2.92,
      "easing": "Out Sine"
     },
     {
@@ -97,7 +97,7 @@
       "yaw_degrees": 4,
       "pitch_degrees": 2
      },
-     "move_duration": 2.0,
+     "move_duration": 3.3,
      "easing": "Linear"
     },
     {
@@ -139,7 +139,7 @@
       "pitch_degrees": 2
      },
      "maximum_zoom": 1.7,
-     "move_duration": 2.5,
+     "move_duration": 2.52,
      "easing": "Linear"
     },
     {
@@ -265,7 +265,7 @@
       "pitch_degrees": 2
      },
      "maximum_zoom": 1.42,
-     "move_duration": 2.9,
+     "move_duration": 2.88,
      "easing": "Linear"
     },
     {
@@ -291,7 +291,7 @@
       "yaw_degrees": 20,
       "pitch_degrees": 7
      },
-     "move_duration": 1.79,
+     "move_duration": 4.48,
      "easing": "Out Sine"
     }
    ]
