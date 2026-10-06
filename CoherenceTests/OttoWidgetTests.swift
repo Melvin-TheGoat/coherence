@@ -49,16 +49,16 @@ final class OttoWidgetTests: XCTestCase {
         // Today: three days in, already sat.
         XCTAssertEqual(s.days[0].level, 80)
         XCTAssertEqual(s.days[0].streak, 3)
-        XCTAssertEqual(s.days[0].line, "Day 3. You already sat today, so today is done.")
+        XCTAssertEqual(s.days[0].line, "Day 3. You already meditated today, so today is done.")
 
         // Tomorrow morning: nothing missed yet.
         XCTAssertEqual(s.days[1].level, 80)
         XCTAssertEqual(s.days[1].streak, 3)
-        XCTAssertEqual(s.days[1].line, "Day 3. Sit whenever you're ready, I'll be here.")
+        XCTAssertEqual(s.days[1].line, "Day 3. Meditate whenever you're ready, I'll be here.")
 
         // A day missed: the week's rest day, so nothing lost yet.
         XCTAssertEqual(s.days[2].level, 80)
-        XCTAssertEqual(s.days[2].line, "Rest day yesterday. Sit today and your 3-day streak carries on.")
+        XCTAssertEqual(s.days[2].line, "Rest day yesterday. Meditate today and your 3-day streak carries on.")
 
         // A second day missed costs glow and ends the run.
         XCTAssertLessThan(s.days[3].level, 80)
@@ -89,7 +89,7 @@ final class OttoWidgetTests: XCTestCase {
         // says what today needs.
         let glowing = (current: 6, longest: 6, restDayUsed: false)
         XCTAssertEqual(OttoLines.widget(stage: .radiant, hasSessions: true, practicedToday: true, streak: glowing),
-                       "Day 6. You already sat today, so today is done.")
+                       "Day 6. You already meditated today, so today is done.")
         XCTAssertEqual(OttoLines.widget(stage: .steady, hasSessions: false, practicedToday: false, streak: streak),
                        "Your first session starts at the plus. I'll be right here.")
         for stage in OttoAura.Stage.allCases where stage > .faded {
@@ -98,8 +98,9 @@ final class OttoWidgetTests: XCTestCase {
         }
     }
 
-    /// No em dashes in anything Otto says, here as everywhere.
-    func test_noEmDashesInOttosLines() {
+    /// No em dashes in anything Otto says, here as everywhere. And he says
+    /// meditate, never sit (Melvin, 2026-10-06).
+    func test_ottosLinesHaveNoEmDashesAndSayMeditate() {
         var all: [String] = []
         for stage in OttoAura.Stage.allCases {
             for practiced in [true, false] {
@@ -113,7 +114,13 @@ final class OttoWidgetTests: XCTestCase {
             }
         }
         all += OttoLines.today(hasSessions: false, practicedToday: false, streak: (0, 0, false))
-        for line in all { XCTAssertFalse(line.contains("\u{2014}"), line) }
+        for line in all {
+            XCTAssertFalse(line.contains("\u{2014}"), line)
+            let words = line.lowercased().split { !$0.isLetter }
+            for verb in ["sit", "sat", "sits", "sitting"] {
+                XCTAssertFalse(words.contains(Substring(verb)), line)
+            }
+        }
     }
 
     /// The app reloads the widget only when what it shows has changed, so

@@ -81,9 +81,11 @@ struct OttoAuraFigure: View {
 
     /// The shared canvas, from `mockups/otto-v4/canvas.json`: 664 x 744, his
     /// body's bottom at 87.2% of the height, and Steady's body 82% of it.
-    static let canvasAspect: CGFloat = 664.0 / 744.0
-    static let baseline: CGFloat = 0.872
-    static let bodyShare: CGFloat = 0.82
+    /// Kept in `OttoStillCanvas` (ValleyPainting.swift), which the home
+    /// screen widget frames its copies of the stills by too.
+    static let canvasAspect: CGFloat = OttoStillCanvas.aspect
+    static let baseline: CGFloat = OttoStillCanvas.baseline
+    static let bodyShare: CGFloat = OttoStillCanvas.bodyShare
 
     var body: some View {
         let canvas = size * 0.95 / Self.bodyShare

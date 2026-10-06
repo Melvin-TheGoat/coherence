@@ -160,7 +160,8 @@ targets:
 
   # THE HOME SCREEN WIDGET (2026-10-05, ships in 1.2). Reads only the
   # snapshot the app writes (Shared/Widget/OttoWidgetSnapshot.swift) and
-  # paints the valley from the app's own DayLight. Its bundle ID must be
+  # paints the app's own valley: DayLight for the hour and ValleyPainting
+  # for the sky, ridges, meadow and cushion (2026-10-06). Its bundle ID must be
   # registered under Lock Out Inc. with the App Group before an archive;
   # `tools/beta_install.sh` swaps it to `.dev.widget` like the others.
   OttoWidget:
@@ -171,6 +172,7 @@ targets:
       - OttoWidget
       - Shared/Widget/OttoWidgetSnapshot.swift
       - Coherence/Session/DayLight.swift
+      - Coherence/Session/ValleyPainting.swift
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.lockout.meditate808.widget

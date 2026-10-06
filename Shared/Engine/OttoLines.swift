@@ -34,15 +34,15 @@ enum OttoLines {
             return ["Your first session starts at the plus. I'll be right here."]
         }
         if practicedToday {
-            return [streak.current > 1 ? "Day \(streak.current). You already sat today, so today is done."
+            return [streak.current > 1 ? "Day \(streak.current). You already meditated today, so today is done."
                                        : "You meditated today. That's the part that counts.",
                     "Nothing more to do here. Come back tomorrow and we'll keep it going."]
         }
         if streak.restDayUsed {
-            return ["Rest day yesterday. Sit today and your \(streak.current)-day streak carries on."]
+            return ["Rest day yesterday. Meditate today and your \(streak.current)-day streak carries on."]
         }
         if streak.current > 1 {
-            var lines = ["Day \(streak.current). Sit whenever you're ready, I'll be here."]
+            var lines = ["Day \(streak.current). Meditate whenever you're ready, I'll be here."]
             if streak.current == streak.longest, streak.current >= 3 {
                 lines.append("\(streak.current) in a row is your longest yet. No rush today either.")
             }

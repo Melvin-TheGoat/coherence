@@ -6770,6 +6770,32 @@ picks: small and medium, members only, a tap opens Home, 1.2 not 1.1.
   register `com.lockout.meditate808.widget` with the App Group in the portal
   (and `.dev.widget` for the beta), then a real-phone pass.
 
+### Redrawn as the app's valley (2026-10-06, Melvin, branch `widget-valley`)
+
+Direction 1 of `mockups/widget-v2.html`: Otto on his cushion in Home's own
+valley (both ridges, the real meadow and flowers, the haze), lit for the
+hour. The medium is one scene with his line in Home's sand bubble; the glow
+panel, glow bar and glow percentage are gone (his drawing shows his stage).
+Renders in `mockups/widget/v3/`.
+
+- **The painting is shared, never copied.** `Coherence/Session/
+  ValleyPainting.swift` holds `ValleySky`, `ValleyClouds`, `ValleyLand`,
+  `Meadow`, `Cushion` (+ `Cushion.seated`), `standsInMeadow`, `SitLayout` and
+  `OttoStillCanvas`; the app's `ValleyScene` composes them and the widget
+  target compiles the file. The move was proven pixel-identical (old code
+  against new, ImageRenderer at six hours) before the copy was deleted.
+- **The streak is always top LEFT** (Melvin). The small's sun is MIRRORED to
+  the right (`sunMirrored`), because all day it hung exactly behind the
+  streak; the medium's sun sits off its left edge, as the mock has it.
+- **Layout scales with the widget's height** (`WidgetValleyLayout`, the mock's
+  164pt widget as the unit): scene at half the sit's scale, cushion bottom
+  140 units below the window top, medium Otto at x 104 of a 500-wide scene.
+- Otto is in the face, the valley and cushion in `containerBackground`, so a
+  tinted home screen keeps a full-colour Otto. A non-member gets "Open 808"
+  (small) or "Open 808 to meditate with me." (medium bubble), no numbers.
+- **Otto says meditate, never sit**: `OttoLines` was swept, and
+  `test_ottosLinesHaveNoEmDashesAndSayMeditate` guards it.
+
 ## FRIENDS ONLY, NO FOLLOWERS (2026-10-01, Aziz)
 
 "Instead of following and followers it's just friends: I request someone,

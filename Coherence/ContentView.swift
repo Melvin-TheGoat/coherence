@@ -1181,7 +1181,7 @@ struct ContentView: View {
         guard !practicedToday else { return nil }
         let streak = StreakCalculator.streak(from: sessions.map(\.startedAt))
         if streak.restDayUsed {
-            return "Rest day yesterday. Sit today and your \(streak.current)-day streak carries on."
+            return "Rest day yesterday. Meditate today and your \(streak.current)-day streak carries on."
         }
         if streak.current > 1 {
             return "Meditate today and your \(streak.current)-day streak keeps going."
