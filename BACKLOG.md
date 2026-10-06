@@ -19,6 +19,19 @@ on-device chat (`FeatureFlags.ottoInRelease` is off), Block
 (`blockInRelease` is off) and Friends (1.1). Otto's seven aura states
 animated in Rive shipped to `block` on 2026-09-23 (`OttoAura.riv`).
 
+### Home screen widget (Melvin, 2026-10-05): mockup awaiting picks
+
+Otto on the home screen as he is right now: the valley at the real hour,
+the still drawing for his glow, the glow percentage and the streak. Small
+(Otto, streak, glow) and medium (adds Otto's Home line).
+`mockups/widget-v1.html`. Waits on four calls: which sizes, whether it
+shows for people without a membership, what a tap does, and shipping in
+1.2 (1.1 is in review). Build notes: a WidgetKit extension with its own
+App ID and privacy manifest, the app writes a snapshot (glow now, glow at
+midnight if no session, streak, today's line) to the App Group and
+reloads timelines; widgets cannot run Rive, so it draws the seven stills.
+Nothing from Screen Time goes in the snapshot.
+
 ### Friends and social
 
 - **Meditate first, then see your friends' day (BeReal style).** Melvin,
