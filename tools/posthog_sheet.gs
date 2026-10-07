@@ -87,8 +87,10 @@ var MARKED_INTERNAL =
 var EXTRA_INTERNAL_IDS = (function () {
   try {
     var raw = PropertiesService.getScriptProperties().getProperty('INTERNAL_PERSON_IDS') || '';
-    return raw.split(',').map(function (s) { return s.trim().toLowerCase(); })
-      .filter(function (s) { return /^[0-9a-f-]{36}$/.test(s); });
+    // Anything that is not part of an id separates ids, so stray quotes,
+    // spaces or new lines in the property cannot break the match.
+    return raw.toLowerCase().split(/[^0-9a-f-]+/)
+      .filter(function (s) { return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(s); });
   } catch (e) { return []; }
 })();
 
@@ -424,7 +426,7 @@ function writeScreens() {
   rows.push(['', 'Finished onboarding', counts['__finished'] || 0,
     '', 'An onboarding_step fires when a screen is LEFT, so each count is people who got past that screen. 1.1 and later only.']);
   rows.push(['', 'Who is counted', '', '',
-    'New installs only: a 1.0 user who updates skips onboarding (see the Updaters tab). Apple’s devices, founders’ and family phones are left out. A founder’s NEW install counts until its team-device switch is on.']);
+    'New installs, plus 1.0 users who never finished 1.0’s onboarding. A 1.0 user who did finish it skips straight to the launch paywall (see the Updaters tab). Apple’s devices, founders’ and family phones are left out. A founder’s NEW install counts until its team-device switch is on.']);
   write('Screens', rows, [50, 380, 200, 170, 620]);
 }
 
@@ -501,7 +503,9 @@ function writePurchases() {
                r[5] > 1 ? 'Repeat taps on the buy button, not repeat sales' : '']);
   });
   rows.push(['']);
-  rows.push(['BUYERS', res.results.length, '', '', '', '', '', '', 'This is the number that matters.']);
+  // Counts in the footers go in as text: column B holds dates here, and a
+  // bare 1 under them printed as 1900-01-01.
+  rows.push(['BUYERS', "'" + res.results.length, '', '', '', '', '', '', 'This is the number that matters.']);
   rows.push(['Note', 'Before the build after 1.0.1, a Lifetime purchase also logged a trial_started it never had, and repeat taps logged repeat purchases. Trials in 1.1 are 3 days; in 1.0 they were 7.']);
   write('Purchases', rows, [280, 130, 260, 300, 70, 60, 120, 120, 340], [5]);
 }
@@ -639,7 +643,7 @@ function writeInstalls() {
                String(r[C.last] || '').replace('T', ' ').slice(0, 19), note, r[C.id]]);
   });
   rows.push(['']);
-  rows.push(['INSTALLS', res.results.length, '', '', '', '', '', '', '', '', '', '', '', '', '', '',
+  rows.push(['INSTALLS', "'" + res.results.length, '', '', '', '', '', '', '', '', '', '', '', '', '', '',
              'A reinstall is a new row. Apple’s devices, founders’ and family phones are left out. A founder’s new install counts until the team-device switch is on (seven taps on the version line in Settings).']);
   write('Installs', rows, [90, 100, 110, 110, 110, 150, 60, 70, 130, 140, 260, 110, 120, 100, 100, 150, 340, 280], [7, 8], [12, 13, 14, 15]);
 }
@@ -648,7 +652,10 @@ function writeUpdaters() {
   // One row per person who opened a version newer than 1.0 after an update.
   // Since 1.1 is premium only, a 1.0 user's first 1.1 launch opens on the
   // launch paywall ("root_lock"): they buy there, already own a plan (a 1.0
-  // Lifetime), or leave. None of it shows on Installs or in onboarding.
+  // Lifetime), or leave. None of it shows on Installs. The exception is a
+  // 1.0 user who never finished 1.0's onboarding: 1.1 sends them through
+  // its own, and they meet the onboarding paywall instead (Fulham,
+  // 2026-10-07).
   var updatedToNew = "event = 'Application Updated' AND NOT " + OLD;
   var sql =
     "SELECT person_id, " +
@@ -686,11 +693,11 @@ function writeUpdaters() {
                String(r[C.last] || '').replace('T', ' ').slice(0, 19), r[C.id]]);
   });
   rows.push(['']);
-  rows.push(['UPDATERS', res.results.length, '', '', '', '', '', '', '', '', '',
+  rows.push(['UPDATERS', "'" + res.results.length, '', '', '', '', '', '', '', '', '',
              '', '', '', 'People who opened 1.1 after updating.']);
-  rows.push(['Met the launch paywall', met, '', '', '', '', '', '', '', '', '',
-             '', '', '', 'The rest already had a plan (a 1.0 Lifetime, or bought on another phone).']);
-  rows.push(['Subscribed after updating', bought]);
+  rows.push(['Met the launch paywall', "'" + met, '', '', '', '', '', '', '', '', '',
+             '', '', '', 'The rest already had a plan (a 1.0 Lifetime, or bought on another phone), or never finished 1.0’s onboarding and go through 1.1’s instead (its paywall counts as onboarding, on the Screens tab).']);
+  rows.push(['Subscribed after updating', "'" + bought]);
   write('Updaters', rows, [90, 100, 110, 110, 110, 150, 60, 90, 70, 140, 300, 190, 210, 150, 280], [7, 8, 9], [12, 13]);
 }
 

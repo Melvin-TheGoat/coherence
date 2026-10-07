@@ -2151,7 +2151,9 @@ so nobody reads the numbers the old way again.
   from launch day, Leicester now) was one of these: monthHalf at 11:30 PM
   Detroit on Oct 6, after saying no to both offers once. Read updaters on
   the "Updaters: launch paywall to subscribed" funnel and the sheet's
-  Updaters tab, never on install funnels.
+  Updaters tab, never on install funnels. **Exception:** a 1.0 user who
+  never FINISHED 1.0's onboarding goes through 1.1's from the start and
+  meets the onboarding paywall, not the launch one (Fulham, Oct 7).
 - **There was no identity bug.** The "7:53 PM install" taken for him was an
   Apple automated test phone (Equinix Metal IP 139.178.x, no city, iOS
   beta, tapping Back between the first two screens every 22 s). All 14
