@@ -6828,6 +6828,14 @@ picks: small and medium, members only, a tap opens Home, 1.2 not 1.1.
   words there, and any words on the sky turn white whenever the valley is
   gone (`showsWidgetContainerBackground` false, as in StandBy). Only a phone
   shows these modes; check tinted, clear and StandBy before shipping.
+- **Tracked since 1.2 (Melvin: "I'm curious"):** `widget_opened` (the
+  widget's link carries `?size=small|medium`), `widget_added` /
+  `widget_removed` and a `has_widget` super property, all from
+  `WidgetPresence`, which asks WidgetCenter on every return to 808. The
+  first answer on a phone counts widgets already up as added.
+- **Otto mentions the widget on Home** (`OttoLines.widgetNudge`, iOS's own
+  steps) only while WidgetCenter says none is up, leading on the days the
+  Apple Watch line doesn't. Silent until WidgetCenter has answered once.
 - **Widget fonts name `design: .rounded` on every `.font(.system(...))`.**
   The root `fontDesign(.rounded)` trick that works in the app did nothing in
   the widget: the first build drew SF Pro.

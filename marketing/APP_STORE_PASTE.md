@@ -215,24 +215,20 @@ https://meditate808.com/privacy
 © 2026 Lock Out Inc.
 ```
 
-**What's New in This Version** (4000 max; this one is 986)
+**What's New in This Version, 1.2** (4000 max; this one is 691; approved by Melvin 2026-10-07. 1.1's text is in git history.)
 
 ```
-Meet Otto. He glows brighter every day you meditate, and in this update everyone's Otto starts at a 50% glow. Your history, streak and awards all carry over.
+Otto now lives on your home screen. Add the 808 widget, small or medium, to see him, your streak and what he has to say, lit for the time of day.
 
-Block: pick the apps that pull you away, and Otto holds them until you've meditated. Five minutes of meditation opens them for the rest of the window you set.
+The block screen is new every time you open a held app: thirteen lines, ten colours, each with its own Otto, and easier to read in light and dark mode. Tap Ask Otto and he's more likely to video call or text you.
 
-Every minute you meditate earns a point. Spend them in the new Shop on hats for Otto.
+Otto talks back. Tell him "Not now" and he answers in his own way, then asks how long you need.
 
-Meditate on your iPhone, with or without an Apple Watch. Set a timer or leave the session open, or record a session you did somewhere else.
+Otto now checks with you before you switch off, delete or change a blocker.
 
-Add friends by username and see how often each of them meditates this week.
+A bell rings when a timed session ends, even with your ring switch on silent.
 
-More than fifty awards, and a fresh look throughout.
-
-808 is now a membership, with every feature included. If you already subscribe or bought Lifetime, everything carries over, and Restore brings it back on a new phone.
-
-We also refined how an Apple Watch session's score adds up, so past scores may read a little differently. What was measured has not changed.
+Fixes a freeze that could happen after asking Otto for an app twice in a row.
 ```
 
 ---

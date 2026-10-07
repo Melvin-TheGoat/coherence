@@ -946,23 +946,31 @@ this release needs a NEW archive.
 
 ## OPEN for 1.2: the home screen widget (added 2026-10-05)
 
+**1.2 (2026-10-07):** the widget, Otto's reworked screens, the new block
+screen, the Ask Otto mix, the are-you-sure before weakening a blocker, the
+end-of-session bell and the freeze fix. Plans, prices, feature flags, privacy
+policy and App Privacy label are unchanged from 1.1 (the widget events are
+Product Interaction, already declared). **Release after approval: automatic**
+(Melvin, 2026-10-07, as 1.1 was).
+
 The widget (`OttoWidget/`, branch `widget`) is a fourth app extension with
 its own bundle ID, so the first archive that carries it needs the portal.
 
-- [ ] **Widget App ID registered.** Certificates, Identifiers & Profiles >
+- [x] (2026-10-07, Melvin confirmed both) **Widget App ID registered.** Certificates, Identifiers & Profiles >
       Identifiers: `com.lockout.meditate808.widget` exists under Lock Out Inc.
       with **App Groups** ticked and `group.com.lockout.meditate808` assigned.
       Automatic signing may create the App ID by itself; it has never assigned
       a group (2026-09-22), so check the App ID before archiving. Same for the
       beta: `com.lockout.meditate808.dev.widget` with
       `group.com.lockout.meditate808.dev`, or `tools/beta_install.sh` fails.
-- [ ] **On a real phone:** add the small and the medium; check them at
-      morning, evening and night, on a tinted home screen (iOS 18+, Otto
-      keeps his colours), and in StandBy. Meditate and watch both update
+- [x] (2026-10-07, Melvin's iPhone 17 Pro; tinted mode found the vanishing
+      bubble words, fixed and rechecked) **On a real phone:** add the small and the medium; check them at
+      morning, evening and night, on a tinted home screen (iOS 18+, ~~Otto
+      keeps his colours~~ Otto takes the tint, 2026-10-07), and in StandBy. Meditate and watch both update
       without opening the widget; tap one from another tab and land on Home.
 - [ ] **`tools/archive.sh` says `home screen widget embedded`** and every
       appex has its privacy manifest.
-- [ ] **What's New** for 1.2 names the widget. Nothing changes in the
+- [x] (2026-10-07, approved, in `marketing/APP_STORE_PASTE.md`) **What's New** for 1.2 names the widget. Nothing changes in the
       privacy policy or the App Privacy label: the widget reads only what the
       app wrote to the App Group on the same phone.
 
