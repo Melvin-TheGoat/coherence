@@ -6751,9 +6751,15 @@ picks: small and medium, members only, a tap opens Home, 1.2 not 1.1.
   into the widget, so the home screen sky is the app's sky at the same hour.
 - **Members only.** A non-member, or a phone 808 has not written to, gets
   Otto at Steady and "Open 808", never a number (808 is premium only).
-- Seven stills (`WidgetOtto1...7`, 450 px), no Rive. Otto and the flame keep
-  their colours on a tinted home screen (`widgetAccentedRenderingMode
-  (.fullColor)`, iOS 18+).
+- Seven stills (`WidgetOtto1...7`, 450 px), no Rive. **On a tinted or clear
+  home screen Otto and the flame take the tint like the icons around them**
+  (`.accentedDesaturated`; Melvin, 2026-10-07, reversing the first build's
+  `.fullColor`). Off full colour (`widgetRenderingMode` accented or vibrant)
+  iOS redraws by alpha, so the sand bubble and its dark words came out the
+  same white and the line vanished: the bubble is now faint glass with white
+  words there, and any words on the sky turn white whenever the valley is
+  gone (`showsWidgetContainerBackground` false, as in StandBy). Only a phone
+  shows these modes; check tinted, clear and StandBy before shipping.
 - **Widget fonts name `design: .rounded` on every `.font(.system(...))`.**
   The root `fontDesign(.rounded)` trick that works in the app did nothing in
   the widget: the first build drew SF Pro.

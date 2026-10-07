@@ -78,7 +78,7 @@ enum OttoWidgetClock {
 
 /// The widget's container background: the app's valley at the hour, with
 /// his cushion and no Otto. A tinted home screen takes this away, and Otto,
-/// in the face over it, keeps his colours.
+/// in the face over it, takes the tint like the icons around him.
 struct OttoWidgetBackdrop: View {
     let date: Date
     let medium: Bool
@@ -99,6 +99,21 @@ struct OttoWidgetFace: View {
     let date: Date
     let snapshot: OttoWidgetSnapshot?
     let medium: Bool
+
+    /// Tinted and clear home screens (`.accented`) and StandBy at night
+    /// (`.vibrant`) redraw the widget by alpha: a white bubble and its dark
+    /// words came out the same white and the line vanished (Melvin's phone,
+    /// 2026-10-07). Off full colour, the bubble is faint glass with white
+    /// words, and Otto takes the tint like the icons around him.
+    @Environment(\.widgetRenderingMode) private var renderingMode
+    /// StandBy and some tinted styles drop the valley behind him, leaving
+    /// black, where the day's dark ink would disappear.
+    @Environment(\.showsWidgetContainerBackground) private var showsBackground
+
+    private var fullColor: Bool { renderingMode == .fullColor }
+    /// Words on the sky in plain white whenever the sky is not there or
+    /// the system is recolouring them.
+    private var plainInk: Bool { !fullColor || !showsBackground }
 
     private var progress: Double { OttoWidgetClock.progress(at: date) }
     private var light: DayLight { DayLight.at(progress) }
@@ -146,13 +161,15 @@ struct OttoWidgetFace: View {
         let canvas = seated * 0.95 / OttoStillCanvas.bodyShare
         return Image("WidgetOtto\(stage)")
             .resizable()
-            .fullColorWhenAccented()
+            .tintedLikeIcons()
             .scaledToFit()
             .frame(width: canvas * OttoStillCanvas.aspect, height: canvas)
             .offset(y: canvas * (1 - OttoStillCanvas.baseline))
             .offset(y: stage >= 6 ? -seated * 0.05 : 0)
             .frame(width: seated, height: seated, alignment: .bottom)
-            .colorMultiply(Color(white: light.light))
+            // The night darkening belongs to the valley; with no valley
+            // behind him it only makes him muddy.
+            .colorMultiply(Color(white: plainInk ? 1 : light.light))
             .position(layout.ottoCentre)
     }
 
@@ -164,7 +181,7 @@ struct OttoWidgetFace: View {
                 HStack(spacing: 3) {
                     Image("WidgetFlame")
                         .resizable()
-                        .fullColorWhenAccented()
+                        .tintedLikeIcons()
                         .scaledToFit()
                         .frame(width: 22, height: 22)
                     onSky(Text("\(day.streak)"), size: 18)
@@ -180,9 +197,11 @@ struct OttoWidgetFace: View {
     private func onSky(_ text: Text, size: CGFloat) -> some View {
         text
             .font(.system(size: size, weight: .heavy, design: .rounded))
-            .foregroundStyle(light.ink)
+            .foregroundStyle(plainInk ? Color.white : light.ink)
             .lineLimit(1)
-            .shadow(color: light.inkIsDark ? Color.white.opacity(0.5) : Color.black.opacity(0.3), radius: 3)
+            .shadow(color: plainInk ? .clear
+                        : light.inkIsDark ? Color.white.opacity(0.5) : Color.black.opacity(0.3),
+                    radius: 3)
     }
 
     /// Home's bubble: the tile sand with its lip, dimmed a little after dark
@@ -192,7 +211,7 @@ struct OttoWidgetFace: View {
         let shape = BubbleShape(cornerRadius: 14, tailDepth: BubbleShape.tailDepth)
         return Text(day?.line ?? "Open 808 to meditate with me. I'll be right here.")
             .font(.system(size: 12.5, weight: .semibold, design: .rounded))
-            .foregroundStyle(Palette.ink)
+            .foregroundStyle(fullColor ? Palette.ink : Color.white)
             .multilineTextAlignment(.leading)
             .lineSpacing(1)
             .fixedSize(horizontal: false, vertical: true)
@@ -200,10 +219,17 @@ struct OttoWidgetFace: View {
             .padding(.vertical, 8)
             .padding(.bottom, BubbleShape.tailDepth)
             .background {
-                shape
-                    .fill(Palette.sand)
-                    .overlay(Color.black.opacity(dim).clipShape(shape))
-                    .shadow(color: Palette.lip, radius: 0, y: 2)
+                if fullColor {
+                    shape
+                        .fill(Palette.sand)
+                        .overlay(Color.black.opacity(dim).clipShape(shape))
+                        .shadow(color: Palette.lip, radius: 0, y: 2)
+                } else {
+                    // Faint glass the words sit on: the system keeps alpha,
+                    // so a fill this light stays a bubble and the white
+                    // words stay readable over it.
+                    shape.fill(Color.white.opacity(0.16))
+                }
             }
     }
 
@@ -219,7 +245,7 @@ struct OttoWidgetFace: View {
 /// The app's valley, at the widget's window: the sky, the clouds where the
 /// app would have them now, the ridges, the meadow and his cushion, all from
 /// `ValleyPainting.swift`. Otto himself is drawn in the widget's content,
-/// over this, so he keeps his colours on a tinted home screen.
+/// over this.
 ///
 /// The small's sun sits on the right: the streak has the top left, and the
 /// daytime sun hung exactly there. The medium's sun is off its left edge,
@@ -310,12 +336,14 @@ private extension Color {
 }
 
 private extension Image {
-    /// Otto keeps his colours when the home screen is tinted (iOS 18): he is
-    /// a drawing of a character, not a glyph, and a monochrome sloth reads as
-    /// a sad one.
-    @ViewBuilder func fullColorWhenAccented() -> some View {
+    /// On a tinted home screen Otto takes the tint like the icons around him
+    /// (Melvin, 2026-10-07, reversing "he keeps his colours": a full-colour
+    /// sloth among tinted icons looked out of place). Desaturated and then
+    /// tinted keeps his drawing; the default would flatten him into a
+    /// one-colour silhouette.
+    @ViewBuilder func tintedLikeIcons() -> some View {
         if #available(iOS 18.0, *) {
-            self.widgetAccentedRenderingMode(.fullColor)
+            self.widgetAccentedRenderingMode(.accentedDesaturated)
         } else {
             self
         }
