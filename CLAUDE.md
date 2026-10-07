@@ -6839,6 +6839,31 @@ then a screen inside it:
 - The recent list is still kept to its last twelve (`BlockRules.prune`), so
   the others' rotation remembers about four of them on average.
 
+## OTTO'S SCREENS HAVE NO X; WEAKENING A BLOCKER ASKS FIRST (2026-10-07, Melvin)
+
+"It's way too easy to click X, then go to blockers and just turn the
+blockers off." Decided from `mockups/block-friction.html`.
+
+- **Otto's screens have no close button.** They are left by "Okay, let's
+  meditate" (the + screen, which can still be closed) or "Not now" (how
+  long). The rehearsal gallery in Settings keeps the X so a tester can leave
+  without taking a pretend pass.
+- **`BlockTurnOffScreen` (Coherence/Block/BlockTurnOff.swift) asks before a
+  blocker that is ON is weakened**: switched off (the Block tab's switch),
+  deleted, or changed in the editor (any saved change, apps or hours). It
+  asks whether or not the blocker is holding apps right now, so turning it
+  off the night before is not the easy way round. Otto sits put out in the
+  valley; while he is holding apps "Okay, let's meditate" leads, then "Keep
+  it on" / "Keep it" / "Keep it as it was" (which drops the edit), and the
+  way through waits **five seconds**, counting down on its button. A blocker
+  that is already off deletes with the plain dialog; turning one ON never
+  asks.
+- The way-through pill ignores early taps rather than using `.disabled`,
+  which faded the whole pill and let the flowers show through it.
+- **Simulated taps on the simulator always hit the blocker card, never its
+  switch**, so the switch path can only be checked on a phone.
+  `PREVIEW_TURNOFF=holding|quiet|delete|edit|ready` (DEBUG) opens the screen.
+
 ## THE SUBSCRIPTION IS "808 MEMBERSHIP" (2026-10-05, Aziz)
 
 "its 808 membership not 808 premium." The subscription group's customer-facing

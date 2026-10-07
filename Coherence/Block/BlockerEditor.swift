@@ -30,8 +30,15 @@ struct BlockerEditor: View {
     @ObservedObject var block: BlockController
     let onSave: (Blocker, FamilyActivitySelection?) -> Void
     let onDelete: (UUID) -> Void
+    /// "Okay, let's meditate" on the are-you-sure screen.
+    var onMeditate: () -> Void = {}
 
     @Environment(\.dismiss) private var dismiss
+    /// Deleting or changing a blocker that is on asks first
+    /// (`BlockTurnOffScreen`, Melvin, 2026-10-07).
+    @State private var asking: BlockTurnOffScreen.Action?
+    /// The change waiting on that answer.
+    @State private var pendingSave: Blocker?
     @State private var draft: Blocker
     @State private var selection: FamilyActivitySelection
     @State private var selectionChanged = false
@@ -52,13 +59,15 @@ struct BlockerEditor: View {
 
     init(original: Blocker, isNew: Bool, pickOnAppear: Bool, block: BlockController,
          onSave: @escaping (Blocker, FamilyActivitySelection?) -> Void,
-         onDelete: @escaping (UUID) -> Void) {
+         onDelete: @escaping (UUID) -> Void,
+         onMeditate: @escaping () -> Void = {}) {
         self.original = original
         self.isNew = isNew
         self.pickOnAppear = pickOnAppear
         self.block = block
         self.onSave = onSave
         self.onDelete = onDelete
+        self.onMeditate = onMeditate
         _draft = State(initialValue: original)
         _selection = State(initialValue: BlockStore.selection(for: original.id))
         initialChoice = BlockWhen.of(original)
@@ -132,6 +141,34 @@ struct BlockerEditor: View {
             try? await Task.sleep(for: .milliseconds(650))
             guard !Task.isCancelled else { return }
             openPicker()
+        }
+        .fullScreenCover(item: $asking) { action in
+            BlockTurnOffScreen(blocker: original, action: action,
+                               holdingNow: block.holds(original),
+                               onMeditate: {
+                                   asking = nil
+                                   onMeditate()
+                               },
+                               onKeep: {
+                                   // Keep it as it was: the change is dropped.
+                                   asking = nil
+                                   pendingSave = nil
+                                   if action == .edit { dismiss() }
+                               },
+                               onConfirm: {
+                                   asking = nil
+                                   let saved = pendingSave
+                                   pendingSave = nil
+                                   // After the cover has gone, so the sheet
+                                   // closing under it is the only change.
+                                   DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                                       if action == .delete {
+                                           onDelete(original.id)
+                                       } else if let saved {
+                                           onSave(saved, selectionChanged ? selection : nil)
+                                       }
+                                   }
+                               })
         }
         .confirmationDialog("Delete \(draft.name)?", isPresented: $confirmDelete, titleVisibility: .visible) {
             Button("Delete", role: .destructive) { onDelete(original.id) }
@@ -225,7 +262,11 @@ struct BlockerEditor: View {
             if !isNew {
                 // A pill, because it is a control; the house rule is that a
                 // capsule is something you press.
-                Button("Delete blocker", role: .destructive) { confirmDelete = true }
+                // A blocker that is on gets Otto's are-you-sure; one already
+                // off weakens nothing, so the plain dialog is enough.
+                Button("Delete blocker", role: .destructive) {
+                    if original.isOn { asking = .delete } else { confirmDelete = true }
+                }
                     .font(.system(size: 14, weight: .bold))
                     .foregroundStyle(AppColor.streakBlushText)
                     .padding(.horizontal, 16).padding(.vertical, 8)
@@ -280,6 +321,14 @@ struct BlockerEditor: View {
         // Adding a blocker means wanting it on. The tab's save still checks
         // Block is paid for and routes to the paywall when it is not.
         if isNew { saved.isOn = true }
+        // Changing a blocker that is on could open apps, so it asks first
+        // (Melvin, 2026-10-07: "after editing just ask are you sure? before
+        // they are allowed to confirm"). Saving with nothing changed doesn't.
+        if !isNew && original.isOn && (saved != original || selectionChanged) {
+            pendingSave = saved
+            asking = .edit
+            return
+        }
         onSave(saved, selectionChanged ? selection : nil)
     }
 }

@@ -217,9 +217,10 @@ private struct UnblockPreviewCover: View {
                              onClose: onDone,
                              rehearsal: true, startOnHowLong: true)
         case .turnOff(let v):
-            // PREVIEW_TURNOFF=holding|quiet|delete|ready (mockup only).
+            // PREVIEW_TURNOFF=holding|quiet|delete|edit|ready: the
+            // are-you-sure screen, nothing real happening.
             BlockTurnOffScreen(blocker: Blocker.preset(.mindfulDay),
-                               action: v == "delete" ? .delete : .turnOff,
+                               action: v == "delete" ? .delete : v == "edit" ? .edit : .turnOff,
                                holdingNow: v != "quiet",
                                wait: v == "ready" ? 0 : BlockTurnOffScreen.waitSeconds,
                                onMeditate: onDone, onKeep: onDone, onConfirm: onDone)

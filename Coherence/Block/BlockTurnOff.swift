@@ -1,12 +1,14 @@
 import SwiftUI
 
-/// "Are you sure?" before a blocker stops holding (Melvin, 2026-10-06: "way
+/// "Are you sure?" before a blocker is weakened (Melvin, 2026-10-06: "way
 /// too easy to click x, then go to blockers and just turn the blockers off").
-/// Switching a blocker off and deleting one both land here first. Otto sits in
-/// the valley, put out, and the way to turn it off waits ten seconds before it
-/// can be tapped, so the decision is made on purpose rather than on reflex.
+/// Switching an on blocker off, deleting it, and saving an edit to it all land
+/// here first, holding apps right now or not (Melvin, 2026-10-07: turning it
+/// off the night before must not be the easy way round). Otto sits in the
+/// valley, put out, and the way through waits five seconds before it can be
+/// tapped, so the decision is made on purpose rather than on reflex.
 struct BlockTurnOffScreen: View {
-    enum Action { case turnOff, delete }
+    enum Action { case turnOff, delete, edit }
 
     let blocker: Blocker
     let action: Action
@@ -19,7 +21,7 @@ struct BlockTurnOffScreen: View {
     /// Turns it off, or deletes it.
     let onConfirm: () -> Void
 
-    static let waitSeconds = 10
+    static let waitSeconds = 5
 
     @State private var remaining: Int
 
@@ -46,10 +48,28 @@ struct BlockTurnOffScreen: View {
             return "I'm holding your apps until you meditate. Delete \(blocker.name) anyway?"
         case (.delete, false):
             return "Delete \(blocker.name)? I won't hold these apps until you set it up again."
+        case (.edit, true):
+            return "I'm holding your apps until you meditate. Change \(blocker.name) anyway?"
+        case (.edit, false):
+            return "Are you sure you want to change \(blocker.name)?"
         }
     }
 
-    private var confirmLabel: String { action == .delete ? "Delete it" : "Turn it off" }
+    private var confirmLabel: String {
+        switch action {
+        case .turnOff: return "Turn it off"
+        case .delete: return "Delete it"
+        case .edit: return "Save changes"
+        }
+    }
+
+    private var keepLabel: String {
+        switch action {
+        case .turnOff: return "Keep it on"
+        case .delete: return "Keep it"
+        case .edit: return "Keep it as it was"
+        }
+    }
 
     var body: some View {
         GeometryReader { geo in
@@ -80,9 +100,9 @@ struct BlockTurnOffScreen: View {
                     if holdingNow {
                         Button("Okay, let's meditate", action: onMeditate)
                             .buttonStyle(PrimaryButtonStyle())
-                        pill(action == .delete ? "Keep it" : "Keep it on", action: onKeep)
+                        pill(keepLabel, action: onKeep)
                     } else {
-                        Button(action == .delete ? "Keep it" : "Keep it on", action: onKeep)
+                        Button(keepLabel, action: onKeep)
                             .buttonStyle(PrimaryButtonStyle())
                     }
                     // The way out waits, and sits smallest: a cream pill like
@@ -135,4 +155,8 @@ struct BlockTurnOffScreen: View {
         }
         .buttonStyle(.plain)
     }
+}
+
+extension BlockTurnOffScreen.Action: Identifiable {
+    var id: Self { self }
 }

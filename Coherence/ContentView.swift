@@ -188,7 +188,9 @@ struct ContentView: View {
                 GuideView(embedded: true) { sheet = .setup }
                     .onAppear { Analytics.track(.guideOpened) }
             case .block:
-                BlockTab(block: block, entitlements: store.entitlements) { present(.blockPaywall) }
+                BlockTab(block: block, entitlements: store.entitlements,
+                         onPaywall: { present(.blockPaywall) },
+                         onMeditate: { present(.setup) })
             case .friends:
                 if FeatureFlags.friends { FriendsTab(onDecline: { tab = .home }) } else { SearchTab() }
             case .store:
@@ -370,7 +372,7 @@ struct ContentView: View {
                                      sheet = nil
                                  },
                                  onClose: {
-                                     BlockTrace.step("Otto closed (X, or a pass taken)")
+                                     BlockTrace.step("Otto closed (a pass taken)")
                                      sheet = nil
                                  })
                     .onAppear { block.noteInterventionShown(kind) }

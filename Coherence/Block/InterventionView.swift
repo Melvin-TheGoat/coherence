@@ -61,17 +61,24 @@ struct InterventionView: View {
                     .transition(.opacity)
             }
         }
+        // No close button (Melvin, 2026-10-07): the X let someone dismiss
+        // Otto without answering him and walk into the Block tab. His screens
+        // are left by "Okay, let's meditate" (the + screen, which can still be
+        // closed) or "Not now" (how long). The rehearsal gallery keeps it, so
+        // a tester can leave without taking a pretend pass.
         .overlay(alignment: .topLeading) {
-            Button(action: onClose) {
-                Image(systemName: "xmark")
-                    .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(AppColor.textSecondary)
-                    .frame(width: 36, height: 36)
-                    .background(AppColor.backgroundPrimary.opacity(0.85), in: Circle())
+            if rehearsal {
+                Button(action: onClose) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(AppColor.textSecondary)
+                        .frame(width: 36, height: 36)
+                        .background(AppColor.backgroundPrimary.opacity(0.85), in: Circle())
+                }
+                .padding(.leading, 16)
+                .padding(.top, 8)
+                .accessibilityLabel("Close")
             }
-            .padding(.leading, 16)
-            .padding(.top, 8)
-            .accessibilityLabel("Close")
         }
         .statusBarHidden(false)
         .followsStatusBarRule()
@@ -758,7 +765,7 @@ private struct FaceTimeScene: View {
 /// and breathing out on the water's 4, 2, 4, then the two doors. It replaced
 /// a circle and looping in / out words in the valley (Melvin, 2026-09-29:
 /// "that ones a lot better"). The doors wait for the breath, as Continue
-/// does in onboarding, and the close button is up the whole time.
+/// does in onboarding. There is no close button (2026-10-07).
 /// One breath with Otto, then he settles into the valley and asks (Aziz,
 /// 2026-10-04): the breath is onboarding's (in 4, hold 2, out 4, the water
 /// rising and falling), and when it ends the white page fades into the

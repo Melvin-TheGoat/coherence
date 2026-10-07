@@ -15,8 +15,12 @@ struct BlockTab: View {
     let entitlements: Entitlements
     /// The free-week offer. Block is paid.
     let onPaywall: () -> Void
+    /// "Okay, let's meditate" on the are-you-sure screen: the + screen.
+    var onMeditate: () -> Void = {}
 
     @State private var editing: EditRequest?
+    /// Switching an on blocker off asks first (`BlockTurnOffScreen`).
+    @State private var turningOff: Blocker?
     @State private var accessDenied = false
     #if DEBUG
     @State private var testShield = false
@@ -73,6 +77,18 @@ struct BlockTab: View {
             .scrollIndicators(.hidden)
             // White status bar over cream cards at night (2026-09-29).
             .modifier(StatusBarScrim(height: top, threshold: 60))
+            // On the scroll view, not beside the editor's sheet: two modals
+            // on one view is the only-one-presents trap.
+            .fullScreenCover(item: $turningOff) { blocker in
+                BlockTurnOffScreen(blocker: blocker, action: .turnOff,
+                                   holdingNow: block.holds(blocker),
+                                   onMeditate: { turningOff = nil; meditateSoon() },
+                                   onKeep: { turningOff = nil },
+                                   onConfirm: {
+                                       block.setOn(blocker.id, false)
+                                       turningOff = nil
+                                   })
+            }
         }
         .background(Self.meadow.ignoresSafeArea())
         .sheet(item: $editing) { request in
@@ -81,7 +97,8 @@ struct BlockTab: View {
                           pickOnAppear: request.pickApps,
                           block: block,
                           onSave: save,
-                          onDelete: { block.delete($0); editing = nil })
+                          onDelete: { block.delete($0); editing = nil },
+                          onMeditate: { editing = nil; meditateSoon() })
         }
         .alert("Screen Time is off for 808", isPresented: $accessDenied) {
             Button("Open Settings") {
@@ -212,8 +229,17 @@ struct BlockTab: View {
 
     /// Everything a blocker needs to hold, asked for in order, only when
     /// missing: the paid tier, Screen Time, notifications, then the apps.
+    /// The + screen, once the cover asking has gone: ContentView presents
+    /// it, and a cover presented while another is leaving can be dropped.
+    private func meditateSoon() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { onMeditate() }
+    }
+
     private func toggle(_ blocker: Blocker, to on: Bool) {
-        guard on else { block.setOn(blocker.id, false); return }
+        // Off asks first, holding apps right now or not (Melvin,
+        // 2026-10-07). The switch reads the stored state, so it stays on
+        // until the answer is "Turn it off".
+        guard on else { turningOff = blocker; return }
         guard BlockAccess.allowed(entitlements) else { onPaywall(); return }
         Task {
             if !block.authorized {
