@@ -504,11 +504,10 @@ function writePurchases() {
                r[5] > 1 ? 'Repeat taps on the buy button, not repeat sales' : '']);
   });
   rows.push(['']);
-  // Counts in the footers go in as text: column B holds dates here, and a
-  // bare 1 under them printed as 1900-01-01.
-  rows.push(['BUYERS', "'" + res.results.length, '', '', '', '', '', '', 'This is the number that matters.']);
+  rows.push(['BUYERS', res.results.length, '', '', '', '', '', '', 'This is the number that matters.']);
+  var buyersRow = rows.length;
   rows.push(['Note', 'Before the build after 1.0.1, a Lifetime purchase also logged a trial_started it never had, and repeat taps logged repeat purchases. Trials in 1.1 are 3 days; in 1.0 they were 7.']);
-  write('Purchases', rows, [280, 130, 260, 300, 70, 60, 120, 120, 340], [5]);
+  write('Purchases', rows, [280, 130, 260, 300, 70, 60, 120, 120, 340], [5], null, [[buyersRow, 2]]);
 }
 
 function writeAppleWatch() {
@@ -644,9 +643,10 @@ function writeInstalls() {
                String(r[C.last] || '').replace('T', ' ').slice(0, 19), note, r[C.id]]);
   });
   rows.push(['']);
-  rows.push(['INSTALLS', "'" + res.results.length, '', '', '', '', '', '', '', '', '', '', '', '', '', '',
+  rows.push(['INSTALLS', res.results.length, '', '', '', '', '', '', '', '', '', '', '', '', '', '',
              'A reinstall is a new row. Apple’s devices and the founders’ phones are left out; family and friends count. A founder’s new install counts until the team-device switch is on (seven taps on the version line in Settings).']);
-  write('Installs', rows, [90, 100, 110, 110, 110, 150, 60, 70, 130, 140, 260, 110, 120, 100, 100, 150, 340, 280], [7, 8], [12, 13, 14, 15]);
+  write('Installs', rows, [90, 100, 110, 110, 110, 150, 60, 70, 130, 140, 260, 110, 120, 100, 100, 150, 340, 280], [7, 8], [12, 13, 14, 15],
+        [[rows.length, 2]]);
 }
 
 function writeUpdaters() {
@@ -694,12 +694,14 @@ function writeUpdaters() {
                String(r[C.last] || '').replace('T', ' ').slice(0, 19), r[C.id]]);
   });
   rows.push(['']);
-  rows.push(['UPDATERS', "'" + res.results.length, '', '', '', '', '', '', '', '', '',
+  rows.push(['UPDATERS', res.results.length, '', '', '', '', '', '', '', '', '',
              '', '', '', 'People who opened 1.1 after updating.']);
-  rows.push(['Met the launch paywall', "'" + met, '', '', '', '', '', '', '', '', '',
+  rows.push(['Met the launch paywall', met, '', '', '', '', '', '', '', '', '',
              '', '', '', 'The rest already had a plan (a 1.0 Lifetime, or bought on another phone), or never finished 1.0’s onboarding and go through 1.1’s instead (its paywall counts as onboarding, on the Screens tab).']);
-  rows.push(['Subscribed after updating', "'" + bought]);
-  write('Updaters', rows, [90, 100, 110, 110, 110, 150, 60, 90, 70, 140, 300, 190, 210, 150, 280], [7, 8, 9], [12, 13]);
+  rows.push(['Subscribed after updating', bought]);
+  var last = rows.length;
+  write('Updaters', rows, [90, 100, 110, 110, 110, 150, 60, 90, 70, 140, 300, 190, 210, 150, 280], [7, 8, 9], [12, 13],
+        [[last - 2, 2], [last - 1, 2], [last, 2]]);
 }
 
 // ---------------------------------------------------------------------------
@@ -762,7 +764,7 @@ function find(rows, label) {
   return null;
 }
 
-function write(name, rows, widths, textCols, numCols) {
+function write(name, rows, widths, textCols, numCols, countCells) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName(name) || ss.insertSheet(name);
   // Formats too, not just contents: a column that moves (adding Version
@@ -783,6 +785,14 @@ function write(name, rows, widths, textCols, numCols) {
     sheet.getRange(1, c, padded.length, 1).setNumberFormat('0');
   });
   sheet.getRange(1, 1, padded.length, width).setValues(padded);
+  // Footer totals sit under the Date and Time columns, and Sheets formats a
+  // bare number there as a date or a time: 39 installs printed "0:00:00",
+  // 1 buyer printed "1899-12-31". Formatting the cell as a plain number
+  // AFTER the value lands is the one fix that cannot be parsed around (a
+  // leading apostrophe was tried first and the cell still read 0:00:00).
+  (countCells || []).forEach(function (rc) {
+    sheet.getRange(rc[0], rc[1]).setNumberFormat('0');
+  });
   sheet.getRange(1, 1, 1, width).setFontWeight('bold');
   sheet.setFrozenRows(1);
   if (widths) widths.forEach(function (w, i) { sheet.setColumnWidth(i + 1, w); });
