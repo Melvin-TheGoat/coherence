@@ -1262,8 +1262,10 @@ UI must coach it, and the 2-signal degrade path must stay.
   - Not yet wired: `notification_opened` (no UNUserNotificationCenter
     delegate exists), `paywall_dismissed` (paywall flow still moving; wire
     when placement is settled).
-  - **POSTHOG DASHBOARD "808 Beta" BUILT 2026-09-12 (Aziz + Claude, driving
-    the browser).** 14 tiles: Day-zero funnel (install → first score, 1-day
+  - **RETIRED 2026-10-07: "808 Beta" is now "808 1.0 (retired, use 808
+    1.1)". Read the "808 1.1" dashboard and "PostHog for 1.1" below; this
+    paragraph is history.** POSTHOG DASHBOARD "808 Beta" BUILT 2026-09-12
+    (Aziz + Claude, driving the browser). 14 tiles: Day-zero funnel (install → first score, 1-day
     window, the number the research says predicts everything); Insight A/B
     retention pair (first-ever `session_completed`, B filtered to cohort
     "Two sessions in week one" = ≥2 sessions in 90 days, the closest this
@@ -1331,7 +1333,8 @@ UI must coach it, and the 2-signal degrade path must stay.
       anything past six minutes), and `stamp` names any tab still holding
       last hour's numbers. Before this, a timeout in `writeDaily` left the
       five tabs after it silently stale with a stamp an hour old.
-    - **Internal-user filter (project setting, default ON):** `$app_build`
+    - **Internal-user filter (project setting, default ON):** superseded
+      2026-10-07, see "PostHog for 1.1". Originally `$app_build`
       ≠ 1 (locally built installs) AND `$is_testflight` ≠ true. A postal-code
       rule (Melvin 11211, Aziz 48073) was tried and REMOVED the same day:
       friends in those areas may be real users. Founders' App Store installs
@@ -2134,6 +2137,71 @@ the full list sorted by cost; this is what shipped and what it taught.
   moving the proof screens into the tour; animation; design polish. No
   HTML mockup was made for this round (revisions to approved screens, all
   small); the next new screen still gets one.
+
+## POSTHOG FOR 1.1: TWO KINDS OF BUYER, AND WHO IS LEFT OUT (2026-10-07, Melvin)
+
+The first 1.1 sale looked like a paywall drop-off and wasn't one. Recorded
+so nobody reads the numbers the old way again.
+
+- **Two kinds of people reach the money.** A NEW install goes through
+  onboarding and meets the paywall at screen 32 (placement `onboarding`).
+  A 1.0 user who UPDATES already finished onboarding, so 1.1 opens straight
+  on the launch paywall (placement `root_lock`): no `Application Installed`,
+  no `onboarding_completed`, ever. The first buyer (the Wednesbury stranger
+  from launch day, Leicester now) was one of these: monthHalf at 11:30 PM
+  Detroit on Oct 6, after saying no to both offers once. Read updaters on
+  the "Updaters: launch paywall to subscribed" funnel and the sheet's
+  Updaters tab, never on install funnels. **Exception:** a 1.0 user who
+  never FINISHED 1.0's onboarding goes through 1.1's from the start and
+  meets the onboarding paywall, not the launch one (Fulham, Oct 7).
+- **There was no identity bug.** The "7:53 PM install" taken for him was an
+  Apple automated test phone (Equinix Metal IP 139.178.x, no city, iOS
+  beta, tapping Back between the first two screens every 22 s). All 14
+  devices ever seen from 17.x or 139.178.x installed and never bought or
+  meditated. `Analytics.reset()` only runs on sign-out, delete account and
+  a revoked Sign in with Apple; checked, fine.
+- **`plan_selected` only fires when someone taps a DIFFERENT plan card.**
+  Buying the preselected card or taking an offer never sends it, so a funnel
+  step on it counts every such buyer as lost. It is out of the paywall
+  funnel; never put it back as a required step.
+- **In 1.1 the purchase comes BEFORE `onboarding_completed`** (paywall is
+  screen 32, completion is the end of the tour). Any ordered funnel must put
+  Subscribed first.
+- **Internal-user filter, as of 2026-10-07:** build 1, TestFlight,
+  sideloaded, `team_device` true, `$ip` matching `^(17|139\.178)\.`, and
+  the cohort "Internal / Test users" (person property
+  `$internal_or_test_user = true`). Founders' old phone records are marked
+  by that property. **Family COUNTS, on purpose** (Melvin, 2026-10-07: "we
+  want to consider those"): the Mason, Ohio records were marked and then
+  unmarked the same day. Never mark family or friends as internal; only
+  the two founders' own phones. The team-device switch
+  (seven taps on the version line in Settings) only flags events sent after
+  it is on, so a founder's NEW install must be switched on or marked. **A
+  1.0-only record has no person profile and cannot be marked**: the sheet
+  takes those by id from its `INTERNAL_PERSON_IDS` Script Property (never
+  in the repo, which is public).
+- **The 808 1.1 dashboard was saved at "Last 24 hours"**, which overrides
+  every tile's own range. Reset to 30 days. A dashboard date filter saves
+  when changed; put it back after a look.
+- `tools/posthog_sheet.gs` was rebuilt for 1.1 on branch `posthog-1.1-audit`:
+  Detroit days, Updaters tab, Problems and Apple Watch tabs replace
+  Failures and Watch gate, 1.0-only rows gone.
+- **`clearFormats()` does NOT reset a number format Sheets guessed from an
+  earlier value.** After the rebuild, counts on Overview landed where rates
+  used to be and printed 4 as "400%"; footer counts under date columns
+  printed 1899-12-31 and 0:00:00. `write()` now gives EVERY cell an explicit
+  format before and after the values land (`cell()`: numbers as counts,
+  "47.6%" strings as real percentages, everything else as text). Pass plain
+  strings; no leading apostrophes.
+- **Audited cell by cell against PostHog the same day** (xlsx export of the
+  sheet vs independent queries): Installs (42 rows), Updaters, Problems,
+  Daily and Overview all matched. Fixed: 1.0 logged a `trial_started` with
+  every Lifetime purchase (`REAL_TRIAL` leaves it out); the paywall was
+  treated as a branch screen, which blamed its drop-off on the next screen;
+  1.0 sessions (all Watch-measured) were missing from "Watch sessions
+  started"; "Updated" counted 1.0 → 1.0.1; the onboarding-paywall rate mixed
+  1.0 views with 1.1 purchases (now 1.1 only). A trial counts as a purchase
+  the moment it starts: PostHog never hears whether it renewed.
 
 ## RELEASE_CHECKLIST.md GATES EVERY SUBMISSION (2026-09-14)
 
