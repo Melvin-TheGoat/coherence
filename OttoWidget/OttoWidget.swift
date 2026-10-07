@@ -102,7 +102,8 @@ struct OttoWidgetView: View {
     var body: some View {
         let medium = family == .systemMedium
         OttoWidgetFace(date: entry.date, snapshot: entry.snapshot, medium: medium)
-            .widgetURL(URL(string: "coherence808://home"))
+            // The size rides along so the app can count which one was tapped.
+            .widgetURL(URL(string: "coherence808://home?size=\(medium ? "medium" : "small")"))
             .containerBackground(for: .widget) {
                 OttoWidgetBackdrop(date: entry.date, medium: medium)
             }

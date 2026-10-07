@@ -114,6 +114,9 @@ final class OttoWidgetTests: XCTestCase {
             }
         }
         all += OttoLines.today(hasSessions: false, practicedToday: false, streak: (0, 0, false))
+        all.append(OttoLines.widgetNudge)
+        // Two lines in Home's bubble on a 375pt phone, the sayings' limit.
+        XCTAssertLessThanOrEqual(OttoLines.widgetNudge.count, 74)
         for line in all {
             XCTAssertFalse(line.contains("\u{2014}"), line)
             let words = line.lowercased().split { !$0.isLetter }

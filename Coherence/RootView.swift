@@ -194,6 +194,7 @@ struct RootView: View {
             // The home screen widget shows Otto to members only, so it hears
             // whenever the root moves between the app and the paywall.
             OttoWidgetPublisher.publish(context: context, member: now == .app)
+            WidgetPresence.shared.refresh()
         }
         .task {
             try? await Task.sleep(for: Self.storeWaitLimit)
@@ -210,6 +211,7 @@ struct RootView: View {
             if phase == .active {
                 nightSky = Self.skyIsDark
                 OttoWidgetPublisher.publish(context: context, member: face == .app)
+                WidgetPresence.shared.refresh()
             }
         }
         .task {

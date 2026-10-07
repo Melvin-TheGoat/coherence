@@ -127,6 +127,12 @@ enum Analytics {
         case shareOpened
         case guideOpened
         case reminderEnabled
+        /// The home screen widget (1.2): tapped into 808, and added or
+        /// removed as WidgetCenter reports on each return to the app. Size is
+        /// "small" | "medium". Nothing about Otto's glow or the streak.
+        case widgetOpened(size: String)
+        case widgetAdded(size: String)
+        case widgetRemoved(size: String)
         /// A tapped notification: "reminder" | "session_end" | "come_back".
         /// Never Block's "Otto wants a word".
         case notificationOpened(kind: String)
@@ -197,6 +203,9 @@ enum Analytics {
             case .shareOpened: "share_opened"
             case .guideOpened: "guide_opened"
             case .reminderEnabled: "reminder_enabled"
+            case .widgetOpened: "widget_opened"
+            case .widgetAdded: "widget_added"
+            case .widgetRemoved: "widget_removed"
             case .notificationOpened: "notification_opened"
             case .awardUnlocked: "award_unlocked"
             case .signedOut: "signed_out"
@@ -254,6 +263,7 @@ enum Analytics {
             case .watchSwitch(let on, let source): ["on": on, "source": source]
             case .watchSetupOpened(let source): ["source": source]
             case .notificationOpened(let kind): ["kind": kind]
+            case .widgetOpened(let size), .widgetAdded(let size), .widgetRemoved(let size): ["size": size]
             case .awardUnlocked(let id): ["id": id]
             case .contentReported(let kind): ["kind": kind]
             case .profileCreated(let photo): ["photo": photo ? "yes" : "no"]
@@ -354,6 +364,7 @@ enum Analytics {
             PostHogSDK.shared.setPersonProperties(userPropertiesToSet: props)
         }
         started = true
+        applyHasWidget()
         // Anything set before the SDK existed (WatchLink reads the pairing
         // at launch, before this runs) goes now.
         personSink(person)
@@ -441,6 +452,7 @@ enum Analytics {
         guard started, !isOptedOut else { return }
         PostHogSDK.shared.reset()
         applyTeamDevice()
+        applyHasWidget()
         personSink(person)
         #endif
     }
@@ -464,6 +476,23 @@ enum Analytics {
     static func setTeamDevice(_ on: Bool) {
         UserDefaults.standard.set(on, forKey: teamDeviceKey)
         applyTeamDevice()
+    }
+
+    /// `has_widget` on every event, so any funnel can be split by whether an
+    /// 808 widget is on the home screen (`WidgetPresence`). Stored, so a
+    /// reset can put it straight back.
+    private static let hasWidgetKey = "analytics.hasWidget.v1"
+
+    static func setHasWidget(_ on: Bool) {
+        UserDefaults.standard.set(on, forKey: hasWidgetKey)
+        applyHasWidget()
+    }
+
+    private static func applyHasWidget() {
+        #if !DEBUG
+        guard started, !isOptedOut else { return }
+        PostHogSDK.shared.register(["has_widget": UserDefaults.standard.bool(forKey: hasWidgetKey)])
+        #endif
     }
 
     private static func applyTeamDevice() {

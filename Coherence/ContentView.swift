@@ -32,6 +32,8 @@ struct ContentView: View {
     @ObservedObject private var block = BlockController.shared
     /// For Otto's nudge toward measuring with the Apple Watch.
     @ObservedObject private var watchLink = WatchLink.shared
+    /// For Otto's nudge toward the home screen widget.
+    @ObservedObject private var widgetPresence = WidgetPresence.shared
     @AppStorage(WatchLink.choiceKey) private var sitKindRaw = SitKind.unmeasured.rawValue
     /// "Okay, let's meditate" on one of Otto's screens starts a session the
     /// moment his screen is down, so two covers never overlap. nil: nothing
@@ -776,12 +778,22 @@ struct ContentView: View {
         // landed or apps are held, and in his rotation every day.
         let watchLeads = Calendar.current.ordinality(of: .day, in: .era, for: Date()).map { $0 % 2 == 0 } ?? false
         if let nudge = watchNudge, watchLeads { lines.append(nudge) }
+        // The home screen widget, the same way on the other days (Melvin,
+        // 2026-10-07), and only while none is on the home screen.
+        if let nudge = widgetNudge, !watchLeads { lines.append(nudge) }
         // His mood leads when it is the news, then where today stands. Both
         // are `OttoLines`, which the home screen widget reads too.
         if let mood = OttoLines.mood(auraStage, practicedToday: practicedToday) { lines.append(mood) }
         lines += OttoLines.today(hasSessions: !sessions.isEmpty, practicedToday: practicedToday, streak: streak)
         if let nudge = watchNudge, !watchLeads { lines.append(nudge) }
+        if let nudge = widgetNudge, watchLeads { lines.append(nudge) }
         return lines + OttoSayings.forDay(Date())
+    }
+
+    /// Otto pointing at the widget, until one is on the home screen. Silent
+    /// until WidgetCenter has answered, so he never suggests one already there.
+    private var widgetNudge: String? {
+        widgetPresence.sizes?.isEmpty == true ? OttoLines.widgetNudge : nil
     }
 
     /// Otto pointing at the Apple Watch, until it is measuring. Said to

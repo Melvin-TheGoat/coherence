@@ -52,6 +52,10 @@ enum WidgetLink {
     @discardableResult
     static func handle(_ url: URL) -> Bool {
         guard url.scheme == "coherence808", url.host == "home" else { return false }
+        // The widget names its size in the link (`?size=small|medium`).
+        let size = URLComponents(url: url, resolvingAgainstBaseURL: false)?
+            .queryItems?.first { $0.name == "size" }?.value ?? "unknown"
+        Analytics.track(.widgetOpened(size: size))
         NotificationCenter.default.post(name: openHome, object: nil)
         return true
     }

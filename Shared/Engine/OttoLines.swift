@@ -51,6 +51,12 @@ enum OttoLines {
         return ["Whenever you're ready. One session is all today asks."]
     }
 
+    /// Otto pointing at the home screen widget, said on Home only while no
+    /// 808 widget is on the home screen (`WidgetPresence`, Melvin,
+    /// 2026-10-07: "is there anywhere where Otto tells the user hey there's
+    /// a widget you can use?"). The steps are iOS's own, in its words.
+    static let widgetNudge = "Want me on your home screen? Hold it down, tap Edit, then Add Widget."
+
     /// The one line the widget shows. A sad Otto says so, because his face
     /// already does; otherwise it is where today stands, which is the thing
     /// somebody glancing at a home screen can act on.
