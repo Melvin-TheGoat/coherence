@@ -149,6 +149,10 @@ struct RootView: View {
                 HatReel()
             } else if ProcessInfo.processInfo.environment["PREVIEW_SHIELD_REEL"] != nil {
                 ShieldReel()
+            } else if ProcessInfo.processInfo.environment["PREVIEW_SHIELD_REPLICA"] != nil {
+                ShieldReplicaPreview()
+            } else if ProcessInfo.processInfo.environment["PREVIEW_SHIELD_REAL"] != nil {
+                ShieldRealPreview()
             } else if let mode = ProcessInfo.processInfo.environment["PREVIEW_STAGE_REEL"] {
                 StageReel(onGreen: mode != "valley")
             } else {
