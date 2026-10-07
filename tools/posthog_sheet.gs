@@ -45,7 +45,8 @@
  * Internal traffic is excluded: locally built installs (App build 1),
  * TestFlight, sideloaded betas, phones flagged as team devices (seven taps on
  * the version line in Settings), Apple's own devices (see APPLE below), and
- * people marked internal in PostHog (founders' old phones, family).
+ * people marked internal in PostHog (founders' old phones). Family and
+ * friends count on purpose.
  * Every time and every day is Detroit time, so Daily and Installs agree.
  */
 
@@ -68,7 +69,7 @@ var APPLE =
   "OR startsWith(ifNull(toString(properties.$ip), ''), '139.178.')";
 
 /**
- * People marked internal in PostHog: founders' old phone records and family
+ * People marked internal in PostHog: founders' old phone records only
  * (person property $internal_or_test_user = true, the same property the
  * project's "Internal / Test users" cohort reads). Marked by hand on
  * 2026-10-07 because the team-device switch only flags events sent after it
@@ -426,7 +427,7 @@ function writeScreens() {
   rows.push(['', 'Finished onboarding', counts['__finished'] || 0,
     '', 'An onboarding_step fires when a screen is LEFT, so each count is people who got past that screen. 1.1 and later only.']);
   rows.push(['', 'Who is counted', '', '',
-    'New installs, plus 1.0 users who never finished 1.0’s onboarding. A 1.0 user who did finish it skips straight to the launch paywall (see the Updaters tab). Apple’s devices, founders’ and family phones are left out. A founder’s NEW install counts until its team-device switch is on.']);
+    'New installs, plus 1.0 users who never finished 1.0’s onboarding. A 1.0 user who did finish it skips straight to the launch paywall (see the Updaters tab). Apple’s devices and the founders’ phones are left out; family and friends count. A founder’s NEW install counts until its team-device switch is on.']);
   write('Screens', rows, [50, 380, 200, 170, 620]);
 }
 
@@ -644,7 +645,7 @@ function writeInstalls() {
   });
   rows.push(['']);
   rows.push(['INSTALLS', "'" + res.results.length, '', '', '', '', '', '', '', '', '', '', '', '', '', '',
-             'A reinstall is a new row. Apple’s devices, founders’ and family phones are left out. A founder’s new install counts until the team-device switch is on (seven taps on the version line in Settings).']);
+             'A reinstall is a new row. Apple’s devices and the founders’ phones are left out; family and friends count. A founder’s new install counts until the team-device switch is on (seven taps on the version line in Settings).']);
   write('Installs', rows, [90, 100, 110, 110, 110, 150, 60, 70, 130, 140, 260, 110, 120, 100, 100, 150, 340, 280], [7, 8], [12, 13, 14, 15]);
 }
 

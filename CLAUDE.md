@@ -2170,8 +2170,11 @@ so nobody reads the numbers the old way again.
 - **Internal-user filter, as of 2026-10-07:** build 1, TestFlight,
   sideloaded, `team_device` true, `$ip` matching `^(17|139\.178)\.`, and
   the cohort "Internal / Test users" (person property
-  `$internal_or_test_user = true`). Founders' old phone records and Melvin's
-  family (Mason, Ohio) are marked by that property. The team-device switch
+  `$internal_or_test_user = true`). Founders' old phone records are marked
+  by that property. **Family COUNTS, on purpose** (Melvin, 2026-10-07: "we
+  want to consider those"): the Mason, Ohio records were marked and then
+  unmarked the same day. Never mark family or friends as internal; only
+  the two founders' own phones. The team-device switch
   (seven taps on the version line in Settings) only flags events sent after
   it is on, so a founder's NEW install must be switched on or marked. **A
   1.0-only record has no person profile and cannot be marked**: the sheet
