@@ -2186,6 +2186,22 @@ so nobody reads the numbers the old way again.
 - `tools/posthog_sheet.gs` was rebuilt for 1.1 on branch `posthog-1.1-audit`:
   Detroit days, Updaters tab, Problems and Apple Watch tabs replace
   Failures and Watch gate, 1.0-only rows gone.
+- **`clearFormats()` does NOT reset a number format Sheets guessed from an
+  earlier value.** After the rebuild, counts on Overview landed where rates
+  used to be and printed 4 as "400%"; footer counts under date columns
+  printed 1899-12-31 and 0:00:00. `write()` now gives EVERY cell an explicit
+  format before and after the values land (`cell()`: numbers as counts,
+  "47.6%" strings as real percentages, everything else as text). Pass plain
+  strings; no leading apostrophes.
+- **Audited cell by cell against PostHog the same day** (xlsx export of the
+  sheet vs independent queries): Installs (42 rows), Updaters, Problems,
+  Daily and Overview all matched. Fixed: 1.0 logged a `trial_started` with
+  every Lifetime purchase (`REAL_TRIAL` leaves it out); the paywall was
+  treated as a branch screen, which blamed its drop-off on the next screen;
+  1.0 sessions (all Watch-measured) were missing from "Watch sessions
+  started"; "Updated" counted 1.0 → 1.0.1; the onboarding-paywall rate mixed
+  1.0 views with 1.1 purchases (now 1.1 only). A trial counts as a purchase
+  the moment it starts: PostHog never hears whether it renewed.
 
 ## RELEASE_CHECKLIST.md GATES EVERY SUBMISSION (2026-09-14)
 

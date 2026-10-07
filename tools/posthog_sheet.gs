@@ -116,6 +116,14 @@ var NOT_INTERNAL =
 /** Version strings starting with this are the old app. */
 var OLD = "startsWith(ifNull(toString(properties.$app_version), ''), '1.0')";
 
+/**
+ * A trial that really started. 1.0 also logged a trial_started with every
+ * Lifetime purchase, which has no trial (the family Lifetime, 2026-09-12),
+ * so a 1.0 trial from someone who bought Lifetime is left out.
+ */
+var REAL_TRIAL = "event = 'trial_started' AND NOT (" + OLD + " AND person_id IN " +
+  "(SELECT person_id FROM events WHERE event = 'purchase' AND toString(properties.plan) = 'lifetime'))";
+
 /** The plans by the app's raw values (`SubscriptionPlan`), as people say them. */
 var PLAN_NAMES = {
   monthly: 'Monthly',
@@ -130,11 +138,12 @@ var PLAN_NAMES = {
 
 /** Where a paywall was shown (`placement` on paywall_viewed and purchase). */
 var PLACE_NAMES = {
-  onboarding: 'Onboarding paywall (new install)',
+  onboarding: 'Onboarding paywall',
   root_lock: 'Launch paywall (updated from 1.0, or plan lapsed)',
   block: 'Block',
   first_session: 'After first session (1.0)',
   results_lock: 'Results lock (1.0)',
+  guided_lock: 'Guided track lock (1.0)',
   results: 'Results',
   otto_lock: 'Otto',
   share_skin_lock: 'Share card'
@@ -268,15 +277,15 @@ function writeOverview() {
     ['Active people', "event = 'Application Opened'", 'people', 'Opened the app at least once'],
     ['Active with a paired Apple Watch', "event = 'Application Opened' AND ifNull(toString(person.properties.has_paired_watch), '') = 'true'", 'people', 'From 1.1 on; 1.0 never sent it'],
     ['New installs', "event = 'Application Installed'", 'people', 'First launch after an App Store install. A reinstall counts again.'],
-    ['Updated the app', "event = 'Application Updated'", 'people', 'First launch of a new version. So far that means 1.0 users moving to 1.1.'],
-    ['Finished onboarding', "event = 'onboarding_completed'", 'people', 'Reached the end of the tour. New installs only: someone updating from 1.0 finished it in 1.0 and never sees it again.'],
+    ['Updated to 1.1 or later', "event = 'Application Updated' AND NOT " + OLD, 'people', 'First launch after updating to 1.1. The same people as the Updaters tab. (Updates from 1.0 to 1.0.1 are not counted.)'],
+    ['Finished onboarding', "event = 'onboarding_completed'", 'people', 'Reached the end of the tour, in any version. Includes the rare updater who never finished 1.0’s onboarding and goes through 1.1’s.'],
     ['Saw a paywall', "event = 'paywall_viewed'", 'people', 'Any placement'],
-    ['Saw the onboarding paywall', "event = 'paywall_viewed' AND toString(properties.placement) = 'onboarding'", 'people', 'Screen 32 of onboarding. Anyone who already pays skips it.'],
+    ['Saw the onboarding paywall (1.1)', "event = 'paywall_viewed' AND toString(properties.placement) = 'onboarding' AND NOT " + OLD, 'people', 'Screen 32 of 1.1’s onboarding: new installs, and updaters who never finished 1.0’s onboarding. Anyone who already pays skips it.'],
     ['Saw the launch paywall', "event = 'paywall_viewed' AND toString(properties.placement) = 'root_lock'", 'people', 'Opened 1.1 without a membership: a 1.0 user updating, or a plan that lapsed'],
     ['Turned down both offers', "event = 'offer_declined' AND toString(properties.rung) = 'half_month'", 'people', 'Said no to the free trial, then to the half-price month, at least once. Some come back: the first 1.1 buyer said no to both, reopened the app, and took the half-price month.'],
-    ['Started a free trial', "event = 'trial_started'", 'people', "3 days, only offered after \"No, I don't want to pay\" (1.0 put a 7-day week on the paywall)"],
-    ['Subscribed (any plan)', "event = 'purchase'", 'people', 'Any plan, with a trial or paid from day one, confirmed by StoreKit'],
-    ['Subscribed in onboarding', "event = 'purchase' AND toString(properties.placement) = 'onboarding'", 'people', 'A new install that bought at screen 32'],
+    ['Started a free trial', REAL_TRIAL, 'people', "1.1: 3 days, offered only after \"No, I don't want to pay\". 1.0: a 7-day week on the paywall."],
+    ['Subscribed (any plan)', "event = 'purchase'", 'people', 'Any plan, Lifetime included, confirmed by StoreKit. A trial counts the moment it starts: PostHog never hears whether it renewed (App Store Connect does).'],
+    ['Subscribed in onboarding (1.1)', "event = 'purchase' AND toString(properties.placement) = 'onboarding' AND NOT " + OLD, 'people', 'Bought at screen 32 of 1.1’s onboarding. (1.0 purchases did not record where they happened.)'],
     ['Subscribed at the launch paywall', "event = 'purchase' AND toString(properties.placement) = 'root_lock'", 'people', 'Mostly 1.0 users updating to 1.1. See the Updaters tab.'],
     ['Pressed Begin', "event = 'session_started'", 'people', 'Started at least one session'],
     ['Completed a session', "event = 'session_completed'", 'people', 'A session was saved, phone timer or Watch'],
@@ -323,23 +332,26 @@ function writeOverview() {
   var c = (query(
     "SELECT " + windows.map(function (w) {
       var inWin = 'installed > now() - INTERVAL ' + w[0] + ' DAY';
-      return 'countIf(' + inWin + '), countIf(' + inWin + ' AND bought), countIf(' + inWin + ' AND sat)';
+      return 'countIf(' + inWin + '), countIf(' + inWin + ' AND bought), countIf(' + inWin + ' AND sat), ' +
+             'countIf(' + inWin + ' AND finished)';
     }).join(', ') +
     " FROM (SELECT person_id, minIf(timestamp, event = 'Application Installed') AS installed, " +
-    "countIf(event = 'purchase') > 0 AS bought, countIf(event = 'session_completed') > 0 AS sat " +
+    "countIf(event = 'purchase') > 0 AS bought, countIf(event = 'session_completed') > 0 AS sat, " +
+    "countIf(event = 'onboarding_completed') > 0 AS finished " +
     "FROM events WHERE timestamp > now() - INTERVAL 3650 DAY AND " + NOT_INTERNAL + " " +
     "GROUP BY person_id HAVING countIf(event = 'Application Installed') > 0)").results || [[]])[0] || [];
 
   rows.push(['']);
   rows.push(['Rate', 'Last 7 days', 'Last 30 days', 'All time', 'Benchmark or note']);
-  rows.push(rate(rows, 'Finished onboarding', 'New installs', 'Onboarding completion',
-    '60 to 80% for short value-first flows'));
-  rows.push(['New install → subscribed', pct(c[1], c[0]), pct(c[4], c[3]), pct(c[7], c[6]),
-    'Of people who installed in the window. Hard paywalls: about 12% median install → paid.']);
-  rows.push(['New install → completed a session', pct(c[2], c[0]), pct(c[5], c[3]), pct(c[8], c[6]),
-    'The activation number. No public benchmark; watch it move.']);
-  rows.push(rate(rows, 'Subscribed in onboarding', 'Saw the onboarding paywall',
-    'Onboarding paywall → subscribed', ''));
+  // c holds four numbers per window: installed, then bought, sat, finished.
+  rows.push(['New install → finished onboarding', pct(c[3], c[0]), pct(c[7], c[4]), pct(c[11], c[8]),
+    'Of people who installed in the window, at any point after. 60 to 80% for short value-first flows.']);
+  rows.push(['New install → subscribed', pct(c[1], c[0]), pct(c[5], c[4]), pct(c[9], c[8]),
+    'Same people. Hard paywalls: about 12% median install → paid.']);
+  rows.push(['New install → completed a session', pct(c[2], c[0]), pct(c[6], c[4]), pct(c[10], c[8]),
+    'Same people. The activation number. No public benchmark; watch it move.']);
+  rows.push(rate(rows, 'Subscribed in onboarding (1.1)', 'Saw the onboarding paywall (1.1)',
+    'Onboarding paywall → subscribed (1.1)', ''));
   rows.push(rate(rows, 'Subscribed at the launch paywall', 'Saw the launch paywall',
     'Launch paywall → subscribed', 'Each 1.0 user meets this paywall once, on their first 1.1 launch'));
   rows.push(rate(rows, 'Subscribed (any plan)', 'Saw a paywall', 'Any paywall → subscribed', ''));
@@ -353,10 +365,10 @@ function writeDaily() {
   var sql =
     "SELECT toDate(toTimeZone(timestamp, '" + TZ + "')) AS day, " +
     "uniqExactIf(person_id, event = 'Application Installed') AS installs, " +
-    "uniqExactIf(person_id, event = 'Application Updated') AS updated, " +
+    "uniqExactIf(person_id, event = 'Application Updated' AND NOT " + OLD + ") AS updated, " +
     "uniqExactIf(person_id, event = 'onboarding_completed') AS finished_onboarding, " +
     "uniqExactIf(person_id, event = 'paywall_viewed') AS saw_paywall, " +
-    "uniqExactIf(person_id, event = 'trial_started') AS trials, " +
+    "uniqExactIf(person_id, " + REAL_TRIAL + ") AS trials, " +
     "uniqExactIf(person_id, event = 'purchase') AS subscribed, " +
     "uniqExactIf(person_id, event = 'session_started') AS pressed_begin, " +
     "countIf(event = 'session_completed') AS sessions_completed, " +
@@ -365,12 +377,12 @@ function writeDaily() {
     "FROM events WHERE timestamp > now() - INTERVAL 31 DAY AND " + NOT_INTERNAL + " " +
     "GROUP BY day ORDER BY day DESC LIMIT 60";
   var res = query(sql);
-  var rows = [['Day (Detroit)', 'New installs', 'Updated the app', 'Finished onboarding',
+  var rows = [['Day (Detroit)', 'New installs', 'Updated to 1.1+', 'Finished onboarding',
                'Saw a paywall', 'Started a trial', 'Subscribed', 'Pressed Begin',
                'Sessions completed', 'Start failures', 'Result missing']];
   res.results.forEach(function (r) { rows.push(r); });
   rows.push(['']);
-  rows.push(['Note', 'Columns 2 to 8 count people, the last three count events. A 1.0 user who updates and buys shows under Updated and Subscribed, never under New installs or Finished onboarding.']);
+  rows.push(['Note', 'Columns 2 to 8 count people, the last three count events. A 1.0 user who updates and buys shows under Updated and Subscribed, never under New installs. A trial counts the day it starts.']);
   write('Daily', rows);
 }
 
@@ -397,10 +409,15 @@ function writeScreens() {
   // version keyed on a letter in the number ("06a") and missed screen 11,
   // which is guarded to regulars only: it showed a 90% "drop" and then
   // -900% on the Watch gate, both pure routing.
+  // The paywall is NOT a branch: 1.1 is premium only, so everyone meets it
+  // except someone who already pays. Treating it as one moved every loss AT
+  // the paywall onto the next screen (2026-10-07: a Dublin install turned
+  // down both offers and left, and the tab blamed the notifications screen).
   var BRANCH = {
-    paywall: 'skipped by anyone who already pays',
     health: 'only with an Apple Watch paired'
   };
+  // Screens a payer skips. A loss is computed, but never a negative one.
+  var PAYERS_SKIP = { paywall: 'Anyone who already pays skips this screen' };
   // Screens where the group of people changes, so "lost vs previous" would
   // count routing as churn. The number is shown; the drop is explained.
   var REBASE = {};
@@ -417,10 +434,11 @@ function writeScreens() {
       if (prev) lost = Math.round((1 - n / prev) * 100) + '%';
       note = REBASE[id];
     } else if (prev) {
-      lost = Math.round((1 - n / prev) * 100) + '%';
+      lost = n <= prev ? Math.round((1 - n / prev) * 100) + '%' : '';
+      if (PAYERS_SKIP[id]) note = PAYERS_SKIP[id];
     }
-    // Apostrophe keeps "33a" and "09" as typed; Sheets would turn "09" into 9.
-    rows.push(["'" + name.split(' ')[0], name.replace(/^\S+\s/, ''), n, lost, note]);
+    // A string, so "09" stays "09" (write() formats every string as text).
+    rows.push([name.split(' ')[0], name.replace(/^\S+\s/, ''), n, lost, note]);
     if (!BRANCH[id]) prev = n;
   });
   rows.push(['']);
@@ -470,11 +488,11 @@ function writeProblems() {
   var res = query(sql);
   var rows = [['Kind', 'Reason', 'Version', 'Times (30d)', 'People', 'What it means']];
   res.results.forEach(function (r) {
-    rows.push([PROBLEM_KIND[r[0]] || r[0], r[1], "'" + r[2], r[3], r[4],
+    rows.push([PROBLEM_KIND[r[0]] || r[0], r[1], r[2], r[3], r[4],
                PROBLEM_MEANING[r[0] + ':' + r[1]] || '']);
   });
   if (!res.results.length) rows.push(['Nothing went wrong in the last 30 days.']);
-  write('Problems', rows, [220, 170, 70, 100, 80, 560], [3]);
+  write('Problems', rows, [220, 170, 70, 100, 80, 560]);
 }
 
 function writePurchases() {
@@ -489,7 +507,7 @@ function writePurchases() {
     "arrayStringConcat(groupUniqArrayIf(toString(properties.placement), event = 'purchase'), ',') AS places, " +
     "argMin(toString(properties.$app_version), timestamp) AS ver, " +
     "countIf(event = 'purchase') AS purchase_events, " +
-    "countIf(event = 'trial_started') AS trial_events, " +
+    "countIf(" + REAL_TRIAL + ") AS trial_events, " +
     "argMinIf(toString(properties.$geoip_country_name), timestamp, " +
     "notEmpty(ifNull(toString(properties.$geoip_country_name), ''))) AS country " +
     "FROM events WHERE event IN ('trial_started', 'purchase') " +
@@ -499,15 +517,18 @@ function writePurchases() {
   var rows = [['Buyer (anonymous id)', 'First bought (Detroit)', 'Plan', 'Where', 'Version',
                'Trial', 'Country', 'Purchase events', 'Note']];
   res.results.forEach(function (r) {
-    rows.push([r[0], r[1], namesOf(r[2], PLAN_NAMES), namesOf(r[3], PLACE_NAMES), "'" + (r[4] || ''),
+    var ver = r[4] || '';
+    // 1.0's purchase events carried no placement; its only paywalls were in
+    // onboarding and on locked results, so the place is unknown, not blank.
+    var where = namesOf(r[3], PLACE_NAMES) || (ver.indexOf('1.0') === 0 ? 'Not recorded (1.0)' : '');
+    rows.push([r[0], r[1], namesOf(r[2], PLAN_NAMES), where, ver,
                r[6] > 0 ? 'Yes' : 'No', r[7] || '', r[5],
                r[5] > 1 ? 'Repeat taps on the buy button, not repeat sales' : '']);
   });
   rows.push(['']);
   rows.push(['BUYERS', res.results.length, '', '', '', '', '', '', 'This is the number that matters.']);
-  var buyersRow = rows.length;
-  rows.push(['Note', 'Before the build after 1.0.1, a Lifetime purchase also logged a trial_started it never had, and repeat taps logged repeat purchases. Trials in 1.1 are 3 days; in 1.0 they were 7.']);
-  write('Purchases', rows, [280, 130, 260, 300, 70, 60, 120, 120, 340], [5], null, [[buyersRow, 2]]);
+  rows.push(['Note', 'A trial counts as a purchase the moment it starts; PostHog never hears whether it renewed or was cancelled, so check App Store Connect for paying members. Trials in 1.1 are 3 days; in 1.0 they were 7. Before the build after 1.0.1, repeat taps logged repeat purchases, and a Lifetime purchase also logged a trial it never had (left out of the Trial column).']);
+  write('Purchases', rows, [280, 130, 260, 300, 70, 60, 120, 120, 340]);
 }
 
 function writeAppleWatch() {
@@ -520,7 +541,9 @@ function writeAppleWatch() {
     "ifNull(toString(person.properties.has_paired_watch), '') = 'true') AS with_watch, " +
     "uniqExactIf(person_id, event = 'watch_switch' AND toString(properties.on) = 'true') AS switched_on, " +
     "uniqExactIf(person_id, event = 'watch_connected') AS first_connection, " +
-    "countIf(event = 'session_started' AND toString(properties.source) IN ('phone_watch', 'watch')) AS watch_started, " +
+    // 1.0 sent source "phone" for a session started on the phone, but
+    // every 1.0 session was measured by the Watch, so all of them count.
+    "countIf(event = 'session_started' AND (toString(properties.source) IN ('phone_watch', 'watch') OR " + OLD + ")) AS watch_started, " +
     "countIf(event = 'session_completed' AND (toString(properties.measured) = 'true' OR " + OLD + ")) AS measured, " +
     "countIf(event = 'watch_fallback') AS fell_back " +
     "FROM events WHERE timestamp > now() - INTERVAL 91 DAY AND " + NOT_INTERNAL + " " +
@@ -622,7 +645,7 @@ function writeInstalls() {
   var C = { id: 0, at: 1, city: 2, region: 3, country: 4, device: 5, os: 6, ver: 7, watch: 8,
             gate: 9, plan: 10, trials: 11, planProp: 12, saidNo: 13, free: 14, finished: 15,
             paywall: 16, began: 17, completed: 18, failed: 19, taps: 20, last: 21 };
-  var rows = [['Date', 'Time (Detroit)', 'City', 'State / region', 'Country', 'iPhone', 'iOS', 'Version',
+  var rows = [['Date', 'Time (Detroit)', 'City', 'State / region', 'Country', 'iPhone', 'iOS', 'Now on',
                'Finished onboarding', 'Apple Watch paired', 'Membership', 'Sessions started',
                'Sessions completed', 'Start failures', 'Purchase taps', 'Last seen', 'Note',
                'PostHog person id']];
@@ -633,10 +656,7 @@ function writeInstalls() {
     if (city === 'Cupertino' || city === 'Sunnyvale' || device === 'iPhone99,7') note = 'Apple (App Review)';
     else if (r[C.taps] > 1) note = 'Repeat taps on the buy button, not repeat sales';
     rows.push([when[0], (when[1] || '').slice(0, 8), city || '(unknown)', r[C.region] || '', r[C.country] || '',
-               // Leading apostrophe: setValues parses strings as user input, so
-               // "1.0" becomes the number 1 and prints "1". The apostrophe is
-               // the same text-forcing prefix a person would type.
-               IPHONE_MODELS[device] || device, "'" + (r[C.os] || ''), "'" + (r[C.ver] || ''),
+               IPHONE_MODELS[device] || device, r[C.os] || '', r[C.ver] || '',
                r[C.finished] > 0 ? 'Yes' : 'No', watchWords(r[C.watch], r[C.gate]),
                membership(r[C.plan], r[C.planProp], r[C.saidNo], r[C.paywall], r[C.free]),
                r[C.began], r[C.completed], r[C.failed], r[C.taps],
@@ -645,8 +665,7 @@ function writeInstalls() {
   rows.push(['']);
   rows.push(['INSTALLS', res.results.length, '', '', '', '', '', '', '', '', '', '', '', '', '', '',
              'A reinstall is a new row. Apple’s devices and the founders’ phones are left out; family and friends count. A founder’s new install counts until the team-device switch is on (seven taps on the version line in Settings).']);
-  write('Installs', rows, [90, 100, 110, 110, 110, 150, 60, 70, 130, 140, 260, 110, 120, 100, 100, 150, 340, 280], [7, 8], [12, 13, 14, 15],
-        [[rows.length, 2]]);
+  write('Installs', rows, [90, 100, 110, 110, 110, 150, 60, 70, 130, 140, 260, 110, 120, 100, 100, 150, 340, 280]);
 }
 
 function writeUpdaters() {
@@ -689,7 +708,7 @@ function writeUpdaters() {
     if (r[C.paywall] > 0) met++;
     rows.push([when[0], (when[1] || '').slice(0, 8), r[C.city] || '(unknown)', r[C.region] || '',
                r[C.country] || '', IPHONE_MODELS[r[C.device]] || r[C.device] || '',
-               "'" + (r[C.os] || ''), "'" + (r[C.firstVer] || ''), "'" + (r[C.ver] || ''),
+               r[C.os] || '', r[C.firstVer] || '', r[C.ver] || '',
                watchWords(r[C.watch], r[C.gate]), words, r[C.began], r[C.completed],
                String(r[C.last] || '').replace('T', ' ').slice(0, 19), r[C.id]]);
   });
@@ -699,9 +718,7 @@ function writeUpdaters() {
   rows.push(['Met the launch paywall', met, '', '', '', '', '', '', '', '', '',
              '', '', '', 'The rest already had a plan (a 1.0 Lifetime, or bought on another phone), or never finished 1.0’s onboarding and go through 1.1’s instead (its paywall counts as onboarding, on the Screens tab).']);
   rows.push(['Subscribed after updating', bought]);
-  var last = rows.length;
-  write('Updaters', rows, [90, 100, 110, 110, 110, 150, 60, 90, 70, 140, 300, 190, 210, 150, 280], [7, 8, 9], [12, 13],
-        [[last - 2, 2], [last - 1, 2], [last, 2]]);
+  write('Updaters', rows, [90, 100, 110, 110, 110, 150, 60, 90, 70, 140, 300, 190, 210, 150, 280]);
 }
 
 // ---------------------------------------------------------------------------
@@ -764,38 +781,47 @@ function find(rows, label) {
   return null;
 }
 
-function write(name, rows, widths, textCols, numCols, countCells) {
+function write(name, rows, widths) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName(name) || ss.insertSheet(name);
-  // Formats too, not just contents: a column that moves (adding Version
-  // shifted Purchase taps into the old Last seen column) otherwise inherits
-  // the old date format and prints 3 as 1900-01-02.
   sheet.clearContents();
   sheet.clearFormats();
   var width = rows.reduce(function (m, r) { return Math.max(m, r.length); }, 1);
-  var padded = rows.map(function (r) { while (r.length < width) r.push(''); return r; });
-  // Columns that hold version strings must be formatted as text BEFORE the
-  // values land, or Sheets reads "1.0" as the number 1 and prints "1".
-  (textCols || []).forEach(function (c) {
-    sheet.getRange(1, c, padded.length, 1).setNumberFormat('@');
+  var cells = rows.map(function (r) {
+    var out = r.slice();
+    while (out.length < width) out.push('');
+    return out.map(cell);
   });
-  // And counts as plain integers. clearFormats alone did not stop a count
-  // landing in a column that once held dates from printing 3 as 1900-01-02.
-  (numCols || []).forEach(function (c) {
-    sheet.getRange(1, c, padded.length, 1).setNumberFormat('0');
-  });
-  sheet.getRange(1, 1, padded.length, width).setValues(padded);
-  // Footer totals sit under the Date and Time columns, and Sheets formats a
-  // bare number there as a date or a time: 39 installs printed "0:00:00",
-  // 1 buyer printed "1899-12-31". Formatting the cell as a plain number
-  // AFTER the value lands is the one fix that cannot be parsed around (a
-  // leading apostrophe was tried first and the cell still read 0:00:00).
-  (countCells || []).forEach(function (rc) {
-    sheet.getRange(rc[0], rc[1]).setNumberFormat('0');
-  });
+  var values = cells.map(function (r) { return r.map(function (c) { return c[0]; }); });
+  var formats = cells.map(function (r) { return r.map(function (c) { return c[1]; }); });
+  // EVERY cell gets an explicit number format, before and after the values
+  // land. clearFormats() does not reset a format Sheets guessed from an
+  // earlier value: after the 1.1 rebuild, counts on Overview rows 20 to 26
+  // sat where rates used to be and printed 4 as "400%", and footer counts
+  // under the Date and Time columns printed as 1899-12-31 and 0:00:00.
+  // Strings are formatted as text BEFORE they land, so "1.0", "09" and
+  // "2026-10-07" are never parsed into a number or a date.
+  var range = sheet.getRange(1, 1, values.length, width);
+  range.setNumberFormats(formats);
+  range.setValues(values);
+  range.setNumberFormats(formats);
   sheet.getRange(1, 1, 1, width).setFontWeight('bold');
   sheet.setFrozenRows(1);
   if (widths) widths.forEach(function (w, i) { sheet.setColumnWidth(i + 1, w); });
+}
+
+/**
+ * [value, number format] for one cell. Numbers print as counts, "47.6%"
+ * (from pct and rate) becomes a real percentage, everything else is text.
+ */
+function cell(v) {
+  if (typeof v === 'number') {
+    return [v, Math.round(v) === v ? '0' : '0.0##'];
+  }
+  if (v === null || v === undefined) return ['', '@'];
+  var str = String(v);
+  if (/^-?\d+(\.\d+)?%$/.test(str)) return [parseFloat(str) / 100, '0.0%'];
+  return [str.replace(/^'/, ''), '@'];
 }
 
 function stamp(failed) {
