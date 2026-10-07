@@ -6977,7 +6977,21 @@ https://claude.ai/artifact/Tj4c8VJkgrp1frhMZuEGYB).
 - **Apple's limit decides the design:** a shield is one solid colour, a
   small icon, a title, a subtitle and two buttons. No images, gradients or
   motion, so never mock up a shield the phone cannot draw, in an ad least of
-  all. `backgroundBlurStyle` is nil so the colour is solid.
+  all. **`backgroundBlurStyle: nil` does NOT make the colour solid**
+  (corrected 2026-10-07, measured on Apple's own shield controller): iOS
+  then lays `.systemThickMaterial` over it, so every colour came out
+  near-white on a light-mode phone and near-black on a dark one. Each palette
+  now names a blur that looks the same in both modes plus a "paint" colour
+  found by rendering, so iOS draws the approved background.
+- **iOS 26 draws the shield's primary button as Liquid Glass and mixes half
+  the button's fill into its label**, lighter in dark mode, darker in light.
+  A dark label on a gold or white button came out a pale tint of the button
+  (Melvin, 2026-10-07: "you can barely read it"). Every primary button is now
+  a near-black fill with a white label, the one fixed pair that survives
+  either shift; Close uses the system label colour. `ShieldReplica` builds the
+  shield the way iOS does, so the in-app stand-ins reproduce this; the old
+  solid-colour stand-ins hid it. `PREVIEW_SHIELD_REPLICA=<i>` /
+  `PREVIEW_SHIELD_REAL=<i>` (DEBUG, simulator) show one palette.
 - **The pick is kept for 90 s** (`BlockShieldWords.look`, App Group key
   `block.shieldLook.v1`, written only by the shield extension): Screen Time
   asks for the configuration more than once while the shield is up and
