@@ -7,12 +7,26 @@
  *
  * Tabs it writes:
  *   Overview      the KPIs for the last 7 days, last 30 days, and all time
- *   Daily         one row per day for the last 30 days
+ *   Daily         one row per day (Detroit time) for the last 30 days
  *   Screens       every onboarding screen, in order, with users and drop-off
- *   Failures      why sessions failed to start, last 30 days
- *   Purchases     each trial and purchase (plan, day, store or TestFlight)
- *   Watch gate    how many installs own a Watch, by week
- *   Installs      one row per install: when, where, phone, how far they got
+ *   Problems      what went wrong, by kind and reason, last 30 days
+ *   Purchases     one row per buyer: plan, where they bought, which version
+ *   Apple Watch   paired Watches, the measuring switch, measured sessions, by week
+ *   Installs      one row per new install: when, where, phone, how far they got
+ *   Updaters      one row per person who updated from 1.0: did they subscribe
+ *
+ * Rebuilt for 1.1 (2026-10-07). Two kinds of people reach the money now, and
+ * the sheet used to see only one. A NEW install goes through onboarding and
+ * meets the paywall at screen 32 (placement "onboarding"). A 1.0 user who
+ * UPDATES has already finished onboarding, so 1.1 opens straight on the
+ * launch paywall (placement "root_lock"): they never fire Application
+ * Installed or onboarding_completed again. The first real 1.1 sale was one of
+ * those, and every tab built on installs missed him. Hence the Updaters tab
+ * and the "update paywall" rows.
+ *
+ * 1.0's events that 1.1 no longer sends (watch_gate, free_tier_entered) are
+ * gone from every tab. The Failures and Watch gate tabs are replaced by
+ * Problems and Apple Watch and are deleted on the next refresh.
  *
  * SETUP, about five minutes.
  *  1. PostHog → click your avatar → Settings → Personal API keys → Create.
@@ -28,25 +42,76 @@
  *  5. Pick `installTrigger` and Run once. From now on it refreshes hourly.
  *     A "808" menu also appears in the sheet with a Refresh now item.
  *
- * Internal traffic is excluded the same way the PostHog project filter does
- * it: locally built installs (App build 1), TestFlight, and phones flagged
- * as team devices (seven taps on the version line in Settings, ships 1.0.1).
+ * Internal traffic is excluded: locally built installs (App build 1),
+ * TestFlight, sideloaded betas, phones flagged as team devices (seven taps on
+ * the version line in Settings), and Apple's own devices (see APPLE below).
+ * Every time and every day is Detroit time, so Daily and Installs agree.
  */
 
 var PROJECT_ID = '562990';
 var HOST = 'https://us.posthog.com';
+var TZ = 'America/Detroit';
 
 /**
- * The same rule as PostHog's "internal and test users" filter: locally built
- * (build 1), TestFlight, sideloaded (a beta installed over the cable), or a
- * phone flagged as a team device. ifNull because a property an old build never
- * sent must read as "not internal", not as unknown.
+ * Apple's devices, by network. 17.0.0.0/8 is Apple's own (the App Review
+ * reviewers: Dallas, Tokyo, Sunnyvale). 139.178.x is Equinix Metal, where
+ * Apple's automated test phones show up: they GeoIP to Cupertino or to no city
+ * at all, run iOS betas, and tap Back and forth between the first two
+ * onboarding screens every 22 seconds. Checked 2026-10-07: all 14 people ever
+ * seen from either network installed, bought nothing and never meditated.
+ * They were counting as installs, and one of them (iPhone SE, 2026-10-06
+ * 7:53 PM) was mistaken for the first 1.1 buyer.
+ */
+var APPLE =
+  "startsWith(ifNull(toString(properties.$ip), ''), '17.') " +
+  "OR startsWith(ifNull(toString(properties.$ip), ''), '139.178.')";
+
+/**
+ * PostHog's "internal and test users" filter (build 1, TestFlight,
+ * sideloaded), plus team devices and Apple's devices, which the PostHog
+ * filter does not have. ifNull because a property an old build never sent
+ * must read as "not internal", not as unknown.
  */
 var NOT_INTERNAL =
   "NOT (ifNull(toString(properties.$app_build), '') = '1' " +
   "OR ifNull(toString(properties.$is_testflight), '') = 'true' " +
   "OR ifNull(toString(properties.$is_sideloaded), '') = 'true' " +
-  "OR ifNull(toString(properties.team_device), '') = 'true')";
+  "OR ifNull(toString(properties.team_device), '') = 'true' " +
+  "OR " + APPLE + ")";
+
+/** Version strings starting with this are the old app. */
+var OLD = "startsWith(ifNull(toString(properties.$app_version), ''), '1.0')";
+
+/** The plans by the app's raw values (`SubscriptionPlan`), as people say them. */
+var PLAN_NAMES = {
+  monthly: 'Monthly',
+  yearly: 'Yearly',
+  lifetime: 'Lifetime',
+  monthTrial: 'Monthly, 3-day free trial',
+  yearTrial: 'Yearly, 3-day free trial',
+  monthHalf: 'Monthly half price ($3.99), 3-day trial',
+  yearHalf: 'Yearly, first year half price',
+  none: ''
+};
+
+/** Where a paywall was shown (`placement` on paywall_viewed and purchase). */
+var PLACE_NAMES = {
+  onboarding: 'Onboarding paywall (new install)',
+  root_lock: 'Launch paywall (updated from 1.0, or plan lapsed)',
+  block: 'Block',
+  first_session: 'After first session (1.0)',
+  results_lock: 'Results lock (1.0)',
+  results: 'Results',
+  otto_lock: 'Otto',
+  share_skin_lock: 'Share card'
+};
+
+function planName(p) { return p in PLAN_NAMES ? PLAN_NAMES[p] : p; }
+
+function namesOf(csv, map) {
+  return String(csv || '').split(',').filter(String)
+    .map(function (x) { return map[x] || x; }).join(', ');
+}
 
 /**
  * Numbered human names for the onboarding screens, in the order 1.1 shows
@@ -131,15 +196,32 @@ function refreshAll() {
   // at the end so the run shows as Failed rather than passing quietly.
   var tabs = [
     ['Overview', writeOverview], ['Daily', writeDaily], ['Screens', writeScreens],
-    ['Failures', writeFailures], ['Purchases', writePurchases],
-    ['Watch gate', writeWatchGate], ['Installs', writeInstalls],
+    ['Problems', writeProblems], ['Purchases', writePurchases],
+    ['Apple Watch', writeAppleWatch], ['Installs', writeInstalls],
+    ['Updaters', writeUpdaters],
   ];
   var failed = [];
   tabs.forEach(function (t) {
     try { t[1](); } catch (e) { failed.push(t[0] + ': ' + e.message); }
   });
+  removeTabs(OBSOLETE_TABS);
   stamp(failed);
   if (failed.length) throw new Error(failed.join(' | '));
+}
+
+/**
+ * Tabs earlier versions wrote that this one does not. Left in place they keep
+ * their last numbers forever and read as current. Everything on them came
+ * from PostHog and still lives there.
+ */
+var OBSOLETE_TABS = ['Failures', 'Watch gate'];
+
+function removeTabs(names) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  names.forEach(function (n) {
+    var s = ss.getSheetByName(n);
+    if (s) ss.deleteSheet(s);
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -147,23 +229,35 @@ function refreshAll() {
 
 function writeOverview() {
   var rows = [['Metric', 'Last 7 days', 'Last 30 days', 'All time', 'What it means']];
+  // [label, condition, 'people' or 'events', what it means]
   var metrics = [
-    ['Installs', "event = 'Application Installed'", 'people', 'First launch after an App Store install'],
-    ['Finished onboarding', "event = 'onboarding_completed'", 'people', 'Reached the end of the interview and offer'],
-    ['Said they have a Watch', "event = 'watch_gate' AND properties.outcome = 'hasWatch'", 'people', 'The only installs 808 can measure for'],
+    ['Active people', "event = 'Application Opened'", 'people', 'Opened the app at least once'],
+    ['Active with a paired Apple Watch', "event = 'Application Opened' AND ifNull(toString(person.properties.has_paired_watch), '') = 'true'", 'people', 'From 1.1 on; 1.0 never sent it'],
+    ['New installs', "event = 'Application Installed'", 'people', 'First launch after an App Store install. A reinstall counts again.'],
+    ['Updated the app', "event = 'Application Updated'", 'people', 'First launch of a new version. So far that means 1.0 users moving to 1.1.'],
+    ['Finished onboarding', "event = 'onboarding_completed'", 'people', 'Reached the end of the tour. New installs only: someone updating from 1.0 finished it in 1.0 and never sees it again.'],
+    ['Saw a paywall', "event = 'paywall_viewed'", 'people', 'Any placement'],
+    ['Saw the onboarding paywall', "event = 'paywall_viewed' AND toString(properties.placement) = 'onboarding'", 'people', 'Screen 32 of onboarding. Anyone who already pays skips it.'],
+    ['Saw the launch paywall', "event = 'paywall_viewed' AND toString(properties.placement) = 'root_lock'", 'people', 'Opened 1.1 without a membership: a 1.0 user updating, or a plan that lapsed'],
+    ['Turned down both offers', "event = 'offer_declined' AND toString(properties.rung) = 'half_month'", 'people', 'Said no to the free trial, then to the half-price month, at least once. Some come back: the first 1.1 buyer said no to both, reopened the app, and took the half-price month.'],
+    ['Started a free trial', "event = 'trial_started'", 'people', "3 days, only offered after \"No, I don't want to pay\" (1.0 put a 7-day week on the paywall)"],
+    ['Subscribed (any plan)', "event = 'purchase'", 'people', 'Any plan, with a trial or paid from day one, confirmed by StoreKit'],
+    ['Subscribed in onboarding', "event = 'purchase' AND toString(properties.placement) = 'onboarding'", 'people', 'A new install that bought at screen 32'],
+    ['Subscribed at the launch paywall', "event = 'purchase' AND toString(properties.placement) = 'root_lock'", 'people', 'Mostly 1.0 users updating to 1.1. See the Updaters tab.'],
     ['Pressed Begin', "event = 'session_started'", 'people', 'Started at least one session'],
-    ['Completed a session', "event = 'session_completed'", 'people', 'A result was saved on the phone'],
+    ['Completed a session', "event = 'session_completed'", 'people', 'A session was saved, phone timer or Watch'],
     ['Sessions completed (count)', "event = 'session_completed'", 'events', 'Total sessions, not people'],
-    ['Saw their score', "event = 'result_viewed'", 'people', 'Opened a result with measurements behind it'],
-    ['Result missing (ALARM)', "event = 'result_missing'", 'events', 'Opened a result with no measurements. Should be zero.'],
-    ['Sessions failed to start', "event = 'session_start_failed'", 'events', 'Watch unreachable, not paired, no heart rate…'],
-    ['Sessions too short to score', "event = 'session_discarded' AND toString(properties.reason) = 'too_short'", 'events', 'Begin then End inside 30 seconds. An accident, not a failure; nothing was saved.'],
-    ['Sessions the Watch could not read', "event = 'session_discarded' AND toString(properties.reason) = 'unreadable'", 'events', 'Ran 30 seconds or more but came back with no readings. Worth watching.'],
-    ['Tapped a lock', "event = 'locked_tapped'", 'people', 'Wanted to see something behind the paywall'],
-    ['Saw the paywall', "event = 'paywall_viewed'", 'people', ''],
-    ['Started a trial', "event = 'trial_started'", 'people', '7-day free week on monthly or yearly'],
-    ['Purchased (any plan)', "event = 'purchase'", 'people', 'Trial start or lifetime buy confirmed by StoreKit'],
-    ['Settled on free', "event = 'free_tier_entered'", 'people', 'Declined every rung of the ladder'],
+    ['Sessions a Watch measured (count)', "event = 'session_completed' AND (toString(properties.measured) = 'true' OR " + OLD + ")", 'events', 'Heart rate and stillness came back. Every 1.0 session was a Watch session.'],
+    ['Sessions recorded by hand (count)', "event = 'session_logged'", 'events', 'Done without the app and typed in afterwards'],
+    ['Opened Watch measurements', "event = 'result_viewed'", 'people', 'Watch sessions only: a phone session has no measurements to open'],
+    ['Result missing (ALARM)', "event = 'result_missing'", 'events', 'Opened measurements that are not on this phone. Should be zero.'],
+    ['Sessions failed to start', "event = 'session_start_failed'", 'events', 'Apple Watch sessions only; see the Problems tab. A phone session cannot fail to start.'],
+    ['Watch sessions carried on the phone', "event = 'watch_fallback'", 'events', 'Asked the Watch to measure, it never confirmed, so the session ran unmeasured on the phone'],
+    ['Sessions too short to count', "event = 'session_discarded' AND toString(properties.reason) = 'too_short'", 'events', 'Under 1 minute in 1.1 (30 seconds in 1.0). An accident, not a failure; nothing was saved.'],
+    ['Sessions voided for leaving 808', "event = 'session_discarded' AND toString(properties.reason) = 'left_app'", 'events', 'Left 808 mid session and did not come back in time'],
+    ['Sessions the Watch could not read', "event = 'session_discarded' AND toString(properties.reason) = 'unreadable'", 'events', 'Long enough, but came back with no readings'],
+    ['Made a Friends profile', "event = 'profile_created'", 'people', ''],
+    ['Bought a hat', "event = 'hat_bought'", 'people', 'Spent points in the Shop'],
     ['Shared a card', "event = 'share_opened'", 'people', ''],
     ['Deleted account', "event = 'account_deleted'", 'people', '']
   ];
@@ -182,39 +276,67 @@ function writeOverview() {
         : 'countIf(' + cond + ') AS m' + i + '_' + w[1]);
     });
   });
-  var res = query('SELECT ' + selects.join(', ') + ' FROM events WHERE ' + NOT_INTERNAL);
+  var res = query('SELECT ' + selects.join(', ') + ' FROM events WHERE ' +
+                  'timestamp > now() - INTERVAL 3650 DAY AND ' + NOT_INTERNAL);
   var v = (res.results && res.results[0]) || [];
 
   metrics.forEach(function (m, i) {
     rows.push([m[0], v[i * 3] || 0, v[i * 3 + 1] || 0, v[i * 3 + 2] || 0, m[3]]);
   });
-  // Derived rates, the ones the launch plan gates spending on.
+
+  // The two rates that need a person's whole story (installed in the window,
+  // then bought or meditated at any point after), not a count of events.
+  var c = (query(
+    "SELECT " + windows.map(function (w) {
+      var inWin = 'installed > now() - INTERVAL ' + w[0] + ' DAY';
+      return 'countIf(' + inWin + '), countIf(' + inWin + ' AND bought), countIf(' + inWin + ' AND sat)';
+    }).join(', ') +
+    " FROM (SELECT person_id, minIf(timestamp, event = 'Application Installed') AS installed, " +
+    "countIf(event = 'purchase') > 0 AS bought, countIf(event = 'session_completed') > 0 AS sat " +
+    "FROM events WHERE timestamp > now() - INTERVAL 3650 DAY AND " + NOT_INTERNAL + " " +
+    "GROUP BY person_id HAVING countIf(event = 'Application Installed') > 0)").results || [[]])[0] || [];
+
   rows.push(['']);
-  rows.push(['Rate', 'Last 7 days', 'Last 30 days', 'All time', 'Benchmark (health & fitness, 2026)']);
-  rows.push(rate(rows, 'Finished onboarding', 'Installs', 'Onboarding completion', '60 to 80% for short value-first flows'));
-  rows.push(rate(rows, 'Completed a session', 'Installs', 'Install → first session', 'The activation number. No public benchmark; watch it move.'));
-  rows.push(rate(rows, 'Started a trial', 'Installs', 'Install → trial', '9.5% globally, 14.5% North America'));
-  rows.push(rate(rows, 'Purchased (any plan)', 'Saw the paywall', 'Paywall → purchase', ''));
-  write('Overview', rows, [220, 110, 110, 110, 420]);
+  rows.push(['Rate', 'Last 7 days', 'Last 30 days', 'All time', 'Benchmark or note']);
+  rows.push(rate(rows, 'Finished onboarding', 'New installs', 'Onboarding completion',
+    '60 to 80% for short value-first flows'));
+  rows.push(['New install → subscribed', pct(c[1], c[0]), pct(c[4], c[3]), pct(c[7], c[6]),
+    'Of people who installed in the window. Hard paywalls: about 12% median install → paid.']);
+  rows.push(['New install → completed a session', pct(c[2], c[0]), pct(c[5], c[3]), pct(c[8], c[6]),
+    'The activation number. No public benchmark; watch it move.']);
+  rows.push(rate(rows, 'Subscribed in onboarding', 'Saw the onboarding paywall',
+    'Onboarding paywall → subscribed', ''));
+  rows.push(rate(rows, 'Subscribed at the launch paywall', 'Saw the launch paywall',
+    'Launch paywall → subscribed', 'Each 1.0 user meets this paywall once, on their first 1.1 launch'));
+  rows.push(rate(rows, 'Subscribed (any plan)', 'Saw a paywall', 'Any paywall → subscribed', ''));
+  write('Overview', rows, [260, 110, 110, 110, 520]);
 }
 
 function writeDaily() {
+  // Detroit days, the same clock as the Installs tab. The project itself runs
+  // on UTC, so a sale at 11:30 PM Detroit used to land on the next day here
+  // while Installs showed the evening before.
   var sql =
-    "SELECT toDate(timestamp) AS day, " +
+    "SELECT toDate(toTimeZone(timestamp, '" + TZ + "')) AS day, " +
     "uniqExactIf(person_id, event = 'Application Installed') AS installs, " +
+    "uniqExactIf(person_id, event = 'Application Updated') AS updated, " +
     "uniqExactIf(person_id, event = 'onboarding_completed') AS finished_onboarding, " +
+    "uniqExactIf(person_id, event = 'paywall_viewed') AS saw_paywall, " +
+    "uniqExactIf(person_id, event = 'trial_started') AS trials, " +
+    "uniqExactIf(person_id, event = 'purchase') AS subscribed, " +
     "uniqExactIf(person_id, event = 'session_started') AS pressed_begin, " +
     "countIf(event = 'session_completed') AS sessions_completed, " +
     "countIf(event = 'session_start_failed') AS start_failures, " +
-    "countIf(event = 'result_missing') AS result_missing, " +
-    "countIf(event = 'trial_started') AS trials, " +
-    "countIf(event = 'purchase') AS purchases " +
-    "FROM events WHERE timestamp > now() - INTERVAL 30 DAY AND " + NOT_INTERNAL + " " +
+    "countIf(event = 'result_missing') AS result_missing " +
+    "FROM events WHERE timestamp > now() - INTERVAL 31 DAY AND " + NOT_INTERNAL + " " +
     "GROUP BY day ORDER BY day DESC LIMIT 60";
   var res = query(sql);
-  var rows = [['Day', 'Installs', 'Finished onboarding', 'Pressed Begin', 'Sessions completed',
-               'Start failures', 'Result missing', 'Trials', 'Purchases']];
+  var rows = [['Day (Detroit)', 'New installs', 'Updated the app', 'Finished onboarding',
+               'Saw a paywall', 'Started a trial', 'Subscribed', 'Pressed Begin',
+               'Sessions completed', 'Start failures', 'Result missing']];
   res.results.forEach(function (r) { rows.push(r); });
+  rows.push(['']);
+  rows.push(['Note', 'Columns 2 to 8 count people, the last three count events. A 1.0 user who updates and buys shows under Updated and Subscribed, never under New installs or Finished onboarding.']);
   write('Daily', rows);
 }
 
@@ -230,7 +352,7 @@ function writeScreens() {
     "AND timestamp > now() - INTERVAL 30 DAY AND " + NOT_INTERNAL + " " +
     // 1.1 onwards only: 1.0 used some of the same step ids (relief, breath,
     // stress) for different screens in a different order.
-    "AND NOT startsWith(ifNull(toString(properties.$app_version), ''), '1.0') " +
+    "AND NOT " + OLD + " " +
     "GROUP BY step ORDER BY people DESC LIMIT 100";
   var res = query(sql);
   var counts = {};
@@ -271,26 +393,54 @@ function writeScreens() {
   rows.push(['', 'Finished onboarding', counts['__finished'] || 0,
     '', 'An onboarding_step fires when a screen is LEFT, so each count is people who got past that screen. 1.1 and later only.']);
   rows.push(['', 'Who is counted', '', '',
-    'Founders’ App Store installs and Apple’s reviewers are INCLUDED (see the Installs tab Note column). Read small numbers with that in mind.']);
+    'New installs only: a 1.0 user who updates skips onboarding (see the Updaters tab). Apple’s devices are left out; founders’ App Store installs are in unless the phone is flagged as a team device.']);
   write('Screens', rows, [50, 380, 200, 170, 620]);
 }
 
-function writeFailures() {
+/** What each problem means, keyed "event:reason". */
+var PROBLEM_MEANING = {
+  'session_start_failed:heartRateUnavailable': 'Heart rate could not be read: Health permission off on the Watch, or the Watch was not on a wrist',
+  'session_start_failed:watchNotPaired': 'No Apple Watch paired to this iPhone (in 1.0 every session needed one)',
+  'session_start_failed:watchAppNotInstalled': '808 is not installed on the Watch yet',
+  'session_start_failed:watchUnreachable': 'Watch is paired but did not answer (out of range, asleep, or Bluetooth off)',
+  'session_start_failed:workoutNotAuthorized': 'Workout permission denied on the Watch',
+  'watch_fallback:no_ack': 'The Watch never confirmed it started; the session carried on unmeasured on the phone',
+  'watch_fallback:launch_failed': 'The phone could not open 808 on the Watch; the session carried on on the phone',
+  'watch_fallback:ended_before_start': 'Ended before the Watch answered',
+  'session_discarded:too_short': 'Under the minimum (1 minute in 1.1, 30 seconds in 1.0). An accidental Begin and End, not a failure.',
+  'session_discarded:unreadable': 'Long enough, but the Watch came back with no readings',
+  'session_discarded:left_app': 'Left 808 mid session and did not come back in time',
+  'purchase_failed:cancelled': 'Closed Apple’s purchase sheet. A change of mind, not an error.',
+  'purchase_failed:pending': 'Waiting on Ask to Buy or a bank check',
+  'purchase_failed:failed': 'StoreKit could not complete it. Worth a look.',
+  'result_missing:': 'Opened Watch measurements that are not on this phone (they never move between devices). Should be zero.'
+};
+
+var PROBLEM_KIND = {
+  session_start_failed: 'Session could not start',
+  watch_fallback: 'Watch fell back to the phone',
+  session_discarded: 'Session not saved',
+  purchase_failed: 'Purchase did not go through',
+  result_missing: 'Measurements missing'
+};
+
+function writeProblems() {
   var sql =
-    "SELECT toString(properties.reason) AS reason, count() AS events, count(DISTINCT person_id) AS people " +
-    "FROM events WHERE event = 'session_start_failed' AND timestamp > now() - INTERVAL 30 DAY AND " + NOT_INTERNAL + " " +
-    "GROUP BY reason ORDER BY events DESC LIMIT 50";
+    "SELECT event, ifNull(toString(properties.reason), '') AS reason, " +
+    "ifNull(toString(properties.$app_version), '') AS ver, " +
+    "count() AS times, count(DISTINCT person_id) AS people " +
+    "FROM events WHERE event IN ('session_start_failed', 'watch_fallback', 'session_discarded', " +
+    "'purchase_failed', 'result_missing') " +
+    "AND timestamp > now() - INTERVAL 30 DAY AND " + NOT_INTERNAL + " " +
+    "GROUP BY event, reason, ver ORDER BY times DESC LIMIT 100";
   var res = query(sql);
-  var meaning = {
-    heartRateUnavailable: 'Heart rate could not be read: Health permission denied on the Watch, or the Watch was not on a wrist',
-    watchNotPaired: 'No Apple Watch paired to this iPhone',
-    watchAppNotInstalled: '808 is not installed on the Watch yet',
-    watchUnreachable: 'Watch is paired but did not answer (out of range, asleep, or Bluetooth off)',
-    workoutNotAuthorized: 'Workout permission denied on the Watch'
-  };
-  var rows = [['Reason', 'Failures (30d)', 'People', 'What it means']];
-  res.results.forEach(function (r) { rows.push([r[0], r[1], r[2], meaning[r[0]] || '']); });
-  write('Failures', rows, [200, 120, 90, 520]);
+  var rows = [['Kind', 'Reason', 'Version', 'Times (30d)', 'People', 'What it means']];
+  res.results.forEach(function (r) {
+    rows.push([PROBLEM_KIND[r[0]] || r[0], r[1], "'" + r[2], r[3], r[4],
+               PROBLEM_MEANING[r[0] + ':' + r[1]] || '']);
+  });
+  if (!res.results.length) rows.push(['Nothing went wrong in the last 30 days.']);
+  write('Problems', rows, [220, 170, 70, 100, 80, 560], [3]);
 }
 
 function writePurchases() {
@@ -300,24 +450,54 @@ function writePurchases() {
   // (one person fired four in eighteen seconds). The app stopped doing that
   // in the build after 1.0.1; the extra-taps column keeps the old data honest.
   var sql =
-    "SELECT person_id, min(toDate(timestamp)) AS first_bought, " +
-    "arrayStringConcat(groupUniqArray(toString(properties.plan)), ', ') AS plans, " +
+    "SELECT person_id, toDate(toTimeZone(min(timestamp), '" + TZ + "')) AS first_bought, " +
+    "arrayStringConcat(groupUniqArray(toString(properties.plan)), ',') AS plans, " +
+    "arrayStringConcat(groupUniqArrayIf(toString(properties.placement), event = 'purchase'), ',') AS places, " +
+    "argMin(toString(properties.$app_version), timestamp) AS ver, " +
     "countIf(event = 'purchase') AS purchase_events, " +
-    "countIf(event = 'trial_started') AS trial_events " +
-    "FROM events WHERE event IN ('trial_started', 'purchase') AND " + NOT_INTERNAL + " " +
+    "countIf(event = 'trial_started') AS trial_events, " +
+    "argMinIf(toString(properties.$geoip_country_name), timestamp, " +
+    "notEmpty(ifNull(toString(properties.$geoip_country_name), ''))) AS country " +
+    "FROM events WHERE event IN ('trial_started', 'purchase') " +
+    "AND timestamp > now() - INTERVAL 3650 DAY AND " + NOT_INTERNAL + " " +
     "GROUP BY person_id ORDER BY first_bought DESC LIMIT 500";
   var res = query(sql);
-  var rows = [['Buyer (anonymous id)', 'First bought', 'Plan', 'Purchase events',
-               'Trial events', 'Note']];
+  var rows = [['Buyer (anonymous id)', 'First bought (Detroit)', 'Plan', 'Where', 'Version',
+               'Trial', 'Country', 'Purchase events', 'Note']];
   res.results.forEach(function (r) {
-    var plans = String(r[2] || '').replace(/(^, )|(, $)/g, '');
-    rows.push([r[0], r[1], plans, r[3], r[4],
-               r[3] > 1 ? 'Repeat taps on the buy button, not repeat sales' : '']);
+    rows.push([r[0], r[1], namesOf(r[2], PLAN_NAMES), namesOf(r[3], PLACE_NAMES), "'" + (r[4] || ''),
+               r[6] > 0 ? 'Yes' : 'No', r[7] || '', r[5],
+               r[5] > 1 ? 'Repeat taps on the buy button, not repeat sales' : '']);
   });
   rows.push(['']);
-  rows.push(['BUYERS', res.results.length, '', '', '', 'This is the number that matters.']);
-  rows.push(['Note', 'Before the build after 1.0.1, a Lifetime purchase also logged a trial_started it never had, and repeat taps logged repeat purchases.']);
-  write('Purchases', rows, [280, 110, 140, 130, 110, 380]);
+  rows.push(['BUYERS', res.results.length, '', '', '', '', '', '', 'This is the number that matters.']);
+  rows.push(['Note', 'Before the build after 1.0.1, a Lifetime purchase also logged a trial_started it never had, and repeat taps logged repeat purchases. Trials in 1.1 are 3 days; in 1.0 they were 7.']);
+  write('Purchases', rows, [280, 130, 260, 300, 70, 60, 120, 120, 340], [5]);
+}
+
+function writeAppleWatch() {
+  // Weekly, Monday start, Detroit time. The paired-Watch fact is a person
+  // property 1.1 sets at launch, so weeks before 1.1 read zero there.
+  var sql =
+    "SELECT toStartOfWeek(toTimeZone(timestamp, '" + TZ + "'), 1) AS week, " +
+    "uniqExactIf(person_id, event = 'Application Opened') AS active, " +
+    "uniqExactIf(person_id, event = 'Application Opened' AND " +
+    "ifNull(toString(person.properties.has_paired_watch), '') = 'true') AS with_watch, " +
+    "uniqExactIf(person_id, event = 'watch_switch' AND toString(properties.on) = 'true') AS switched_on, " +
+    "uniqExactIf(person_id, event = 'watch_connected') AS first_connection, " +
+    "countIf(event = 'session_started' AND toString(properties.source) IN ('phone_watch', 'watch')) AS watch_started, " +
+    "countIf(event = 'session_completed' AND (toString(properties.measured) = 'true' OR " + OLD + ")) AS measured, " +
+    "countIf(event = 'watch_fallback') AS fell_back " +
+    "FROM events WHERE timestamp > now() - INTERVAL 91 DAY AND " + NOT_INTERNAL + " " +
+    "GROUP BY week ORDER BY week DESC LIMIT 20";
+  var res = query(sql);
+  var rows = [['Week of (Monday)', 'Active people', 'Active with a paired Watch',
+               'Turned measuring on', 'First Watch connection', 'Watch sessions started',
+               'Sessions a Watch measured', 'Fell back to the phone']];
+  res.results.forEach(function (r) { rows.push(r); });
+  rows.push(['']);
+  rows.push(['Note', 'Columns 2 to 5 count people, the rest count sessions. 1.0 asked "Do you have an Apple Watch?"; 1.1 detects a paired Watch instead, so the old Watch gate tab is gone.']);
+  write('Apple Watch', rows, [130, 110, 170, 150, 160, 160, 170, 160]);
 }
 
 /** iPhone model codes → names, for the Installs tab. Unknown codes print as-is. */
@@ -332,13 +512,55 @@ var IPHONE_MODELS = {
   'iPhone18,4': 'iPhone Air', 'iPhone99,7': 'not a shipping phone (Apple internal)'
 };
 
+/**
+ * One person's membership, in words, for the Installs and Updaters tabs.
+ * `plan` is the last plan they bought on this install, `planProp` the plan
+ * the app last reported for them (it also knows a membership bought on
+ * another install or restored from the Apple ID, which never fires
+ * `purchase` here).
+ */
+function membership(plan, planProp, saidNoToBoth, sawPaywall, freeTier1_0) {
+  if (plan) return planName(plan);
+  if (planProp && planProp !== 'none') return 'Already a member: ' + planName(planProp);
+  if (saidNoToBoth > 0) return 'Said no to both offers';
+  if (sawPaywall > 0) return 'Saw the paywall, did not subscribe';
+  if (freeTier1_0 > 0) return 'Free tier (1.0)';
+  return 'Did not reach the paywall';
+}
+
+/** Common per-person columns for the Installs and Updaters queries. */
+function personColumns() {
+  return (
+    "argMinIf(toString(properties.$geoip_city_name), timestamp, notEmpty(ifNull(toString(properties.$geoip_city_name), ''))) AS city, " +
+    "argMinIf(toString(properties.$geoip_subdivision_1_name), timestamp, notEmpty(ifNull(toString(properties.$geoip_city_name), ''))) AS region, " +
+    "argMinIf(toString(properties.$geoip_country_name), timestamp, notEmpty(ifNull(toString(properties.$geoip_city_name), ''))) AS country, " +
+    "any(properties.$device_model) AS device, " +
+    "argMax(toString(properties.$os_version), timestamp) AS os, " +
+    "argMax(toString(properties.$app_version), timestamp) AS ver, " +
+    "argMax(ifNull(toString(person.properties.has_paired_watch), ''), timestamp) AS watch, " +
+    "anyIf(toString(properties.outcome), event = 'watch_gate') AS gate, " +
+    "argMaxIf(toString(properties.plan), timestamp, event = 'purchase') AS plan, " +
+    "countIf(event = 'trial_started') AS trials, " +
+    "argMax(ifNull(toString(person.properties.plan), ''), timestamp) AS plan_prop, " +
+    "countIf(event = 'offer_declined' AND toString(properties.rung) = 'half_month') AS said_no, " +
+    "countIf(event = 'free_tier_entered') AS free, "
+  );
+}
+
+/** "Yes" / "No" for the paired-Watch column, falling back to 1.0's question. */
+function watchWords(prop, gate) {
+  if (prop === 'true') return 'Yes';
+  if (prop === 'false') return 'No';
+  var gates = { hasWatch: 'Said yes (1.0)', waitlist: 'Said no (1.0)', notYet: 'Not yet (1.0)', declined: 'Said no (1.0)' };
+  return gates[gate] || '';
+}
+
 function writeInstalls() {
-  // One row per install, newest first. Version is the LATEST the person
+  // One row per NEW install, newest first. Version is the LATEST the person
   // ran (argMax by time), so an update shows the build they are on now.
-  // An "install" is one PostHog person
-  // with an Application Installed event (first launch after an App Store
-  // install), so a reinstall on the same phone is a new row: that is why the
-  // founders appear several times until the team-device switch ships.
+  // An "install" is one PostHog person with an Application Installed event
+  // (first launch after an App Store install), so a reinstall on the same
+  // phone is a new row. People who updated from 1.0 are on the Updaters tab.
   // Location is GeoIP of the network, not the person, and on a phone it
   // moves: one person's events resolved to Michigan, Ohio and Indiana in
   // the same afternoon, and the install event itself often carries a state
@@ -348,71 +570,97 @@ function writeInstalls() {
   // state as reliable and the city as a guess.
   var sql =
     "SELECT person_id, " +
-    "toTimeZone(minIf(timestamp, event = 'Application Installed'), 'America/Detroit') AS installed_at, " +
-    "argMinIf(toString(properties.$geoip_city_name), timestamp, notEmpty(toString(properties.$geoip_city_name))) AS city, " +
-    "argMinIf(toString(properties.$geoip_subdivision_1_name), timestamp, notEmpty(toString(properties.$geoip_city_name))) AS region, " +
-    "argMinIf(toString(properties.$geoip_country_name), timestamp, notEmpty(toString(properties.$geoip_city_name))) AS country, " +
-    "any(properties.$device_model) AS device, " +
-    "any(properties.$os_version) AS os, " +
-    "argMax(toString(properties.$app_version), timestamp) AS ver, " +
+    "toTimeZone(minIf(timestamp, event = 'Application Installed'), '" + TZ + "') AS installed_at, " +
+    personColumns() +
     "countIf(event = 'onboarding_completed') AS finished, " +
-    "anyIf(toString(properties.outcome), event = 'watch_gate') AS gate, " +
     "countIf(event = 'paywall_viewed') AS paywall, " +
-    "anyIf(toString(properties.plan), event = 'purchase') AS plan, " +
-    "countIf(event = 'trial_started') AS trials, " +
-    "countIf(event = 'free_tier_entered') AS free, " +
     "countIf(event = 'session_started') AS began, " +
     "countIf(event = 'session_completed') AS completed, " +
     "countIf(event = 'session_start_failed') AS failed, " +
     "countIf(event = 'purchase') AS taps, " +
-    "toTimeZone(max(timestamp), 'America/Detroit') AS last_seen " +
+    "toTimeZone(max(timestamp), '" + TZ + "') AS last_seen " +
     "FROM events WHERE timestamp > now() - INTERVAL 3650 DAY AND " + NOT_INTERNAL + " " +
     "GROUP BY person_id HAVING countIf(event = 'Application Installed') > 0 " +
     "ORDER BY installed_at DESC LIMIT 2000";
   var res = query(sql);
-  var gates = { hasWatch: 'Has a Watch', waitlist: 'No Watch (waitlist)', declined: 'Declined' };
+  // Column positions in the result, named so a new column cannot shift them.
+  var C = { id: 0, at: 1, city: 2, region: 3, country: 4, device: 5, os: 6, ver: 7, watch: 8,
+            gate: 9, plan: 10, trials: 11, planProp: 12, saidNo: 13, free: 14, finished: 15,
+            paywall: 16, began: 17, completed: 18, failed: 19, taps: 20, last: 21 };
   var rows = [['Date', 'Time (Detroit)', 'City', 'State / region', 'Country', 'iPhone', 'iOS', 'Version',
-               'Finished onboarding', 'Watch gate', 'Package', 'Sessions started',
+               'Finished onboarding', 'Apple Watch paired', 'Membership', 'Sessions started',
                'Sessions completed', 'Start failures', 'Purchase taps', 'Last seen', 'Note',
                'PostHog person id']];
   res.results.forEach(function (r) {
-    var when = String(r[1] || '').replace('T', ' ').split(' ');
-    var city = r[2] || '', device = r[5] || '';
-    var pkg;
-    if (r[11] === 'lifetime') pkg = 'Lifetime';
-    else if (r[11]) pkg = r[11].charAt(0).toUpperCase() + r[11].slice(1) + (r[12] > 0 ? ', 7-day trial' : '');
-    else if (r[13] > 0) pkg = 'Free (declined the ladder)';
-    else if (r[10] > 0) pkg = 'Saw the paywall, no plan';
-    else pkg = 'Free (never reached the paywall)';
+    var when = String(r[C.at] || '').replace('T', ' ').split(' ');
+    var city = r[C.city] || '', device = r[C.device] || '';
     var note = '';
     if (city === 'Cupertino' || city === 'Sunnyvale' || device === 'iPhone99,7') note = 'Apple (App Review)';
-    else if (r[17] > 1) note = 'Repeat taps on the buy button, not repeat sales';
-    rows.push([when[0], (when[1] || '').slice(0, 8), city || '(unknown)', r[3] || '', r[4] || '',
+    else if (r[C.taps] > 1) note = 'Repeat taps on the buy button, not repeat sales';
+    rows.push([when[0], (when[1] || '').slice(0, 8), city || '(unknown)', r[C.region] || '', r[C.country] || '',
                // Leading apostrophe: setValues parses strings as user input, so
                // "1.0" becomes the number 1 and prints "1". The apostrophe is
                // the same text-forcing prefix a person would type.
-               IPHONE_MODELS[device] || device, "'" + (r[6] || ''), "'" + (r[7] || ''),
-               r[8] > 0 ? 'Yes' : 'No', gates[r[9]] || 'Did not reach it', pkg,
-               r[14], r[15], r[16], r[17], String(r[18] || '').replace('T', ' ').slice(0, 19),
-               note, r[0]]);
+               IPHONE_MODELS[device] || device, "'" + (r[C.os] || ''), "'" + (r[C.ver] || ''),
+               r[C.finished] > 0 ? 'Yes' : 'No', watchWords(r[C.watch], r[C.gate]),
+               membership(r[C.plan], r[C.planProp], r[C.saidNo], r[C.paywall], r[C.free]),
+               r[C.began], r[C.completed], r[C.failed], r[C.taps],
+               String(r[C.last] || '').replace('T', ' ').slice(0, 19), note, r[C.id]]);
   });
   rows.push(['']);
   rows.push(['INSTALLS', res.results.length, '', '', '', '', '', '', '', '', '', '', '', '', '', '',
-             'A reinstall is a new row. Founders count until the team-device switch ships.']);
-  write('Installs', rows, [90, 100, 110, 110, 110, 150, 60, 70, 130, 150, 220, 110, 120, 100, 100, 150, 340, 280], [7, 8], [12, 13, 14, 15]);
+             'A reinstall is a new row. Apple’s devices are left out. Founders count unless their phone is flagged as a team device (seven taps on the version line in Settings).']);
+  write('Installs', rows, [90, 100, 110, 110, 110, 150, 60, 70, 130, 140, 260, 110, 120, 100, 100, 150, 340, 280], [7, 8], [12, 13, 14, 15]);
 }
 
-function writeWatchGate() {
+function writeUpdaters() {
+  // One row per person who opened a version newer than 1.0 after an update.
+  // Since 1.1 is premium only, a 1.0 user's first 1.1 launch opens on the
+  // launch paywall ("root_lock"): they buy there, already own a plan (a 1.0
+  // Lifetime), or leave. None of it shows on Installs or in onboarding.
+  var updatedToNew = "event = 'Application Updated' AND NOT " + OLD;
   var sql =
-    "SELECT toStartOfWeek(timestamp) AS week, toString(properties.outcome) AS outcome, count(DISTINCT person_id) AS people " +
-    "FROM events WHERE event = 'watch_gate' AND timestamp > now() - INTERVAL 90 DAY AND " + NOT_INTERNAL + " " +
-    "GROUP BY week, outcome ORDER BY week DESC, outcome LIMIT 200";
+    "SELECT person_id, " +
+    "toTimeZone(minIf(timestamp, " + updatedToNew + "), '" + TZ + "') AS updated_at, " +
+    personColumns() +
+    "argMin(toString(properties.$app_version), timestamp) AS first_ver, " +
+    "countIf(event = 'paywall_viewed' AND toString(properties.placement) = 'root_lock') AS launch_paywall, " +
+    // Bought AFTER the update. `plan` above also sees a 1.0 purchase, which
+    // here is a membership they already had, not a sale the update made.
+    "argMaxIf(toString(properties.plan), timestamp, event = 'purchase' AND NOT " + OLD + ") AS new_plan, " +
+    "countIf(event = 'session_started' AND NOT " + OLD + ") AS began, " +
+    "countIf(event = 'session_completed' AND NOT " + OLD + ") AS completed, " +
+    "toTimeZone(max(timestamp), '" + TZ + "') AS last_seen " +
+    "FROM events WHERE timestamp > now() - INTERVAL 3650 DAY AND " + NOT_INTERNAL + " " +
+    "GROUP BY person_id HAVING countIf(" + updatedToNew + ") > 0 " +
+    "ORDER BY updated_at DESC LIMIT 2000";
   var res = query(sql);
-  var rows = [['Week of', 'Answer at the Watch gate', 'People', 'Why it matters']];
-  res.results.forEach(function (r, i) {
-    rows.push([r[0], r[1], r[2], i === 0 ? 'The share without a Watch is the signal for building the no-Watch session' : '']);
+  var C = { id: 0, at: 1, city: 2, region: 3, country: 4, device: 5, os: 6, ver: 7, watch: 8,
+            gate: 9, plan: 10, trials: 11, planProp: 12, saidNo: 13, free: 14, firstVer: 15,
+            paywall: 16, newPlan: 17, began: 18, completed: 19, last: 20 };
+  var rows = [['Date', 'Time (Detroit)', 'City', 'State / region', 'Country', 'iPhone', 'iOS',
+               'First version', 'Now on', 'Apple Watch paired', 'Membership',
+               'Sessions started (since update)', 'Sessions completed (since update)', 'Last seen',
+               'PostHog person id']];
+  var bought = 0, met = 0;
+  res.results.forEach(function (r) {
+    var when = String(r[C.at] || '').replace('T', ' ').split(' ');
+    var words = membership(r[C.newPlan], r[C.planProp], r[C.saidNo], r[C.paywall], 0);
+    if (r[C.newPlan]) bought++;
+    if (r[C.paywall] > 0) met++;
+    rows.push([when[0], (when[1] || '').slice(0, 8), r[C.city] || '(unknown)', r[C.region] || '',
+               r[C.country] || '', IPHONE_MODELS[r[C.device]] || r[C.device] || '',
+               "'" + (r[C.os] || ''), "'" + (r[C.firstVer] || ''), "'" + (r[C.ver] || ''),
+               watchWords(r[C.watch], r[C.gate]), words, r[C.began], r[C.completed],
+               String(r[C.last] || '').replace('T', ' ').slice(0, 19), r[C.id]]);
   });
-  write('Watch gate', rows, [120, 220, 90, 480]);
+  rows.push(['']);
+  rows.push(['UPDATERS', res.results.length, '', '', '', '', '', '', '', '', '',
+             '', '', '', 'People who opened 1.1 after updating.']);
+  rows.push(['Met the launch paywall', met, '', '', '', '', '', '', '', '', '',
+             '', '', '', 'The rest already had a plan (a 1.0 Lifetime, or bought on another phone).']);
+  rows.push(['Subscribed after updating', bought]);
+  write('Updaters', rows, [90, 100, 110, 110, 110, 150, 60, 90, 70, 140, 300, 190, 210, 150, 280], [7, 8, 9], [12, 13]);
 }
 
 // ---------------------------------------------------------------------------
@@ -463,6 +711,11 @@ function rate(rows, numLabel, denLabel, label, note) {
   }
   out.push(note);
   return out;
+}
+
+/** n of d as a percentage with one decimal, or blank when there is no d. */
+function pct(n, d) {
+  return d ? Math.round((n || 0) / d * 1000) / 10 + '%' : '';
 }
 
 function find(rows, label) {
