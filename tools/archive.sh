@@ -133,6 +133,20 @@ if unzip -q "$IPA" -d "$UNPACKED" 2>/dev/null; then
   else
     echo "  WRONG no privacy manifest (ITMS-91053 territory at upload)"
   fi
+  # Every extension needs its own manifest too: Block's three and the widget.
+  for appex in "$APP"/PlugIns/*.appex; do
+    [ -d "$appex" ] || continue
+    if [ -f "$appex/PrivacyInfo.xcprivacy" ]; then
+      echo "  ok    $(basename "$appex") has its privacy manifest"
+    else
+      echo "  WRONG $(basename "$appex") has no privacy manifest (ITMS-91053)"
+    fi
+  done
+  if [ -d "$APP/PlugIns/OttoWidget.appex" ]; then
+    echo "  ok    home screen widget embedded"
+  else
+    echo "  WRONG no home screen widget embedded"
+  fi
   rm -rf "$UNPACKED"
 fi
 

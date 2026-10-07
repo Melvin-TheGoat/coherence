@@ -944,6 +944,28 @@ Archive from `mvp` at or after the commit that added `FeatureFlags`. It ships:
 The 1.0.2 build uploaded earlier (202609141719) predates all of this, so
 this release needs a NEW archive.
 
+## OPEN for 1.2: the home screen widget (added 2026-10-05)
+
+The widget (`OttoWidget/`, branch `widget`) is a fourth app extension with
+its own bundle ID, so the first archive that carries it needs the portal.
+
+- [ ] **Widget App ID registered.** Certificates, Identifiers & Profiles >
+      Identifiers: `com.lockout.meditate808.widget` exists under Lock Out Inc.
+      with **App Groups** ticked and `group.com.lockout.meditate808` assigned.
+      Automatic signing may create the App ID by itself; it has never assigned
+      a group (2026-09-22), so check the App ID before archiving. Same for the
+      beta: `com.lockout.meditate808.dev.widget` with
+      `group.com.lockout.meditate808.dev`, or `tools/beta_install.sh` fails.
+- [ ] **On a real phone:** add the small and the medium; check them at
+      morning, evening and night, on a tinted home screen (iOS 18+, Otto
+      keeps his colours), and in StandBy. Meditate and watch both update
+      without opening the widget; tap one from another tab and land on Home.
+- [ ] **`tools/archive.sh` says `home screen widget embedded`** and every
+      appex has its privacy manifest.
+- [ ] **What's New** for 1.2 names the widget. Nothing changes in the
+      privacy policy or the App Privacy label: the widget reads only what the
+      app wrote to the App Group on the same phone.
+
 ## OPEN for the build that flips `FeatureFlags.ottoInRelease`
 
 - [ ] Privacy policy, both copies (`PRIVACY_POLICY.md`, `website/privacy.html`):

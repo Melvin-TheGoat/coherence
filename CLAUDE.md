@@ -6722,6 +6722,80 @@ detail. Supersedes "RESUME HERE (end of 2026-09-14)".
   simulator settings, above all the text size. An agent that needs another
   size or device creates its own simulator and deletes it after.
 
+## OTTO ON THE HOME SCREEN: THE WIDGET (2026-10-05, Melvin, ships in 1.2)
+
+"Can we add a widget, so you can see what otto looks like from your
+homescreen?" Built on branch `widget` from `mockups/widget-v1.html` with his
+picks: small and medium, members only, a tap opens Home, 1.2 not 1.1.
+
+- **The widget computes nothing.** `OttoWidgetPublisher` (Coherence/Widget)
+  works out an `OttoWidgetSnapshot` (Shared/Widget) from the same rules Home
+  uses and writes it to the App Group (key `widget.otto.v1`); the extension
+  (`OttoWidget/`) only picks the day and paints the sky. It reloads only when
+  the snapshot changed. Published on every root change between the app and
+  the paywall, every return to the foreground, and every session landed or
+  deleted (`sessions.count`).
+- **A widget cannot wake the app at midnight**, so the snapshot carries today
+  plus three days projected as if nobody meditates (`OttoWidgetFeed`), each
+  worked out at its own midnight: the missed day, the rest day and the cost
+  all show on the home screen the morning they happen. Locked by
+  `OttoWidgetTests`.
+- **One source for Otto's day lines: `OttoLines`** (Shared/Engine). Home's
+  bubble and the widget both read it. The widget's line is the sad mood when
+  he is Withered or Faded, otherwise where today stands. Change a line there,
+  never in ContentView.
+- **The widget carries its own copy of the stage bands**
+  (`OttoWidgetSnapshot.stage(level:)`) because it does not compile `OttoAura`;
+  `test_widgetStagesMatchTheAura` fails if they drift.
+- **`DayLight` has its own file** (Coherence/Session/DayLight.swift), compiled
+  into the widget, so the home screen sky is the app's sky at the same hour.
+- **Members only.** A non-member, or a phone 808 has not written to, gets
+  Otto at Steady and "Open 808", never a number (808 is premium only).
+- Seven stills (`WidgetOtto1...7`, 450 px), no Rive. Otto and the flame keep
+  their colours on a tinted home screen (`widgetAccentedRenderingMode
+  (.fullColor)`, iOS 18+).
+- **Widget fonts name `design: .rounded` on every `.font(.system(...))`.**
+  The root `fontDesign(.rounded)` trick that works in the app did nothing in
+  the widget: the first build drew SF Pro.
+- **Place a layer wider than its container by centre (`.position`), never by
+  `.offset` in a ZStack.** The 120%-wide ridge widened the stack and slid the
+  meadow left, leaving a strip of sky down the right edge.
+- `coherence808://home` is the tap (`WidgetLink`, through the app's one
+  `.onOpenURL`, after FocusShortcut declines it).
+- DEBUG: `VALLEY_HOUR` and `OTTO_AURA` on the app reach the widget too (the
+  hour travels through the App Group, since the extension never sees the
+  app's launch environment). To review on a simulator: launch the app, then
+  long-press the home screen > Edit > Add Widget > search "808".
+- **Owed before the 1.2 archive** (RELEASE_CHECKLIST.md "OPEN for 1.2"):
+  register `com.lockout.meditate808.widget` with the App Group in the portal
+  (and `.dev.widget` for the beta), then a real-phone pass.
+
+### Redrawn as the app's valley (2026-10-06, Melvin, branch `widget-valley`)
+
+Direction 1 of `mockups/widget-v2.html`: Otto on his cushion in Home's own
+valley (both ridges, the real meadow and flowers, the haze), lit for the
+hour. The medium is one scene with his line in Home's sand bubble; the glow
+panel, glow bar and glow percentage are gone (his drawing shows his stage).
+Renders in `mockups/widget/v3/`.
+
+- **The painting is shared, never copied.** `Coherence/Session/
+  ValleyPainting.swift` holds `ValleySky`, `ValleyClouds`, `ValleyLand`,
+  `Meadow`, `Cushion` (+ `Cushion.seated`), `standsInMeadow`, `SitLayout` and
+  `OttoStillCanvas`; the app's `ValleyScene` composes them and the widget
+  target compiles the file. The move was proven pixel-identical (old code
+  against new, ImageRenderer at six hours) before the copy was deleted.
+- **The streak is always top LEFT** (Melvin). The small's sun is MIRRORED to
+  the right (`sunMirrored`), because all day it hung exactly behind the
+  streak; the medium's sun sits off its left edge, as the mock has it.
+- **Layout scales with the widget's height** (`WidgetValleyLayout`, the mock's
+  164pt widget as the unit): scene at half the sit's scale, cushion bottom
+  140 units below the window top, medium Otto at x 104 of a 500-wide scene.
+- Otto is in the face, the valley and cushion in `containerBackground`, so a
+  tinted home screen keeps a full-colour Otto. A non-member gets "Open 808"
+  (small) or "Open 808 to meditate with me." (medium bubble), no numbers.
+- **Otto says meditate, never sit**: `OttoLines` was swept, and
+  `test_ottosLinesHaveNoEmDashesAndSayMeditate` guards it.
+
 ## FRIENDS ONLY, NO FOLLOWERS (2026-10-01, Aziz)
 
 "Instead of following and followers it's just friends: I request someone,

@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Otto Widget v2</title>
+<style>
+  @font-face { font-family:'Nunito'; src:url('../website/fonts/nunito-var.woff2') format('woff2'); font-weight:200 1000; }
+  :root {
+    --paper:#FBF8F2; --sand:#F0E9DC; --ink:#2A231E; --soft:#6B6158; --faint:#A1978C;
+    --green:#5AB950; --green-ink:#2F6E2A;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--paper); color:var(--ink); font-family:'Nunito', ui-rounded, system-ui, sans-serif;
+         padding:44px 16px 80px; -webkit-font-smoothing:antialiased; }
+  .wrap { max-width:1140px; margin:0 auto; }
+  h1 { font-size:34px; font-weight:900; letter-spacing:-0.025em; }
+  .lede { color:var(--soft); margin:8px 0 8px; max-width:720px; line-height:1.5; font-size:17px; font-weight:600; }
+  .note { color:var(--soft); font-size:15px; line-height:1.5; max-width:760px; }
+  h2 { font-size:24px; font-weight:900; letter-spacing:-0.02em; margin:46px 0 4px; display:flex; gap:10px; align-items:baseline; }
+  h2 .tag { font-size:12px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--green-ink);
+            background:#E3F1DD; border-radius:99px; padding:4px 10px; }
+  ul.points { margin:10px 0 18px 20px; color:var(--ink); font-size:15px; line-height:1.55; max-width:780px; }
+  ul.points li { margin:3px 0; }
+  .row { display:flex; flex-wrap:wrap; gap:28px; align-items:flex-start; margin-top:14px; }
+  .col { display:flex; flex-direction:column; gap:14px; }
+  .cap { font-size:13px; font-weight:800; color:var(--soft); letter-spacing:.02em; }
+  /* Real iPhone 17 Pro widget size in points; the images are 3x. */
+  .w { display:block; border-radius:23px; overflow:hidden; box-shadow:0 8px 22px rgba(40,30,20,.16); }
+  .w.small { width:164px; height:164px; }
+  .w.medium { width:348px; height:164px; }
+  .w img { width:100%; height:100%; display:block; }
+
+  .phones { display:flex; flex-wrap:wrap; gap:36px; margin-top:16px; }
+  .phone { width:402px; height:620px; border-radius:48px; padding:62px 27px 0; position:relative; overflow:hidden;
+           background:linear-gradient(165deg,#3E5A7A,#7E6B8C 55%,#C99A86); box-shadow:0 18px 40px rgba(40,30,20,.25); }
+  .phone .bar { position:absolute; top:14px; left:0; right:0; display:flex; justify-content:space-between; padding:0 34px;
+                color:#fff; font-weight:800; font-size:15px; }
+  .phone .stack { display:flex; flex-direction:column; gap:20px; }
+  .phone .pair { display:flex; gap:20px; }
+  .icons { display:grid; grid-template-columns:repeat(2,64px); gap:18px 36px; padding:6px 0 0 14px; }
+  .icon { width:64px; height:64px; border-radius:15px; }
+  .i1{background:#F5F5F5}.i2{background:#4CD964}.i3{background:#FF9500}.i4{background:#5AC8FA}
+  .dock { position:absolute; left:20px; right:20px; bottom:-40px; height:120px; border-radius:36px; background:rgba(255,255,255,.22); }
+  .qs { margin-top:44px; }
+  .q { background:#fff; border-radius:16px; padding:16px 18px; margin-top:12px; max-width:780px;
+       box-shadow:0 1px 0 rgba(0,0,0,.05); line-height:1.5; font-size:15px; }
+  .q b { display:block; margin-bottom:3px; font-weight:900; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Otto on the home screen, two directions</h1>
+  <p class="lede">Both are rendered from the app itself: the real valley, Otto's real still drawings and the real flame. A widget cannot animate, so these are exactly the pictures it would show at each hour.</p>
+  <p class="note">Same three moments in each: morning, five days in, not yet meditated · evening, six days, already meditated · night, a few days away, no streak.</p>
+
+  <h2>1. The app's valley <span class="tag">Recommended</span></h2>
+  <ul class="points">
+    <li>Otto sits on his cushion in the same valley as Home: both ridges, the real flowers in front of and behind him, the haze.</li>
+    <li>At night he darkens with the ground, so he is lit for the hour instead of for noon.</li>
+    <li>The medium is one continuous scene. His line sits in Home's own speech bubble; the sand panel and the glow bar are gone.</li>
+    <li>Only the streak sits on top. The glow percentage is dropped: his drawing already shows it.</li>
+  </ul>
+  <div class="row">
+    <div class="col"><span class="cap">Morning</span>
+      <span class="w small"><img src="widget/v2/a-small-morning.png" alt=""></span>
+      <span class="w medium"><img src="widget/v2/a-medium-morning.png" alt=""></span></div>
+    <div class="col"><span class="cap">Evening</span>
+      <span class="w small"><img src="widget/v2/a-small-evening.png" alt=""></span>
+      <span class="w medium"><img src="widget/v2/a-medium-evening.png" alt=""></span></div>
+    <div class="col"><span class="cap">Night</span>
+      <span class="w small"><img src="widget/v2/a-small-night.png" alt=""></span>
+      <span class="w medium"><img src="widget/v2/a-medium-night.png" alt=""></span></div>
+  </div>
+
+  <h2>2. Otto up close</h2>
+  <ul class="points">
+    <li>One colour from the hour's sky, Otto big and cut off at the bottom edge, the streak as one big number. Duolingo's widget works this way.</li>
+    <li>His face carries his mood; the medium adds his line.</li>
+    <li>The simplest to build, and it holds up best when someone tints their home screen.</li>
+  </ul>
+  <div class="row">
+    <div class="col"><span class="cap">Morning</span>
+      <span class="w small"><img src="widget/v2/b-small-morning.png" alt=""></span>
+      <span class="w medium"><img src="widget/v2/b-medium-morning.png" alt=""></span></div>
+    <div class="col"><span class="cap">Evening</span>
+      <span class="w small"><img src="widget/v2/b-small-evening.png" alt=""></span>
+      <span class="w medium"><img src="widget/v2/b-medium-evening.png" alt=""></span></div>
+    <div class="col"><span class="cap">Night</span>
+      <span class="w small"><img src="widget/v2/b-small-night.png" alt=""></span>
+      <span class="w medium"><img src="widget/v2/b-medium-night.png" alt=""></span></div>
+  </div>
+
+  <h2>On a home screen</h2>
+  <div class="phones">
+    <div class="phone"><div class="bar"><span>9:41</span><span>●●● ▮</span></div>
+      <div class="stack">
+        <span class="w medium"><img src="widget/v2/a-medium-morning.png" alt=""></span>
+        <div class="pair"><span class="w small"><img src="widget/v2/a-small-morning.png" alt=""></span>
+          <div class="icons"><span class="icon i1"></span><span class="icon i2"></span><span class="icon i3"></span><span class="icon i4"></span></div></div>
+      </div><div class="dock"></div></div>
+    <div class="phone"><div class="bar"><span>9:41</span><span>●●● ▮</span></div>
+      <div class="stack">
+        <span class="w medium"><img src="widget/v2/b-medium-morning.png" alt=""></span>
+        <div class="pair"><span class="w small"><img src="widget/v2/b-small-morning.png" alt=""></span>
+          <div class="icons"><span class="icon i1"></span><span class="icon i2"></span><span class="icon i3"></span><span class="icon i4"></span></div></div>
+      </div><div class="dock"></div></div>
+  </div>
+
+  <div class="qs">
+    <h2>To decide</h2>
+    <div class="q"><b>Which direction?</b>The valley (1) or Otto up close (2).</div>
+    <div class="q"><b>The small valley's streak sits top right.</b>Top left is where the morning sun is, so the flame landed on it. Home keeps its streak top left; the widget would differ.</div>
+    <div class="q"><b>Direction 2 with no streak.</b>It says "Meditate today" for now. The other choice is to show only Otto and let his face say it.</div>
+  </div>
+</div>
+</body>
+</html>

@@ -111,7 +111,10 @@ struct CoherenceApp: App {
                 // The Silence and Restore shortcuts answer here: x-success,
                 // x-error or x-cancel. Only a success counts (App Review
                 // pass, 2026-09-29; see FocusShortcut.handle).
-                .onOpenURL { url in FocusShortcut.shared.handle(url) }
+                .onOpenURL { url in
+                    // The home screen widget's tap opens Home (WidgetLink).
+                    if !FocusShortcut.shared.handle(url) { WidgetLink.handle(url) }
+                }
                 // An account deletion whose Friends cleanup could not finish
                 // (no network, no iCloud, at the exact moment somebody left)
                 // retries here until it does. See
