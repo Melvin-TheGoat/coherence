@@ -153,8 +153,8 @@ struct StageReel: View {
 /// The Screen Time shield and the "Otto wants a word" notification, drawn the
 /// way a phone shows them, for an ad (Aziz, 2026-10-06). The simulator cannot
 /// draw a real shield, and the test-mode stand-in is labelled as one. Same
-/// words (`BlockShieldWords`, the `BlockAsk` notification) and colours (the
-/// Shield extension's assets) as the real thing. `PREVIEW_SHIELD_REEL=1`:
+/// words (`BlockShieldWords`, the `BlockAsk` notification), colours and
+/// rendering (`ShieldReplica`) as the real thing. `PREVIEW_SHIELD_REEL=1`:
 /// the shield holds, "Ask Otto" is pressed at 1.6 s, the banner drops in.
 struct ShieldReel: View {
     @State private var start: Date? = nil
@@ -171,46 +171,17 @@ struct ShieldReel: View {
                      palette: ShieldLines.palettes[c % ShieldLines.palettes.count])
     }()
     private var paper: Color { Color(shieldHex: Self.look.palette.background) }
-    private var ink: Color { Color(shieldHex: Self.look.palette.text) }
-    private var soft: Color { Color(shieldHex: Self.look.palette.soft).opacity(Self.look.palette.softAlpha) }
-    private var gold: Color { Color(shieldHex: Self.look.palette.button) }
-    private var goldInk: Color { Color(shieldHex: Self.look.palette.buttonText) }
 
     var body: some View {
         TimelineView(.animation) { context in
             let t = start.map { context.date.timeIntervalSince($0) } ?? 0
             let asked = t >= Self.press
             ZStack(alignment: .top) {
-                paper.ignoresSafeArea()
-                VStack(spacing: 14) {
-                    Spacer()
-                    Image(ShieldLines.icon(Self.look.line)).resizable().scaledToFit().frame(width: 84, height: 84)
-                        .padding(.bottom, 6)
-                    Text(BlockShieldWords.title(for: "Instagram", look: Self.look))
-                        .font(.system(size: 22, weight: .semibold))
-                        .foregroundStyle(ink)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 30)
-                    Text(BlockShieldWords.subtitle(for: "Instagram", look: Self.look, asked: asked, notificationsAllowed: true))
-                        .font(.system(size: 17))
-                        .foregroundStyle(soft)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 40)
-                    Spacer()
-                    Spacer()
-                    Text(BlockShieldWords.primary(asked: asked))
-                        .font(.system(size: 17, weight: .semibold))
-                        .foregroundStyle(goldInk)
-                        .frame(maxWidth: .infinity).frame(height: 52)
-                        .background(gold, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                        .scaleEffect(t > Self.press - 0.12 && t < Self.press + 0.1 ? 0.96 : 1)
-                        .padding(.horizontal, 24)
-                    Text(BlockShieldWords.secondary)
-                        .font(.system(size: 17, weight: .semibold))
-                        .foregroundStyle(soft)
-                        .frame(height: 50)
-                        .padding(.bottom, 20)
-                }
+                // Built the way iOS builds the real shield (ShieldReplica),
+                // so the ad shows the colours and button a phone shows.
+                ShieldReplica(look: Self.look, app: "Instagram", asked: asked, notificationsAllowed: true,
+                              pressed: t > Self.press - 0.12 && t < Self.press + 0.1)
+                    .ignoresSafeArea()
                 banner
                     .padding(.horizontal, 10)
                     .padding(.top, 8)

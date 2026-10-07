@@ -506,10 +506,60 @@ enum ShieldLines {
         "ShieldOtto\((all.firstIndex(of: line) ?? 0) + 1)"
     }
 
-    /// One solid background with text and button colours that stay readable
-    /// on it, as 0xRRGGBB.
+    /// The blur iOS lays over the shield's colour. **iOS never draws the
+    /// configured colour solid** (read out of ScreenTimeUI, 2026-10-07): the
+    /// shield is a `UIVisualEffectView` whose `backgroundColor` is our colour
+    /// and whose effect is the configured blur, or `.systemThickMaterial` when
+    /// it is nil, which washed every palette to near white on a light-mode
+    /// phone and near black on a dark one. These three are not adaptive, so a
+    /// palette looks the same in both appearances. Raw values are
+    /// `UIBlurEffect.Style`'s.
+    enum Material: Int, Equatable {
+        /// 70% of the colour, saturated 1.8x, over 30% white.
+        case light = 1
+        /// 27% of the colour, saturated 1.8x, over a near-black tint.
+        case dark = 2
+        /// `.systemUltraThinMaterialDark`: no simple formula, measured.
+        case ultraThinDark = 16
+
+        /// What iOS draws for `paint` under this material, or nil where the
+        /// material has no simple formula. Matches the simulator's render to
+        /// a couple of levels per channel.
+        func render(_ paint: UInt32) -> (r: Double, g: Double, b: Double)? {
+            let c = [Double((paint >> 16) & 0xFF), Double((paint >> 8) & 0xFF), Double(paint & 0xFF)]
+            let luma = 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]
+            let saturated = c.map { min(255, max(0, luma + 1.8 * ($0 - luma))) }
+            let (keep, add): (Double, Double)
+            switch self {
+            case .light: (keep, add) = (0.7, 76.5)
+            case .dark: (keep, add) = (0.27, 20.5)
+            case .ultraThinDark: return nil
+            }
+            let o = saturated.map { keep * $0 + add }
+            return (o[0], o[1], o[2])
+        }
+    }
+
+    /// One shield look, as 0xRRGGBB. `background` is what the person sees;
+    /// `paint` is the colour handed to iOS so that `material` draws it (found
+    /// by rendering in the simulator, `ShieldRealHarness`). Text and buttons
+    /// are judged against `background`.
+    ///
+    /// **The primary button is iOS 26 Liquid Glass and iOS rewrites its
+    /// label** (`UIButton.Configuration.prominentGlass()`): the label is mixed
+    /// with half the button's fill, lifted toward white
+    /// (label + fill / 2) or pushed toward black (label - (1 - fill) / 2)
+    /// depending on the phone's appearance and what is behind the glass.
+    /// The old light buttons with dark labels became 1.4 to 2.7:1 on a
+    /// dark-mode phone, which is the "lighter tone you can barely read".
+    /// So every button is a near-black fill with a white
+    /// label: readable whichever way iOS pushes it (`ShieldLinesTests`).
+    /// The secondary button's label is the system label colour in the
+    /// extension, which follows the glass behind it (measured 5:1 and up).
     struct Palette: Equatable {
         let background: UInt32
+        let paint: UInt32
+        let material: Material
         let text: UInt32
         let soft: UInt32
         let softAlpha: Double
@@ -517,17 +567,24 @@ enum ShieldLines {
         let buttonText: UInt32
     }
 
+    /// The approved colours (`mockups/shield-backgrounds.html`). Three differ
+    /// slightly because no material can draw them exactly: midnight black is
+    /// 0x141414 (approved 0x111111), ocean blue 0x4D68D6 (approved 0x2F6FD6;
+    /// the nearest a light material reaches that still holds white text above
+    /// 4.5:1), sunset orange 0xF2804D (approved 0xF2803A). Meadow, sunset
+    /// orange, alarm coral and bubblegum pink carry dark text: white on them
+    /// measured 2.6 to 3.3:1, under the 4.5 minimum.
     static let palettes: [Palette] = [
-        Palette(background: 0x1E2440, text: 0xF3EAD8, soft: 0xF3EAD8, softAlpha: 0.72, button: 0xF0C47B, buttonText: 0x2B2117), // night valley
-        Palette(background: 0x111111, text: 0xFFFFFF, soft: 0xFFFFFF, softAlpha: 0.65, button: 0xF0C47B, buttonText: 0x1A1206), // midnight black
-        Palette(background: 0x3B2A6B, text: 0xFFFFFF, soft: 0xFFFFFF, softAlpha: 0.75, button: 0xF6C66B, buttonText: 0x2B2117), // deep purple
-        Palette(background: 0x2F6FD6, text: 0xFFFFFF, soft: 0xFFFFFF, softAlpha: 0.80, button: 0xFFFFFF, buttonText: 0x1F4E9C), // ocean blue
-        Palette(background: 0x8EC3EA, text: 0x2B2117, soft: 0x2B2117, softAlpha: 0.70, button: 0xFFFFFF, buttonText: 0x1F4E70), // sky
-        Palette(background: 0x6FA35B, text: 0xFFFFFF, soft: 0xFFFFFF, softAlpha: 0.85, button: 0xFFF6E6, buttonText: 0x2E4A22), // meadow
-        Palette(background: 0xF0B44C, text: 0x2B2117, soft: 0x2B2117, softAlpha: 0.72, button: 0x2B2117, buttonText: 0xFFF6E6), // otto gold
-        Palette(background: 0xF2803A, text: 0xFFFFFF, soft: 0xFFFFFF, softAlpha: 0.85, button: 0xFFFFFF, buttonText: 0xB5521A), // sunset orange
-        Palette(background: 0xEE6B4D, text: 0xFFFFFF, soft: 0xFFFFFF, softAlpha: 0.85, button: 0xFFFFFF, buttonText: 0xC9472B), // alarm coral
-        Palette(background: 0xF27DB0, text: 0xFFFFFF, soft: 0xFFFFFF, softAlpha: 0.88, button: 0xFFFFFF, buttonText: 0xB33E73), // bubblegum pink
+        Palette(background: 0x1E2440, paint: 0x2D3973, material: .dark, text: 0xF3EAD8, soft: 0xF3EAD8, softAlpha: 0.80, button: 0x2B2117, buttonText: 0xFFFFFF), // night valley
+        Palette(background: 0x141414, paint: 0x000000, material: .dark, text: 0xFFFFFF, soft: 0xFFFFFF, softAlpha: 0.75, button: 0x2B2117, buttonText: 0xFFFFFF), // midnight black
+        Palette(background: 0x3B2A6B, paint: 0x37188D, material: .ultraThinDark, text: 0xFFFFFF, soft: 0xFFFFFF, softAlpha: 0.80, button: 0x1E1233, buttonText: 0xFFFFFF), // deep purple
+        Palette(background: 0x4D68D6, paint: 0x132980, material: .light, text: 0xFFFFFF, soft: 0xFFFFFF, softAlpha: 1, button: 0x0E1E44, buttonText: 0xFFFFFF), // ocean blue
+        Palette(background: 0x8EC3EA, paint: 0x7AA4C3, material: .light, text: 0x2B2117, soft: 0x2B2117, softAlpha: 0.80, button: 0x13283A, buttonText: 0xFFFFFF), // sky
+        Palette(background: 0x6FA35B, paint: 0x487138, material: .light, text: 0x2B2117, soft: 0x2B2117, softAlpha: 1, button: 0x1C2B14, buttonText: 0xFFFFFF), // meadow
+        Palette(background: 0xF0B44C, paint: 0xC79741, material: .light, text: 0x2B2117, soft: 0x2B2117, softAlpha: 0.80, button: 0x2B2117, buttonText: 0xFFFFFF), // otto gold
+        Palette(background: 0xF2804D, paint: 0xAF5400, material: .light, text: 0x2B2117, soft: 0x2B2117, softAlpha: 1, button: 0x2E1608, buttonText: 0xFFFFFF), // sunset orange
+        Palette(background: 0xEE6B4D, paint: 0xA43C24, material: .light, text: 0x2B2117, soft: 0x2B2117, softAlpha: 1, button: 0x2E120B, buttonText: 0xFFFFFF), // alarm coral
+        Palette(background: 0xF27DB0, paint: 0xB4577F, material: .light, text: 0x2B2117, soft: 0x2B2117, softAlpha: 1, button: 0x2E1020, buttonText: 0xFFFFFF), // bubblegum pink
     ]
 
     /// `{app}` filled with the held app's name, or "this app" when the shield

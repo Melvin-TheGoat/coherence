@@ -34,16 +34,24 @@ final class BlockShieldConfiguration: ShieldConfigurationDataSource {
         let look = BlockShieldWords.look()
         let p = look.palette
         return ShieldConfiguration(
-            backgroundBlurStyle: nil,
-            backgroundColor: color(p.background),
+            // Never nil: nil is not "solid", it is .systemThickMaterial, which
+            // washes the colour out (see ShieldLines.Material). `paint` is the
+            // colour this material draws as `background`.
+            backgroundBlurStyle: UIBlurEffect.Style(rawValue: p.material.rawValue),
+            backgroundColor: color(p.paint),
             icon: UIImage(named: ShieldLines.icon(look.line)) ?? UIImage(named: "OttoShield"),
             title: .init(text: BlockShieldWords.title(for: name, look: look), color: color(p.text)),
             subtitle: .init(text: BlockShieldWords.subtitle(for: name, look: look, asked: asked,
                                                             notificationsAllowed: BlockStore.notificationsAllowed),
                             color: color(p.soft, alpha: p.softAlpha)),
+            // iOS 26 draws this as Liquid Glass and mixes the label with half
+            // the fill; a dark fill with a white label survives either way.
             primaryButtonLabel: .init(text: BlockShieldWords.primary(asked: asked), color: color(p.buttonText)),
             primaryButtonBackgroundColor: color(p.button),
-            secondaryButtonLabel: .init(text: BlockShieldWords.secondary, color: color(p.soft, alpha: p.softAlpha)))
+            // A glass button whose own tint follows the phone's appearance and
+            // what is behind it, so no fixed colour reads on it in both. The
+            // system label colour follows the glass.
+            secondaryButtonLabel: .init(text: BlockShieldWords.secondary, color: .label))
     }
 
     private func color(_ hex: UInt32, alpha: Double = 1) -> UIColor {

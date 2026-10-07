@@ -305,58 +305,35 @@ private struct BlockTestShield: View {
     @State private var look = BlockShieldWords.look(remember: false)
 
     var body: some View {
-        let p = look.palette
-        VStack(spacing: 18) {
-            Spacer()
-            Image(ShieldLines.icon(look.line))
-                .resizable()
-                .scaledToFit()
-                .frame(width: 92, height: 92)
-            Text(BlockShieldWords.title(for: "Instagram", look: look))
-                .font(DisplayFont.display(22))
-                .foregroundStyle(Color(shieldHex: p.text))
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
-            Text(BlockShieldWords.subtitle(for: "Instagram", look: look, asked: asked,
-                                           notificationsAllowed: block.notificationsAllowed))
-                .font(AppFont.callout)
-                .foregroundStyle(Color(shieldHex: p.soft).opacity(p.softAlpha))
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
-            Button {
-                asked = true
-                BlockAsk.post {
-                    Task { @MainActor in
-                        // With notifications off there is no banner to tap,
-                        // and the phone's answer is to open 808 by hand.
-                        if !block.notificationsAllowed { block.requestIntervention() }
-                    }
-                }
-                // The real shield stays up behind the notification; this one
-                // steps aside so the banner can be tapped.
-                Task { @MainActor in
-                    try? await Task.sleep(for: .milliseconds(900))
-                    onClose()
-                }
-            } label: {
-                Text(BlockShieldWords.primary(asked: asked))
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(Color(shieldHex: p.buttonText))
-                    .frame(maxWidth: .infinity).frame(height: 52)
-                    .background(Color(shieldHex: p.button), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        // Built the way iOS builds the real one (ShieldReplica), so what
+        // reads here reads on a phone, in either appearance.
+        ShieldReplica(look: look, app: "Instagram", asked: asked,
+                      notificationsAllowed: block.notificationsAllowed,
+                      onPrimary: askOtto, onSecondary: onClose)
+            .ignoresSafeArea()
+            .overlay(alignment: .top) {
+                Text("Stand-in shield, test mode")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(Color(shieldHex: look.palette.soft).opacity(0.6))
+                    .padding(.top, 8)
             }
-            .padding(.horizontal, 32)
-            Button(BlockShieldWords.secondary, action: onClose)
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(Color(shieldHex: p.soft).opacity(p.softAlpha))
-            Spacer()
-            Text("Stand-in shield, test mode")
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(Color(shieldHex: p.soft).opacity(0.6))
-                .padding(.bottom, 12)
+    }
+
+    private func askOtto() {
+        asked = true
+        BlockAsk.post {
+            Task { @MainActor in
+                // With notifications off there is no banner to tap,
+                // and the phone's answer is to open 808 by hand.
+                if !block.notificationsAllowed { block.requestIntervention() }
+            }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(shieldHex: p.background).ignoresSafeArea())
+        // The real shield stays up behind the notification; this one
+        // steps aside so the banner can be tapped.
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(900))
+            onClose()
+        }
     }
 }
 
