@@ -43,9 +43,13 @@ struct BlockHooks: ViewModifier {
             .onChange(of: lastSessionID) { _, _ in catchUp() }
             .onChange(of: scenePhase, initial: true) { _, phase in
                 guard FeatureFlags.block, phase == .active else { return }
+                BlockTrace.step("808 is active")
                 block.refresh()
                 catchUp()
-                if block.hasUnansweredAsk { showOtto() }
+                if block.hasUnansweredAsk {
+                    BlockTrace.step("an Ask Otto is unanswered")
+                    showOtto()
+                }
             }
     }
 
@@ -57,8 +61,10 @@ struct BlockHooks: ViewModifier {
         // moment ago that no redraw has picked up yet. Two days back covers
         // the 36 hours it judges, whatever the session's length.
         let cutoff = Date().addingTimeInterval(-48 * 3600)
-        let fetched = (try? context.fetch(FetchDescriptor<Session>(
-            predicate: #Predicate { $0.startedAt >= cutoff }))) ?? sessions
+        let fetched = BlockTrace.timed("catch up: fetch sessions") {
+            (try? context.fetch(FetchDescriptor<Session>(
+                predicate: #Predicate { $0.startedAt >= cutoff }))) ?? sessions
+        }
         // A recorded sit never opens apps (`Session.isLogged`).
         let recent = fetched.filter { !$0.isLogged }.map { session in
             (end: session.startedAt.addingTimeInterval(TimeInterval(session.durationSec)),
@@ -72,12 +78,23 @@ struct BlockHooks: ViewModifier {
     /// already have opened the apps, and Otto asking about nothing (with "No
     /// passes left today") is worse than no Otto.
     private func showOtto() {
-        guard !sessionActive, !ottoShowing else { return }
+        guard !sessionActive, !ottoShowing else {
+            BlockTrace.step("no Otto: \(sessionActive ? "a session is running" : "Otto is already up")")
+            return
+        }
         catchUp()
         block.clearDeliveredAsk()
-        guard !block.holding().isEmpty else { return }
-        if awardShowing { waiting = true; return }
-        guard block.claimPresentation() else { return }
-        present(pick())
+        guard !block.holding().isEmpty else {
+            BlockTrace.step("no Otto: nothing is held")
+            return
+        }
+        if awardShowing { waiting = true; BlockTrace.step("Otto waits for an award"); return }
+        guard block.claimPresentation() else {
+            BlockTrace.step("no Otto: one was presented under 2 s ago")
+            return
+        }
+        let kind = pick()
+        BlockTrace.step("presenting Otto's \(kind.rawValue) screen")
+        present(kind)
     }
 }

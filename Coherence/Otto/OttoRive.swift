@@ -502,12 +502,17 @@ final class BreathHaptics {
     /// One breath, played once: a swell over `inhale`, stillness for `hold`,
     /// a softer fall over `exhale`. For the onboarding's single paced breath
     /// (in 4, hold 2, out 4), which does not repeat.
+    ///
+    /// The engine starts without waiting: `start()` holds the main thread
+    /// until the haptic server answers, and this also runs on Otto's "Breathe
+    /// with me" screen, which a person may close the moment it opens
+    /// (2026-10-06). The swell begins once the engine is up, a few
+    /// milliseconds late, and not at all if `stop()` came first.
     func playOnce(inhale: TimeInterval, hold: TimeInterval, exhale: TimeInterval) {
         guard CHHapticEngine.capabilitiesForHardware().supportsHaptics else { return }
         do {
             let engine = try CHHapticEngine()
             engine.playsHapticsOnly = true
-            try engine.start()
             let rise = CHHapticEvent(
                 eventType: .hapticContinuous,
                 parameters: [CHHapticEventParameter(parameterID: .hapticIntensity, value: 0.6),
@@ -529,9 +534,18 @@ final class BreathHaptics {
                 relativeTime: 0)
             let player = try engine.makeAdvancedPlayer(
                 with: CHHapticPattern(events: [rise, fall], parameterCurves: [curve]))
-            try player.start(atTime: CHHapticTimeImmediate)
             self.engine = engine
             self.player = player
+            let started = ObjectIdentifier(engine)
+            engine.start { [weak self] error in
+                guard error == nil else { return }
+                Task { @MainActor in
+                    // Stopped, or another breath begun, while it was starting.
+                    guard let self, let engine = self.engine, ObjectIdentifier(engine) == started,
+                          let player = self.player else { return }
+                    try? player.start(atTime: CHHapticTimeImmediate)
+                }
+            }
         } catch {
             player = nil
             engine = nil

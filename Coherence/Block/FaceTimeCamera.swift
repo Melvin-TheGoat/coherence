@@ -45,7 +45,9 @@ final class FrontCamera: ObservableObject {
         started = true
         FrontCameraEngine.log.info("start requested")
 
-        guard AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .front) != nil else {
+        // Looked up on the camera's queue: finding a device asks the camera
+        // server, which can be busy finishing the last call's stop.
+        guard await FrontCameraEngine.shared.hasFrontCamera(), started, !Task.isCancelled else {
             return
         }
         let authorized: Bool
@@ -94,6 +96,15 @@ final class FrontCameraEngine: @unchecked Sendable {
     private let queue = DispatchQueue(label: "com.lockout.meditate808.front-camera")
     private var configured = false
 
+    func hasFrontCamera() async -> Bool {
+        await withCheckedContinuation { continuation in
+            queue.async {
+                continuation.resume(returning: AVCaptureDevice.default(.builtInWideAngleCamera, for: .video,
+                                                                       position: .front) != nil)
+            }
+        }
+    }
+
     /// Adds the front camera once, for the life of the app.
     func configure() async -> Bool {
         await withCheckedContinuation { continuation in
@@ -131,7 +142,35 @@ final class FrontCameraEngine: @unchecked Sendable {
             let began = Date()
             if session.isRunning { session.stopRunning() }
             Self.log.info("stopped after \(Date().timeIntervalSince(began), format: .fixed(precision: 2))s")
+            Task { @MainActor in self.releaseRetired() }
         }
+    }
+
+    /// Preview views whose screen has gone, kept until the session is still.
+    @MainActor private var retired: [UIView] = []
+
+    /// A preview layer detaches itself from the session when it is freed,
+    /// and that waits on the session: freed on the main thread while
+    /// `startRunning` or `stopRunning` is under way on `queue`, it holds the
+    /// interface until the camera finishes (2026-10-06). Since the call rings
+    /// with the camera on, closing Otto the moment he appears does exactly
+    /// that. So a gone screen's preview is kept here and freed once the queue
+    /// has nothing in flight: now, if the session is already still, or by
+    /// `stopRunning` when it finishes.
+    @MainActor
+    func retire(_ view: UIView) {
+        retired.append(view)
+        queue.async { [self] in
+            guard !session.isRunning else { return }
+            Task { @MainActor in self.releaseRetired() }
+        }
+    }
+
+    @MainActor
+    private func releaseRetired() {
+        guard !retired.isEmpty else { return }
+        retired.removeAll()
+        Self.log.info("released a gone screen's preview")
     }
 }
 
@@ -152,6 +191,9 @@ struct FaceTimeCameraPreview: UIViewRepresentable {
     final class PreviewView: UIView {
         override class var layerClass: AnyClass { AVCaptureVideoPreviewLayer.self }
         var preview: AVCaptureVideoPreviewLayer { layer as! AVCaptureVideoPreviewLayer }
+        /// Mirrored once and done: after that, an update asks the session
+        /// nothing while it may be busy starting.
+        var mirrored = false
     }
 
     func makeUIView(context: Context) -> PreviewView {
@@ -159,21 +201,29 @@ struct FaceTimeCameraPreview: UIViewRepresentable {
         view.preview.session = session
         view.preview.videoGravity = .resizeAspectFill
         mirror(view)
+        FrontCameraEngine.log.info("preview attached")
         return view
     }
 
     func updateUIView(_ uiView: PreviewView, context: Context) {
         // The connection isn't guaranteed to exist yet when `makeUIView`
         // runs (the session may still be mid-configuration), so this is
-        // re-asserted on every update rather than once.
+        // re-asserted on updates until it has taken.
         mirror(uiView)
     }
 
+    /// Freed only once the session is still (`FrontCameraEngine.retire`).
+    static func dismantleUIView(_ uiView: PreviewView, coordinator: ()) {
+        FrontCameraEngine.shared.retire(uiView)
+    }
+
     /// Writes only what differs: a connection setter can make the session
-    /// reconfigure, and this runs on every SwiftUI update of the screen.
+    /// reconfigure, and this runs on SwiftUI updates of the screen.
     private func mirror(_ view: PreviewView) {
+        guard !view.mirrored else { return }
         guard let connection = view.preview.connection, connection.isVideoMirroringSupported else { return }
         if connection.automaticallyAdjustsVideoMirroring { connection.automaticallyAdjustsVideoMirroring = false }
         if !connection.isVideoMirrored { connection.isVideoMirrored = true }
+        view.mirrored = true
     }
 }

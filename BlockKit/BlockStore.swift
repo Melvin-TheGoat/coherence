@@ -2,6 +2,7 @@ import Foundation
 import FamilyControls
 import ManagedSettings
 import UserNotifications
+import os
 
 // BlockKit: the Screen Time half of Block, compiled into the app and all three
 // extensions (the DeviceActivity monitor, the shield's look, the shield's
@@ -172,19 +173,28 @@ enum BlockShields {
     /// to call from anywhere, any number of times: it only ever sets what
     /// the rules say. A store left by a blocker that no longer exists is
     /// lifted, so nothing stays shielded with no way to open it.
-    static func reconcile(now: Date = Date()) {
+    ///
+    /// Each write is a synchronous call to Screen Time's daemon: the app
+    /// makes this call off the main thread (`ScreenTimeWork`). Returns how
+    /// many stores it held and lifted, for the app's log.
+    @discardableResult
+    static func reconcile(now: Date = Date()) -> (held: Int, lifted: Int) {
         let state = BlockStore.load()
+        var held = 0, lifted = 0
         for blocker in state.blockers {
             if BlockRules.holds(blocker, in: state, at: now) {
                 hold(blocker)
+                held += 1
             } else {
                 lift(blocker.id)
+                lifted += 1
             }
         }
         let current = Set(state.blockers.map(\.id.uuidString))
         for raw in BlockStore.knownStores() where !current.contains(raw) {
-            if let id = UUID(uuidString: raw) { lift(id) }
+            if let id = UUID(uuidString: raw) { lift(id); lifted += 1 }
         }
+        return (held, lifted)
     }
 }
 
@@ -194,7 +204,13 @@ enum BlockShields {
 /// what the phone will.
 enum BlockAsk {
     static let notificationID = "808.block.ask"
+    private static let log = Logger(subsystem: "com.lockout.meditate808", category: "Block")
 
+    /// `completion` runs once the notification is handed over, or after two
+    /// seconds, whichever is first: the shield's button waits on it before
+    /// the shield draws again, and it must never wait on a slow notification
+    /// server (2026-10-06). The ask is recorded first either way, so opening
+    /// 808 by hand still finds Otto waiting.
     static func post(completion: @escaping () -> Void = {}) {
         BlockStore.appendAsk()
         let content = UNMutableNotificationContent()
@@ -205,7 +221,35 @@ enum BlockAsk {
         content.interruptionLevel = .timeSensitive
         content.userInfo = ["block": "ask"]
         let request = UNNotificationRequest(identifier: notificationID, content: content, trigger: nil)
-        UNUserNotificationCenter.current().add(request) { _ in completion() }
+        let finish = OneShot(completion)
+        let began = Date()
+        UNUserNotificationCenter.current().add(request) { error in
+            let took = Date().timeIntervalSince(began)
+            log.info("Ask Otto: notification handed over in \(took, format: .fixed(precision: 2), privacy: .public)s, error: \(error.map { String(describing: $0) } ?? "none", privacy: .public)")
+            finish.run()
+        }
+        DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + 2) {
+            if finish.run() { log.error("Ask Otto: the notification server took over 2 s; the shield went on without it") }
+        }
+    }
+}
+
+/// A completion that runs once, whichever caller gets there first.
+private final class OneShot: @unchecked Sendable {
+    private let lock = NSLock()
+    private var work: (() -> Void)?
+
+    init(_ work: @escaping () -> Void) { self.work = work }
+
+    /// Runs it if nobody has yet; says whether this call did.
+    @discardableResult
+    func run() -> Bool {
+        lock.lock()
+        let pending = work
+        work = nil
+        lock.unlock()
+        pending?()
+        return pending != nil
     }
 }
 

@@ -7239,3 +7239,41 @@ The decisions it produced, so nobody undoes them:
   self-management of your own iPhone. This supersedes the earlier note that the
   listing must lead with Block. Keywords drop 528hz/solfeggio/nature/rain for
   mindfulness, guided, timer, stress, detox, selfcare, pet (`APP_STORE_PASTE.md`).
+
+## SCREEN TIME IS NEVER CALLED ON THE MAIN THREAD (2026-10-06, the "Ask Otto" freeze)
+
+Melvin: shield, Ask Otto, Otto appears, X at once, back to the held app,
+"Send it again", back to 808, and the phone froze for about fifteen
+seconds. Not reproducible on a simulator (no shield, no Screen Time daemon,
+no camera); the presentation path itself measured clean there (Otto up
+~110 ms after 808 is active, nothing stalls around X). So the fix covers
+every synchronous system call on that path, and the log names the culprit
+if it comes back. **Branch `fix/ask-otto-freeze`; unverified on a phone.**
+
+- **`ScreenTimeWork`** (BlockController.swift): every ManagedSettings shield
+  write and DeviceActivity call the app makes runs on one serial queue, each
+  under a background-task assertion. 808 used to write every shield two or
+  three times on the main thread each time it came back from a held app,
+  exactly while "Ask Otto" had those daemons redrawing the shield.
+  Shield passes coalesce (a waiting pass reads the saved state when it
+  starts, so later asks join it). `takePass` schedules pass ends there too
+  and applies refusals when Screen Time answers. Otto appearing no longer
+  triggers a shield pass at all (`noteInterventionShown` only saves). **Any
+  new app-side `BlockShields` / `BlockSchedule` call goes through it.** The
+  extensions still call `BlockShields` directly on their own threads.
+- **Camera**: a FaceTime preview layer freed while the session is starting
+  or stopping makes its dealloc wait on the session, on the main thread, and
+  since the call rings with the camera on, closing Otto at once does exactly
+  that. Gone previews are kept by `FrontCameraEngine.retire` until the
+  session is still; the device lookup moved to the camera queue; mirroring
+  is set once, not re-queried on every update.
+- **Haptics**: `BreathHaptics.playOnce` starts its engine asynchronously
+  (`start()` blocks until the haptic server answers).
+- **The shield's Ask Otto** finishes after the notification is handed over
+  or two seconds, whichever is first (`BlockAsk.post`).
+- **`BlockTrace`** logs every step (category `Block`), and in DEBUG
+  `MainThreadWatch` reports any main-thread stall over a second with the last
+  step taken. To read it from a phone running 808 Beta:
+  `DEVICECTL_CHILD_OS_ACTIVITY_DT_MODE=enable xcrun devicectl device process
+  launch --console --terminate-existing --device <id> com.lockout.meditate808.dev`,
+  then look for `MAIN THREAD NOT ANSWERING`.

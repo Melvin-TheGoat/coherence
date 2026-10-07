@@ -151,7 +151,11 @@ struct ContentView: View {
 
     /// One cover at a time; anything asked for while one is up waits its turn.
     private func present(_ next: HomeSheet) {
-        if sheet == nil { sheet = next } else { pendingSheet = next }
+        let queued = sheet != nil
+        if queued { pendingSheet = next } else { sheet = next }
+        if case .intervention = next {
+            BlockTrace.step(queued ? "Otto waits behind another cover" : "Otto's cover presenting")
+        }
     }
 
     /// The tab bar's measured height, handed to the tabs as
@@ -321,7 +325,10 @@ struct ContentView: View {
                 pendingSheet = nil
                 // Otto asks only while something is held: a session that
                 // ended behind another cover may have opened the apps.
-                if case .intervention = next, block.holding().isEmpty { return }
+                if case .intervention = next {
+                    if block.holding().isEmpty { return }
+                    BlockTrace.step("Otto's cover presenting, after the one before it")
+                }
                 sheet = next
             }
         }) { which in
@@ -362,8 +369,12 @@ struct ContentView: View {
                                      startAfterOtto = minutes ?? 0
                                      sheet = nil
                                  },
-                                 onClose: { sheet = nil })
+                                 onClose: {
+                                     BlockTrace.step("Otto closed (X, or a pass taken)")
+                                     sheet = nil
+                                 })
                     .onAppear { block.noteInterventionShown(kind) }
+                    .onDisappear { BlockTrace.step("Otto's \(kind.rawValue) screen is gone") }
             case .blockPaywall:
                 PaywallScreen(placement: "block", plan: $paywallPlan) { _ in sheet = nil }
             case .friends:
