@@ -44,7 +44,8 @@
  *
  * Internal traffic is excluded: locally built installs (App build 1),
  * TestFlight, sideloaded betas, phones flagged as team devices (seven taps on
- * the version line in Settings), and Apple's own devices (see APPLE below).
+ * the version line in Settings), Apple's own devices (see APPLE below), and
+ * people marked internal in PostHog (founders' old phones, family).
  * Every time and every day is Detroit time, so Daily and Installs agree.
  */
 
@@ -67,9 +68,34 @@ var APPLE =
   "OR startsWith(ifNull(toString(properties.$ip), ''), '139.178.')";
 
 /**
+ * People marked internal in PostHog: founders' old phone records and family
+ * (person property $internal_or_test_user = true, the same property the
+ * project's "Internal / Test users" cohort reads). Marked by hand on
+ * 2026-10-07 because the team-device switch only flags events sent after it
+ * is turned on.
+ */
+var MARKED_INTERNAL =
+  "person_id IN (SELECT id FROM persons WHERE toString(properties.$internal_or_test_user) = 'true')";
+
+/**
+ * Extra people to leave out, by PostHog person id, from the Script Property
+ * INTERNAL_PERSON_IDS (comma separated). For a record that cannot be marked
+ * in PostHog because it never got a profile: 1.0 sent events without one, so
+ * a phone that never opened 1.1 has nothing to set a property on. Kept out
+ * of this file because the repo is public.
+ */
+var EXTRA_INTERNAL_IDS = (function () {
+  try {
+    var raw = PropertiesService.getScriptProperties().getProperty('INTERNAL_PERSON_IDS') || '';
+    return raw.split(',').map(function (s) { return s.trim().toLowerCase(); })
+      .filter(function (s) { return /^[0-9a-f-]{36}$/.test(s); });
+  } catch (e) { return []; }
+})();
+
+/**
  * PostHog's "internal and test users" filter (build 1, TestFlight,
- * sideloaded), plus team devices and Apple's devices, which the PostHog
- * filter does not have. ifNull because a property an old build never sent
+ * sideloaded, team devices, Apple's networks, people marked internal), plus
+ * any extra ids above. ifNull because a property an old build never sent
  * must read as "not internal", not as unknown.
  */
 var NOT_INTERNAL =
@@ -77,7 +103,12 @@ var NOT_INTERNAL =
   "OR ifNull(toString(properties.$is_testflight), '') = 'true' " +
   "OR ifNull(toString(properties.$is_sideloaded), '') = 'true' " +
   "OR ifNull(toString(properties.team_device), '') = 'true' " +
-  "OR " + APPLE + ")";
+  "OR " + APPLE + " " +
+  "OR " + MARKED_INTERNAL +
+  (EXTRA_INTERNAL_IDS.length
+    ? " OR toString(person_id) IN ('" + EXTRA_INTERNAL_IDS.join("', '") + "')"
+    : '') +
+  ")";
 
 /** Version strings starting with this are the old app. */
 var OLD = "startsWith(ifNull(toString(properties.$app_version), ''), '1.0')";
@@ -393,7 +424,7 @@ function writeScreens() {
   rows.push(['', 'Finished onboarding', counts['__finished'] || 0,
     '', 'An onboarding_step fires when a screen is LEFT, so each count is people who got past that screen. 1.1 and later only.']);
   rows.push(['', 'Who is counted', '', '',
-    'New installs only: a 1.0 user who updates skips onboarding (see the Updaters tab). Apple’s devices are left out; founders’ App Store installs are in unless the phone is flagged as a team device.']);
+    'New installs only: a 1.0 user who updates skips onboarding (see the Updaters tab). Apple’s devices, founders’ and family phones are left out. A founder’s NEW install counts until its team-device switch is on.']);
   write('Screens', rows, [50, 380, 200, 170, 620]);
 }
 
@@ -609,7 +640,7 @@ function writeInstalls() {
   });
   rows.push(['']);
   rows.push(['INSTALLS', res.results.length, '', '', '', '', '', '', '', '', '', '', '', '', '', '',
-             'A reinstall is a new row. Apple’s devices are left out. Founders count unless their phone is flagged as a team device (seven taps on the version line in Settings).']);
+             'A reinstall is a new row. Apple’s devices, founders’ and family phones are left out. A founder’s new install counts until the team-device switch is on (seven taps on the version line in Settings).']);
   write('Installs', rows, [90, 100, 110, 110, 110, 150, 60, 70, 130, 140, 260, 110, 120, 100, 100, 150, 340, 280], [7, 8], [12, 13, 14, 15]);
 }
 
