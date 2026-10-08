@@ -203,7 +203,11 @@ enum BlockShields {
 /// mode both come through here, so a rehearsal on the simulator sends exactly
 /// what the phone will.
 enum BlockAsk {
-    static let notificationID = "808.block.ask"
+    /// Every ask gets its own identifier under this prefix (2026-10-08).
+    /// One fixed identifier made each ask REPLACE the last one still in
+    /// Notification Center, and iOS can deliver a replacement late and
+    /// quietly; Melvin saw about five seconds between the tap and the banner.
+    static let notificationPrefix = "808.block.ask"
     private static let log = Logger(subsystem: "com.lockout.meditate808", category: "Block")
 
     /// `completion` runs once the notification is handed over, or after two
@@ -220,16 +224,36 @@ enum BlockAsk {
         // Through Focus, which is when it matters most.
         content.interruptionLevel = .timeSensitive
         content.userInfo = ["block": "ask"]
-        let request = UNNotificationRequest(identifier: notificationID, content: content, trigger: nil)
+        let id = "\(notificationPrefix).\(Int(Date().timeIntervalSince1970 * 1000))"
+        let request = UNNotificationRequest(identifier: id, content: content, trigger: nil)
         let finish = OneShot(completion)
         let began = Date()
-        UNUserNotificationCenter.current().add(request) { error in
+        let center = UNUserNotificationCenter.current()
+        // Older asks still in Notification Center go, without holding up
+        // this one: the new banner is the only one worth tapping.
+        center.getDeliveredNotifications { delivered in
+            let old = delivered.map(\.request.identifier)
+                .filter { $0.hasPrefix(notificationPrefix) && $0 != id }
+            if !old.isEmpty { center.removeDeliveredNotifications(withIdentifiers: old) }
+        }
+        center.add(request) { error in
             let took = Date().timeIntervalSince(began)
             log.info("Ask Otto: notification handed over in \(took, format: .fixed(precision: 2), privacy: .public)s, error: \(error.map { String(describing: $0) } ?? "none", privacy: .public)")
             finish.run()
         }
         DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + 2) {
             if finish.run() { log.error("Ask Otto: the notification server took over 2 s; the shield went on without it") }
+        }
+    }
+}
+
+extension BlockAsk {
+    /// Every "Otto wants a word" still in Notification Center.
+    static func clearDelivered() {
+        let center = UNUserNotificationCenter.current()
+        center.getDeliveredNotifications { delivered in
+            let ids = delivered.map(\.request.identifier).filter { $0.hasPrefix(notificationPrefix) }
+            if !ids.isEmpty { center.removeDeliveredNotifications(withIdentifiers: ids) }
         }
     }
 }

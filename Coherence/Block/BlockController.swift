@@ -286,7 +286,7 @@ final class BlockController: ObservableObject {
     /// "Otto wants a word" lingers in Notification Center after the apps are
     /// open, and tapping it later would open Otto about nothing.
     func clearDeliveredAsk() {
-        UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: [BlockAsk.notificationID])
+        BlockAsk.clearDelivered()
     }
 
     /// Sessions that ended while 808 was closed (a Watch session delivered
