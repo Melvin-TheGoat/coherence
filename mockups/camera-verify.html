@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Camera Verified Sessions</title>
+<style>
+  :root { --paper:#F7F1E3; --ink:#41301F; --soft:#6F5D4F; --line:#E4D9C3; --green:#5E9B5A; --teal:#3E8A86; --card:#FFFBF2; --warn:#A8432A; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--paper); color:var(--ink);
+         font-family: ui-rounded, "SF Pro Rounded", system-ui, sans-serif; }
+  main { max-width:1180px; margin:0 auto; padding:40px 16px 80px; }
+  h1 { font-size:34px; margin:0 0 8px; }
+  h2 { font-size:24px; margin:52px 0 6px; }
+  h3 { font-size:18px; margin:26px 0 4px; }
+  p, li { font-size:16px; line-height:1.5; color:var(--soft); max-width:780px; }
+  li b, p b { color:var(--ink); }
+  .row { display:flex; flex-wrap:wrap; gap:24px; margin-top:18px; }
+  figure { margin:0; width:250px; max-width:100%; }
+  figure img { width:100%; border-radius:34px; box-shadow:0 8px 24px rgba(65,48,31,.18); display:block; }
+  figcaption { font-size:14px; color:var(--soft); margin-top:10px; line-height:1.4; }
+  figcaption b { color:var(--ink); }
+  .tag { display:inline-block; font-size:12px; font-weight:700; color:var(--green);
+         background:#E6F0E2; border-radius:99px; padding:2px 10px; margin-left:8px; vertical-align:middle; }
+  .tag.today { color:var(--soft); background:#EEE6D6; }
+  .box { background:var(--card); border:1px solid var(--line); border-radius:18px; padding:6px 24px 14px; margin-top:22px; }
+  .box h3 { margin-top:16px; }
+  table { border-collapse:collapse; margin-top:12px; font-size:15px; color:var(--soft); width:100%; max-width:820px; }
+  th, td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { color:var(--ink); font-size:14px; }
+  .decided { background:#E6F0E2; border:1px solid #CFE0C8; border-radius:14px; padding:10px 18px; margin:14px 0 4px; }
+  .decided p { margin:6px 0; }
+  .decide { background:var(--card); border:1px solid var(--line); border-radius:18px; padding:8px 24px 16px; margin-top:52px; }
+  .decide li { margin:10px 0; }
+  .src li { font-size:14px; }
+  a { color:var(--teal); }
+  .note { font-size:14px; }
+  code { font-size:14px; background:#EEE6D6; border-radius:6px; padding:1px 5px; }
+  .uv { color:var(--warn); font-weight:700; font-size:12px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Camera verified sessions</h1>
+  <p>The phone is propped up and the front camera keeps a loose eye on you: are you there, and are you mostly still. Verified sessions grow the streak and Otto's glow and open held apps. Unverified ones are kept in history.</p>
+  <p class="note">Every screen is rendered from the app on an iPhone 17 Pro simulator, using the real valley, Otto, pills and buttons. Two things are stand-ins: the simulator has no camera, so the feed is a drawn room, and the phone icon on the camera card is a placeholder for a drawing in the style of Melvin's icon sheet.</p>
+
+  <h2>1. How are we meditating?</h2>
+  <p>Two sections. <b>Verified</b> carries a teal "Recommended" tag and the two big cards, with camera chosen by default (the gold outline, as today). <b>Unverified</b> sits underneath in the smaller pills, so the eye lands on the verified pair first.</p>
+  <p>The difference is said once, as what each section does: "Otto knows you showed up, so these grow your streak and his glow, and open your apps" over Verified, and "Kept in your history, just for you" over Unverified. Nothing says what an unverified session doesn't do. The reader works it out from the sentence above.</p>
+  <div class="row">
+    <figure><img src="camera-verify/today.png" alt=""><figcaption><b>Today</b> <span class="tag today">For comparison</span><br>Three equal cards.</figcaption></figure>
+    <figure><img src="camera-verify/kinds.png" alt=""><figcaption><b>Proposed.</b> Verified first and big, camera chosen. Unverified below, quieter.</figcaption></figure>
+    <figure><img src="camera-verify/ready.png" alt=""><figcaption><b>Back on the Ready screen.</b> The pill reads "Camera · Verified", and Otto's line becomes "Prop me up where I can see you."</figcaption></figure>
+  </div>
+
+  <h2>2. Setting up the camera</h2>
+  <p>The permission is asked the first time camera is picked, never at launch. Before Apple's alert there is one screen that says what the camera is for, with a single <b>Continue</b> button: Apple's guidance says a screen shown before the system alert may only offer Continue or Next, with no cancel and no "Allow". If the camera is refused, the alternatives come straight up (App Review 5.1.1(iv)).</p>
+  <p><b>The start is hands-free.</b> Once the phone is propped up an arm's length away, nobody can reach Begin. So Begin is tapped while holding the phone, and the camera does the rest. When Otto has seen you for two seconds, he says "I can see you" and a five second count starts with a soft tick each second, then hands over to today's "Get comfortable" moment. The check is loose on purpose: corner marks and no outline of a seated body. Sitting, leaning back with legs out or standing all pass.</p>
+  <div class="row">
+    <figure><img src="camera-verify/permission.png" alt=""><figcaption><b>Before Apple's alert.</b> What, where, and nothing kept. One button.</figcaption></figure>
+    <figure><img src="camera-verify/denied.png" alt=""><figcaption><b>Camera refused.</b> "No camera today? No problem." The Watch (if paired), without camera, or Settings.</figcaption></figure>
+    <figure><img src="camera-verify/looking.png" alt=""><figcaption><b>Looking.</b> Corner marks, no body outline. Back is still in the corner.</figcaption></figure>
+    <figure><img src="camera-verify/found.png" alt=""><figcaption><b>Found.</b> A teal box around you (teal is guidance in 808's colours) and the count starts by itself.</figcaption></figure>
+    <figure><img src="camera-verify/recline.png" alt=""><figcaption><b>Leaning back, legs out.</b> Also found. The box follows the person, not a pose.</figcaption></figure>
+  </div>
+
+  <h2>3. During the session</h2>
+  <p><b>No live preview.</b> A picture of yourself is the opposite of a quiet screen, and the stance is still evidence after, never during. What stays is one small line under the island, "Otto can see you", for the whole session. That line is not decoration: App Review 2.5.14 asks for "a clear visual and/or audible indication" whenever an app logs what a person is doing, so it never fades away.</p>
+  <p><b>In a dark room the screen becomes a lamp.</b> Normally the sit dims itself to a fifth (<code>SitDimmer</code>). When the camera can't see well enough, the valley gives way to warm white at full brightness, with the clock and Otto in brown ink, and goes back to the valley once there's enough light. Be clear about what this buys: by a rough estimate a phone screen adds about 10 lux to a face at one metre and about 38 lux at half a metre (a dim room is under 10). So the lamp really helps only up close, which is why the dark screen asks to bring the phone nearer.</p>
+  <div class="row">
+    <figure><img src="camera-verify/arrive.png" alt=""><figcaption><b>Arriving.</b> "Otto can see you. Stay in view and it counts." The line under the headline carries the cue for the first nine seconds.</figcaption></figure>
+    <figure><img src="camera-verify/sit.png" alt=""><figcaption><b>Mid-session.</b> Today's sit screen plus the small cue.</figcaption></figure>
+    <figure><img src="camera-verify/sit-night.png" alt=""><figcaption><b>Evening, lamp on in the room.</b> Enough light: the valley stays, dimmed as usual.</figcaption></figure>
+    <figure><img src="camera-verify/lamp.png" alt=""><figcaption><b>Dark room.</b> The screen is the light. The cue says why it's bright.</figcaption></figure>
+  </div>
+
+  <h2>4. The warning, and the minutes that don't count</h2>
+  <p><b>Eyes are closed, so the warning is a sound first.</b> Two soft wooden knocks, clearly not the singing bowl that ends a session. They play on the media channel the way <code>SessionBell</code> does, so the ring switch doesn't silence them and anything else playing keeps playing. If the person is still away after 20 seconds, the knock plays once more and then stays quiet: nagging a person who has gone to answer the door helps nobody. When they're back and settled, one soft tone. Otto's bubble says the same thing in words for anyone who opens their eyes.</p>
+  <p>The minutes Otto couldn't count show as a dotted stretch in the ring. The clock keeps real time, and no number about it appears until the end.</p>
+  <table>
+    <tr><th>Recommended timeline</th><th>What happens</th></tr>
+    <tr><td>Out of view or moving a lot, under 10 s</td><td>Nothing. Scratching a nose or shifting legs is part of sitting.</td></tr>
+    <tr><td>10 s out of view, or 15 s of big movement</td><td>Knock, knock, and Otto's bubble.</td></tr>
+    <tr><td>Back and settled within 20 s of the knock</td><td>Nothing is lost.</td></tr>
+    <tr><td>Still away after that</td><td>Uncounted from when it started until settled again. One more knock, then quiet.</td></tr>
+    <tr><td>First 60 s and last 10 s</td><td>Exempt: sitting down and getting up are big movements by nature.</td></tr>
+  </table>
+  <div class="row">
+    <figure><img src="camera-verify/away.png" alt=""><figcaption><b>Out of view.</b> Otto looks up and waves: "I can't see you. Come back into view and I'll keep counting."</figcaption></figure>
+    <figure><img src="camera-verify/moving.png" alt=""><figcaption><b>Moving a lot.</b> "Lots of moving. Settle back in and I'll keep counting."</figcaption></figure>
+    <figure><img src="camera-verify/gap.png" alt=""><figcaption><b>Later.</b> The uncounted stretch is dotted in the ring, on the right.</figcaption></figure>
+  </div>
+
+  <h2>5. Too dark to see</h2>
+  <p>Checked before the session starts, during the framing step. The screen has already turned itself into a lamp. Otto asks for a little help in his own words and keeps looking, so turning on a light is enough and nothing needs tapping. If it gets dark in the middle of a session, the lamp comes on first; only if Otto still can't see does the normal "I can't see you" knock follow.</p>
+  <div class="row">
+    <figure><img src="camera-verify/dark.png" alt=""><figcaption><b>Too dark.</b> "It's a little dark for me to see you. Bring me closer, or turn on a lamp." Without camera stays one tap away.</figcaption></figure>
+  </div>
+
+  <h2>6. The end</h2>
+  <p>A verified session with a gap reads "17 of 20 minutes counted" under "Session complete!", and the tiles, points and glow all use the 17. An unverified session gets a lighter ending: the minutes, "saved to your history", and one line from Otto inviting the camera next time, with no streak, points or glow bar (see To decide).</p>
+  <div class="row">
+    <figure><img src="camera-verify/end.png" alt=""><figcaption><b>Verified, 17 of 20.</b> Streak, points and glow on the counted minutes.</figcaption></figure>
+    <figure><img src="camera-verify/endfree.png" alt=""><figcaption><b>Unverified.</b> "Nice one. Next time, prop me up and I'll glow for it."</figcaption></figure>
+  </div>
+
+  <h2>How it watches, as cheaply as possible</h2>
+  <div class="box">
+    <h3>Video frames, not photos</h3>
+    <p>A low-resolution video feed, never repeated photo captures. Apple lets apps silence the photo shutter "except in jurisdictions" that require it, so a photo every few seconds would click in Japan and Korea. Photos also refocus and re-expose each time. Video frames from the data output make no sound (<span class="uv">unverified:</span> Apple documents the shutter only for photo output).</p>
+    <h3>The ladder</h3>
+    <p><b>Resting:</b> the lowest frame rate the front camera format allows, aiming for 1 to 2 fps. Apple documents no minimum, and a format refuses a rate outside its <code>videoSupportedFrameRateRanges</code>. So read the range at runtime and drop extra frames in the delegate if 1 fps isn't offered. Each frame gets a tiny luma-grid difference for stillness (the <code>camera-vision</code> branch already does this). Every 3 seconds, one <code>VNDetectHumanRectanglesRequest</code> with <code>upperBodyOnly = false</code>. It defaults to true, and full body (revision 2, iOS 15) is what covers lying back, legs out and standing.</p>
+    <p><b>Something looks off</b> (box lost, motion jumps): go to about 5 fps for 10 seconds to confirm before knocking, then back down. Under heat, follow Apple's advice for capture pressure and lower the rate.</p>
+    <p><b>Not used:</b> body pose, because Apple says it wants the person at least a third of the frame height and fails bent over or near the edges. Person segmentation, because it costs more memory and time. Tracking between detections, because it is built for consecutive frames and seconds apart it would drift (<span class="uv">unverified:</span> nobody publishes relative costs, so measure all of these with signposts).</p>
+    <h3>Dark rooms</h3>
+    <p>The low frame rate is also what makes long exposures possible: exposure can't be longer than a frame, and a 1 fps frame lasts up to a second. Set custom exposure and ISO up to the format's <code>maxExposureDuration</code> and <code>maxISO</code>, read on the device. Forum reports put continuous auto exposure near 1/30 s and custom exposures near 1 s (<span class="uv">unverified</span>). Apple's low-light boost has no published device list and may not exist on the front camera (<span class="uv">unverified</span>), so it is a bonus, not the plan. Retina Flash fires only for still photos and has no video API, so the "lamp" is simply full screen brightness and warm white pixels. Brightness set by an app lasts until the phone is locked, so it must be put back, which <code>SitDimmer</code> already does.</p>
+    <h3>Measuring the battery cost</h3>
+    <p>No estimate here, on purpose: it has to be measured on a phone. Three 20-minute sessions on the same phone at the same brightness, repeated three times in alternating order, in airplane mode, from the same battery level:</p>
+    <ol>
+      <li>Without camera (today's timer, dimmed to a fifth).</li>
+      <li>Camera at 1 to 2 fps, valley dimmed.</li>
+      <li>Camera in lamp mode at full brightness.</li>
+    </ol>
+    <p>Record each with Xcode 26's Power Profiler on the device itself (Developer settings, Performance Trace: no cable needed, CPU, GPU, display and network impact). Cross-check with Xcode's Energy Impact gauge while connected, which breaks out Camera and Display, plus battery percentage before and after and <code>ProcessInfo.thermalState</code>. MetricKit has no camera metric. Apple's own energy talks say the display can be the biggest drain, so expect run 3 to cost the most. That is why the lamp only comes on when it's needed.</p>
+    <h3>Privacy</h3>
+    <p>Each frame becomes a few numbers and is released. Nothing is stored and nothing leaves the phone. Apple's App Privacy rules say data processed only on the device isn't "collected", so the labels and the privacy manifest don't change. The privacy policy needs one paragraph (both copies), and the camera usage string must describe this use alongside the selfie and Otto's video call, for example: "808 uses the front camera during a session to check that you're there and still. Nothing is recorded or saved, and nothing leaves your phone."</p>
+  </div>
+
+  <h2>App Review</h2>
+  <div class="box">
+    <p><b>The real risk is 5.1.2(i).</b> An app "may not require users to enable system functionalities" in order to access functionality. 808 has no free tier, so every feature is paid. Tying the streak, the glow and held apps to the camera is the kind of gate a reviewer could read that way. What softens it:</p>
+    <ul>
+      <li>The Apple Watch is a second verified way, with no camera at all.</li>
+      <li>Block's "Not now" still opens apps for 5, 10 or 30 minutes whatever kind of session was done, so no app is ever locked behind the camera.</li>
+      <li>Unverified sessions still run and are kept in history.</li>
+      <li>The camera is the feature itself, a watched session, rather than a gate in front of something unrelated.</li>
+      <li>Prior art: Push2Unlock counts push-ups on camera to unlock blocked apps and is on the App Store (<span class="uv">unverified:</span> going by its listing only).</li>
+    </ul>
+    <p>Recommended: say this plainly in the review notes. Keep a fallback ready (see To decide, item 7).</p>
+    <p><b>5.1.1(iv)</b>: "provide alternative solutions for users who don't grant consent". That is the camera-refused screen. <b>2.5.14</b>: a visible indication while logging. That is the cue that never leaves the screen. <b>5.1.1(ii)</b>: the usage string must clearly and completely describe the use.</p>
+  </div>
+
+  <div class="decide">
+    <h2>To decide</h2>
+    <div class="decided">
+      <p><b>Decided (Melvin, 2026-10-08): existing history keeps counting exactly as it always did.</b> Streak, glow and apps all stay the same, so nobody's streak or glow drops on update. The Unverified rules apply only to sessions from the version that ships this.</p>
+      <p class="note">How to build it: mark each new session with how it was verified (<code>camera</code>, <code>watch</code> or <code>none</code>), and treat a session with no mark as from before, which counts. Use the mark, not a cut-off date: "Record one" can log a session dated last week after the update, and that one must still be unverified. It is a new synced field, so the CloudKit schema needs promoting before release.</p>
+    </div>
+    <ol>
+      <li><b>Do unverified sessions earn points, awards or "time meditated"?</b> Recommended: no, one rule, "unverified is history only". Points buy hats and run on the same minutes as the glow. Awards are rewards. If Home's time and session totals counted them while the streak didn't, the numbers on one screen would disagree. History lists every session with no badge.</li>
+      <li><b>Counted minutes or total minutes?</b> Recommended: counted, everywhere a minute matters. That covers Block's "meditate first" length, the glow's minutes per day, points, and the one-minute floor for the streak. Otherwise four minutes of washing up inside a five-minute session would open the apps.</li>
+      <li><b>Warning thresholds.</b> Starting values as in the table: knock at 10 s out of view or 15 s of big movement, 20 s of grace, one repeat, the first minute and last 10 seconds exempt. "Big movement" should be relative to each session's own settled level, because camera motion varies with distance. The <code>camera-vision</code> branch measured x4 the median as the gate that separates real settling. Tune on a dozen real sits before shipping.</li>
+      <li><b>Apple Watch sessions that fall back to the phone.</b> Recommended: a Watch session is verified for the minutes the Watch actually sensed a heart rate. A Watch taken off loses its heart rate, the same as stepping out of frame. If the Watch never confirms and the session becomes a phone session, Otto offers the camera on the spot ("Your Watch didn't answer. Prop me up and I'll count it."). Otherwise it is unverified.</li>
+      <li><b>Default for Watch owners.</b> Camera is the default. For someone whose Watch is connected, should the Watch be the default instead, since it also reads heart and breath? Recommended: yes.</li>
+      <li><b>Timed sessions with uncounted minutes.</b> Should they run longer to make the time up? Recommended: no. A session ends when it was set to, and the end says "17 of 20 minutes counted".</li>
+      <li><b>No Watch and no camera permission</b> means everything is unverified. If App Review objects under 5.1.2(i), the fallback is to let unverified sessions keep the streak but not the glow, points or apps. Recommended: ship the strict rule with a clear review note, and keep this fallback ready.</li>
+      <li><b>"Record one" changes meaning.</b> Today a recorded session counts for the streak and glow. From this version it won't, which is Melvin's rule, but it is a visible change for anyone who logs sessions elsewhere. A line in What's New would cover it.</li>
+      <li><b>The word "Unverified".</b> Keep it, or soften the section title to "Just for you", which matches its line? Recommended: try "Just for you". "Unverified" names what the session lacks, and the house copy rule avoids that.</li>
+      <li><b>Hands-free start.</b> Start the count automatically once Otto sees you (recommended), or wait for a tap? A tap means leaning back over to the phone after propping it up.</li>
+      <li><b>Lamp mode.</b> Automatic when it's too dark (recommended), and only then. Or a switch? It is the most expensive state for the battery.</li>
+      <li><b>Volume.</b> The knock follows media volume, so at zero nobody hears it. Recommended: if media volume is zero at Begin, Otto says "Turn your volume up a little so you can hear me if I lose you."</li>
+      <li><b>A camera score?</b> The <code>camera-vision</code> branch can read stillness and slow breathing well enough for a score (stillness .80, breath .20). Recommended: not in this version. Verification only needs "there and still", and adding a score brings back the open questions about breathing accuracy.</li>
+      <li><b>Art.</b> A drawing for the camera kind in Melvin's icon sheet style, such as a phone leaning on a stone. The one here is a placeholder.</li>
+    </ol>
+  </div>
+
+  <h2>Sources</h2>
+  <ul class="src">
+    <li>App Review Guidelines, 2.5.14, 5.1.1(ii), 5.1.1(iv), 5.1.2(i): <a href="https://developer.apple.com/app-store/review/guidelines/">developer.apple.com/app-store/review/guidelines</a></li>
+    <li>HIG, requesting permission (one Continue button, no cancel): <a href="https://developer.apple.com/design/human-interface-guidelines/privacy">developer.apple.com/design/human-interface-guidelines/privacy</a></li>
+    <li>App Privacy details (on-device processing is not "collected"): <a href="https://developer.apple.com/app-store/app-privacy-details/">developer.apple.com/app-store/app-privacy-details</a></li>
+    <li><code>upperBodyOnly</code> (iOS 15, default true): <a href="https://developer.apple.com/documentation/vision/vndetecthumanrectanglesrequest/upperbodyonly">developer.apple.com/documentation/vision/vndetecthumanrectanglesrequest/upperbodyonly</a>, and full body in revision 2: <a href="https://developer.apple.com/videos/play/wwdc2021/10040/">WWDC21 10040</a></li>
+    <li>Body pose limits: <a href="https://developer.apple.com/documentation/vision/detecting-human-body-poses-in-images">Detecting human body poses in images</a>, <a href="https://developer.apple.com/videos/play/wwdc2020/10653/">WWDC20 10653</a></li>
+    <li>Tracking: <a href="https://developer.apple.com/documentation/vision/vntrackingrequest">VNTrackingRequest</a></li>
+    <li>Exposure: <a href="https://developer.apple.com/documentation/avfoundation/avcapturedevice/setexposuremodecustom(duration:iso:completionhandler:)">setExposureModeCustom</a>, <a href="https://developer.apple.com/documentation/avfoundation/avcapturedevice/activemaxexposureduration">activeMaxExposureDuration</a>, <a href="https://developer.apple.com/documentation/avfoundation/avcapturedevice/activevideomaxframeduration">activeVideoMaxFrameDuration</a>, <a href="https://developer.apple.com/documentation/avfoundation/avcapturedevice/isautovideoframerateenabled">isAutoVideoFrameRateEnabled</a>; forum reports on durations (<span class="uv">unverified</span>): <a href="https://developer.apple.com/forums/thread/751112">thread 751112</a>, <a href="https://developer.apple.com/forums/thread/736856">thread 736856</a></li>
+    <li>Low-light boost: <a href="https://developer.apple.com/documentation/avfoundation/avcapturedevice/automaticallyenableslowlightboostwhenavailable">automaticallyEnablesLowLightBoostWhenAvailable</a></li>
+    <li>Retina Flash is photo only: <a href="https://developer.apple.com/forums/thread/21694">developer forums 21694</a></li>
+    <li>Screen brightness persists until lock: <a href="https://developer.apple.com/documentation/uikit/uiscreen/brightness">UIScreen.brightness</a>. Panel brightness: <a href="https://www.apple.com/iphone-18-pro/specs/">iPhone tech specs</a>. Room light levels: <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC3047226/">Gooley et al. 2011</a>. The lux figures above are back-of-envelope arithmetic, not measurements.</li>
+    <li>Shutter sound: <a href="https://developer.apple.com/documentation/avfoundation/avcapturephotooutput/isshuttersoundsuppressionsupported">isShutterSoundSuppressionSupported</a>. Camera in the background: <a href="https://developer.apple.com/documentation/avfoundation/avcapturesession/interruptionreason/videodevicenotavailableinbackground">videoDeviceNotAvailableInBackground</a></li>
+    <li>Energy: <a href="https://developer.apple.com/documentation/xcode/analyzing-your-app-s-battery-use">Analyzing your app's battery use</a>, <a href="https://developer.apple.com/videos/play/wwdc2025/226/">WWDC25 226 (Power Profiler)</a>, <a href="https://developer.apple.com/videos/play/wwdc2022/10083/">WWDC22 10083 (display)</a>, <a href="https://developer.apple.com/documentation/avfoundation/avcapturedevice/systempressurestate-swift.class">capture system pressure</a>, <a href="https://developer.apple.com/documentation/metrickit/mxmetricpayload">MetricKit</a></li>
+    <li>Prior art (<span class="uv">unverified</span>, listings only): <a href="https://apps.apple.com/us/app/id6779601187">Push2Unlock</a>; <a href="https://github.com/bobby-sills/sit-still">sit-still</a>, an open-source web meditation timer that watches for leaving the frame</li>
+    <li>808's own measurements: branch <code>camera-vision</code>, <code>CAMERA_VISION_PLAN.md</code> (the x4 motion gate, stillness normalised per session)</li>
+  </ul>
+</main>
+</body>
+</html>
