@@ -282,7 +282,7 @@ function writeOverview() {
     ['Saw a paywall', "event = 'paywall_viewed'", 'people', 'Any placement'],
     ['Saw the onboarding paywall (1.1)', "event = 'paywall_viewed' AND toString(properties.placement) = 'onboarding' AND NOT " + OLD, 'people', 'Screen 32 of 1.1’s onboarding: new installs, and updaters who never finished 1.0’s onboarding. Anyone who already pays skips it.'],
     ['Saw the launch paywall', "event = 'paywall_viewed' AND toString(properties.placement) = 'root_lock'", 'people', 'Opened 1.1 without a membership: a 1.0 user updating, or a plan that lapsed'],
-    ['Turned down both offers', "event = 'offer_declined' AND toString(properties.rung) = 'half_month'", 'people', 'Said no to the free trial, then to the half-price month, at least once. Some come back: the first 1.1 buyer said no to both, reopened the app, and took the half-price month.'],
+    ['Turned down every offer', "event = 'offer_declined' AND toString(properties.rung) = 'half_month'", 'people', 'Said no to the plans, then the free trial, then the half-price month, at least once. Someone who already used a free trial is never offered another, so for them it is the plans and the half-price month. Some come back: the first 1.1 buyer turned down every offer, reopened the app, and took the half-price month.'],
     ['Started a free trial', REAL_TRIAL, 'people', "1.1: 3 days, offered only after \"No, I don't want to pay\". 1.0: a 7-day week on the paywall."],
     ['Subscribed (any plan)', "event = 'purchase'", 'people', 'Any plan, Lifetime included, confirmed by StoreKit. A trial counts the moment it starts: PostHog never hears whether it renewed (App Store Connect does).'],
     ['Subscribed in onboarding (1.1)', "event = 'purchase' AND toString(properties.placement) = 'onboarding' AND NOT " + OLD, 'people', 'Bought at screen 32 of 1.1’s onboarding. (1.0 purchases did not record where they happened.)'],
@@ -412,7 +412,7 @@ function writeScreens() {
   // The paywall is NOT a branch: 1.1 is premium only, so everyone meets it
   // except someone who already pays. Treating it as one moved every loss AT
   // the paywall onto the next screen (2026-10-07: a Dublin install turned
-  // down both offers and left, and the tab blamed the notifications screen).
+  // down every offer and left, and the tab blamed the notifications screen).
   var BRANCH = {
     health: 'only with an Apple Watch paired'
   };
@@ -577,10 +577,12 @@ var IPHONE_MODELS = {
  * another install or restored from the Apple ID, which never fires
  * `purchase` here).
  */
-function membership(plan, planProp, saidNoToBoth, sawPaywall, freeTier1_0) {
+function membership(plan, planProp, saidNoToAll, sawPaywall, freeTier1_0) {
   if (plan) return planName(plan);
   if (planProp && planProp !== 'none') return 'Already a member: ' + planName(planProp);
-  if (saidNoToBoth > 0) return 'Said no to both offers';
+  // The last rung of the ladder: the plans, the free trial (if they can
+  // still have one) and the half-price month were all turned down.
+  if (saidNoToAll > 0) return 'Said no to every offer';
   if (sawPaywall > 0) return 'Saw the paywall, did not subscribe';
   if (freeTier1_0 > 0) return 'Free tier (1.0)';
   return 'Did not reach the paywall';
