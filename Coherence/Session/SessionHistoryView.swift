@@ -190,6 +190,7 @@ struct ProfileTab: View {
                 .background(Circle().fill(AppColor.backgroundPrimary.opacity(0.92)))
                 .shadow(color: .black.opacity(0.14), radius: 6, y: 2)
         }
+        .buttonStyle(.tactile)
         .padding(.trailing, AppMetrics.screenPadding)
         .padding(.top, top + 6)
         .accessibilityLabel("Settings")

@@ -69,6 +69,8 @@ struct ValleyLife: View {
         }
         .frame(width: max(size.width, 0), height: max(size.height, 0))
         .allowsHitTesting(false)
+        .modifier(BirdSong(singing: layer == .sky && !reduceMotion && size.width >= 2 && size.height >= 2,
+                           seed: seed, sky: skyBand, size: size, scale: scale))
     }
 
     // MARK: - Birds
@@ -418,6 +420,94 @@ private struct BirdFlight: Identifiable {
                          wingLift: flap.wingLift, frame: flap.frame,
                          facingRight: direction > 0, opacity: pattern.opacity(at: p),
                          species: species, width: width)
+    }
+}
+
+// MARK: - Birds: their calls
+
+/// The birds call as they fly by (Melvin, 2026-10-09: "maybe the birds chirp
+/// when they fly by").
+///
+/// **Every call comes from a bird on screen.** A flight is a pure function
+/// of `(seed, slot)`, so this works out the same flights the sky is drawing,
+/// waits until the next one is a third to a half of the way across, and
+/// calls then, panned to where that bird is and in its own species' voice
+/// (`SoundEffect.chirp`). Two flights in three call; a valley that sang at
+/// every bird, every ten seconds, would be a valley you turned off.
+///
+/// **One valley sings at a time**: the newest on screen. A full-screen cover
+/// over Home (the Ready screen, an award) draws a valley of its own while
+/// Home's is still there beneath it, and two skies calling at once would be
+/// a flock nobody can see. `AppAudio` keeps the order.
+private struct BirdSong: ViewModifier {
+    let singing: Bool
+    let seed: UInt64
+    let sky: ClosedRange<CGFloat>
+    let size: CGSize
+    let scale: CGFloat
+
+    @State private var voice = UUID()
+
+    private struct Key: Equatable {
+        let singing: Bool
+        let seed: UInt64
+        let width: Int
+        let height: Int
+    }
+
+    func body(content: Content) -> some View {
+        content
+            .onAppear { if singing { AppAudio.shared.birdsAppeared(voice) } }
+            .onDisappear { AppAudio.shared.birdsDisappeared(voice) }
+            .task(id: Key(singing: singing, seed: seed, width: Int(size.width), height: Int(size.height))) {
+                guard singing else { return }
+                // A sky that only became big enough to sing after it appeared
+                // joins here, without jumping ahead of a newer one.
+                AppAudio.shared.birdsAppeared(voice, keepingPlace: true)
+                await sing()
+            }
+    }
+
+    private func sing() async {
+        while !Task.isCancelled {
+            let now = Date().timeIntervalSinceReferenceDate
+            guard let call = Self.nextCall(after: now, seed: seed, sky: sky, width: size.width, scale: scale) else {
+                try? await Task.sleep(for: .seconds(2))
+                continue
+            }
+            try? await Task.sleep(for: .seconds(max(0.02, call.at - now)))
+            // A cancelled sleep throws and `try?` swallows it: a valley that
+            // has gone must not call once more on its way out.
+            guard !Task.isCancelled else { return }
+            if AppAudio.shared.birdsAreHeard(voice) {
+                AppAudio.shared.play(.chirp(species: call.species, call: call.variant), pan: call.pan)
+            }
+        }
+    }
+
+    struct Call {
+        let at: Double
+        let species: Int
+        let variant: Int
+        let pan: Float
+    }
+
+    /// The next call after `now`: the lead bird of the first flight that
+    /// calls, at its moment a third to a half of the way across.
+    static func nextCall(after now: Double, seed: UInt64, sky: ClosedRange<CGFloat>,
+                         width: CGFloat, scale: CGFloat) -> Call? {
+        let slot = Int((now / ValleyLife.birdSlot).rounded(.down))
+        for s in (slot - 1)...(slot + 3) {
+            guard valleyLifeUnit(seed, s, 61) < 0.66,
+                  let lead = BirdFlight.make(seed: seed, slot: s, sky: sky, sceneWidth: width, scale: scale).first
+            else { continue }
+            let at = lead.startTime + lead.indexDelay + lead.duration * valleyLifeRange(seed, s, 62, 0.3, 0.55)
+            guard at > now + 0.02, let pose = lead.pose(at: at) else { continue }
+            // Heard where it is, but never hard in one ear.
+            let pan = Float(max(-0.75, min(0.75, Double(pose.x / max(width, 1)) * 2 - 1)))
+            return Call(at: at, species: lead.species, variant: valleyLifeInt(seed, s, 63, 2), pan: pan)
+        }
+        return nil
     }
 }
 

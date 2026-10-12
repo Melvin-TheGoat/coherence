@@ -219,10 +219,12 @@ struct CreateProfileView: View {
                 // changes nothing (Melvin, 2026-09-29).
                 if !editing {
                     Button(model.phase == .unavailable ? "Continue without a profile" : "Not now") { notNow() }
+                        .buttonStyle(.tactile)
                         .font(AppFont.callout.weight(.semibold))
                         .onValley()
                 } else if onboardingStep {
                     Button("Continue") { keepAsItIs() }
+                        .buttonStyle(.tactile)
                         .font(AppFont.callout.weight(.semibold))
                         .onValley()
                 }
@@ -402,11 +404,12 @@ struct CreateProfileView: View {
                 }
                 .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.tactile)
             .accessibilityAddTraits(agreed ? .isSelected : [])
             .accessibilityHint("Required to create a profile")
 
             Button("Read the community rules") { legalDoc = .terms }
+                .buttonStyle(.tactile)
                 .font(AppFont.caption.weight(.semibold))
                 .foregroundStyle(AppColor.skyDeep)
                 .padding(.leading, 30)
@@ -523,6 +526,7 @@ struct FriendsIntroView: View {
                 Button { creating = true } label: { Text("Pick your username") }
                     .buttonStyle(PrimaryButtonStyle())
                 Button("Not now") { markShown(); onDone() }
+                    .buttonStyle(.tactile)
                     .font(AppFont.callout.weight(.semibold))
                     .foregroundStyle(AppColor.textSecondary)
                     .frame(maxWidth: .infinity)

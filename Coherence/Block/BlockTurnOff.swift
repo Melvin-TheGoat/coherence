@@ -123,7 +123,7 @@ struct BlockTurnOffScreen: View {
                             .background(AppColor.backgroundPrimary.opacity(0.94), in: Capsule())
                             .shadow(color: .black.opacity(0.10), radius: 6, y: 2)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.tactile)
                     .padding(.top, 4)
                     .accessibilityLabel(remaining > 0 ? "\(confirmLabel), available in \(remaining) seconds" : confirmLabel)
                 }
@@ -153,7 +153,7 @@ struct BlockTurnOffScreen: View {
                 .background(AppColor.backgroundPrimary.opacity(0.94), in: Capsule())
                 .shadow(color: .black.opacity(0.14), radius: 8, y: 2)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.tactile)
     }
 }
 

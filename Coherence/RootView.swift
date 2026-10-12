@@ -227,6 +227,9 @@ struct RootView: View {
         .onChange(of: preferences.contains { $0.onboardingComplete }, initial: true) { _, done in
             coordinator.setOnboarded(done)
         }
+        .modifier(AppAudioHooks(hapticsOn: preferences.first?.hapticsEnabled ?? true,
+                                sessionActive: coordinator.active != nil,
+                                scenePhase: scenePhase))
         .task {
             // A Sign in with Apple credential can be revoked from iOS Settings
             // at any moment, and Apple's SIWA rules require apps to verify the

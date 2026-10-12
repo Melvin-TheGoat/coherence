@@ -225,7 +225,7 @@ struct SessionActiveView: View {
                             .padding(.vertical, 14)
                             .contentShape(Rectangle())
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.tactile)
                     .padding(.bottom, 44)
                 }
             }

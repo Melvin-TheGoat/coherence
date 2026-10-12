@@ -772,6 +772,7 @@ struct ShareSessionSheet: View {
                                 .font(.caption)
                                 .foregroundStyle(AppColor.textSecondary)
                         }
+                        .buttonStyle(.tactile)
                         .padding(.top, 2)
                     }
                 }

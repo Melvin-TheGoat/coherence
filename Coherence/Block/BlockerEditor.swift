@@ -124,6 +124,7 @@ struct BlockerEditor: View {
         }
         .overlay(alignment: .topLeading) {
             Button("Cancel") { dismiss() }
+                .buttonStyle(.tactile)
                 .font(.system(size: 14, weight: .bold))
                 .foregroundStyle(AppColor.textPrimary)
                 .padding(.horizontal, 12).padding(.vertical, 7)
@@ -267,6 +268,7 @@ struct BlockerEditor: View {
                 Button("Delete blocker", role: .destructive) {
                     if original.isOn { asking = .delete } else { confirmDelete = true }
                 }
+                    .buttonStyle(.tactile)
                     .font(.system(size: 14, weight: .bold))
                     .foregroundStyle(AppColor.streakBlushText)
                     .padding(.horizontal, 16).padding(.vertical, 8)

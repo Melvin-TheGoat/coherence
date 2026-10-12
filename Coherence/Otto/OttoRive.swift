@@ -432,7 +432,7 @@ final class BreathHaptics {
     private var player: CHHapticAdvancedPatternPlayer?
 
     func start() {
-        guard CHHapticEngine.capabilitiesForHardware().supportsHaptics else { return }
+        guard Tactile.hapticsOn, CHHapticEngine.capabilitiesForHardware().supportsHaptics else { return }
         do {
             let engine = try CHHapticEngine()
             engine.playsHapticsOnly = true
@@ -509,7 +509,7 @@ final class BreathHaptics {
     /// (2026-10-06). The swell begins once the engine is up, a few
     /// milliseconds late, and not at all if `stop()` came first.
     func playOnce(inhale: TimeInterval, hold: TimeInterval, exhale: TimeInterval) {
-        guard CHHapticEngine.capabilitiesForHardware().supportsHaptics else { return }
+        guard Tactile.hapticsOn, CHHapticEngine.capabilitiesForHardware().supportsHaptics else { return }
         do {
             let engine = try CHHapticEngine()
             engine.playsHapticsOnly = true

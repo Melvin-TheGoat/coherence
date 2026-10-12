@@ -116,7 +116,11 @@ struct LockedGraphCard: View {
         .background(AppColor.backgroundSecondary,
                     in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .contentShape(Rectangle())
-        .onTapGesture { onTap?() }
+        .onTapGesture {
+            guard let onTap else { return }
+            Tactile.tap()
+            onTap()
+        }
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(title), locked")
         .accessibilityHint(onTap == nil ? "" : "Opens the unlock options")
@@ -151,7 +155,11 @@ struct LockedTiles: View {
             }
         }
         .contentShape(Rectangle())
-        .onTapGesture { onTap?() }
+        .onTapGesture {
+            guard let onTap else { return }
+            Tactile.tap()
+            onTap()
+        }
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Measurements locked")
     }
@@ -195,6 +203,7 @@ struct UnlockSheet: View {
                        action: onSeePlans)
                     .buttonStyle(PrimaryButtonStyle())
                 Button("Not now", action: onDismiss)
+                    .buttonStyle(.tactile)
                     .font(AppFont.callout)
                     .foregroundStyle(AppColor.textSecondary)
                     .padding(.vertical, 6)

@@ -149,6 +149,7 @@ private struct CloseCapsule: View {
                 .background(AppColor.backgroundPrimary.opacity(0.94), in: Circle())
                 .shadow(color: .black.opacity(0.12), radius: 5, y: 2)
         }
+        .buttonStyle(.tactile)
         .padding(.leading, AppMetrics.screenPadding)
         .padding(.top, 8)
     }
@@ -346,6 +347,7 @@ struct UnavailableCard: View {
                     } label: {
                         Text(checking ? "Checking…" : "Check again")
                     }
+                    .buttonStyle(.tactile)
                     .font(AppFont.callout)
                     .foregroundStyle(AppColor.textSecondary)
                     .disabled(checking)
@@ -547,6 +549,7 @@ struct FriendsHomeView: View {
                 .foregroundStyle(ValleyGround.inkSoft)
             Spacer(minLength: 0)
             Button("Turn off") { Task { await model.setTestMode(false) } }
+                .buttonStyle(.tactile)
                 .font(AppFont.caption.weight(.bold))
                 .foregroundStyle(AppColor.skyDeep)
         }
@@ -609,7 +612,7 @@ struct FriendsHomeView: View {
                 Button { query = ""; searched = false; result = nil } label: {
                     Image(systemName: "xmark.circle.fill").foregroundStyle(AppColor.textSecondary)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.tactile)
             }
         }
         .padding(.horizontal, 16).padding(.vertical, 13)
@@ -910,7 +913,7 @@ struct RequestsView: View {
                             GrassHeading(title: "Sent").padding(.top, 6)
                             group(model.sent, subtitle: " \u{00B7} waiting") { id in
                                 Button("Withdraw") { Task { await model.remove(id) } }
-                                    .buttonStyle(.plain)
+                                    .buttonStyle(.tactile)
                                     .font(AppFont.caption.weight(.bold))
                                     .foregroundStyle(AppColor.textSecondary)
                             }
@@ -926,7 +929,7 @@ struct RequestsView: View {
                                             .foregroundStyle(AppColor.textPrimary)
                                         Spacer()
                                         Button("Unblock") { Task { await model.unblock(id) } }
-                                            .buttonStyle(.plain)
+                                            .buttonStyle(.tactile)
                                             .font(AppFont.caption.weight(.bold))
                                             .foregroundStyle(AppColor.textSecondary)
                                     }
@@ -1005,7 +1008,7 @@ struct RequestsView: View {
                 }
                 .padding(.bottom, gold ? 3 : 0)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(TactilePlainButtonStyle(main: gold))
     }
 }
 
@@ -1031,7 +1034,7 @@ struct FriendsLine: View {
         Group {
             if let personID, count > 0 {
                 Button { showing = FriendsList(person: personID) } label: { text }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.tactile)
             } else {
                 text
             }

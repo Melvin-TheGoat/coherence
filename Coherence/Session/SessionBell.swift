@@ -37,12 +37,16 @@ enum SessionBell {
 
     static func ring() {
         stop()
+        // The music under the app steps aside, and waits until the bell has
+        // handed the audio back (`AppAudio`).
+        AppAudio.shared.set(.bell, true)
         let session = AVAudioSession.sharedInstance()
         do {
             try session.setCategory(.playback, mode: .default, options: [.mixWithOthers])
             try session.setActive(true)
         } catch {
             log.error("bell: audio session refused: \(error.localizedDescription)")
+            AppAudio.shared.set(.bell, false)
             return
         }
 
@@ -67,6 +71,7 @@ enum SessionBell {
             try engine.start()
         } catch {
             log.error("bell: engine refused: \(error.localizedDescription)")
+            AppAudio.shared.set(.bell, false)
             return
         }
         self.engine = engine
@@ -87,6 +92,7 @@ enum SessionBell {
         self.engine = nil
         // Hand the audio back to whatever the person was playing.
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        AppAudio.shared.set(.bell, false)
     }
 
     /// One sample of the strike at `t` seconds. Partial ratios are a singing

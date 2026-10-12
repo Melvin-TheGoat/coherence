@@ -435,6 +435,11 @@ struct ContentView: View {
     /// than an inline closure: as one expression on the body's chain it sent
     /// the type checker over its time limit (2026-09-15).
     private func debugPreviewHooks() {
+            // PREVIEW_SETTINGS=1 opens Settings, to review its rows (the
+            // Sound card, 2026-10-09) without the gear.
+            if ProcessInfo.processInfo.environment["PREVIEW_SETTINGS"] == "1", sheet == nil {
+                sheet = .settings
+            }
             // PREVIEW_REWARD=<from>:<to> opens the reward screen with a
             // demo session (18 minutes, streak 4 to 5) and that glow.
             if let raw = ProcessInfo.processInfo.environment["PREVIEW_REWARD"], sheet == nil {
@@ -721,7 +726,7 @@ struct ContentView: View {
                 .contentShape(Rectangle())
                 .frame(width: ottoSize, height: ottoSize)
                 .position(x: width / 2, y: ottoTop + ottoSize / 2)
-                .onTapGesture {
+                .tactileTap {
                     ottoLineIndex += 1
                     ottoPokes += 1
                 }
@@ -852,13 +857,13 @@ struct ContentView: View {
                     .background(AppColor.backgroundSecondary, in: Circle())
                     .overlay(Circle().strokeBorder(AppColor.backgroundPrimary, lineWidth: 2))
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.tactile)
             .offset(x: -7, y: -7)
             .accessibilityLabel("Dismiss")
         }
         .padding(.horizontal, AppMetrics.screenPadding)
         .contentShape(Rectangle())
-        .onTapGesture { present(.save(id)) }
+        .tactileTap { present(.save(id)) }
         .transition(.move(edge: .bottom).combined(with: .opacity))
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.isButton)
@@ -928,7 +933,7 @@ struct ContentView: View {
             .background(TileFill(shape: Circle(), opacity: 0.9))
             .shadow(color: .black.opacity(0.10), radius: 5, y: 2)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.tactile)
         .accessibilityLabel("How to meditate guide")
     }
 
@@ -941,7 +946,7 @@ struct ContentView: View {
             .background(TileFill(shape: Circle(), opacity: 0.9))
             .shadow(color: .black.opacity(0.10), radius: 5, y: 2)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.tactile)
         .accessibilityLabel("Friends")
     }
 

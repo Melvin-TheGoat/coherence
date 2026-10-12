@@ -37,7 +37,7 @@ struct SessionLengthPicker: View {
                         .frame(minWidth: 180)
                         .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.tactile)
                 .accessibilityLabel("Length, \(SessionLength.words(minutes))")
                 .accessibilityHint("Tap to type a length")
 
@@ -76,6 +76,7 @@ struct SessionLengthPicker: View {
                     .foregroundStyle(inkSoft)
             }
             Button("Done", action: commit)
+                .buttonStyle(.tactile)
                 .font(DisplayFont.display(15, .bold))
                 .foregroundStyle(AppColor.textPrimary)
                 .padding(.horizontal, 26)
@@ -164,7 +165,7 @@ struct LengthTape: View {
                     .allowsHitTesting(false)
             }
         }
-        .sensoryFeedback(.selection, trigger: index)
+        .sensoryFeedback(.selection, trigger: index) { _, _ in Tactile.hapticsOn }
     }
 
     fileprivate static let space = "lengthTape"

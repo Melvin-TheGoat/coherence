@@ -139,6 +139,8 @@ final class ToneEngine: ObservableObject {
 
     init() { observeSessionEvents() }
 
+    deinit { AppAudio.shared.set(.tone(ObjectIdentifier(self)), false) }
+
     private let engine = AVAudioEngine()
     private var nodes: [AVAudioNode] = []
     /// The ambient bed (pre-produced audio) looping under the synthesized tone.
@@ -486,9 +488,14 @@ final class ToneEngine: ObservableObject {
         nodes.forEach { engine.detach($0) }
         nodes = []
         playingID = nil
+        // The music under the app may come back now (`AppAudio`).
+        AppAudio.shared.set(.tone(ObjectIdentifier(self)), false)
     }
 
     private func configureSession() {
+        // The music under the app steps aside first, and 808's taps stop
+        // touching the category while this owns it (`AppAudio`).
+        AppAudio.shared.set(.tone(ObjectIdentifier(self)), true)
         // .playback (no mixWithOthers) → our audio is primary and keeps playing when
         // the screen locks mid-meditation (paired with the "audio" UIBackgroundMode).
         let session = AVAudioSession.sharedInstance()

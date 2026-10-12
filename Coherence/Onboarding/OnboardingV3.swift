@@ -557,6 +557,7 @@ struct IntroScreen<Figure: View>: View {
                     Button(action: secondary.action) {
                         Text(secondary.title).modifier(FootnoteInk())
                     }
+                    .buttonStyle(.tactile)
                     .font(.footnote.weight(.semibold))
                     .padding(.top, -12)
                     .opacity(ctaShown ? 1 : 0)
@@ -1407,11 +1408,15 @@ enum WelcomeHaptics {
         thump.prepare(); soft.prepare()
     }
     static func land() {
+        guard Tactile.hapticsOn else { return }
         thump.impactOccurred(intensity: 0.9)
         thump.prepare()
     }
-    /// A light tick for each typed letter.
+    /// A light tick for each typed letter. Settings > Haptics silences both,
+    /// which matters on Otto's Block screens; onboarding runs before the
+    /// switch exists, at its default.
     static func tick() {
+        guard Tactile.hapticsOn else { return }
         soft.impactOccurred(intensity: 0.55)
         soft.prepare()
     }

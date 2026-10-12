@@ -79,7 +79,7 @@ struct MeadowTabBar: View {
             .contentShape(Rectangle())
             .animation(.spring(response: 0.35, dampingFraction: 0.8), value: selected)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.tactile)
         .accessibilityLabel(label)
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
@@ -91,7 +91,7 @@ struct MeadowTabBar: View {
             art("tab-begin")
                 .frame(height: 60)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.tactileMain)
         .anchorPreference(key: TourTargetKey.self, value: .bounds) { [.begin: $0] }
         // Level with the other objects' feet, above where their labels sit.
         .padding(.bottom, 20)

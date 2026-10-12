@@ -184,6 +184,7 @@ struct SessionSetupView: View {
                     else if choosingSound { choosingSound = false }
                     else { cancel() }
                 }
+                .buttonStyle(.tactile)
                 .font(AppFont.callout.weight(.semibold))
                 .onValley(soft: true)
                 .padding(.horizontal, 20).padding(.top, 14)
@@ -247,11 +248,18 @@ struct SessionSetupView: View {
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { watchLink.refresh() }
         }
+        // The music under the app fades over the five seconds of the count,
+        // so the first thing the sit gives is quiet (`AppAudio`). The
+        // session's own hold takes over when it begins.
+        .onChange(of: countdown != nil || settling, initial: true) { _, counting in
+            AppAudio.shared.set(.countdown, counting)
+        }
         // Closed mid-count (swiped away, or dismissed from above): the count
         // must not run on and start a sit behind a screen that is gone.
         .onDisappear {
             countdownTask?.cancel()
             countdownTask = nil
+            AppAudio.shared.set(.countdown, false)
         }
     }
 
@@ -340,7 +348,7 @@ struct SessionSetupView: View {
                         .frame(width: 46)
                 }
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.tactile)
         } else {
             Text("Turn on Do Not Disturb first, from Control Center.")
                 .font(AppFont.caption.weight(.semibold))
@@ -433,14 +441,14 @@ struct SessionSetupView: View {
                             chevron
                         }
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.tactile)
                     Button { choosingSound = true } label: {
                         SitPill(art: "sit-sound", label: "Sound",
                                 subtitle: compact ? nil : sound, compact: compact, half: true) {
                             chevron
                         }
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.tactile)
                 }
 
                 silenceControl(ink: day.ink, compact: compact)
@@ -502,6 +510,7 @@ struct SessionSetupView: View {
         VStack {
             Spacer()
             Button("Cancel", action: cancelCountdown)
+                .buttonStyle(.tactile)
                 .font(DisplayFont.display(15, .bold))
                 .foregroundStyle(AppColor.textPrimary)
                 .padding(.horizontal, 30)
@@ -685,7 +694,7 @@ struct SitKindCards: View {
                     .shadow(color: .black.opacity(0.14), radius: 8, y: 2)
                     .opacity(dim ? 0.6 : 1)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.tactile)
                 .disabled(dim)
                 .accessibilityLabel("\(k.title). \(k.card)")
                 .accessibilityAddTraits(chosen ? .isSelected : [])
@@ -893,6 +902,7 @@ struct FocusSetupSheet: View {
             }
 
             Button("Not now") { dismiss() }
+                .buttonStyle(.tactile)
                 .font(AppFont.caption.weight(.semibold))
                 .foregroundStyle(AppColor.textSecondary)
                 .frame(maxWidth: .infinity)
@@ -1095,7 +1105,7 @@ struct SoundChoiceList: View {
                 .stroke(chosen ? AppColor.accentGold : .clear, lineWidth: 2))
             .shadow(color: .black.opacity(0.14), radius: 8, y: 2)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.tactile)
     }
 
     private func guidedPill(_ preset: GuidedPreset) -> some View {
@@ -1134,7 +1144,7 @@ struct SoundChoiceList: View {
                         lineWidth: chosen ? 2 : 1))
             .shadow(color: .black.opacity(0.14), radius: 8, y: 2)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.tactile)
     }
 
     /// Tapping previews AND selects, which is what the rows did. There is no

@@ -125,6 +125,7 @@ struct SessionView: View {
                 .background(AppColor.backgroundPrimary.opacity(0.9), in: Circle())
                 .shadow(color: .black.opacity(0.12), radius: 5, y: 2)
         }
+        .buttonStyle(.tactile)
         .accessibilityLabel("Close")
     }
 
@@ -140,6 +141,7 @@ struct SessionView: View {
             .background(AppColor.backgroundPrimary.opacity(0.9), in: Capsule())
             .shadow(color: .black.opacity(0.12), radius: 5, y: 2)
         }
+        .buttonStyle(.tactile)
     }
 
     private var moreMenu: some View {
@@ -270,7 +272,7 @@ struct SessionView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .clipped()
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.tactile)
         .disabled(item.video == nil)
     }
 

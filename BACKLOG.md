@@ -309,6 +309,22 @@ Home. Before the 1.2 archive: the portal steps in RELEASE_CHECKLIST.md
 
 ## Open threads
 
+- **Music and sound effects: judge them on a phone (Melvin, 2026-10-09).**
+  Built on `sound-and-haptics` (CLAUDE.md "MUSIC, SOUND EFFECTS, AND A PRESS
+  ON EVERY BUTTON"). **Decided 2026-10-12 from the listening page
+  (https://claude.ai/artifact/ApabV3mrmQHArLJgnU2V8c):** the music is the
+  Manifest bed, the presses and the after-session sounds are right. **Same
+  day, on the phone: Manifest is out ("too ethereal for the theme"); he wants
+  music with actual notes, zen but gently playful,** somewhere between a
+  village tune (too busy) and slow solo piano (too sleepy). **His first
+  ElevenLabs take is in the app** (`music-garden`, a 61-second loop).
+  Owed before release: confirm it came from a paid ElevenLabs plan (the free
+  plan does not allow commercial use), and ideally a two to three minute
+  take so the loop repeats less often. The presses became a water droplet, landing
+  higher on main buttons; he picked it over three others.
+  Still open: where the music comes from (ElevenLabs Music, a composer, or a
+  library licence that covers in-app use), whether Home wants a quick mute
+  beside Settings > Music, and the haptics, which only a phone can judge.
 - **Decisions from the 2026-09-23 call.**
   - **Trial length: "likely 3 days".** The app reads the trial off the
     monthly product in App Store Connect (`Store.trialDays`), so deciding is

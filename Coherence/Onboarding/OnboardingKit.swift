@@ -250,15 +250,13 @@ enum OnboardingGreen {
     static let shade = Color(red: 0.255, green: 0.557, blue: 0.227)
 }
 
-/// `PrimaryButtonStyle` in onboarding's green, plus the press-and-release pulse.
+/// `PrimaryButtonStyle` in onboarding's green. The press-and-release pulse
+/// comes with it: since 2026-10-09 every shared style gives it
+/// (`PressFeedback`), so adding it here as well would fire it twice.
 struct OnboardingPrimaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         PrimaryButtonStyle(fill: OnboardingGreen.fill, shade: OnboardingGreen.shade, ink: .white)
             .makeBody(configuration: configuration)
-            .onAppear { PressHaptic.prepare() }
-            .onChange(of: configuration.isPressed) { _, pressed in
-                PressHaptic.fire(pressed: pressed)
-            }
     }
 }
 
@@ -276,10 +274,7 @@ struct PressReleaseHapticStyle: ButtonStyle {
             .contentShape(Rectangle())
             .opacity(configuration.isPressed ? 0.55 : 1)
             .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
-            .onAppear { PressHaptic.prepare() }
-            .onChange(of: configuration.isPressed) { _, pressed in
-                PressHaptic.fire(pressed: pressed)
-            }
+            .pressFeedback(configuration.isPressed)
     }
 }
 
@@ -592,6 +587,7 @@ struct OnboardingScreen<Content: View>: View {
                 Button(action: onSkip) {
                     Text(skipTitle).modifier(FootnoteInk())
                 }
+                .buttonStyle(.tactile)
                 .font(.footnote.weight(.semibold))
                 .frame(maxWidth: .infinity)
                 .padding(.top, 12)

@@ -180,6 +180,7 @@ struct SaveSessionView: View {
                     .background(AppColor.backgroundPrimary.opacity(0.9), in: Circle())
                     .shadow(color: .black.opacity(0.12), radius: 5, y: 2)
             }
+            .buttonStyle(.tactile)
             .padding(.leading, 12)
             .padding(.top, 8)
         }
@@ -335,7 +336,7 @@ struct SaveSessionView: View {
                     }
                     if mediaItems.count < SessionStore.maxPhotosPerSession {
                         Button { showCamera = true } label: { addTileLabel("camera") }
-                            .buttonStyle(.plain)
+                            .buttonStyle(.tactile)
                         // `.current`: the original file, as it is. The default
                         // lets Photos convert a video to a "compatible" format
                         // before handing it over, which for a phone's 4K clip
@@ -388,7 +389,7 @@ struct SaveSessionView: View {
                     }
                 }
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.tactile)
         .overlay(alignment: .topTrailing) {
             Button { removeItem(item) } label: {
                 Image(systemName: "xmark")
@@ -397,7 +398,7 @@ struct SaveSessionView: View {
                     .frame(width: 20, height: 20)
                     .background(Color.black.opacity(0.55), in: Circle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.tactile)
             .padding(5)
         }
     }
@@ -662,7 +663,7 @@ private struct RatingSlider: View {
             )
         }
         .frame(height: rowHeight)
-        .sensoryFeedback(.selection, trigger: rating)
+        .sensoryFeedback(.selection, trigger: rating) { _, _ in Tactile.hapticsOn }
         .accessibilityRepresentation {
             Slider(value: Binding(get: { Double(rating ?? midpoint) },
                                   set: { rating = Int($0.rounded()) }),
@@ -830,7 +831,12 @@ struct VideoSheet: View {
                 .appendingPathComponent("808-play-\(UUID().uuidString).mp4")
             try? data.write(to: file)
             url = file
+            // Their own clip, with its own sound: the music waits (`AppAudio`).
+            AppAudio.shared.set(.video, true)
         }
-        .onDisappear { if let url { try? FileManager.default.removeItem(at: url) } }
+        .onDisappear {
+            if let url { try? FileManager.default.removeItem(at: url) }
+            AppAudio.shared.set(.video, false)
+        }
     }
 }

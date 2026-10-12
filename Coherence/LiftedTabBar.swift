@@ -126,7 +126,7 @@ struct LiftedTabBar: View {
             .contentShape(Rectangle())
             .animation(.spring(response: 0.3, dampingFraction: 0.8), value: selected)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.tactile)
         .accessibilityLabel(label)
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
@@ -148,7 +148,7 @@ struct LiftedTabBar: View {
             .frame(width: Self.plusSize, height: Self.plusSize)
             .shadow(color: .black.opacity(0.16), radius: 8, y: 4)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.tactileMain)
         // The tour's spotlight measures the circle itself, before the lift
         // and the slot's width (the 2026-09-19 lesson: measured after, the
         // lit window missed the top of the plus).

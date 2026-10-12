@@ -20,6 +20,7 @@ struct CardButtonStyle: ButtonStyle {
             .contentShape(Rectangle())
             .opacity(configuration.isPressed ? 0.55 : 1)
             .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+            .pressFeedback(configuration.isPressed)
     }
 }
 
@@ -434,7 +435,11 @@ struct WeekStrip: View {
                 plant(day)
                     .frame(maxWidth: .infinity)
                     .contentShape(Rectangle())
-                    .onTapGesture { if day.sessionCount > 0 { onDayTap?(day.date) } }
+                    .onTapGesture {
+                        guard day.sessionCount > 0, let onDayTap else { return }
+                        Tactile.tap()
+                        onDayTap(day.date)
+                    }
                     .accessibilityElement(children: .ignore)
                     .accessibilityLabel(accessibilityLabel(day))
                     .accessibilityAddTraits(day.sessionCount > 0 ? .isButton : [])

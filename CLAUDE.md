@@ -7472,3 +7472,123 @@ if it comes back. **Branch `fix/ask-otto-freeze`; unverified on a phone.**
   `DEVICECTL_CHILD_OS_ACTIVITY_DT_MODE=enable xcrun devicectl device process
   launch --console --terminate-existing --device <id> com.lockout.meditate808.dev`,
   then look for `MAIN THREAD NOT ANSWERING`.
+
+## MUSIC, SOUND EFFECTS, AND A PRESS ON EVERY BUTTON (2026-10-09, Melvin)
+
+"Peaceful zen music for the homepage and just app in general, maybe the
+birds chirp when they fly by... when you get points there should be sound
+effects too. When you tap there should be sound effects. And also add haptic
+feedback, same as from the onboarding, for every tab switch, button click."
+Branch `sound-and-haptics`. Listening page with every sound and the music
+candidates: https://claude.ai/artifact/ApabV3mrmQHArLJgnU2V8c
+
+- **Every sound effect is synthesized** (`Coherence/Audio/SoundSynth.swift`,
+  pure Foundation, like `SessionBell` and `ToneEngine`): no file, no licence.
+  A press, a pop for each reward card, a
+  coin per point climbing the scale, a shimmer for the glow, a chime for a
+  new look, stage or award, a low bell as Otto lands, and two calls each for
+  the sparrow, cardinal and blue bird. **Tuned to C major pentatonic at
+  528 Hz (root 264), the key of the music**; changing the music to a bed in
+  another key means moving `SoundSynth.root`, and
+  `test_theEffectsAreInTheMusicsKey` fails until it moves. Pops and birds
+  are not pitched to the key and never move. `tools/render_sounds.swift`
+  compiles the same file on the Mac and writes every sound and four mixes to
+  WAVs; iterate there.
+- **The press is ONE sound, a water droplet landing on G5; a main button's
+  lands on C6** (Melvin, 2026-10-12: "i want it all to be the same sound,
+  not randomized between 3", higher "for the green button ... the start
+  button, or any button that is more significant"). Three rounds that day:
+  a wood block ("too clunky ... like a bird pecker pecking on wood, or
+  xylophone ... creamier, softer"), then one soft steady note (liked the
+  softness, but "too much like a piano key ... it doesnt go up and down or
+  swipes ... its not dynamic"), then the droplet: a sine sweeping up from
+  62% to its note in ~20 ms, gone in 85 ms. **A steady pitch with a decay
+  reads as an instrument; a sweep reads as a thing.** Research behind it:
+  Facebook's sound director builds UI sounds from "frequency sweeps" and
+  finds simple harmonics tolerate the most repetition; UI taps run 30 to
+  150 ms; a set should share one timbre and vary only pitch and direction,
+  rising for forward and falling for back. **Melvin picked the droplet over
+  three others the same day ("i love droplet")**; the listening page still
+  holds the two-droplet main press, the press-and-lift pair and the soft
+  swish he passed over.
+  **Main** = `PrimaryButtonStyle` (every gold and green filled button),
+  `.tactileMain` (the plus in all four tab bars), and Friends' gold small
+  buttons. A new button that is the one its screen exists for and draws its
+  own fill takes `.tactileMain`.
+  `SoundSynthTests` pin no clipping, silent ends, no DC and the key.
+- **The music is Melvin's own ElevenLabs Music take,
+  `Coherence/Audio/Music/music-garden.m4a`, at 0.3** (2026-10-12). It
+  replaced the Manifest bed, which he picked from the listening page and
+  rejected on the phone the same day: "too ethereal for the theme". The take
+  is C major at A440 (measured: chroma, tuning within a cent), so
+  `SoundSynth.root` is 261.63 and `AppAudio.musicTonic` records the key;
+  `test_theEffectsAreInTheMusicsKey` ties the two. The loop is 70 beats at
+  68.75 BPM from the first note (61.1 s), ending in a quiet phrase before a
+  guitar entered, faded over its last 0.6 s, at the beds' loudness (mono RMS
+  0.1256). **Before release, confirm the take came from a paid ElevenLabs
+  plan**: the free plan's terms do not allow commercial use. A two to three
+  minute take would repeat less often than once a minute. **He wants music with actual
+  notes, zen but gently playful**: an Animal Crossing village was too busy
+  ("implies theres more life, more hustle and bustle ... than there is"),
+  slow solo piano too sleepy ("we dont want it totally tranquil"). Solo or
+  near solo, plucked instruments, a light pulse around 80 BPM. None of the
+  owned beds was that;
+  they are all ambient pads. The higgsfield MCP generates speech only and
+  refuses music, so a track comes from the ElevenLabs Music account the beds
+  came from, a composer, or a library licence that covers use inside an app.
+  Swapping is one name, plus moving `SoundSynth.root` to the track's key.
+- **`AppAudio` rules, each one a fault avoided:**
+  - `.ambient`: mixes with other apps and obeys the ring switch, so a phone
+    on silent hears nothing from 808 outside a session. The session's own
+    sound and the end bell stay `.playback` on purpose.
+  - **Holds stop the music**: a sit (`coordinator.active`), the Ready
+    screen's countdown (it fades over the five seconds), a `ToneEngine`
+    playing (previews and session sounds claim it in `configureSession` and
+    release in `stop`), the bell, a person's own video, the background, and
+    another app's audio (`secondaryAudioShouldBeSilencedHint`). Bring your
+    own audio means music never lands on someone's podcast. Taps and coins
+    still play over their audio; the birds do not.
+  - **It never changes the session category while a holder owns it.** A tap
+    during a preview plays under `.playback`; flipping to `.ambient` mid-sit
+    would let the ring switch silence a meditation and stop it on lock.
+  - No sound effect plays during a sit (the press haptic still does).
+  - Settings > Music and > Sound effects are DEVICE settings in UserDefaults
+    (`AppAudio.musicKey` / `effectsKey`), not synced `Preferences`: no
+    CloudKit schema promotion for a per-phone choice.
+- **The press is onboarding's** (`PressHaptic`: heavy down, rigid up) plus
+  the tap sound, through `PressFeedback` (Shared): every shared style
+  (Primary, Secondary, Pill, Card) reports `isPressed` to a hook only the iOS
+  app sets, so **the Watch still never buzzes**. `Tactile.swift` answers it.
+- **`.buttonStyle(.plain)` is gone from the app: use `.tactile`**
+  (`TactilePlainButtonStyle`, same look, same hit area, plus the press). 48
+  were swapped and 47 unstyled text buttons ("Not now", "Cancel", the
+  paywall's links) gained `.tactile`; every one of them sets its own colour,
+  so none changed look. Alert, menu and toolbar buttons are iOS's own and
+  give none. A tap gesture that acts as a button uses `.tactileTap {}` or
+  `Tactile.tap()`. **A new button in content gets a shared style or
+  `.tactile`, or it is the one press in 808 that feels like nothing.**
+- **Settings > Haptics now governs every haptic** (`Tactile.hapticsOn`,
+  mirrored from `Preferences.hapticsEnabled` by `AppAudioHooks` at the root):
+  presses, Otto's typing ticks (`WelcomeHaptics`), the breath haptics, the
+  timer tape and rating ticks, the reward and the award. Onboarding runs
+  before the switch exists, at its default. The Sound card holds Music,
+  Sound effects and Haptics; Haptics moved there from Practice.
+- **This reverses "Home and a sit never buzz" for PRESSES only.** Otto's
+  typing ticks stay off on Home and the sit, as before; a button you press
+  answers everywhere, End included.
+- **The birds call from the bird you see** (`BirdSong` in `ValleyLife`): the
+  flights are a pure function of `(seed, slot)`, so it waits for the next
+  lead bird to be a third to a half of the way across and calls then, in its
+  species' voice, panned to its side; two flights in three. **One valley
+  sings at a time**, the newest on screen (`AppAudio.birdsAreHeard`): a cover
+  over Home draws its own sky while Home's is still beneath it.
+- **The reward's sounds ride its existing beats**: land, a pop per card and
+  the streak flare, a coin per landing coin spread over the whole scale
+  whatever the count, the shimmer as the glow counts, the chime on a new look.
+- Verified on the simulator, log category `AppAudio`: music in on launch, out
+  for a Rain preview and back after it, out at the countdown, off through the
+  sit, back when it ended; the reward's full sequence; birds at
+  `VALLEY_HOUR=12`; a tab tap's sound. Haptics need a phone.
+  `PREVIEW_SETTINGS=1` (DEBUG) opens Settings.
+- **Open:** which music (the listening page has all eight), and whether the
+  sounds' character and levels are right, judged on a phone speaker.

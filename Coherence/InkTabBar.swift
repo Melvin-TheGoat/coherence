@@ -92,7 +92,7 @@ struct InkTabBar: View {
             .contentShape(Rectangle())
             .animation(.spring(response: 0.35, dampingFraction: 0.8), value: selected)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.tactile)
         .accessibilityLabel(label)
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
@@ -103,7 +103,7 @@ struct InkTabBar: View {
         Button(action: onPlus) {
             art("ink-plus", scale: 58 / 204)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.tactileMain)
         .anchorPreference(key: TourTargetKey.self, value: .bounds) { [.begin: $0] }
         .frame(maxWidth: .infinity)
         .accessibilityLabel("Begin session")

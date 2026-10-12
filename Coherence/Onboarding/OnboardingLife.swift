@@ -281,6 +281,7 @@ struct LifePauseScreen: View {
                 .accessibilityLabel(sentence)
             Spacer()
             Button("Skip", action: finish)
+                .buttonStyle(.tactile)
                 .font(.system(size: 17, weight: .semibold, design: .rounded))
                 .foregroundStyle(AppColor.textPrimary.opacity(0.4))
                 .padding(.bottom, 24)
@@ -383,6 +384,7 @@ struct LifeDotsScreen: View {
                         .transition(.opacity)
                 } else {
                     Button("Skip", action: skip)
+                        .buttonStyle(.tactile)
                         .font(.system(size: 17, weight: .semibold, design: .rounded))
                         .foregroundStyle(AppColor.textPrimary.opacity(0.4))
                         .frame(height: 56)

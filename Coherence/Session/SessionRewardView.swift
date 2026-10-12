@@ -186,7 +186,11 @@ struct SessionRewardView: View {
             .overlay { foreground(size: size) }
             .coordinateSpace(name: Self.space)
             .contentShape(Rectangle())
-            .onTapGesture { finish() }
+            .onTapGesture {
+                // A press only while there is something left to skip.
+                if !ctaIn || !done { Tactile.tap() }
+                finish()
+            }
         }
         .ignoresSafeArea()
         .onAppear {
@@ -350,6 +354,7 @@ struct SessionRewardView: View {
         try? await Task.sleep(for: .milliseconds(150))
         guard !done else { return }
         buzz(.heavy)
+        AppAudio.shared.play(.land)
         withAnimation(.easeOut(duration: 0.9)) { lit = true }
         withAnimation(.linear(duration: 9)) { spin = true }
         hop += 1
@@ -368,6 +373,7 @@ struct SessionRewardView: View {
         guard await pause(420) else { return }
         flare += 1
         buzz(.medium)
+        AppAudio.shared.play(.pop)
         withAnimation(.spring(response: 0.38, dampingFraction: 0.6)) { streakShown = reward.streakAfter }
         guard await pause(380) else { return }
         if showsPoints {
@@ -406,6 +412,7 @@ struct SessionRewardView: View {
 
     private func showTile(_ i: Int) {
         buzz(.light)
+        AppAudio.shared.play(.pop)
         withAnimation(.spring(response: 0.42, dampingFraction: 0.62)) { tilesIn[i] = true }
     }
 
@@ -437,6 +444,9 @@ struct SessionRewardView: View {
                 withAnimation(.snappy(duration: 0.18)) { bank += share }
                 bankBump += 1
                 buzz(.light)
+                // The run climbs the whole scale whatever its length, three
+                // coins or eighteen, and lands on the top note (`SoundSynth`).
+                AppAudio.shared.play(.coin((SoundEffect.coinSteps - 1) * i / max(n - 1, 1)))
             }
             withAnimation(.snappy(duration: 0.1)) { pointsShown = points * (i + 1) / n }
             guard await pause(105) else { return false }
@@ -447,6 +457,7 @@ struct SessionRewardView: View {
 
     private func countGlow() async -> Bool {
         let from = reward.glowBefore, to = reward.glowAfter
+        if to > from { AppAudio.shared.play(.shimmer) }
         withAnimation(.easeOut(duration: 1.1)) { gainFloat = false }
         let steps = 22
         for k in 1...steps {
@@ -463,6 +474,7 @@ struct SessionRewardView: View {
     /// has reached a new stage.
     private func levelUp() {
         buzzSuccess()
+        AppAudio.shared.play(.chime)
         withAnimation(.easeOut(duration: 0.08)) { flash = true }
         look = OttoAura.look(level: reward.glowAfter)
         hop += 1

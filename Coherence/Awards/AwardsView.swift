@@ -303,6 +303,7 @@ struct AwardUnlockView: View {
             if preferences.first?.hapticsEnabled ?? true {
                 UINotificationFeedbackGenerator().notificationOccurred(.success)
             }
+            AppAudio.shared.play(.chime)
         }
     }
 }

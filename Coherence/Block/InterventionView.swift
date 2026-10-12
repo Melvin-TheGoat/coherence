@@ -75,6 +75,7 @@ struct InterventionView: View {
                         .frame(width: 36, height: 36)
                         .background(AppColor.backgroundPrimary.opacity(0.85), in: Circle())
                 }
+                .buttonStyle(.tactile)
                 .padding(.leading, 16)
                 .padding(.top, 8)
                 .accessibilityLabel("Close")
@@ -148,7 +149,7 @@ private struct DoorButtons: View {
                         .background(AppColor.backgroundPrimary.opacity(0.94), in: Capsule())
                         .shadow(color: .black.opacity(0.14), radius: 8, y: 2)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.tactile)
             }
         }
         .padding(.horizontal, AppMetrics.screenPadding)
@@ -572,7 +573,7 @@ private struct ReplyChip: View {
                 .background(AppColor.backgroundPrimary, in: Capsule())
                 .overlay(Capsule().stroke(AppColor.skyDeep, lineWidth: 2))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.tactile)
     }
 }
 
@@ -755,7 +756,7 @@ private struct FaceTimeScene: View {
                     .foregroundStyle(.white)
             }
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.tactile)
     }
 }
 
@@ -892,7 +893,7 @@ private struct NoteHowLongScreen: View {
                                 .background(AppColor.backgroundSecondary, in: Capsule())
                                 .shadow(color: .black.opacity(0.12), radius: 6, y: 2)
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.tactile)
                         .accessibilityLabel("Open my apps for \(m) minutes")
                     }
                 }
@@ -1064,7 +1065,7 @@ private struct PassOptions: View {
                             .background(AppColor.backgroundPrimary, in: Capsule())
                             .shadow(color: .black.opacity(0.12), radius: 6, y: 2)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.tactile)
                     .accessibilityLabel("Open my apps for \(m) minutes")
                 }
             }
@@ -1274,6 +1275,7 @@ private struct AskWhyScene: View {
                 HStack(spacing: 8) {
                     ForEach(Self.replies, id: \.0) { reply in
                         Button(reply.0) { withAnimation(.easeOut(duration: 0.2)) { answer = reply.0 } }
+                            .buttonStyle(.tactile)
                             .font(.system(size: 14, weight: .semibold))
                             .foregroundStyle(AppColor.textPrimary)
                             .padding(.horizontal, 12)
@@ -1378,7 +1380,7 @@ private struct HowLongScreen: View {
                                     .background(AppColor.backgroundPrimary.opacity(0.94), in: Capsule())
                                     .shadow(color: .black.opacity(0.14), radius: 8, y: 2)
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(.tactile)
                             .accessibilityLabel("Open my apps for \(m) minutes")
                         }
                     }

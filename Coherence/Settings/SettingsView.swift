@@ -243,6 +243,7 @@ struct AccountSheet: View {
                     VStack(spacing: 10) {
                         if AccountActions.isSignedIn(users) {
                             Button("Sign out") { confirmSignOut = true }
+                                .buttonStyle(.tactile)
                                 .font(AppFont.callout.weight(.medium))
                                 .foregroundStyle(AppColor.textSecondary)
                                 .confirmationDialog(AccountActions.signOutTitle, isPresented: $confirmSignOut,
@@ -351,6 +352,9 @@ private struct SettingsForm: View {
     @State private var editingName = false
     /// What the last Restore found (Melvin, 2026-09-29).
     @State private var restoreFeedback: RestoreFeedback?
+    /// Settings > Sound (2026-10-09). Device settings; see `AppAudio.musicKey`.
+    @AppStorage(AppAudio.musicKey) private var musicOn = true
+    @AppStorage(AppAudio.effectsKey) private var effectsOn = true
     @EnvironmentObject private var store: Store
     #if DEBUG
     @Environment(\.modelContext) private var context
@@ -490,12 +494,29 @@ private struct SettingsForm: View {
                         .padding(.leading, 41)
                         .tint(AppColor.accentGoldText)
                     }
+                }
+
+                // Music, sound and touch together (Melvin, 2026-10-09). The
+                // Haptics switch moved here from Practice; it now governs
+                // every haptic in the app, not only the award's (`Tactile`).
+                GrassHeading(title: "Sound")
+                settingsCard {
+                    row(icon: "music.note", title: "Music") {
+                        Toggle("", isOn: $musicOn)
+                            .labelsHidden().tint(AppColor.calmAccent)
+                    }
+                    divider
+                    row(icon: "speaker.wave.2", title: "Sound effects") {
+                        Toggle("", isOn: $effectsOn)
+                            .labelsHidden().tint(AppColor.calmAccent)
+                    }
                     divider
                     row(icon: "hand.tap", title: "Haptics") {
                         Toggle("", isOn: $prefs.hapticsEnabled)
                             .labelsHidden().tint(AppColor.calmAccent)
                     }
                 }
+                .onChange(of: musicOn) { _, _ in AppAudio.shared.reconcile() }
 
                 GrassHeading(title: "Membership")
                 settingsCard {
@@ -625,6 +646,7 @@ private struct SettingsForm: View {
                         .foregroundStyle(AppColor.accentGoldText)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
+                .buttonStyle(.tactile)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -697,6 +719,7 @@ private struct SettingsForm: View {
             } label: {
                 debugRow(icon: "arrow.up.circle", title: "Prime CloudKit schema")
             }
+            .buttonStyle(.tactile)
             divider
             Button {
                 let n = CloudSchemaPrimer.removePrimedRows(in: context)
@@ -705,6 +728,7 @@ private struct SettingsForm: View {
             } label: {
                 debugRow(icon: "trash", title: "Remove primer rows")
             }
+            .buttonStyle(.tactile)
             if primerRows > 0 || !primerMessage.isEmpty {
                 divider
                 VStack(alignment: .leading, spacing: 4) {
@@ -1003,6 +1027,7 @@ private struct SettingsForm: View {
             // nothing to sign out of (Melvin, 2026-09-29).
             if !user.appleUserID.isEmpty && user.deletedAt == nil {
                 Button("Sign out") { confirmSignOut = true }
+                    .buttonStyle(.tactile)
                     .font(AppFont.callout.weight(.medium))
                     .foregroundStyle(AppColor.textSecondary)
                     // What signing out costs is said first (`AccountActions`).

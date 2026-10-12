@@ -133,6 +133,9 @@ struct PrimaryButtonStyle: ButtonStyle {
             .offset(y: AppMetrics.buttonLift - lift)
             .animation(.easeOut(duration: 0.12), value: down)
             .padding(.bottom, AppMetrics.buttonLift)
+            // The filled button is the one the screen exists for, gold or
+            // onboarding's green, so it sounds a note higher than the rest.
+            .pressFeedback(down, main: true)
     }
 }
 
@@ -145,6 +148,7 @@ struct SecondaryButtonStyle: ButtonStyle {
             .padding(.vertical, 14)
             .background(AppColor.backgroundSecondary, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
             .opacity(configuration.isPressed ? 0.85 : 1)
+            .pressFeedback(configuration.isPressed)
     }
 }
 
@@ -207,6 +211,7 @@ struct PillButtonStyle: ButtonStyle {
                     .shadow(color: AppColor.hairline, radius: 0, y: 2)
             )
             .opacity(configuration.isPressed ? 0.75 : 1)
+            .pressFeedback(configuration.isPressed)
     }
 }
 

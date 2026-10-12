@@ -48,7 +48,7 @@ struct SessionLeftAppView: View {
                             .padding(.horizontal, 16)
                             .contentShape(Rectangle())
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.tactile)
                 }
                 .padding(.horizontal, 18)
                 // Matches End's own fix on the sit screen this replaces:

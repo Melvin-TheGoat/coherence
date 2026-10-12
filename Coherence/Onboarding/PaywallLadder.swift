@@ -196,6 +196,7 @@ struct DownsellSheet: View {
                     Text(rung.next == nil && !Monetization.premiumOnly ? "Show me the free version" : "Not for me")
                         .onMeadow()
                 }
+                .buttonStyle(.tactile)
                 .font(.system(size: 16, weight: .semibold, design: .rounded))
                 .padding(.vertical, 6)
             }
@@ -291,6 +292,7 @@ struct FreeTierScreen: View {
                        action: onStartTrial)
                     .buttonStyle(PrimaryButtonStyle())
                 Button("Continue with free 808", action: onContinueFree)
+                    .buttonStyle(.tactile)
                     .font(AppFont.callout)
                     .foregroundStyle(AppColor.textSecondary)
                     .padding(.vertical, 6)

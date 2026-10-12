@@ -96,6 +96,7 @@ struct InterventionGalleryView: View {
             }
             .padding(.vertical, 2)
         }
+        .buttonStyle(.tactile)
     }
 
     /// What Otto would know, so every screen reads true instead of blank: a

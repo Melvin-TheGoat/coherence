@@ -252,7 +252,7 @@ private struct HatCard: View {
                     .stroke(selected ? AppColor.skyDeep : .clear, lineWidth: 2)
             )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.tactile)
         .accessibilityLabel("\(item.name), \(worn ? "worn" : owned ? "owned" : "\(item.price) points")")
     }
 

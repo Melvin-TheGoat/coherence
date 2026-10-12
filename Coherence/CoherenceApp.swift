@@ -17,6 +17,10 @@ struct CoherenceApp: App {
         // delivered. Installed on every build, not only Block's: it is also
         // what plays the timed session's end chime with 808 on screen.
         BlockNotifications.shared.install()
+        // The press every button gives, and the app's own music and sounds
+        // (2026-10-09). The sounds render off the main thread from here.
+        Tactile.install()
+        AppAudio.shared.install()
         // One-time rescue of pre-split health stats — the extract MUST run
         // before the split container first opens the main store.
         let rescued = Persistence.rescueOrphanedHealthStatsIfNeeded()

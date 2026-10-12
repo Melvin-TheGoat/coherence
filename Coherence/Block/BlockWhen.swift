@@ -198,7 +198,7 @@ struct BlockWhenPicker: View {
                             .background(on ? AppColor.accentGold : AppColor.textSecondary.opacity(0.10),
                                         in: Capsule())
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.tactile)
                     .accessibilityAddTraits(on ? .isSelected : [])
                 }
             }
@@ -231,7 +231,7 @@ struct BlockWhenPicker: View {
                 .padding(.vertical, 10)
                 .background(on ? AppColor.accentGold : AppColor.textSecondary.opacity(0.10), in: Capsule())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.tactile)
         .accessibilityAddTraits(on ? .isSelected : [])
     }
 

@@ -68,7 +68,7 @@ struct PhotoTile: View {
             }
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.tactile)
         #if DEBUG && targetEnvironment(simulator)
         .overlay(alignment: .bottomTrailing) {
             if shown == nil, onSimulatorPick != nil {

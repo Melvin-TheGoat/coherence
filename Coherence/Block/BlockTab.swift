@@ -178,6 +178,7 @@ struct BlockTab: View {
                         UIApplication.shared.open(url)
                     }
                 }
+                .buttonStyle(.tactile)
                 .font(.system(size: 15, weight: .bold))
                 .foregroundStyle(AppColor.accentGoldText)
             }
@@ -217,7 +218,7 @@ struct BlockTab: View {
                             .background(AppColor.backgroundPrimary.opacity(0.92),
                                         in: RoundedRectangle(cornerRadius: 20, style: .continuous))
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.tactile)
                     }
                 }
             }
@@ -417,7 +418,7 @@ private struct BlockerCard: View {
             }
             .card()
             .contentShape(Rectangle())
-            .onTapGesture(perform: onOpen)
+            .tactileTap(perform: onOpen)
             .accessibilityAddTraits(.isButton)
             .accessibilityHint("Opens this blocker's settings")
     }

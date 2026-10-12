@@ -466,6 +466,7 @@ struct OttoLockedView: View {
                 Button(trialEligible ? TrialCopy.startButton(trialDays) : "See the plans", action: onSeePlans)
                     .buttonStyle(PrimaryButtonStyle())
                 Button("Not now", action: onDismiss)
+                    .buttonStyle(.tactile)
                     .font(AppFont.callout)
                     .foregroundStyle(AppColor.textSecondary)
                     .padding(.vertical, 6)

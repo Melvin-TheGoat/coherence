@@ -920,10 +920,14 @@ struct PaywallScreen: View {
     /// on-device record went missing must always have the second.
     @ViewBuilder private var linkButtons: some View {
         Button("Restore") { restore() }
+            .buttonStyle(.tactile)
         Button("Privacy Policy") { sheet = .legal(.privacy) }
+            .buttonStyle(.tactile)
         Button("Terms of Use") { sheet = .legal(.terms) }
+            .buttonStyle(.tactile)
         if offersAccount {
             Button("Account") { sheet = .account }
+                .buttonStyle(.tactile)
         }
     }
 
@@ -971,6 +975,7 @@ struct PaywallScreen: View {
             // are declined the link goes, and the plans are what is left.
             if !declinedAll, let first = firstRung() {
                 Button("No, I don't want to pay") { showRung(first) }
+                    .buttonStyle(.tactile)
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(AppColor.textSecondary.opacity(0.8))
                     .multilineTextAlignment(.center)
@@ -1283,6 +1288,7 @@ struct SignInScreen: View {
                 Button(action: onSkip) {
                     Text("Not now").modifier(FootnoteInk())
                 }
+                .buttonStyle(.tactile)
                 .font(.footnote.weight(.semibold))
                 .padding(.top, 14)
             }

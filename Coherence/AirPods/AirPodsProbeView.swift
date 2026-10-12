@@ -119,6 +119,8 @@ struct AirPodsProbeView: View {
                 .fixedSize(horizontal: false, vertical: true)
             if !probe.files.isEmpty {
                 Button("Delete all captures", role: .destructive) { probe.deleteAllCaptures() }
+                    .buttonStyle(.tactile)
+                    .foregroundStyle(.red)
                     .font(AppFont.caption.weight(.medium))
             }
         }

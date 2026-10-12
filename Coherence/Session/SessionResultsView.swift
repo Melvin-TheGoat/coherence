@@ -311,6 +311,7 @@ struct SessionResultsView: View {
 
     private func bandButton(_ symbol: String, label: String, action: @escaping () -> Void) -> some View {
         Button(action: action) { bandCircle(symbol) }
+            .buttonStyle(.tactile)
             .accessibilityLabel(label)
     }
 
@@ -599,6 +600,7 @@ struct SessionResultsView: View {
                 .background(AppColor.backgroundSecondary, in: Capsule())
                 .shadow(color: .black.opacity(0.08), radius: 4, y: 2)
             }
+            .buttonStyle(.tactile)
             // Attached to the button, not stacked on the NavigationStack with
             // the other two sheets — several .sheet modifiers on one view is
             // the documented only-one-presents trap.

@@ -58,7 +58,7 @@ struct SelfieCamera: View {
                     .foregroundStyle(.white)
                     .frame(width: 32, height: 32)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.tactile)
             Spacer()
             Text("808")
                 .font(.system(size: 17, weight: .heavy, design: .rounded))
@@ -71,7 +71,7 @@ struct SelfieCamera: View {
                         .foregroundStyle(.white)
                         .frame(width: 32, height: 32)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.tactile)
             } else {
                 Color.clear.frame(width: 32, height: 32)
             }
@@ -133,7 +133,7 @@ struct SelfieCamera: View {
                             .stroke(.white.opacity(0.3), lineWidth: 1))
                         .contentShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.tactile)
                 Button {
                     onPhoto(captured)
                     dismiss()
@@ -191,6 +191,7 @@ struct SelfieCamera: View {
             Button("Open Settings") {
                 if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) }
             }
+            .buttonStyle(.tactile)
             .font(AppFont.callout.weight(.semibold))
             .foregroundStyle(.white)
             .padding(.top, 4)

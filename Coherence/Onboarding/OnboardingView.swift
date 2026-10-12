@@ -1267,6 +1267,7 @@ struct HealthConsentScreen: View {
                            "Your health data is never used for advertising, never shared, never sold. Delete any session in the app, or your whole account in Settings.")
 
                 Button("Read the full Privacy Policy") { showPrivacyPolicy = true }
+                    .buttonStyle(.tactile)
                     .font(.footnote.weight(.medium))
                     .foregroundStyle(AppColor.accentGoldText)
                     .frame(maxWidth: .infinity)

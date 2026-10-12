@@ -1071,6 +1071,7 @@ struct HardwareScreen: View {
 
             if let declineTitle, let onDecline {
                 Button(declineTitle, action: onDecline)
+                    .buttonStyle(.tactile)
                     .font(AppFont.callout)
                     .foregroundStyle(AppColor.textSecondary)
                     .frame(maxWidth: .infinity)

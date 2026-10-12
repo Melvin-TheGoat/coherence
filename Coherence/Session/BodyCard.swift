@@ -59,7 +59,7 @@ struct BodyCard: View {
                 .padding(.vertical, 6)
                 .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.tactile)
         }
         .padding(inset)
     }

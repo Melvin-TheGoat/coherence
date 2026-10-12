@@ -48,7 +48,7 @@ struct SessionTooShortView: View {
                             .background(AppColor.backgroundPrimary.opacity(0.94), in: Capsule())
                             .shadow(color: .black.opacity(0.14), radius: 8, y: 2)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.tactile)
                 }
                 .padding(.horizontal, 18)
                 .padding(.bottom, 30)

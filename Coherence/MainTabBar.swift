@@ -136,7 +136,7 @@ struct MainTabBar: View {
             .frame(minHeight: 44)
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.tactile)
         .accessibilityLabel(label)
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
@@ -152,7 +152,7 @@ struct MainTabBar: View {
                 .background(AppColor.accentGold, in: Circle())
                 .shadow(color: AppColor.accentGold.opacity(0.35), radius: 12, y: 6)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.tactileMain)
         // The tour's anchor sits on the circle, BEFORE the offset and the
         // full-width frame. It used to sit after both, so the spotlight was
         // the whole slot's width and 18pt lower than the drawn button: the
