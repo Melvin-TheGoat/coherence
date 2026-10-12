@@ -289,9 +289,12 @@ final class SessionCoordinator: NSObject, ObservableObject {
                 if wc.isReachable {
                     wc.sendMessage([WCKeys.params: data], replyHandler: nil, errorHandler: nil)
                 }
-                if wc.activationState == .activated {
-                    try? wc.updateApplicationContext([WCKeys.params: data, WCKeys.onboarded: true])
-                }
+                // The start command rides the application context too, so a
+                // Watch app launching cold picks it up. Through the store,
+                // which keeps Otto's glow and the length in the same update.
+                WatchContextStore.params = data
+                WatchContextStore.onboarded = true
+                WatchContextStore.push()
             }
             let config = HKWorkoutConfiguration()
             config.activityType = .mindAndBody
@@ -370,9 +373,8 @@ final class SessionCoordinator: NSObject, ObservableObject {
             })
         }
         wc.transferUserInfo(msg)
-        if wc.activationState == .activated {
-            try? wc.updateApplicationContext([WCKeys.onboarded: onboarded])
-        }
+        WatchContextStore.params = nil
+        WatchContextStore.push()
     }
 
     /// Runs the whole sit here: the phone keeps the clock, plays the sound,
@@ -665,23 +667,31 @@ final class SessionCoordinator: NSObject, ObservableObject {
                                plannedDurationSec: current.plannedDurationSec,
                                soundTitle: current.soundTitle,
                                engine: current.engine)
-        if let planned = current.plannedDurationSec {
-            let remaining = Double(planned) - Date().timeIntervalSince(startedAt)
-            // The end notice follows the Watch's real start, so it rings as
-            // the Watch's own timer ends rather than a few seconds early.
-            if remaining > 0 {
-                SessionEndNotice.schedule(for: current.id, afterSeconds: Int(remaining.rounded(.up)),
-                                          plannedSec: planned)
-            }
-            audioStopTask?.cancel()
-            audioStopTask = Task { @MainActor [weak self] in
-                try? await Task.sleep(for: .seconds(max(0, remaining)))
-                guard !Task.isCancelled else { return }
-                self?.tone.stop(reason: "planned timer (re-anchored, \(Int(remaining))s left)")
-                // The Watch's timer has just run out: the bell, as a phone
-                // sit rings it.
-                SessionBell.ringIfOnScreen()
-            }
+        armWatchTimedEnd(id: current.id, startedAt: startedAt,
+                         plannedSec: current.plannedDurationSec, note: "re-anchored")
+    }
+
+    /// A timed session the Watch is clocking: the phone stops its sound,
+    /// sends the end notice and rings the bell when the Watch's timer runs
+    /// out, measured from the Watch's real start. Used by the start ack and
+    /// by a session begun on the wrist with a length (2026-10-12).
+    private func armWatchTimedEnd(id: UUID, startedAt: Date, plannedSec: Int?, note: String) {
+        guard let planned = plannedSec else { return }
+        let remaining = Double(planned) - Date().timeIntervalSince(startedAt)
+        // The end notice follows the Watch's real start, so it rings as
+        // the Watch's own timer ends rather than a few seconds early.
+        if remaining > 0 {
+            SessionEndNotice.schedule(for: id, afterSeconds: Int(remaining.rounded(.up)),
+                                      plannedSec: planned)
+        }
+        audioStopTask?.cancel()
+        audioStopTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(max(0, remaining)))
+            guard !Task.isCancelled else { return }
+            self?.tone.stop(reason: "planned timer (\(note), \(Int(remaining))s left)")
+            // The Watch's timer has just run out: the bell, as a phone
+            // sit rings it.
+            SessionBell.ringIfOnScreen()
         }
     }
 
@@ -852,7 +862,8 @@ final class SessionCoordinator: NSObject, ObservableObject {
     /// `onboardingComplete`, so a signed-out phone re-gates the wrist too.
     func setOnboarded(_ done: Bool) {
         onboarded = done
-        try? WCSession.default.updateApplicationContext([WCKeys.onboarded: done])
+        WatchContextStore.onboarded = done
+        WatchContextStore.push()
     }
 
     private func persist(_ payload: SessionPayload) {
@@ -906,7 +917,8 @@ final class SessionCoordinator: NSObject, ObservableObject {
             // session (application context lingers until overwritten).
             // Clearing the start command must not also clear the Watch's
             // onboarded flag, which rides the same context.
-            try? WCSession.default.updateApplicationContext([WCKeys.onboarded: onboarded])
+            WatchContextStore.params = nil
+            WatchContextStore.push()
         } else {
             log.info("Stale payload \(id) persisted without touching the live session")
         }
@@ -967,12 +979,20 @@ final class SessionCoordinator: NSObject, ObservableObject {
 
 extension SessionCoordinator: WCSessionDelegate {
     nonisolated func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {
-        Task { @MainActor in WatchLink.shared.refresh() }
+        Task { @MainActor in
+            WatchLink.shared.refresh()
+            // Anything set before the session was up (the onboarded flag at
+            // launch, Otto's glow) goes now.
+            WatchContextStore.push()
+        }
     }
     /// Paired, unpaired, 808 installed or removed on the Watch: the Ready
     /// screen's switch and Settings follow at once.
     nonisolated func sessionWatchStateDidChange(_ session: WCSession) {
-        Task { @MainActor in WatchLink.shared.refresh() }
+        Task { @MainActor in
+            WatchLink.shared.refresh()
+            WatchContextStore.push()
+        }
     }
     nonisolated func sessionDidBecomeInactive(_ session: WCSession) {}
     nonisolated func sessionDidDeactivate(_ session: WCSession) {
@@ -1042,10 +1062,13 @@ extension SessionCoordinator: WCSessionDelegate {
             if parts.count == 3, let id = UUID(uuidString: String(parts[0])),
                let epoch = Double(parts[1]) {
                 let soundID = parts[2].isEmpty ? nil : String(parts[2])
+                // The wrist's length, when one was chosen (2026-10-12).
+                let planned = (dict[WCKeys.watchPlanned] as? Int).flatMap { $0 > 0 ? $0 : nil }
                 Task { @MainActor in
                     self.joinWatchSession(sessionID: id,
                                           at: Date(timeIntervalSince1970: epoch),
-                                          soundID: soundID)
+                                          soundID: soundID,
+                                          plannedSec: planned)
                 }
             }
         }
@@ -1081,7 +1104,8 @@ extension SessionCoordinator: WCSessionDelegate {
     /// up, chosen sound playing — instead of orchestrating it. Everything
     /// downstream (started re-anchor, payload, persist) is the existing path.
     @MainActor
-    private func joinWatchSession(sessionID: UUID, at startedAt: Date, soundID: String?) {
+    private func joinWatchSession(sessionID: UUID, at startedAt: Date, soundID: String?,
+                                  plannedSec: Int? = nil) {
         guard currentAttemptID != sessionID,                  // double delivery
               !endedIDs.contains(sessionID) else { return }
         // A phone sit running here is written first, never silently replaced.
@@ -1093,10 +1117,15 @@ extension SessionCoordinator: WCSessionDelegate {
         startAcked = true
         active = ActiveSession(id: sessionID,
                                startedAt: startedAt,
-                               plannedDurationSec: nil,
+                               plannedDurationSec: plannedSec,
                                soundTitle: SoundCatalog.title(for: soundID))
         startAudio(soundID: soundID, headphones: false, plannedDurationSec: nil)
-        status = "Started from your Watch. Meditate, then End on the Watch."
+        // A length chosen on the wrist: the Watch ends the session itself,
+        // and the phone stops the sound and rings with it.
+        armWatchTimedEnd(id: sessionID, startedAt: startedAt, plannedSec: plannedSec, note: "wrist length")
+        status = plannedSec == nil
+            ? "Started from your Watch. Meditate, then End on the Watch."
+            : "Started from your Watch. It ends by itself."
     }
 }
 

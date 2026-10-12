@@ -1,35 +1,59 @@
 import SwiftUI
 
-/// The Watch app's four screens: a real start screen (Begin + sound choice),
-/// the live session, sending, and delivered. Sessions can begin from the wrist
-/// or from the phone; either way the pipeline is identical.
+/// The Watch app, standing in the app's valley (2026-10-12, Aziz: "the UI is
+/// current theme, and you should be able to set time limits and choose
+/// audio from the apple watch"). Built to `mockups/watch-v2.html`.
 ///
-/// **No live biometrics anywhere** — evidence after, not during. The only
-/// "status" the live screen shows is a teal measuring dot.
+/// The valley is the iPhone's own painting (`DayLight` and
+/// `ValleyPainting.swift`, compiled into this target the way the home screen
+/// widget compiles them), at the real hour, with Otto on his cushion at the
+/// glow Home shows. Controls are the + screen's: sand pills for the length
+/// and the sound, one gold Begin.
+///
+/// **No live biometrics anywhere**: evidence after, not during. **No
+/// haptics**: the Watch plays none (CLAUDE.md), a timed session included;
+/// the iPhone's bell and end notice mark the end when it is near.
 struct WatchContentView: View {
     @EnvironmentObject private var manager: WatchSessionManager
     @Environment(\.scenePhase) private var scenePhase
-    @State private var showSoundPicker = false
+    @State private var picking: Choosing?
+
+    enum Choosing: String, Identifiable {
+        case length, sound
+        var id: String { rawValue }
+    }
 
     var body: some View {
-        ZStack {
-            Color.black.ignoresSafeArea()
-            content
-        }
-        .sheet(isPresented: $showSoundPicker) {
-            NavigationStack {
-                SoundPickerView(selectedID: $manager.soundID)
+        content
+            .sheet(item: $picking) { which in
+                switch which {
+                case .length:
+                    LengthPickerView(minutes: manager.lengthMinutes) { chosen in
+                        manager.chooseLength(chosen)
+                        picking = nil
+                    }
+                case .sound:
+                    SoundPickerView(selectedID: $manager.soundID)
+                }
             }
-        }
-        // Workouts gets turned on in the Health app on the iPhone while the
-        // first-run screen waits here; notice it on the way back without a
-        // tap (2026-09-30). Only while still locked out, so a session in
-        // progress is never sent back to the first-run screen.
-        .onChange(of: scenePhase) { _, phase in
-            if phase == .active, !manager.authorized {
-                manager.recheckAuthorization(explain: manager.authorizeHelp != nil)
+            #if DEBUG
+            .onAppear {
+                switch ProcessInfo.processInfo.environment["PREVIEW_WATCH_SCREEN"] {
+                case "length": picking = .length
+                case "sound": picking = .sound
+                default: break
+                }
             }
-        }
+            #endif
+            // Workouts gets turned on in the Health app on the iPhone while the
+            // first-run screen waits here; notice it on the way back without a
+            // tap (2026-09-30). Only while still locked out, so a session in
+            // progress is never sent back to the first-run screen.
+            .onChange(of: scenePhase) { _, phase in
+                if phase == .active, !manager.authorized {
+                    manager.recheckAuthorization(explain: manager.authorizeHelp != nil)
+                }
+            }
     }
 
     @ViewBuilder
@@ -48,6 +72,10 @@ struct WatchContentView: View {
         }
     }
 
+    /// The sky at the real hour.
+    private var nowHour: Double { WatchValley.quantize(DayLight.clockProgress()) }
+    private var nowDay: DayLight { DayLight.at(nowHour) }
+
     // MARK: - First run
 
     /// Allow asks HealthKit. When Workouts was already declined (often on the
@@ -55,43 +83,43 @@ struct WatchContentView: View {
     /// to sit there as if Allow were broken (App Review, 2026-09-30). After
     /// an Allow that comes back without Workouts, the help replaces the intro
     /// line and the button becomes Try again, which asks again and re-reads
-    /// the answer.
-    /// Scrolls, because the help runs to four lines on a 41 mm Watch.
+    /// the answer. Scrolls, because the help runs to four lines on a 41 mm
+    /// Watch.
     private var authorizeScreen: some View {
-        ScrollView {
-            VStack(spacing: 10) {
-                markRow
-                Text(manager.authorizeHelp ?? "808 measures with your heart rate and motion.")
-                    .font(.system(size: 13))
-                    .foregroundStyle(manager.authorizeHelp == nil ? WatchPalette.inkMuted : WatchPalette.ink)
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.top, 6)
-                if manager.authorizeHelp == nil {
-                    Button("Allow") { Task { await manager.authorize() } }
-                        .buttonStyle(.borderedProminent)
-                        .tint(WatchPalette.gold)
-                        .foregroundStyle(.black)
-                } else {
-                    // Asks again, not only re-reads (2026-09-30): if the
-                    // iPhone's prompt was missed, re-reading kept the person
-                    // here for good. Once Workouts is decided HealthKit
-                    // returns at once with no UI, so this is safe when denied.
-                    Button("Try again") { Task { await manager.authorize() } }
-                        .buttonStyle(.borderedProminent)
-                        .tint(WatchPalette.gold)
-                        .foregroundStyle(.black)
-                }
-                // One message at a time: the help line, when there is one,
-                // already says what to do (2026-09-30).
-                if manager.authorizeHelp == nil, let msg = manager.statusMessage {
-                    Text(msg).font(.system(size: 11))
-                        .foregroundStyle(WatchPalette.inkMuted)
+        ZStack {
+            WatchValley(hour: nowHour, stage: manager.ottoStage(), cushion: 0.46)
+                .equatable()
+                .ignoresSafeArea()
+            ScrollView {
+                VStack(spacing: 8) {
+                    Spacer(minLength: 96)
+                    Text(manager.authorizeHelp ?? "808 measures with your heart rate and motion.")
+                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        .foregroundStyle(WatchPalette.sandInk)
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
+                        .padding(10)
+                        .frame(maxWidth: .infinity)
+                        .background(SandCard())
+                    Button(manager.authorizeHelp == nil ? "Allow" : "Try again") {
+                        // Asks again, not only re-reads (2026-09-30): once
+                        // Workouts is decided HealthKit returns at once with
+                        // no UI, so this is safe when denied.
+                        Task { await manager.authorize() }
+                    }
+                    .buttonStyle(BeginButtonStyle())
+                    // One message at a time: the help line, when there is
+                    // one, already says what to do (2026-09-30).
+                    if manager.authorizeHelp == nil, let msg = manager.statusMessage {
+                        Text(msg)
+                            .font(.system(size: 11, weight: .medium, design: .rounded))
+                            .onSky(nowDay)
+                            .multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                 }
+                .padding(.horizontal, 6)
             }
-            .padding(.horizontal, 6)
         }
     }
 
@@ -101,86 +129,72 @@ struct WatchContentView: View {
     /// session started here would deliver into an app that can't receive it.
     /// Say what to do instead of offering a Begin that half-works.
     private var setupScreen: some View {
-        VStack(spacing: 10) {
-            markRow
-            Spacer()
-            Image(systemName: "iphone.gen3")
-                .font(.system(size: 26))
-                .foregroundStyle(WatchPalette.calm)
-            Text("Set up 808 on your iPhone first.")
-                .font(.system(size: 14, weight: .semibold, design: .rounded))
-                .foregroundStyle(WatchPalette.ink)
-                .multilineTextAlignment(.center)
-            Text("Open the app on your phone and finish the setup. This screen unlocks by itself.")
-                .font(.system(size: 11))
-                .foregroundStyle(WatchPalette.inkMuted)
-                .multilineTextAlignment(.center)
-            Spacer()
+        ZStack {
+            WatchValley(hour: nowHour, stage: manager.ottoStage(), cushion: 0.5)
+                .equatable()
+                .ignoresSafeArea()
+            VStack(spacing: 4) {
+                Spacer()
+                Text("Set up 808 on your iPhone first.")
+                    .font(.system(size: 14, weight: .bold, design: .rounded))
+                    .foregroundStyle(WatchPalette.sandInk)
+                Text("Finish the setup on your phone. This screen unlocks by itself.")
+                    .font(.system(size: 11, weight: .medium, design: .rounded))
+                    .foregroundStyle(WatchPalette.sandInkSoft)
+            }
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(10)
+            .frame(maxWidth: .infinity)
+            .background(SandCard())
+            .frame(maxHeight: .infinity, alignment: .bottom)
+            .padding(.horizontal, 6)
         }
-        .padding(.horizontal, 6)
     }
 
     // MARK: - Start
 
     private var startScreen: some View {
-        VStack(spacing: 6) {
-            markRow
-
-            Spacer(minLength: 2)
-
-            Button(action: { manager.beginFromWatch() }) {
-                ZStack {
-                    Circle()
-                        .fill(RadialGradient(
-                            colors: [Color(red: 0.91, green: 0.77, blue: 0.35),
-                                     Color(red: 0.79, green: 0.60, blue: 0.17),
-                                     Color(red: 0.66, green: 0.49, blue: 0.11)],
-                            center: .init(x: 0.34, y: 0.30),
-                            startRadius: 4, endRadius: 90))
-                        .shadow(color: WatchPalette.gold.opacity(0.45), radius: 14, y: 6)
-                    Text("Begin")
-                        .font(.system(size: 19, weight: .heavy, design: .rounded))
-                        .foregroundStyle(WatchPalette.onGold)
+        ZStack {
+            WatchValley(hour: nowHour, stage: manager.ottoStage(), cushion: 0.47)
+                .equatable()
+                .ignoresSafeArea()
+            VStack(spacing: 7) {
+                HStack {
+                    Text("808")
+                        .font(.system(size: 12, weight: .black, design: .rounded))
+                        .tracking(2.4)
+                        .onSky(nowDay)
+                    Spacer()
                 }
-                .frame(width: 108, height: 108)
-            }
-            .buttonStyle(.plain)
-
-            Spacer(minLength: 2)
-
-            Button(action: { showSoundPicker = true }) {
+                Spacer(minLength: 0)
+                // Surfaces a start refusal (no HR, not authorized) on the
+                // screen the person is looking at. Three lines: the Workouts
+                // help is one full sentence (2026-09-30).
+                if let msg = manager.statusMessage {
+                    Text(msg)
+                        .font(.system(size: 11, weight: .semibold, design: .rounded))
+                        .foregroundStyle(WatchPalette.sandInk)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(3)
+                        .padding(.horizontal, 8).padding(.vertical, 5)
+                        .background(SandCard(radius: 10))
+                }
                 HStack(spacing: 6) {
-                    Image(systemName: "music.note")
-                        .font(.system(size: 11))
-                        .foregroundStyle(WatchPalette.calm)
-                    Text(SoundMenu.title(for: manager.soundID))
-                        .font(.system(size: 13, weight: .semibold, design: .rounded))
-                        .foregroundStyle(WatchPalette.ink)
-                        .lineLimit(1)
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 9, weight: .bold))
-                        .foregroundStyle(WatchPalette.inkMuted)
+                    ChoicePill(icon: "WatchIconLength",
+                               title: manager.lengthMinutes.map { "\($0) min" } ?? "Open") {
+                        picking = .length
+                    }
+                    ChoicePill(icon: "WatchIconSound",
+                               title: SoundMenu.title(for: manager.soundID)) {
+                        picking = .sound
+                    }
                 }
-                .padding(.horizontal, 13)
-                .padding(.vertical, 8)
-                .background(WatchPalette.surface, in: Capsule())
+                Button("Begin") { manager.beginFromWatch() }
+                    .buttonStyle(BeginButtonStyle())
             }
-            .buttonStyle(.plain)
-
-            // Surfaces a start refusal (no HR, not authorized) on the screen
-            // the user is actually looking at.
-            if let msg = manager.statusMessage {
-                // Three lines: the Workouts help is one full sentence and was
-                // cut off at two (2026-09-30).
-                Text(msg)
-                    .font(.system(size: 10))
-                    .foregroundStyle(WatchPalette.gold)
-                    .multilineTextAlignment(.center)
-                    .lineLimit(3)
-            }
+            .padding(.horizontal, 4)
         }
-        .padding(.horizontal, 4)
-        .padding(.vertical, 2)
     }
 
     // MARK: - Countdown
@@ -188,73 +202,78 @@ struct WatchContentView: View {
     /// Five seconds to settle before the wrist starts measuring, matching the
     /// phone's countdown. A number, a line, a way out. No haptics.
     private var countdownScreen: some View {
-        VStack(spacing: 6) {
-            Spacer(minLength: 0)
-            Text(manager.countdown.map(String.init) ?? "")
-                .font(.system(size: 64, weight: .bold, design: .rounded))
-                .foregroundStyle(WatchPalette.gold)
-                .monospacedDigit()
-                .contentTransition(.numericText(countsDown: true))
-                .animation(.easeOut(duration: 0.15), value: manager.countdown)
-            Text("Get comfortable.")
-                .font(.system(size: 12))
-                .foregroundStyle(WatchPalette.inkMuted)
-            Spacer(minLength: 0)
-            Button(action: { manager.cancelCountdown() }) {
-                Text("Cancel")
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
-                    .foregroundStyle(WatchPalette.inkMuted)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 7)
-                    .background(WatchPalette.surface, in: Capsule())
+        ZStack {
+            WatchValley(hour: nowHour, stage: manager.ottoStage(), cushion: 0.8, sceneShare: 0.84)
+                .equatable()
+                .ignoresSafeArea()
+            VStack(spacing: 4) {
+                Text(manager.countdown.map(String.init) ?? "")
+                    .font(.system(size: 40, weight: .heavy, design: .rounded))
+                    .monospacedDigit()
+                    .contentTransition(.numericText(countsDown: true))
+                    .animation(.easeOut(duration: 0.15), value: manager.countdown)
+                    .onSky(nowDay)
+                Text("Get comfortable.")
+                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                    .onSky(nowDay)
+                Spacer()
+                Button("Cancel") { manager.cancelCountdown() }
+                    .buttonStyle(SandButtonStyle())
             }
-            .buttonStyle(.plain)
-        }
-        .padding(.horizontal, 6)
-        .padding(.bottom, 4)
-    }
-
-    private var markRow: some View {
-        HStack(spacing: 6) {
-            // 22, not 17. The flower was a glyph and survived being tiny; a
-            // face needs a few more points before the eyes read.
-            Image("OttoHead")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 22, height: 22)
-            Text("808")
-                .font(.system(size: 12, weight: .black, design: .rounded))
-                .tracking(2.4)
-                .foregroundStyle(WatchPalette.gold)
+            // Into the bottom inset, so the button sits under Otto, not on him.
+            .padding(.bottom, 6)
+            .ignoresSafeArea(edges: .bottom)
         }
     }
 
     // MARK: - Live
 
+    /// The iPhone's sit at Watch size: the sun runs from the real hour on to
+    /// night over the session, and the ring hangs in the sky over Otto. A
+    /// timed session draws its arc and counts down; an open one counts up
+    /// with no arc, its sky moving over a nominal twenty minutes.
     private var liveScreen: some View {
-        ZStack {
-            BreathingOrb(elapsed: manager.elapsed)
+        let planned = manager.params?.plannedDurationSec
+        let elapsed = manager.elapsed
+        let total = Double(planned ?? Self.openArcSec)
+        let progress = min(1, Double(elapsed) / max(1, total))
+        let start = DayLight.clockProgress(at: Date().addingTimeInterval(-Double(elapsed)))
+        let hour = WatchValley.quantize(start + (1 - start) * progress)
+        let day = DayLight.at(hour)
+        let shown = planned.map { max(0, $0 - elapsed) } ?? elapsed
 
-            VStack {
-                HStack(spacing: 5) {
-                    Circle().fill(WatchPalette.calm).frame(width: 5, height: 5)
-                    Text(silentNote ?? "measuring")
-                        .font(.system(size: 11))
-                        .foregroundStyle(WatchPalette.inkMuted)
+        return ZStack {
+            WatchValley(hour: hour, stage: manager.ottoStage(), cushion: 0.8, sceneShare: 0.84)
+                .equatable()
+                .ignoresSafeArea()
+            VStack(spacing: 4) {
+                SitRing(progress: planned == nil ? nil : progress,
+                        track: day.ringTrack,
+                        time: Self.clock(shown),
+                        label: planned == nil ? "open" : "left",
+                        day: day)
+                if let note = silentNote {
+                    Text(note)
+                        .font(.system(size: 10, weight: .bold, design: .rounded))
+                        .foregroundStyle(WatchPalette.sand)
+                        .padding(.horizontal, 8).padding(.vertical, 2)
+                        .background(Capsule().fill(.black.opacity(0.3)))
                 }
                 Spacer()
-                Button(action: { manager.endByUser() }) {
-                    Text("End")
-                        .font(.system(size: 15, weight: .bold, design: .rounded))
-                        .foregroundStyle(WatchPalette.warn)
-                        .padding(.horizontal, 38)
-                        .padding(.vertical, 10)
-                        .background(WatchPalette.surface, in: Capsule())
-                }
-                .buttonStyle(.plain)
+                Button("End") { manager.endByUser() }
+                    .buttonStyle(SandButtonStyle())
             }
-            .padding(.bottom, 2)
+            // Into the bottom inset, so the button sits under Otto, not on him.
+            .padding(.bottom, 6)
+            .ignoresSafeArea(edges: .bottom)
         }
+    }
+
+    /// An open session's sky reaches night after this long, as on the iPhone.
+    static let openArcSec = 20 * 60
+
+    private static func clock(_ seconds: Int) -> String {
+        String(format: "%d:%02d", seconds / 60, seconds % 60)
     }
 
     /// The honest one-liner when a wrist-started session wanted sound but the
@@ -262,153 +281,434 @@ struct WatchContentView: View {
     private var silentNote: String? {
         guard manager.startedOnWatch, !manager.phoneLinked,
               manager.soundID?.isEmpty == false else { return nil }
-        return "iPhone out of reach · silent"
+        return "iPhone out of reach, silent"
     }
 
     // MARK: - Sending / sent
 
     private var sendingScreen: some View {
-        VStack(spacing: 12) {
-            PhoneStream()
-            Text("Scoring your session")
-                .font(.system(size: 15, weight: .bold, design: .rounded))
-                .foregroundStyle(WatchPalette.ink)
-            Text("Your evidence is on its way\nto your iPhone.")
-                .font(.system(size: 11))
-                .foregroundStyle(WatchPalette.inkMuted)
-                .multilineTextAlignment(.center)
+        ZStack {
+            WatchValley(hour: nowHour, stage: manager.ottoStage(), cushion: 0.84, sceneShare: 0.84)
+                .equatable()
+                .ignoresSafeArea()
+            VStack(spacing: 6) {
+                Text("Sending")
+                    .font(.system(size: 18, weight: .heavy, design: .rounded))
+                    .onSky(nowDay)
+                SendingDots(color: nowDay.ink)
+                Spacer()
+            }
         }
     }
 
     private var sentScreen: some View {
-        VStack(spacing: 8) {
-            // An encode failure sends nothing and queues nothing, so it must
-            // not read "Saved" (2026-09-30).
-            Image(systemName: manager.sendFailed ? "exclamationmark.circle.fill" : "checkmark.seal.fill")
-                .font(.system(size: 30))
-                .foregroundStyle(manager.sendFailed ? WatchPalette.inkMuted : WatchPalette.gold)
-            Text(manager.sendFailed ? "Not sent" : (manager.deliveredImmediately ? "Delivered" : "Saved"))
-                .font(.system(size: 16, weight: .bold, design: .rounded))
-                .foregroundStyle(WatchPalette.ink)
-            Text(manager.sendFailed
-                 ? "Couldn't send this session."
-                 : manager.deliveredImmediately
-                 ? "Open 808 to see it."
-                 : "It'll reach your iPhone\nwhen it's back in range.")
-                .font(.system(size: 11))
-                .foregroundStyle(WatchPalette.inkMuted)
-                .multilineTextAlignment(.center)
+        ZStack {
+            WatchValley(hour: nowHour, stage: manager.ottoStage(), cushion: 0.84, sceneShare: 0.84)
+                .equatable()
+                .ignoresSafeArea()
+            VStack(spacing: 3) {
+                // An encode failure sends nothing and queues nothing, so it
+                // must not read "Saved" (2026-09-30).
+                Text(manager.sendFailed ? "Not sent" : (manager.deliveredImmediately ? "Delivered" : "Saved"))
+                    .font(.system(size: 18, weight: .heavy, design: .rounded))
+                Text(manager.sendFailed
+                     ? "Couldn't send this session."
+                     : manager.deliveredImmediately
+                     ? "Open 808 on your iPhone to see how you settled."
+                     : "It'll reach your iPhone when it's back in range.")
+                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer()
+            }
+            .onSky(nowDay)
+            .padding(.horizontal, 8)
         }
     }
 }
 
-// MARK: - The breathing orb
+// MARK: - The valley
 
-/// Elapsed time inside a teal orb that breathes at 6/min (5 s in, 5 s out) —
-/// the resonance pace, so a glance at the wrist is itself a pacing cue.
-/// Holds still under Reduce Motion.
-private struct BreathingOrb: View {
-    let elapsed: Int
-    @State private var inhale = false
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+/// The iPhone's valley at Watch size, Otto on his cushion. `cushion` is where
+/// the cushion's bottom lands, as a share of the screen's height, so each
+/// screen leaves room for what it shows.
+///
+/// Equatable on purpose: the live screen redraws every second, and the
+/// painting (a canvas of flowers and grass) only needs redrawing when the
+/// hour moves a step or Otto's stage changes.
+struct WatchValley: View, Equatable {
+    let hour: Double
+    let stage: Int?
+    let cushion: CGFloat
+    /// The scene's height against the screen's: smaller draws Otto smaller.
+    var sceneShare: CGFloat = 1.01
+
+    /// The sky moves in small steps, not every second.
+    static func quantize(_ hour: Double) -> Double {
+        (min(max(hour, 0), 1) * 200).rounded() / 200
+    }
+
+    var body: some View {
+        GeometryReader { geo in
+            let size = geo.size
+            // A scene a little taller than the screen keeps Otto about a
+            // third of its height, the share the mockup was drawn at.
+            let scene = CGSize(width: size.width, height: size.height * sceneShare)
+            let s = SitLayout.scale(in: scene)
+            let day = DayLight.at(hour)
+            let grass = day.field.last ?? .green
+            let originY = size.height * cushion - SitLayout.cushionBottom(in: scene)
+            let seated = SitLayout.ottoHeight(in: scene)
+            let canvas = seated * 0.95 / OttoStillCanvas.bodyShare
+            ZStack(alignment: .topLeading) {
+                // Above the scene, its own top colour; below it, the grass.
+                (day.sky.first ?? .blue)
+                Rectangle().fill(grass).colorMultiply(Color(white: day.light))
+                    .frame(height: size.height)
+                    .offset(y: originY + scene.height - 1)
+                ZStack {
+                    ValleySky(day: day, hour: hour, size: scene, scale: s)
+                    ValleyClouds(day: day, hour: hour, size: scene, scale: s, time: 0)
+                    ValleyLand(day: day, size: scene)
+                    ZStack {
+                        Meadow(scale: s).frame(width: scene.width, height: scene.height)
+                        if stage != nil { Cushion.seated(in: scene, scale: s) }
+                    }
+                    .frame(width: scene.width, height: scene.height)
+                    .colorMultiply(Color(white: day.light))
+                    if let stage {
+                        Image("WatchOtto\(stage)")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: canvas * OttoStillCanvas.aspect, height: canvas)
+                            .offset(y: canvas * (1 - OttoStillCanvas.baseline))
+                            // The two brightest float, as on Home.
+                            .offset(y: stage >= 6 ? -seated * 0.05 : 0)
+                            .frame(width: seated, height: seated, alignment: .bottom)
+                            .colorMultiply(Color(white: day.light))
+                            .position(x: scene.width / 2, y: SitLayout.seatedCentreY(in: scene))
+                    }
+                }
+                .frame(width: scene.width, height: scene.height)
+                // The meadow fades into plain grass below it, the way every
+                // band of valley in the app ends (`fadesIntoMeadow`).
+                .overlay(alignment: .bottom) {
+                    LinearGradient(colors: [grass.opacity(0), grass], startPoint: .top, endPoint: .bottom)
+                        .colorMultiply(Color(white: day.light))
+                        .frame(height: scene.height * 0.18)
+                }
+                .offset(y: originY)
+            }
+            .frame(width: size.width, height: size.height, alignment: .topLeading)
+            .clipped()
+            .drawingGroup()
+        }
+        .accessibilityHidden(true)
+    }
+}
+
+private extension View {
+    /// Words drawn straight on the sky take the hour's ink with a faint halo
+    /// of the opposite shade, as `onValley()` does on the iPhone.
+    func onSky(_ day: DayLight) -> some View {
+        foregroundStyle(day.ink)
+            .shadow(color: day.inkIsDark ? .white.opacity(0.55) : .black.opacity(0.4), radius: 3)
+    }
+}
+
+// MARK: - Pieces
+
+/// A sand card with the lip under it, the app's tile.
+private struct SandCard: View {
+    var radius: CGFloat = 14
+    var body: some View {
+        RoundedRectangle(cornerRadius: radius, style: .continuous)
+            .fill(WatchPalette.sand)
+            .shadow(color: WatchPalette.sandLip, radius: 0, y: 2)
+    }
+}
+
+/// Length or sound: the + screen's pill, at Watch size.
+private struct ChoicePill: View {
+    let icon: String
+    let title: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 4) {
+                Image(icon)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 20, height: 20)
+                Text(title)
+                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                    .foregroundStyle(WatchPalette.sandInk)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+                Spacer(minLength: 0)
+                Text("\u{203A}")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(WatchPalette.sandInkSoft)
+            }
+            .padding(.leading, 6).padding(.trailing, 8)
+            .frame(maxWidth: .infinity, minHeight: 34)
+            .background(Capsule().fill(WatchPalette.sand)
+                .shadow(color: WatchPalette.sandLip, radius: 0, y: 2))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(icon == "WatchIconLength" ? "Length, \(title)" : "Sound, \(title)")
+    }
+}
+
+/// The one gold thing: Begin, Done, Allow. The iPhone's lifted gold button.
+private struct BeginButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.system(size: 17, weight: .heavy, design: .rounded))
+            .foregroundStyle(WatchPalette.beginInk)
+            .frame(maxWidth: .infinity, minHeight: 42)
+            .background(Capsule().fill(WatchPalette.begin))
+            .background(
+                Capsule().fill(WatchPalette.beginLip).offset(y: configuration.isPressed ? 0 : 3)
+            )
+            .offset(y: configuration.isPressed ? 2 : 0)
+            .padding(.bottom, 3)
+    }
+}
+
+/// Cancel and End: a sand pill, quieter than Begin.
+private struct SandButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.system(size: 15, weight: .bold, design: .rounded))
+            .foregroundStyle(WatchPalette.sandInk)
+            .padding(.horizontal, 28)
+            .frame(minHeight: 34)
+            .background(Capsule().fill(WatchPalette.sand)
+                .shadow(color: WatchPalette.sandLip, radius: 0, y: 2))
+            .opacity(configuration.isPressed ? 0.8 : 1)
+    }
+}
+
+/// The ring in the sky: an empty track that is always there, and the sage
+/// arc of a timed session closing over it, as on the iPhone's sit.
+private struct SitRing: View {
+    let progress: Double?
+    let track: Color
+    let time: String
+    let label: String
+    let day: DayLight
 
     var body: some View {
         ZStack {
-            // Same three layers as the phone's pacer orb, at watch scale: a
-            // soft outer bloom, a solid inner glow, then the defining ring.
-            // The single thin gradient this replaced read as a bare outline.
             Circle()
-                .fill(WatchPalette.calm.opacity(0.18))
-                .frame(width: 150, height: 150)
-                .blur(radius: 16)
-            Circle()
-                .fill(RadialGradient(
-                    colors: [WatchPalette.calm.opacity(0.60), WatchPalette.calm.opacity(0.10)],
-                    center: .center, startRadius: 4, endRadius: 66))
-                .frame(width: 124, height: 124)
-            Circle()
-                .stroke(WatchPalette.calm.opacity(0.55), lineWidth: 1.5)
-                .frame(width: 124, height: 124)
-            Text(timeString(elapsed))
-                .font(.system(size: 32, weight: .bold, design: .rounded))
-                .monospacedDigit()
-                .foregroundStyle(WatchPalette.ink)
-        }
-        .frame(width: 150, height: 150)
-        .scaleEffect(reduceMotion ? 1 : (inhale ? 1.05 : 0.86))
-        .onAppear {
-            guard !reduceMotion else { return }
-            withAnimation(.easeInOut(duration: 5).repeatForever(autoreverses: true)) {
-                inhale = true
+                .inset(by: 2.5)
+                .stroke(track, lineWidth: 5)
+            if let progress {
+                Circle()
+                    .inset(by: 2.5)
+                    .trim(from: 0, to: max(0.0001, progress))
+                    .stroke(WatchPalette.arc.opacity(0.3 + 0.6 * progress),
+                            style: StrokeStyle(lineWidth: 5, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
             }
+            VStack(spacing: 0) {
+                Text(time)
+                    .font(.system(size: 19, weight: .heavy, design: .rounded))
+                    .monospacedDigit()
+                    .minimumScaleFactor(0.7)
+                    .lineLimit(1)
+                Text(label)
+                    .font(.system(size: 10, weight: .bold, design: .rounded))
+            }
+            .onSky(day)
+            .padding(.horizontal, 8)
         }
-    }
-
-    private func timeString(_ seconds: Int) -> String {
-        String(format: "%d:%02d", seconds / 60, seconds % 60)
+        .frame(width: 74, height: 74)
+        .accessibilityElement(children: .combine)
     }
 }
 
-// MARK: - Sending animation
-
-/// Gold dots streaming from the wrist up into a phone outline.
-private struct PhoneStream: View {
+/// Three dots rising toward the iPhone while the payload goes.
+private struct SendingDots: View {
+    let color: Color
     @State private var animate = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        VStack(spacing: 8) {
-            RoundedRectangle(cornerRadius: 7, style: .continuous)
-                .stroke(WatchPalette.inkMuted.opacity(0.6), lineWidth: 2)
-                .frame(width: 30, height: 50)
-            ZStack {
-                ForEach(0..<3, id: \.self) { i in
-                    Circle()
-                        .fill(WatchPalette.gold)
-                        .frame(width: 5, height: 5)
-                        .offset(y: animate ? -30 : 12)
-                        .opacity(animate ? 0 : 1)
-                        .animation(reduceMotion ? nil :
-                            .linear(duration: 1.4)
-                            .repeatForever(autoreverses: false)
-                            .delay(Double(i) * 0.45),
-                            value: animate)
-                }
+        HStack(spacing: 6) {
+            ForEach(0..<3, id: \.self) { i in
+                Circle()
+                    .fill(color)
+                    .frame(width: 6, height: 6)
+                    .opacity(animate ? 0.25 : 1)
+                    .animation(reduceMotion ? nil :
+                        .easeInOut(duration: 0.6).repeatForever().delay(Double(i) * 0.2),
+                        value: animate)
             }
-            .frame(height: 26)
         }
         .onAppear { animate = true }
     }
 }
 
-// MARK: - Sound picker
+// MARK: - Length
 
-/// The full catalog, one crown-scrollable list in the sound sheet's shipped
-/// order. Selection is remembered between sessions; audio plays from the phone.
+/// The + screen's tape at Watch size: the Digital Crown slides it, Open at
+/// the left end, then every minute from 5 to 120 (`SessionLength`). The
+/// crown's detent is watchOS's own; the app plays no haptic.
+private struct LengthPickerView: View {
+    let onDone: (Int?) -> Void
+    @State private var crown: Double
+
+    init(minutes: Int?, onDone: @escaping (Int?) -> Void) {
+        self.onDone = onDone
+        _crown = State(initialValue: Double(SessionLength.nearestIndex(for: minutes)))
+    }
+
+    private var index: Int {
+        min(max(Int(crown.rounded()), 0), SessionLength.values.count - 1)
+    }
+    private var minutes: Int? { SessionLength.values[index] }
+    private var day: DayLight { DayLight.at(WatchValley.quantize(DayLight.clockProgress())) }
+
+    private static let spacing: CGFloat = 9
+
+    var body: some View {
+        ZStack {
+            WatchValley(hour: WatchValley.quantize(DayLight.clockProgress()), stage: nil, cushion: 0.78)
+                .equatable()
+                .ignoresSafeArea()
+            VStack(spacing: 2) {
+                Text(minutes.map(String.init) ?? "\u{221E}")
+                    .font(.system(size: 48, weight: .heavy, design: .rounded))
+                    .monospacedDigit()
+                    .contentTransition(.numericText())
+                    .onSky(day)
+                Text(minutes == nil ? "Open, end when you like" : (minutes == 1 ? "minute" : "minutes"))
+                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                    .onSky(day)
+                tape
+                    .padding(.top, 6)
+                Spacer(minLength: 4)
+                Button("Done") { onDone(minutes) }
+                    .buttonStyle(BeginButtonStyle())
+            }
+            .padding(.horizontal, 4)
+        }
+        .focusable()
+        .digitalCrownRotation($crown,
+                              from: 0,
+                              through: Double(SessionLength.values.count - 1),
+                              by: 1,
+                              sensitivity: .medium,
+                              isContinuous: false,
+                              isHapticFeedbackEnabled: true)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Length")
+        .accessibilityValue(SessionLength.words(minutes))
+        .accessibilityAdjustableAction { direction in
+            switch direction {
+            case .increment: crown = min(crown.rounded() + 1, Double(SessionLength.values.count - 1))
+            case .decrement: crown = max(crown.rounded() - 1, 0)
+            @unknown default: break
+            }
+        }
+    }
+
+    /// Ticks on a sand strip, sliding under a fixed needle. A tick a minute,
+    /// a number every five, ∞ at the left end. Dragging the strip works too.
+    private var tape: some View {
+        GeometryReader { geo in
+            let mid = geo.size.width / 2
+            ZStack(alignment: .topLeading) {
+                ForEach(Array(SessionLength.values.enumerated()), id: \.offset) { i, value in
+                    let x = mid + (CGFloat(i) - CGFloat(crown)) * Self.spacing
+                    if x > -12, x < geo.size.width + 12 {
+                        tick(value)
+                            .position(x: x, y: geo.size.height / 2)
+                    }
+                }
+                Capsule()
+                    .fill(WatchPalette.needle)
+                    .frame(width: 3, height: geo.size.height - 8)
+                    .position(x: mid, y: geo.size.height / 2)
+            }
+            .contentShape(Rectangle())
+            .gesture(DragGesture(minimumDistance: 2).onChanged { g in
+                let delta = -g.translation.width / Self.spacing
+                crown = min(max(Double(index) + delta * 0.2, 0), Double(SessionLength.values.count - 1))
+            })
+        }
+        .frame(height: 44)
+        .background(RoundedRectangle(cornerRadius: 12, style: .continuous)
+            .fill(WatchPalette.sand)
+            .shadow(color: WatchPalette.sandLip, radius: 0, y: 2))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+
+    @ViewBuilder
+    private func tick(_ value: Int?) -> some View {
+        if let value {
+            let labelled = value % 5 == 0
+            VStack(spacing: 2) {
+                Text(labelled ? "\(value)" : " ")
+                    .font(.system(size: 9, weight: .bold, design: .rounded))
+                    .foregroundStyle(WatchPalette.sandInkSoft)
+                    .fixedSize()
+                RoundedRectangle(cornerRadius: 1)
+                    .fill(labelled ? WatchPalette.sandInkSoft : WatchPalette.sandInkSoft.opacity(0.55))
+                    .frame(width: 2, height: labelled ? 13 : 8)
+            }
+            .frame(height: 30, alignment: .bottom)
+        } else {
+            Text("\u{221E}")
+                .font(.system(size: 14, weight: .heavy, design: .rounded))
+                .foregroundStyle(WatchPalette.sandInk)
+                .frame(height: 30, alignment: .bottom)
+        }
+    }
+}
+
+// MARK: - Sound
+
+/// The full catalog as the iPhone's pills, over the valley, scrolled with the
+/// crown. Selection is remembered between sessions; audio plays from the
+/// phone.
 private struct SoundPickerView: View {
     @Binding var selectedID: String?
     @Environment(\.dismiss) private var dismiss
 
+    private var day: DayLight { DayLight.at(WatchValley.quantize(DayLight.clockProgress())) }
+
     var body: some View {
-        List {
-            Section {
-                row(id: nil, title: "Silence", detail: nil)
-            } footer: {
-                Text("Plays from your iPhone")
-                    .font(.system(size: 10))
-                    .foregroundStyle(WatchPalette.inkMuted)
-            }
-            ForEach(SoundMenu.groups) { group in
-                Section {
-                    ForEach(group.entries) { entry in
-                        row(id: entry.id, title: entry.title, detail: entry.detail)
+        ZStack {
+            WatchValley(hour: WatchValley.quantize(DayLight.clockProgress()), stage: nil, cushion: 0.78)
+                .equatable()
+                .blur(radius: 5)
+                .ignoresSafeArea()
+            ScrollView {
+                VStack(alignment: .leading, spacing: 6) {
+                    row(id: nil, title: "Silence", detail: "or your own")
+                    ForEach(SoundMenu.groups) { group in
+                        Text(group.name.uppercased())
+                            .font(.system(size: 10, weight: .heavy, design: .rounded))
+                            .tracking(0.8)
+                            .foregroundStyle(WatchPalette.sandInk)
+                            .padding(.horizontal, 8).padding(.vertical, 2)
+                            .background(RoundedRectangle(cornerRadius: 7).fill(WatchPalette.sand))
+                            .padding(.top, 4)
+                        ForEach(group.entries) { entry in
+                            row(id: entry.id, title: entry.title, detail: entry.detail)
+                        }
                     }
-                } header: {
-                    Text(group.name.uppercased())
-                        .font(.system(size: 10, weight: .heavy))
-                        .tracking(0.8)
-                        .foregroundStyle(WatchPalette.inkMuted)
+                    Text("Plays from your iPhone")
+                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                        .onSky(day)
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, 6)
                 }
+                .padding(.horizontal, 4)
             }
         }
         .navigationTitle("Sound")
@@ -420,28 +720,34 @@ private struct SoundPickerView: View {
             selectedID = id
             dismiss()
         } label: {
-            HStack(spacing: 8) {
-                // Explicit light ink, not the asset colors: inside the
-                // sheet's List the catalog ink resolved near-black on the
-                // black screen (the rows were unreadable on-device).
+            HStack(spacing: 6) {
                 Text(title)
-                    .font(.system(size: 14, weight: .semibold, design: .rounded))
-                    .foregroundStyle(WatchPalette.ink)
+                    .font(.system(size: 14, weight: .bold, design: .rounded))
+                    .foregroundStyle(WatchPalette.sandInk)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
                 Spacer(minLength: 0)
                 if let detail {
                     Text(detail)
-                        .font(.system(size: 10))
-                        .foregroundStyle(WatchPalette.inkMuted)
+                        .font(.system(size: 10, weight: .semibold, design: .rounded))
+                        .foregroundStyle(WatchPalette.sandInkSoft)
+                        .lineLimit(1)
                 }
                 if isSelected {
                     Image(systemName: "checkmark")
                         .font(.system(size: 11, weight: .heavy))
-                        .foregroundStyle(WatchPalette.gold)
+                        .foregroundStyle(WatchPalette.chosen)
                 }
             }
+            .padding(.horizontal, 12)
+            .frame(maxWidth: .infinity, minHeight: 36)
+            .background(
+                Capsule().fill(WatchPalette.sand)
+                    .shadow(color: WatchPalette.sandLip, radius: 0, y: 2)
+            )
+            .overlay(Capsule().strokeBorder(isSelected ? WatchPalette.begin : .clear, lineWidth: 2.5))
         }
-        .listRowBackground(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(isSelected ? WatchPalette.gold.opacity(0.16) : WatchPalette.surface))
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }

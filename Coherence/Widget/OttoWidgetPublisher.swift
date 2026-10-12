@@ -39,6 +39,11 @@ enum OttoWidgetPublisher {
         if OttoWidgetShelf.write(snapshot) {
             WidgetCenter.shared.reloadTimelines(ofKind: OttoWidgetShelf.kind)
         }
+        // The Watch draws the same Otto, and starts from the + screen's
+        // length (2026-10-12). Sent only when either moved.
+        let prefs = (try? context.fetch(FetchDescriptor<Preferences>(
+            sortBy: [SortDescriptor(\.createdAt)])))?.first
+        WatchContextStore.update(glow: snapshot, defaultLengthSec: prefs?.defaultDurationSec)
     }
 }
 

@@ -190,6 +190,10 @@ targets:
     sources:
       - CoherenceWatch
       - Shared
+      # The valley, painted the iPhone's way (2026-10-12): the Watch stands
+      # in it like the widget does. Painting only, no Rive and no state.
+      - Coherence/Session/DayLight.swift
+      - Coherence/Session/ValleyPainting.swift
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.lockout.meditate808.watchkitapp

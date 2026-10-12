@@ -7593,6 +7593,56 @@ candidates: https://claude.ai/artifact/ApabV3mrmQHArLJgnU2V8c
 - **Open:** which music (the listening page has all eight), and whether the
   sounds' character and levels are right, judged on a phone speaker.
 
+## THE WATCH STANDS IN THE VALLEY; LENGTH AND SOUND ARE CHOSEN ON THE WRIST (2026-10-12, Aziz)
+
+"Change the watch screen so that the UI is current theme, and you should be
+able to set time limits and choose audio from the apple watch." Built to
+`mockups/watch-v2.html` (artifact
+https://claude.ai/artifact/8aa7vdNgXwy8R2H1DGmwEw). Supersedes the black
+Watch screens and the teal breathing orb of 2026-08-08.
+
+- **The valley is the iPhone's own painting.** `DayLight.swift` and
+  `ValleyPainting.swift` are compiled into the Watch target (project.yml),
+  the way the widget compiles them. `WatchValley` (WatchContentView.swift)
+  draws the sky at the real hour, the ridges, the meadow and Otto on his
+  cushion; `cushion` is where the cushion's bottom lands as a share of the
+  screen, `sceneShare` draws Otto smaller where the sky must hold a clock.
+  It is Equatable and quantizes the hour to 1/200, because the live screen
+  redraws every second and the meadow is a canvas.
+- **Otto is one of the seven glow stills** (`WatchOtto1` to `7`, the
+  widget's art resized, in `CoherenceWatch/Assets.xcassets`). His glow comes
+  from the widget's own snapshot: `OttoWidgetPublisher` hands it to
+  `WatchContextStore`, the Watch picks today's day from it
+  (`WatchSessionManager.ottoStage`), so the wrist matches Home even on days
+  808 is not opened. Steady until the phone has said anything.
+- **`WatchContextStore` owns the Watch's application context.**
+  `updateApplicationContext` replaces the whole dictionary, so the start
+  command, the onboarded flag, the glow snapshot and the + screen's length
+  always travel together. Never call `updateApplicationContext` anywhere
+  else: a glow update in the moment a session starts would wipe its start
+  command.
+- **Length on the wrist**: a pill opens the + screen's tape (`SessionLength`,
+  Open then 5 to 120), turned with the Digital Crown (watchOS's own detent).
+  The Watch starts from the phone's remembered length and keeps its own once
+  picked (`watch.lengthSec.v1`). A timed wrist session ends itself
+  (`startTimer(planned:)`, unchanged).
+- **The phone joins a timed wrist session on time.** The length rides the
+  `watchBegin` message under its own key, `WCKeys.watchPlanned`, never a
+  fourth field: the phone reads `watchBegin` only with exactly three parts,
+  and a Watch app can update before the phone. `armWatchTimedEnd` (shared
+  with the start ack) stops the sound, sends the end notice and rings the
+  bell when the Watch's timer runs out.
+- **Sound** is the iPhone's full list as sand pills over the blurred valley.
+  It still plays from the iPhone; out of reach, the session is silent and
+  says so.
+- **Still no haptics on the Watch, a timed end included.** The mockup asked
+  whether a timed wrist session should end with one soft tap; not decided,
+  so the rule stands and the iPhone's bell and notice mark the end when it is
+  near. The end lives in one place (`endSession`) if that changes.
+- `PREVIEW_WATCH_SCREEN=start|length|sound|countdown|live|liveTimed|sending|sent`
+  and `PREVIEW_WATCH_STAGE=1...7` (DEBUG) open each screen on a Watch
+  simulator. Checked on 46 mm and 42 mm; 714 tests green.
+
 ## REGIONAL PRICING: 102 COUNTRIES PAY LESS FROM OCT 14, 2026 (2026-10-12, Aziz)
 
 Set in App Store Connect on all six products (Monthly, Monthly Trial, Half

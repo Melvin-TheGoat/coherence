@@ -29,6 +29,69 @@ final class WatchSessionManager: NSObject, ObservableObject {
         if let done = dict[WCKeys.onboarded] as? Bool {
             Task { @MainActor in self.applyOnboarded(done) }
         }
+        // Otto's glow and the + screen's length ride the same context
+        // (2026-10-12).
+        let glow = dict[WCKeys.glowSnapshot] as? Data
+        let length = dict[WCKeys.defaultLength] as? Int
+        if glow != nil || length != nil {
+            Task { @MainActor in self.applyPhoneExtras(glow: glow, defaultLengthSec: length) }
+        }
+    }
+
+    @MainActor private func applyPhoneExtras(glow: Data?, defaultLengthSec: Int?) {
+        if let glow, glow != glowSnapshotData {
+            glowSnapshotData = glow
+            UserDefaults.standard.set(glow, forKey: Self.glowKey)
+        }
+        if let defaultLengthSec {
+            UserDefaults.standard.set(defaultLengthSec, forKey: Self.phoneLengthKey)
+            // The phone's length stands until a length is picked here.
+            if UserDefaults.standard.object(forKey: Self.lengthKey) == nil {
+                lengthMinutes = defaultLengthSec > 0 ? defaultLengthSec / 60 : nil
+            }
+        }
+    }
+
+    // MARK: - Otto and the length (2026-10-12)
+
+    /// The widget's snapshot from the phone: Otto's glow today and on the
+    /// days ahead, so the wrist matches Home even with the phone away.
+    @Published private(set) var glowSnapshotData: Data? =
+        UserDefaults.standard.data(forKey: glowKey)
+    private static let glowKey = "watch.glowSnapshot.v1"
+
+    /// Otto's stage, 1 (Withered) to 7 (Nirvana), for today. Steady (4)
+    /// until the phone has said anything.
+    func ottoStage(at date: Date = Date()) -> Int {
+        #if DEBUG
+        if let raw = ProcessInfo.processInfo.environment["PREVIEW_WATCH_STAGE"], let n = Int(raw) {
+            return min(max(n, 1), 7)
+        }
+        #endif
+        guard let data = glowSnapshotData,
+              let snapshot = try? JSONDecoder().decode(OttoWidgetSnapshot.self, from: data),
+              let day = snapshot.day(at: date) else { return 4 }
+        return OttoWidgetSnapshot.stage(level: day.level)
+    }
+
+    /// The length chosen on the wrist, in minutes; nil for open. Starts from
+    /// the phone's length, then remembers its own once picked here.
+    @Published private(set) var lengthMinutes: Int? = WatchSessionManager.storedLength()
+    private static let lengthKey = "watch.lengthSec.v1"
+    private static let phoneLengthKey = "watch.phoneLengthSec.v1"
+
+    private static func storedLength() -> Int? {
+        let d = UserDefaults.standard
+        let sec = d.object(forKey: lengthKey) != nil
+            ? d.integer(forKey: lengthKey) : d.integer(forKey: phoneLengthKey)
+        return SessionLength.clamped(sec > 0 ? sec / 60 : nil)
+    }
+
+    /// Picked on the wrist: remembered here from now on.
+    func chooseLength(_ minutes: Int?) {
+        let m = SessionLength.clamped(minutes)
+        lengthMinutes = m
+        UserDefaults.standard.set((m ?? 0) * 60, forKey: Self.lengthKey)
     }
 
     @MainActor private func applyOnboarded(_ done: Bool) {
@@ -120,10 +183,24 @@ final class WatchSessionManager: NSObject, ObservableObject {
         // PREVIEW_WATCH_SCREEN=start|live (simulator, store shots): past the
         // HealthKit prompt and the phone's onboarding flag, and for `live`
         // the live screen at 7:12 with no workout running.
+        // Since 2026-10-12 also: liveTimed (10 min, 3:53 in), countdown,
+        // sending, sent; `length` and `sound` open their pickers (the view
+        // reads those). PREVIEW_WATCH_STAGE=1...7 sets Otto's glow.
         if let screen = ProcessInfo.processInfo.environment["PREVIEW_WATCH_SCREEN"] {
             authorized = true
             phoneOnboarded = true
-            if screen == "live" { phase = .running; elapsed = 7 * 60 + 12 }
+            switch screen {
+            case "live": phase = .running; elapsed = 7 * 60 + 12
+            case "liveTimed":
+                params = SessionParams(sessionID: UUID(), mode: "silence", trackID: nil,
+                                       plannedDurationSec: 600, bellyBreathing: false,
+                                       hapticsEnabled: false, sentAt: Date())
+                phase = .running; elapsed = 233
+            case "countdown": countdown = 5
+            case "sending": phase = .sending
+            case "sent": phase = .sent; deliveredImmediately = true
+            default: break
+            }
         }
         #endif
     }
@@ -176,7 +253,7 @@ final class WatchSessionManager: NSObject, ObservableObject {
             sessionID: UUID(),
             mode: SoundMenu.mode(for: chosen),
             trackID: nil,
-            plannedDurationSec: nil,      // wrist sessions are open-ended
+            plannedDurationSec: lengthMinutes.map { $0 * 60 },   // nil = open
             bellyBreathing: false,
             hapticsEnabled: true,
             sentAt: Date()
@@ -383,7 +460,11 @@ final class WatchSessionManager: NSObject, ObservableObject {
                 guard let self, self.phase == .running,
                       self.params?.sessionID == sessionID else { return }
                 if WCSession.default.isReachable {
-                    WCSession.default.sendMessage([WCKeys.watchBegin: value],
+                    var message: [String: Any] = [WCKeys.watchBegin: value]
+                    if let planned = self.params?.plannedDurationSec {
+                        message[WCKeys.watchPlanned] = planned
+                    }
+                    WCSession.default.sendMessage(message,
                                                   replyHandler: nil) { [weak self] error in
                         self?.log.error("join failed: \(error.localizedDescription)")
                         Task { @MainActor in self?.phoneLinked = false }

@@ -19,6 +19,16 @@ on-device chat (`FeatureFlags.ottoInRelease` is off), Block
 (`blockInRelease` is off) and Friends (1.1). Otto's seven aura states
 animated in Rive shipped to `block` on 2026-09-23 (`OttoAura.riv`).
 
+### What a free 1.0 user sees on updating (Aziz, 2026-10-07): discuss
+
+Today an updater with no membership opens 1.1 straight onto the paywall
+(onboarding stays finished; `LaunchLock` shows `root_lock`). They never see
+Otto, Block or the hats before being asked to pay. Options: (1) run them
+through the new onboarding, (2) three or four "what's new" screens before
+the paywall (recommended), (3) leave it. Data so far: the one stranger who
+updated (England, 2026-10-07) bought the $3.99 plan from the bare paywall;
+a friend in Ohio declined. Mockup first if anything changes.
+
 ### Home screen widget (Melvin, 2026-10-05): BUILT, ships in 1.2
 
 Otto on the home screen as he is right now: the valley at the real hour,

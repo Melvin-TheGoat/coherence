@@ -43,6 +43,20 @@ enum WCKeys {
     /// a queued replay of an old "ending" must not touch a live session, and
     /// an unreachable phone has no live screen to drop anyway.
     static let ending = "ending"
+    /// Watch → Phone, beside `watchBegin` in the same message: the length
+    /// chosen on the wrist, in seconds. Absent for an open session. A key of
+    /// its own rather than a fourth field in `watchBegin`, because the phone
+    /// reads that value only when it has exactly three parts, and a Watch app
+    /// can update before the phone does (2026-10-12).
+    static let watchPlanned = "watchPlanned"
+    /// Phone → Watch (application context): the home screen widget's snapshot
+    /// (`OttoWidgetSnapshot`, JSON), so Otto on the wrist shows the glow Home
+    /// shows, including the days ahead if 808 is not opened.
+    static let glowSnapshot = "glowSnapshot"
+    /// Phone → Watch (application context): the length the + screen
+    /// remembers, in seconds, 0 for open. The Watch starts from it until
+    /// someone picks a length on the wrist.
+    static let defaultLength = "defaultLength"
 }
 
 /// Why a session refused to start on the Watch. Sent to the phone so it can
