@@ -7592,3 +7592,57 @@ candidates: https://claude.ai/artifact/ApabV3mrmQHArLJgnU2V8c
   `PREVIEW_SETTINGS=1` (DEBUG) opens Settings.
 - **Open:** which music (the listening page has all eight), and whether the
   sounds' character and levels are right, judged on a phone speaker.
+
+## REGIONAL PRICING: 102 COUNTRIES PAY LESS FROM OCT 14, 2026 (2026-10-12, Aziz)
+
+Set in App Store Connect on all six products (Monthly, Monthly Trial, Half
+Price, Yearly, Yearly Trial, Lifetime), effective 2026-10-14. Everywhere else
+keeps the full price. No app change: the paywall shows Apple's local prices,
+and the half-price plan's struck-through "was" price is scaled from each
+country's own live Monthly price (`Store.anchorPrice`), so the ratio holds in
+every tier. The hardcoded USD strings in `OnboardingOffer.swift` only render
+when the live price is missing.
+
+| Tier | Monthly | Yearly | Lifetime | Half Price |
+|---|---|---|---|---|
+| Full (everyone else) | $7.99 | $29.99 | $99.99 | $3.99 |
+| 2 | $4.99 | $17.99 | $59.99 | $2.49 |
+| 3 | $2.99 | $11.99 | $39.99 | $1.49 |
+| 4 | $1.99 | $7.99 | $24.99 | $0.99 |
+
+The trial plans match Monthly and Yearly in every tier. Base country US
+dollars; Apple converts and adds local tax, so VAT storefronts land higher
+than the base (tier 3 Lifetime is $49.99 in Albania, EUR 44.99 in Bosnia).
+
+- **Tier 2 (5):** Poland, Romania, Serbia, Mexico, Malaysia.
+- **Tier 3 (47):** Brazil, Colombia, Peru, Argentina, Türkiye, South Africa,
+  Thailand, Morocco, Ukraine; Albania, Belarus, Bosnia and Herzegovina,
+  Kosovo, Moldova, Montenegro, North Macedonia, Algeria, Armenia,
+  Azerbaijan, Botswana, Cape Verde, Eswatini, Gabon, Georgia, Iraq, Jordan,
+  Lebanon, Libya, Namibia, Tunisia, Belize, Bolivia, Dominican Republic,
+  Ecuador, El Salvador, Guatemala, Jamaica, Paraguay, Suriname, Venezuela,
+  Fiji, Kazakhstan, Maldives, Micronesia, Mongolia, Tonga, Turkmenistan.
+- **Tier 4 (50):** India, Nepal and eight more set in the first pass;
+  Afghanistan, Angola, Benin, Burkina Faso, Cameroon, Chad, Congo (both),
+  Côte d'Ivoire, Gambia, Ghana, Guinea-Bissau, Liberia, Madagascar, Malawi,
+  Mali, Mauritania, Mozambique, Niger, Rwanda, São Tomé and Príncipe,
+  Senegal, Sierra Leone, Tanzania, Uganda, Yemen, Zambia, Zimbabwe,
+  Honduras, Nicaragua, Bhutan, Cambodia, Kyrgyzstan, Laos, Myanmar, Papua
+  New Guinea, Solomon Islands, Tajikistan, Uzbekistan, Vanuatu. The full
+  list per product is under Upcoming Changes > Download in App Store Connect.
+
+- **Existing subscribers in these countries move to the lower price at
+  their next renewal.**
+- **Apple no longer auto-adjusts these 102 prices** for tax or exchange
+  rates, because they are set by hand. Review them every 6 to 12 months.
+- **Yearly plans need a 12-month commitment monthly price** alongside the
+  upfront one, totalling 1 to 1.5 times the upfront ($7.99 with $0.99 a
+  month in tier 4). $1.49, $2.49 and $11.99 sit under "See Additional
+  Prices".
+- **Doing it again:** subscriptions are "Plan Subscription Price Change";
+  Lifetime is Price Schedule > + > Custom Price Change > "Manually manage
+  prices in specific countries". Batch many countries per pass: one
+  country at a time costs a minute each.
+- **Watch it in PostHog by country** before cutting further. Installs from
+  these storefronts were few when this was set, so it is a bet on
+  conversion, not a correction to observed churn.
