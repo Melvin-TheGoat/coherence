@@ -917,7 +917,9 @@ struct OnboardingView: View {
         // nobody meets a screen for a feature their build doesn't have.
         case .blockApps:
             if FeatureFlags.block {
-                BlockAppsScreen { go(.blockSchedule) }
+                BlockAppsScreen(onContinue: { go(.blockSchedule) },
+                                // Declined Screen Time: no apps to schedule.
+                                onSkip: { go(afterBlockSetup) })
             } else {
                 Color.clear.onAppear { go(.blockSchedule) }
             }
@@ -1232,6 +1234,12 @@ struct OnboardingView: View {
             ?? Calendar.current.date(bySettingHour: 8, minute: 0, second: 0, of: Date())
         prefs.reminderTime = time
         prefs.remindersEnabled = reminderAllowed
+        // The two answers reminders speak to (2026-10-12): what they want
+        // from meditating, and what usually gets in the way. Kept on this
+        // phone only (`ReminderScheduler.profile`).
+        ReminderScheduler.profile = ReminderProfile(
+            motivations: Motivation.allCases.filter { answers.motivations.contains($0) },
+            obstacles: Obstacle.allCases.filter { (answers.obstacles ?? []).contains($0) })
         NotificationScheduler.apply(enabled: reminderAllowed, at: time)
         try? context.save()
     }

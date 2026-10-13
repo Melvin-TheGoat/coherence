@@ -127,6 +127,9 @@ struct ContentView: View {
         case reward(SessionReward)
         /// Friends, from its circle on Home, when the Store has its tab.
         case friends
+        /// Otto's one-time ask to pick an app for him to hold (2026-10-13),
+        /// for members with nothing held (`BlockAppsPrompt`).
+        case pickApps
 
         var id: String {
             switch self {
@@ -142,6 +145,7 @@ struct ContentView: View {
             case .blockPaywall: return "blockPaywall"
             case .friends: return "friends"
             case .reward(let r): return "reward-\(r.id)"
+            case .pickApps: return "pickApps"
             }
         }
     }
@@ -166,6 +170,20 @@ struct ContentView: View {
 
     /// The tab on screen: the tour's while it runs, the person's otherwise.
     private var shownTab: MainTab { tourTab ?? tab }
+
+    /// Home with nothing over it, nothing running and nothing queued: the
+    /// only moment Otto's one-time app ask may appear.
+    private var homeIsQuiet: Bool {
+        sheet == nil && pendingSheet == nil && coordinator.active == nil
+            && tourTab == nil && unlockQueue.isEmpty && !holdAwards && tab == .home
+    }
+
+    /// A member with no apps held who hasn't been asked (`BlockAppsPrompt`).
+    private var appsAskEligible: Bool {
+        FeatureFlags.block && BlockAppsPrompt.shouldAsk(blockers: block.state.blockers,
+                                                        asked: BlockAppsPrompt.wasAsked(),
+                                                        allowed: BlockAccess.allowed(store.entitlements))
+    }
 
     /// One of Otto's screens is up or waiting behind another cover.
     private var ottoShowing: Bool {
@@ -252,8 +270,9 @@ struct ContentView: View {
         .onChange(of: sessions.count) { _, _ in
             refreshAwards(); readDetailsPrompt()
             // A session landed or was deleted: Otto's glow and the streak on
-            // the home screen widget move with it.
+            // the home screen widget move with it, and so do the reminders.
             OttoWidgetPublisher.publish(context: context, member: true)
+            ReminderScheduler.replan()
         }
         // The widget's tap (`coherence808://home`).
         .onReceive(NotificationCenter.default.publisher(for: WidgetLink.openHome)) { _ in tab = .home }
@@ -261,6 +280,7 @@ struct ContentView: View {
                               sessionActive: coordinator.active != nil) { d in
             if sheet == nil { sheet = .discarded(d) } else { pendingSheet = .discarded(d) }
         })
+        .modifier(BlockAppsAskHook(quiet: homeIsQuiet, eligible: appsAskEligible) { present(.pickApps) })
         .firstSessionHooks(offer: firstOffer, paid: store.entitlements.paid,
                            onOpenSetup: { present(.setup) },
                            onPaywallDue: { present(.paywall) })
@@ -390,6 +410,8 @@ struct ContentView: View {
                 PaywallScreen(placement: "block", plan: $paywallPlan) { _ in sheet = nil }
             case .friends:
                 FriendsTab(onClose: { sheet = nil })
+            case .pickApps:
+                BlockAppsAskView { sheet = nil }
             case .reward(let reward):
                 SessionRewardView(reward: reward) {
                     holdAwards = false
@@ -1507,6 +1529,28 @@ private struct SessionLandedHooks: ViewModifier {
 /// Opens "Too short to score" once the live-session cover has gone. The payload
 /// that says so arrives the same moment the cover is torn down, and presenting
 /// during that animation is the dropped-presentation trap (see FriendsHooks).
+/// Opens Otto's one-time app ask (`BlockAppsPrompt`) once Home has been
+/// quiet for a moment, so it never lands on top of a session, an award or the
+/// tour, and never in the same breath as the app opening.
+private struct BlockAppsAskHook: ViewModifier {
+    let quiet: Bool
+    let eligible: Bool
+    let open: () -> Void
+
+    private struct Gate: Equatable { let quiet: Bool; let eligible: Bool }
+
+    func body(content: Content) -> some View {
+        content.task(id: Gate(quiet: quiet, eligible: eligible)) {
+            guard quiet, eligible else { return }
+            try? await Task.sleep(for: .seconds(1.5))
+            // A cancelled sleep throws and falls through; Home changed.
+            guard !Task.isCancelled, !BlockAppsPrompt.wasAsked() else { return }
+            BlockAppsPrompt.markAsked()
+            open()
+        }
+    }
+}
+
 private struct DiscardHook: ViewModifier {
     let discard: SessionCoordinator.Discard?
     let sessionActive: Bool

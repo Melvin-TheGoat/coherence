@@ -1087,7 +1087,11 @@ struct PermissionScreen: View {
 
     var body: some View {
         OnboardingScreen(section: .win,
-                         title: "One nudge,\nat your time.",
+                         // Reminders are planned since 2026-10-13
+                         // (`ReminderPlanner`): up to three on a day not yet
+                         // meditated, none once they have. "One nudge" and
+                         // "one a day" stopped being true.
+                         title: "Nudges at\nyour time.",
                          // Every notification 808 sends, named, because this is
                          // the screen that asks permission for all of them
                          // (Melvin, 2026-09-29). "Nothing else, ever" was
@@ -1098,9 +1102,9 @@ struct PermissionScreen: View {
                          // which arrives when the person taps Ask Otto on a
                          // held app (2026-09-22).
                          subtitle: FeatureFlags.block
-                            ? "One reminder a day at the time you pick, a chime when a timed session ends, a heads-up if you leave the app mid-session, and Otto whenever you ask him from a held app."
-                            : "One reminder a day at the time you pick, a chime when a timed session ends, and a heads-up if you leave the app mid-session.",
-                         ctaTitle: "Turn on my reminder",
+                            ? "A reminder at your time and a couple more on days you haven't meditated, stopping once you do. Plus a chime when a timed session ends, a heads-up if you leave mid-session, and Otto when you ask him from a held app."
+                            : "A reminder at your time and a couple more on days you haven't meditated, stopping once you do. Plus a chime when a timed session ends and a heads-up if you leave mid-session.",
+                         ctaTitle: "Turn on reminders",
                          // Not a skip either: both buttons continue the flow.
                          // This one declines the iOS permission, and iOS gives
                          // an app exactly ONE chance at that dialog, ever.
@@ -1134,9 +1138,10 @@ struct PermissionScreen: View {
                             .labelsHidden()
                             .tint(AppColor.accentGold)
                     }
-                    Text("One a day. Change it any time in Settings.")
+                    Text("Up to three on days you haven't meditated. Change it any time in Settings.")
                         .font(.caption)
                         .foregroundStyle(AppColor.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 10)
@@ -1192,15 +1197,16 @@ private struct LockScreenBanner: View {
                                                         AppColor.accentGold.opacity(0.7)],
                                                startPoint: .topLeading, endPoint: .bottomTrailing),
                                 in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+                // One of the real reminders (`ReminderCopy`, gentle), title and
+                // body, so the preview promises exactly what arrives.
                 VStack(alignment: .leading, spacing: 1) {
-                    Text("808")
+                    Text("A few quiet minutes?")
                         .font(.caption.weight(.bold))
                         .foregroundStyle(AppColor.textPrimary)
-                    // The real reminder's words (NotificationScheduler), so the preview
-                    // promises exactly what arrives.
-                    Text("A few minutes of stillness. Your practice is waiting.")
+                    Text("Otto's on his cushion whenever you are.")
                         .font(.caption)
                         .foregroundStyle(AppColor.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer(minLength: 0)
                 Text("now")

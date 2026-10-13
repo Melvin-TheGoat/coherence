@@ -568,7 +568,24 @@ struct IntroScreen<Figure: View>: View {
             .padding(.horizontal, AppMetrics.screenPadding)
             .padding(.bottom, 10)
         }
-        .task { await play() }
+        // Keyed to the line: a screen whose line changes while it is up
+        // (Block's "Pick at least one") has Otto say the new one, typed from
+        // the start. Without it the bubble kept the old line's letter count
+        // and cut a longer new line short.
+        .task(id: subtitle) {
+            if shown { await retype() } else { await play() }
+        }
+    }
+
+    private func retype() async {
+        guard let subtitle else { return }
+        if reduceMotion { subtitleShown = subtitle.count; ctaShown = true; return }
+        subtitleShown = 0
+        await type(subtitle, every: .milliseconds(28)) { subtitleShown = $0 }
+        guard !Task.isCancelled else { return }
+        if !ctaShown {
+            withAnimation(.spring(response: 0.45, dampingFraction: 0.72)) { ctaShown = true }
+        }
     }
 
     private func play() async {

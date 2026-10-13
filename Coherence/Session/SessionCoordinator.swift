@@ -74,7 +74,18 @@ final class SessionCoordinator: NSObject, ObservableObject {
     /// The session currently running on the Watch — drives the phone's
     /// mid-session screen. Non-nil from a successful `startWatchApp` until the
     /// payload lands.
-    @Published private(set) var active: ActiveSession?
+    @Published private(set) var active: ActiveSession? {
+        didSet {
+            // Reminders (2026-10-12): nothing buzzes mid-meditation, and a
+            // finished session takes back the rest of today's nudges. Every
+            // way a session starts or ends passes through here.
+            if oldValue == nil, active != nil {
+                ReminderScheduler.holdForSession()
+            } else if oldValue != nil, active == nil {
+                Task { @MainActor in ReminderScheduler.replan() }
+            }
+        }
+    }
 
     /// Set when the Watch refuses to start a session — drives the blocking
     /// explanation screen. Cleared when the user dismisses it.

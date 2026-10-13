@@ -106,7 +106,7 @@ Friends profile, such as your name and username. Versions before 1.1 sent one
 answer with usage analytics: whether you said during setup that you own an
 Apple Watch.
 
-**Notifications.** Besides the optional daily reminder, 808 can send you three
+**Notifications.** Besides the optional reminders to meditate, 808 can send you three
 kinds of notification, all about something you started yourself: that a timed
 session you set is finishing; that a session on your phone is still running
 after you left the app, so you can come back to it; and a note from Otto after
@@ -345,8 +345,12 @@ timing, or leave it on hold for a while, at any time in the app.
   and sync across your own devices.
 - To let you know when a timed session is ending, or when Otto has something
   to say after Block held an app, as described under "Notifications" above.
-- To send a **daily reminder**, only if you enable it (a local notification
-  scheduled on your device).
+- To send **reminders to meditate**, only if you enable them. They are local
+  notifications scheduled on your device: up to three on a day you haven't
+  meditated yet, none once you have, and fewer the longer you've been away.
+  Which reminder you get is chosen on your device from your practice, the
+  goals you gave during setup, and which earlier reminders you acted on. None
+  of that leaves your device.
 - To show your Friends profile to other people using 808, only if you create
   one, and to review and act on reports.
 - To understand which features are used and where people get stuck, through

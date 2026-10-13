@@ -135,7 +135,8 @@ enum Analytics {
         case widgetRemoved(size: String)
         /// A tapped notification: "reminder" | "session_end" | "come_back".
         /// Never Block's "Otto wants a word".
-        case notificationOpened(kind: String)
+        /// `topic` is a reminder's topic (`ReminderTopic`), never Block's.
+        case notificationOpened(kind: String, topic: String? = nil)
         case awardUnlocked(id: String)
         case signedOut
         case accountDeleted
@@ -262,7 +263,8 @@ enum Analytics {
             case .hatBought(let id), .hatWorn(let id): ["hat_id": id]
             case .watchSwitch(let on, let source): ["on": on, "source": source]
             case .watchSetupOpened(let source): ["source": source]
-            case .notificationOpened(let kind): ["kind": kind]
+            case .notificationOpened(let kind, let topic):
+                topic.map { ["kind": kind, "topic": $0] } ?? ["kind": kind]
             case .widgetOpened(let size), .widgetAdded(let size), .widgetRemoved(let size): ["size": size]
             case .awardUnlocked(let id): ["id": id]
             case .contentReported(let kind): ["kind": kind]
@@ -290,7 +292,8 @@ enum Analytics {
         if userInfo["block"] != nil { return nil }
         if userInfo[SessionEndNotice.userInfoKey] != nil { return "session_end" }
         if userInfo[LeftAppNotice.userInfoKey] != nil { return "come_back" }
-        if identifier == NotificationScheduler.reminderID { return "reminder" }
+        if identifier == NotificationScheduler.reminderID
+            || identifier.hasPrefix(ReminderScheduler.idPrefix) { return "reminder" }
         return nil
     }
 

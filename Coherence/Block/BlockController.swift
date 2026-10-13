@@ -531,8 +531,12 @@ final class BlockNotifications: NSObject, UNUserNotificationCenterDelegate {
         } else if let kind = Analytics.notificationKind(identifier: request.identifier,
                                                         userInfo: request.content.userInfo) {
             // 808's own notifications only. Block's ask is never tracked:
-            // Screen Time's terms keep what Block does on the phone.
-            Analytics.track(.notificationOpened(kind: kind))
+            // Screen Time's terms keep what Block does on the phone, which is
+            // also why a reminder about held apps sends no topic.
+            let topic = request.content.userInfo[ReminderScheduler.userInfoKey] as? String
+            Analytics.track(.notificationOpened(kind: kind,
+                                                topic: topic == ReminderTopic.apps.rawValue ? nil : topic))
+            Task { @MainActor in ReminderScheduler.noteTapped(request.identifier) }
         }
         completionHandler()
     }

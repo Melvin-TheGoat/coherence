@@ -95,6 +95,8 @@ enum AccountActions {
         Analytics.reset()
         SessionStore.signOut(in: context)
         OttoChatStore.deleteAll()
+        // What this phone learned about which reminders move them is theirs.
+        ReminderScheduler.forget()
         // Friends forgets them on this phone too: the profile they had stops
         // showing and stops being published to, and the next person agrees
         // to the community rules for themselves.
@@ -113,8 +115,9 @@ enum AccountActions {
         // An email typed on the no-Watch waitlist and not yet sent is theirs;
         // it does not go out after they asked to be deleted.
         WaitlistClient.forgetPending()
-        // The daily reminder was their setting, and its row is gone.
-        NotificationScheduler.apply(enabled: false, at: nil)
+        // The reminders were their setting, and its row is gone; so is what
+        // this phone learned about which reminders moved them.
+        ReminderScheduler.forget()
         // Friends: the public profile and everything it wrote go too, not
         // just the local sign-out (5.1.1(v)). The screen forgets them at
         // once; the deletion itself runs on without holding the screen, and
@@ -348,6 +351,7 @@ private struct SettingsForm: View {
     @State private var confirmDelete = false
     @State private var confirmSignOut = false
     @State private var showManageSubscriptions = false
+    @State private var reminderCadence = ReminderScheduler.cadence
     @State private var showRedeem = false
     @State private var editingName = false
     /// What the last Restore found (Melvin, 2026-09-29).
@@ -465,7 +469,7 @@ private struct SettingsForm: View {
                         .tint(AppColor.textSecondary)
                     }
                     divider
-                    row(icon: "bell", title: "Daily reminder",
+                    row(icon: "bell", title: "Reminders",
                         subtitle: prefs.remindersEnabled ? timeString(prefs.reminderTime) : nil) {
                         Toggle("", isOn: Binding(
                             get: { prefs.remindersEnabled },
@@ -493,6 +497,21 @@ private struct SettingsForm: View {
                         .foregroundStyle(AppColor.textSecondary)
                         .padding(.leading, 41)
                         .tint(AppColor.accentGoldText)
+                        // How many (2026-10-13, `mockups/retention-v1.html`):
+                        // a quieter setting is what keeps someone from turning
+                        // notifications off altogether.
+                        Picker("How many", selection: Binding(
+                            get: { reminderCadence },
+                            set: { reminderCadence = $0
+                                   ReminderScheduler.cadence = $0
+                                   ReminderScheduler.replan() }
+                        )) {
+                            Text("Up to 3 a day").tag(ReminderCadence.smart)
+                            Text("Once a day").tag(ReminderCadence.once)
+                        }
+                        .pickerStyle(.segmented)
+                        .padding(.leading, 41)
+                        .accessibilityLabel("How many reminders")
                     }
                 }
 
