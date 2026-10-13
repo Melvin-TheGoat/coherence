@@ -87,17 +87,20 @@ final class AppAudio {
 
     // MARK: - Music
 
-    /// Melvin's own track (2026-10-12), made in ElevenLabs Music after the
-    /// ambient beds proved "too ethereal": music with notes, zen but
-    /// gently playful. A 61-second take cut to 70 beats (68.75 BPM) from its first
-    /// note, ending in the quiet phrase before a guitar came in, so the pulse
-    /// carries across the loop; set to the beds' loudness. In
-    /// `Coherence/Audio/Music/`.
+    /// Melvin's own track, made in ElevenLabs Music after the ambient beds
+    /// proved "too ethereal": music with notes, zen but gently playful.
+    /// Since 2026-10-13 his three-minute take, "Stone Garden Flow": 7.0 s to
+    /// 174.0 s of it, the outro's last 6 s mixed over the intro so the loop
+    /// wraps with no silent dip (161 s), at the beds' loudness (mono RMS
+    /// 0.1256). `tools/music_prepare.swift` measured and cut it. Before it, a
+    /// 61-second take cut to 70 beats. In `Coherence/Audio/Music/`.
     static let musicResource = "music-garden"
-    /// The music's key note, C4 at A440, measured off the file (its chroma
-    /// reads C major, tuned within a cent of A440). The effects are tuned
-    /// to it (`SoundSynth.root`), and `SoundSynthTests` fails if a new track
-    /// changes this without moving them.
+    /// The music's key note, C4 at A440, measured off the file. The take
+    /// uses only C, D, E, G and A (C major pentatonic; G is its heaviest
+    /// note, so chroma alone leans G major), tuned within a cent of A440.
+    /// The effects are pentatonic on this root (`SoundSynth.root`), so they
+    /// only ever play notes the music plays. `SoundSynthTests` fails if a new
+    /// track changes this without moving them.
     static let musicTonic: Double = 261.63
     static let musicVolume: Float = 0.3
 

@@ -7819,3 +7819,15 @@ members (Melvin chose Aziz's option 2) are a mockup awaiting approval:
 `mockups/whats-new-v1.html`. The new longer music track Melvin sent sits in
 Messages' attachments, which macOS keeps out of reach of the shell (Full
 Disk Access); it goes in once it is copied somewhere readable.
+
+**The new track is in (same day): "Stone Garden Flow", 3 minutes.** Cut with
+`tools/music_prepare.swift` (written for it: key, tuning, loudness, head and
+tail envelopes, and a crossfaded render). 7.0 s to 174.0 s, its last 6 s
+mixed over the intro so the loop wraps with no dip (the take swells in over
+~6 s and fades out over ~4; looped plainly it went near silent for several
+seconds every pass), 161 s, mono RMS 0.1256, AAC 160 kbps, still
+`music-garden.m4a` so no code moved. It uses only C D E G A, the C major
+pentatonic the effects are already built on, so `SoundSynth.root` stays
+261.63 (chroma leans G major because G is its heaviest note; transposing the
+effects to G would have ADDED B, a note the track never plays). **Still owed:
+confirm it came from a paid ElevenLabs plan.**

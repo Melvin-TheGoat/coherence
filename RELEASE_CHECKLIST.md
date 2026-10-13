@@ -952,10 +952,10 @@ one-time ask on Home, the session's page opening by itself after the reward.
 Music, sound effects and the Watch redesign joined on 2026-10-12. What's New
 covers all of it.
 
-- [ ] **Music licence:** confirm the track that ships came from a paid
-      ElevenLabs plan (the free plan forbids commercial use). Melvin sent a
-      new, longer take on 2026-10-13 (`Stone_Garden_Flow`); it replaces
-      `music-garden.m4a` once it is reachable from the repo.
+- [ ] **Music licence:** confirm "Stone Garden Flow" (in the app since
+      2026-10-13 as `music-garden.m4a`, a 161 s loop) came from a paid
+      ElevenLabs plan (the free plan forbids commercial use). Listen to the
+      loop's wrap on a phone, about every 2 min 41 s.
 - [ ] **On a phone, Release build:** a reminder arrives on a day not yet
       meditated and none after a session; Settings' "How many" switches to
       once a day; onboarding's app pick refuses an empty pick and lets a
