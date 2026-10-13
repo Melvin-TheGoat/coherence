@@ -14,6 +14,7 @@
  *   Apple Watch   paired Watches, the measuring switch, measured sessions, by week
  *   Installs      one row per new install: when, where, phone, how far they got
  *   Updaters      one row per person who updated from 1.0: did they subscribe
+ *   Who they are  every onboarding answer: how many gave it, how many subscribed
  *
  * Rebuilt for 1.1 (2026-10-07). Two kinds of people reach the money now, and
  * the sheet used to see only one. A NEW install goes through onboarding and
@@ -241,7 +242,7 @@ function refreshAll() {
     ['Overview', writeOverview], ['Daily', writeDaily], ['Screens', writeScreens],
     ['Problems', writeProblems], ['Purchases', writePurchases],
     ['Apple Watch', writeAppleWatch], ['Installs', writeInstalls],
-    ['Updaters', writeUpdaters],
+    ['Updaters', writeUpdaters], ['Who they are', writeWhoTheyAre],
   ];
   var failed = [];
   tabs.forEach(function (t) {
@@ -668,6 +669,111 @@ function writeInstalls() {
   rows.push(['INSTALLS', res.results.length, '', '', '', '', '', '', '', '', '', '', '', '', '', '',
              'A reinstall is a new row. Apple’s devices and the founders’ phones are left out; family and friends count. A founder’s new install counts until the team-device switch is on (seven taps on the version line in Settings).']);
   write('Installs', rows, [90, 100, 110, 110, 110, 150, 60, 70, 130, 140, 260, 110, 120, 100, 100, 150, 340, 280]);
+}
+
+/**
+ * The onboarding questions whose answers reach PostHog (since 1.3,
+ * `OnboardingAnswerReport` in the app), in the order the app asks them,
+ * with each raw value in the app's own words. Values are sent as raw values
+ * so a copy change in the app cannot split one answer into two here; when
+ * the app's wording changes, change it here too.
+ */
+var ANSWER_QUESTIONS = [
+  ['onboarding_goals', 'What\u2019s your goal with meditation? (pick any)', {
+    lessStressed: 'Feel less stressed', sharperFocus: 'Sharpen my focus', betterSleep: 'Sleep better',
+    morePresent: 'Be more present', overthinkLess: 'Overthink less', justCurious: 'Just curious',
+    moreDiscipline: 'More discipline', lessAnxious: 'Less anxious', deeperPractice: 'Deeper prayer or practice',
+    manifestGoals: 'Manifest my goals', changeIdentity: 'Change who I am', other: 'Something else' }],
+  ['onboarding_obstacles', 'What usually gets in the way? (pick any)', {
+    forget: 'I forget', noTime: 'I don\u2019t have time', mindWontSettle: 'My mind won\u2019t settle',
+    unsureDoingItRight: 'I\u2019m not sure I\u2019m doing it right',
+    loseMotivation: 'I lose motivation after a few days', phonePulls: 'My phone pulls me away' }],
+  ['onboarding_role', 'Which one sounds most like you?', {
+    creative: 'Creative', deskJob: 'Employee', founder: 'Founder', athlete: 'Athlete',
+    student: 'Student', liveWell: 'Just trying to live well' }],
+  ['onboarding_quiet_time', 'When could you fit in a few quiet minutes?', {
+    morning: 'First thing in the morning', breakInDay: 'On a break during the day',
+    afternoon: 'In the afternoon', evening: 'In the evening', beforeBed: 'Right before bed' }],
+  ['onboarding_habit_history', 'Tried to make meditation a habit before?', {
+    didntStick: 'Yes, but it didn\u2019t stick', workedForAWhile: 'Yes, it worked for a while',
+    firstTry: 'No, this is my first try' }],
+  ['onboarding_age', 'How old are you?', {}],
+  ['onboarding_frequency', 'How often do you meditate right now?', {
+    never: 'Not yet', triedNeverStuck: 'Once in a while', fewTimesMonth: 'A few times a month',
+    mostWeeks: 'A few times a week', almostDaily: 'Every day' }],
+  ['onboarding_mind_profile', 'Mind profile (shown at the end)', {
+    racingMind: 'The Racing Mind', fullPlate: 'The Full Plate', alwaysOn: 'The Always-On Mind',
+    comeback: 'The Comeback', freshStart: 'The Fresh Start' }]
+];
+
+/** A sent answer as a list: a multi-pick arrives as a JSON array. */
+function answerValues(raw) {
+  var str = String(raw || '').trim();
+  if (!str) return [];
+  if (str.charAt(0) === '[') {
+    try { return JSON.parse(str).map(String); } catch (e) { /* fall through */ }
+  }
+  return [str];
+}
+
+function writeWhoTheyAre() {
+  // One row per person who answered at least one question, with their latest
+  // answer to each (Back and a new pick replaces the old one) and whether
+  // they ever saw the paywall, subscribed or completed a session. Tallied
+  // here rather than in SQL: a multi-pick question counts a person once per
+  // pick, and that is simpler in JavaScript than in HogQL.
+  var cols = ANSWER_QUESTIONS.map(function (q) {
+    return "argMaxIf(toString(properties." + q[0] + "), timestamp, " +
+      "notEmpty(ifNull(toString(properties." + q[0] + "), ''))) AS " + q[0];
+  });
+  var sql =
+    "SELECT " + cols.join(', ') + ", " +
+    "countIf(event = 'paywall_viewed') > 0 AS paywall, " +
+    "countIf(event = 'purchase') > 0 AS bought, " +
+    "countIf(event = 'session_completed') > 0 AS sat " +
+    "FROM events WHERE timestamp > now() - INTERVAL 3650 DAY AND " + NOT_INTERNAL + " " +
+    "GROUP BY person_id HAVING " +
+    ANSWER_QUESTIONS.map(function (q) { return 'notEmpty(' + q[0] + ')'; }).join(' OR ') + " " +
+    "LIMIT 20000";
+  var res = query(sql);
+  var people = res.results || [];
+  var n = ANSWER_QUESTIONS.length;
+
+  var rows = [['Question', 'Answer', 'People', 'Share of those asked', 'Saw the paywall',
+               'Subscribed', 'Subscribed (of these people)', 'Completed a session']];
+  ANSWER_QUESTIONS.forEach(function (q, i) {
+    var tally = {}, asked = 0;
+    people.forEach(function (r) {
+      var values = answerValues(r[i]);
+      if (!values.length) return;
+      asked++;
+      values.forEach(function (v) {
+        var t = tally[v] || (tally[v] = { people: 0, paywall: 0, bought: 0, sat: 0 });
+        t.people++;
+        if (r[n]) t.paywall++;
+        if (r[n + 1]) t.bought++;
+        if (r[n + 2]) t.sat++;
+      });
+    });
+    var keys = Object.keys(tally).sort(function (a, b) { return tally[b].people - tally[a].people; });
+    if (!keys.length) {
+      rows.push([q[1], 'No answers yet', 0, '', '', '', '', '']);
+    }
+    keys.forEach(function (k, j) {
+      var t = tally[k];
+      rows.push([j === 0 ? q[1] : '', q[2][k] || k, t.people, pct(t.people, asked),
+                 t.paywall, t.bought, pct(t.bought, t.people), t.sat]);
+    });
+    rows.push(['']);
+  });
+  rows.push(['Who is counted', 'People who answered at least one question: ' + people.length + '. ' +
+    'Answers are sent from 1.3 on, by new installs going through onboarding (a 1.0 user who updates ' +
+    'never sees the questions). Each person counts once per question, with their latest answer; a ' +
+    'pick-any question counts them once per pick, so its shares add up to more than 100%. ' +
+    'Subscribed and Completed a session mean at any point, not only right after onboarding. ' +
+    'Apple\u2019s devices and the founders\u2019 phones are left out. The stress question and the ' +
+    '\u201cmind somewhere else\u201d slider are never sent.']);
+  write('Who they are', rows, [300, 300, 80, 150, 120, 100, 190, 160]);
 }
 
 function writeUpdaters() {
