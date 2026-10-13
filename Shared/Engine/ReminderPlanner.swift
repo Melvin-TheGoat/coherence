@@ -187,7 +187,9 @@ enum ReminderPlanner {
             for slot in slots(daysAway: d, sinceSession: sinceSession, cadence: input.cadence) {
                 guard let minutes = times[slot],
                       let fire = cal.date(byAdding: .minute, value: minutes, to: day),
-                      fire > input.now.addingTimeInterval(60) else { continue }
+                      // Ten seconds, not a minute: someone who sets the time one
+                      // minute ahead expects it (found testing 1.3, 2026-10-13).
+                      fire > input.now.addingTimeInterval(10) else { continue }
                 let state = DayState(input: input, day: day, fire: fire, daysAway: d)
                 let topic = d == farewellDay
                     ? .farewell

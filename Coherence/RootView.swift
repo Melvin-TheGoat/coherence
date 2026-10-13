@@ -12,7 +12,7 @@ import AuthenticationServices
 /// that the next day. It returns without the Watch gate, since a session no
 /// longer needs a Watch.
 struct RootView: View {
-    @Query private var preferences: [Preferences]
+    @Query(sort: \Preferences.createdAt) private var preferences: [Preferences]
     @Environment(\.modelContext) private var context
     @EnvironmentObject private var coordinator: SessionCoordinator
     @EnvironmentObject private var store: Store

@@ -229,7 +229,7 @@ struct AwardUnlockView: View {
 
     /// The one haptic left in the app outside onboarding, so it is what the
     /// Settings toggle now governs. The Watch plays none at all.
-    @Query private var preferences: [Preferences]
+    @Query(sort: \Preferences.createdAt) private var preferences: [Preferences]
     @State private var appeared = false
     /// Where the award's words end, measured, so the badge never lands on
     /// them (App Review pass, 2026-09-30: on an iPhone SE, and on an iPad

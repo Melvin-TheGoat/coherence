@@ -10,7 +10,12 @@ struct SettingsView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
     @Query private var users: [User]
-    @Query private var preferences: [Preferences]
+    /// The OLDEST row, like every other single-row reader (2026-10-13). A
+    /// phone can hold several Preferences rows (sign-ins, other devices'
+    /// rows over iCloud), and unsorted `.first` made Settings edit a
+    /// different row from the one the reminders and the + screen read:
+    /// a reminder time set here was never scheduled.
+    @Query(sort: \Preferences.createdAt) private var preferences: [Preferences]
     @EnvironmentObject private var community: CommunityModel
 
     var body: some View {

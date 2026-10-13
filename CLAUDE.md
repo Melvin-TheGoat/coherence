@@ -7869,3 +7869,22 @@ pentatonic the effects are already built on, so `SoundSynth.root` stays
 261.63 (chroma leans G major because G is its heaviest note; transposing the
 effects to G would have ADDED B, a note the track never plays). **Licence confirmed
 (Melvin, 2026-10-13): from a paid ElevenLabs plan.**
+
+## EVERY SINGLE-ROW PREFERENCES READER TAKES THE OLDEST ROW (2026-10-13, found testing 1.3)
+
+Melvin set a reminder two minutes ahead in Settings on 808 Beta and nothing
+came. The beta's store held FOUR Preferences rows (earlier installs,
+sign-ins). Settings used an UNSORTED `@Query` and `.first`, so it edited row
+1 (reminder 1:29 AM); `ReminderScheduler` read the oldest by `createdAt`, row
+3 (7:00 PM). The time was saved and never scheduled. The + screen's default
+length had the same split. A real user gets extra rows from a sign-in or
+from another device's rows arriving over iCloud.
+
+**Rule: anything that reads or writes ONE Preferences row sorts by
+`createdAt` and takes the first.** Settings, RootView (haptics) and
+AwardsView (haptics) were moved to it; ContentView, the Shop, Otto's hats,
+the + screen, the reward and the scheduler already used it. Readers that
+check ALL rows (`contains { $0.onboardingComplete }`) are fine as they are.
+Not changed tonight, worth a look later: onboarding's `persistAnswers` writes
+the row whose `userID` matches before falling back to the oldest, which on a
+phone with several rows can differ from the oldest.
