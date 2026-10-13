@@ -316,88 +316,145 @@ enum ReminderPlanner {
 enum ReminderCopy {
     typealias Line = (title: String, body: String)
 
+    // Melvin, 2026-10-13, after the first reminder arrived on his phone: "kind
+    // of bland ... I want variety for sure ... from casual to urgent to funny.
+    // Get inspiration from duo lingo." Duolingo's owl gets its pull from
+    // personality and a deadline, so Otto does too: he is a sloth, patient to
+    // a fault and a little dramatic, and the evening's last call is the one
+    // place a deadline is real. The house rules still hold (never shame,
+    // never tell someone what they lack, no health claims, no em dashes).
+    // Lines rotate within a topic, so nobody sees the same one twice running.
+
     static func lines(_ topic: ReminderTopic, slot: ReminderSlot, state s: ReminderPlanner.DayState) -> [Line] {
+        let n = s.streak
         switch topic {
         case .streak:
             if slot == .lastCall {
-                return [("Still time today", "Meditate before midnight and your \(s.streak)-day streak keeps going.")]
+                // The urgent ones: the deadline is real tonight.
+                return [("Still time today", "Meditate before midnight and your \(n)-day streak keeps going."),
+                        ("⏰ Your \(n)-day streak needs you", "A few quiet minutes before bed keeps it alive."),
+                        ("Last call for day \(n + 1)", "Otto's holding the door open until midnight."),
+                        ("Your streak is getting nervous", "\(n) days on the line. A few quiet minutes saves it."),
+                        ("Midnight is coming", "Your \(n)-day streak would love one more day. So would Otto."),
+                        ("Quick, before the day ends", "Sit with Otto and day \(n + 1) is yours.")]
             }
             if s.restDayUsed {
                 return [("Today keeps your streak alive",
-                         "Your rest day covered yesterday. Meditate today and your \(s.streak)-day streak carries on.")]
+                         "Your rest day covered yesterday. Meditate today and your \(n)-day streak carries on."),
+                        ("Rest day used, streak safe", "Today's session keeps your \(n)-day streak going.")]
             }
-            return [("\(s.streak) days and counting", "Keep it going with a few quiet minutes today."),
-                    ("Day \(s.streak + 1) is one session away", "Sit with Otto and keep your streak growing."),
-                    ("Your \(s.streak)-day streak", "One session today keeps it going.")]
+            return [("\(n) days and counting", "Keep it going with a few quiet minutes today."),
+                    ("Day \(n + 1) is one session away", "Sit with Otto and keep your streak growing."),
+                    ("🔥 \(n) days strong", "Let's make it \(n + 1). Otto's already on his cushion."),
+                    ("You're on a roll", "\(n) days straight. Otto is very impressed. Keep it rolling."),
+                    ("Keep the chain going", "\(n) days linked. Today's session adds one more."),
+                    ("Your \(n)-day streak", "One session today keeps it going.")]
         case .glow:
             if slot == .lastCall {
                 return [("Still time today", "A few quiet minutes before bed, and Otto's glow rises."),
-                        ("Before the day ends", "Sit with Otto for a few minutes and watch him glow.")]
+                        ("Before the day ends", "Sit with Otto for a few minutes and watch him glow."),
+                        ("Otto's bedtime glow-up", "Meditate before bed and he'll sleep a little brighter."),
+                        ("One more thing before bed", "Otto would love a few quiet minutes with you.")]
             }
             var out: [Line] = [("Otto saved you a spot", "He's on his cushion. Come sit with him for a few minutes."),
-                               ("Otto's ready when you are", "Meditate together and watch him glow.")]
+                               ("Otto's ready when you are", "Meditate together and watch him glow."),
+                               ("Psst. It's Otto.", "I've been sitting here practicing. Want to join me?"),
+                               ("Otto is meditating solo", "He says it's nicer with company."),
+                               ("A sloth is waiting", "Very patiently. As sloths do. Meditate with Otto?")]
             // The number only when it's a good one: "Otto's glow is at 6%"
             // is a sentence about what they lack.
-            if s.glow >= 40 { out.insert(("Otto's glow is at \(s.glow)%", "A session today brightens it."), at: 0) }
+            if s.glow >= 40 {
+                out.insert(("Otto's glow is at \(s.glow)%", "A session today brightens it."), at: 0)
+                out.append(("\(s.glow)% and ready for more", "One session today and Otto glows a little brighter."))
+            }
             return out
         case .apps:
             return [("Your apps are on hold", "Meditate first and Otto lets them go."),
-                    ("Otto's holding your apps", "Meditate and he'll open them back up.")]
+                    ("Otto's holding your apps", "Meditate and he'll open them back up."),
+                    ("The scroll can wait", "Meditate first, then everything opens back up."),
+                    ("Your apps miss you", "Otto's keeping them safe until you've meditated."),
+                    ("Unlock your apps the calm way", "Sit with Otto, then they're all yours.")]
         case .goal:
             let goals = s.profile.motivations.filter { $0 != .other }
             guard !goals.isEmpty else { return [] }
-            let goal = goals[s.rotation % goals.count]
-            return [goalLine(goal, slot: slot)]
+            return goalLines(goals[s.rotation % goals.count], slot: slot)
         case .gentle:
             var out: [Line] = [("Time to meditate", "A few minutes of stillness. Otto's ready when you are."),
                                ("A few quiet minutes?", "Otto's on his cushion whenever you are."),
+                               ("Hi, it's Otto 👋", "Just checking in. Want to meditate together?"),
+                               ("Sloth mode: on", "Slow down for a few minutes with Otto."),
+                               ("Breathe in. Breathe out.", "Now do that for a few minutes with Otto."),
+                               ("This is your sign", "To sit down, close your eyes and breathe for a bit."),
+                               ("Your cushion is calling", "Otto says it's extra comfy today."),
+                               ("Knock knock", "It's Otto. He'd like to meditate with you."),
                                ("Your meditation for today", "Sit, breathe, and let Otto keep time."),
                                ("Pause for a moment", "Close your eyes with Otto for a few minutes.")]
-            for obstacle in s.profile.obstacles {
-                if let line = obstacleLine(obstacle) { out.append(line) }
-            }
+            for obstacle in s.profile.obstacles { out += obstacleLines(obstacle) }
             return out
         case .shop:
             guard let hat = s.nextHat, hat.pointsAway > 0 else { return [] }
             return [("\(hat.pointsAway) points from the \(hat.name)", "Every minute you meditate earns a point."),
-                    ("Otto's eyeing the \(hat.name)", "\(hat.pointsAway) more minutes of meditating and it's his.")]
+                    ("Otto's eyeing the \(hat.name)", "\(hat.pointsAway) more minutes of meditating and it's his."),
+                    ("Otto has a hat in mind", "The \(hat.name). \(hat.pointsAway) minutes of meditating gets it.")]
         case .comeback:
             return [("Otto misses you", "He's been keeping your cushion warm."),
+                    ("Hey stranger 👋", "Otto saved your spot. Come sit for a few minutes."),
+                    ("Otto has been very patient", "He's a sloth, so that's easy. But he'd love to see you."),
+                    ("Otto wrote you a note", "It just says \"meditate with me?\" He's not great at notes."),
+                    ("No pressure, but...", "Otto's been practicing alone. He'd love some company."),
                     ("Start fresh today", "One session and you're back. Otto's glow comes with you.")]
         case .farewell:
             return [("I'll give the reminders a rest", "Otto will be on his cushion whenever you're ready.")]
         }
     }
 
-    static func goalLine(_ goal: Motivation, slot: ReminderSlot) -> Line {
+    static func goalLines(_ goal: Motivation, slot: ReminderSlot) -> [Line] {
         switch goal {
         case .lessStressed, .lessAnxious:
-            return ("A few quiet minutes for you", "Step away from the day and sit with Otto.")
+            return [("A few quiet minutes for you", "Step away from the day and sit with Otto."),
+                    ("Breathe out the day", "A few slow breaths with Otto. The rest can wait.")]
         case .sharperFocus:
-            return ("Clear your head", "A few quiet minutes before the next thing.")
+            return [("Clear your head", "A few quiet minutes before the next thing."),
+                    ("Reset before the next thing", "Close your eyes with Otto, then come back to it fresh.")]
         case .betterSleep:
             return slot == .first
-                ? ("Your quiet minutes", "Otto's ready when you are.")
-                : ("Wind down with Otto", "A few quiet minutes before bed.")
+                ? [("Your quiet minutes", "Otto's ready when you are.")]
+                : [("Wind down with Otto", "A few quiet minutes before bed."),
+                   ("Bedtime, sloth style", "Slow down with Otto before you sleep.")]
         case .morePresent:
-            return ("Come back to right now", "Sit with Otto and just notice.")
+            return [("Come back to right now", "Sit with Otto and just notice."),
+                    ("Where are you right now?", "Take a few minutes to really be here.")]
         case .overthinkLess:
-            return ("Give your thoughts a rest", "Sit with Otto for a few minutes.")
+            return [("Give your thoughts a rest", "Sit with Otto for a few minutes."),
+                    ("Too many tabs open in your head?", "Sit with Otto and let a few close.")]
         case .moreDiscipline:
-            return ("Show up for yourself", "One session today. That's the whole promise.")
+            return [("Show up for yourself", "One session today. That's the whole promise."),
+                    ("Future you says thanks", "Show up today. Otto will notice.")]
         default:
-            return ("Your quiet minutes", "Otto's ready when you are.")
+            return [("Your quiet minutes", "Otto's ready when you are."),
+                    ("Just a few minutes", "That's all it takes to show up today.")]
         }
     }
 
-    static func obstacleLine(_ obstacle: Obstacle) -> Line? {
+    static func obstacleLines(_ obstacle: Obstacle) -> [Line] {
         switch obstacle {
-        case .forget: return ("Quick reminder", "Today's meditation is still waiting for you.")
-        case .noTime: return ("Got a few minutes?", "Even a short session counts for your streak and Otto's glow.")
-        case .mindWontSettle: return ("No need to empty your mind", "Just sit and notice. That's the practice.")
-        case .unsureDoingItRight: return ("There's no wrong way to sit", "Close your eyes and follow your breath. Otto keeps time.")
-        case .phonePulls: return ("Put the phone down with Otto", "A few quiet minutes, then everything's still here.")
-        case .loseMotivation: return nil
+        case .forget:
+            return [("Quick reminder", "Today's meditation is still waiting for you."),
+                    ("Psst, today's session", "Easy to forget, easy to do. Otto's ready.")]
+        case .noTime:
+            return [("Got a few minutes?", "Even a short session counts for your streak and Otto's glow."),
+                    ("Busy day?", "Even a short session counts. Otto's slow, but your session can be quick.")]
+        case .mindWontSettle:
+            return [("No need to empty your mind", "Just sit and notice. That's the practice."),
+                    ("Busy mind? Perfect.", "That's exactly what sitting with Otto is for.")]
+        case .unsureDoingItRight:
+            return [("There's no wrong way to sit", "Close your eyes and follow your breath. Otto keeps time."),
+                    ("You're doing it right", "If you sat down and breathed, that counts. Otto agrees.")]
+        case .phonePulls:
+            return [("Put the phone down with Otto", "A few quiet minutes, then everything's still here."),
+                    ("Your phone will survive", "A few minutes without it. Otto promises.")]
+        case .loseMotivation:
+            return []
         }
     }
 }
