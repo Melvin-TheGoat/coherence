@@ -2202,6 +2202,42 @@ so nobody reads the numbers the old way again.
   started"; "Updated" counted 1.0 → 1.0.1; the onboarding-paywall rate mixed
   1.0 views with 1.1 purchases (now 1.1 only). A trial counts as a purchase
   the moment it starts: PostHog never hears whether it renewed.
+- **Run `refresh`, not whatever the Apps Script dropdown shows.** The Run
+  button runs the function selected beside it, which after a paste can be
+  any helper (`planName` was). A run of a helper writes nothing, so the
+  sheet keeps last hour's formats and looks broken when it is only stale.
+- **"Said no to every offer"**, not "both": the ladder is the paywall plus
+  two rungs, three offers in all.
+
+## ONBOARDING ANSWERS REACH POSTHOG, A CLOSED LIST OF EIGHT (2026-10-13, Melvin, ships in 1.3)
+
+"I want to get a sense for our customer profile." Until 1.3 no answer left
+the phone; only the screen did. `OnboardingAnswerReport` (Shared, pure) maps
+a step to its answer, and `go()` sends it on the `onboarding_step` it
+already sent AND sets it on the anonymous person (`Analytics.
+setOnboardingAnswer`), so any funnel can be split by it. Sent as each screen
+is LEFT, so people who stop halfway count.
+
+- **In:** goals, what gets in the way, role, quiet time, habit history, age
+  range, how often they meditate, the mind profile TYPE (Melvin: "leave mind
+  profile in"). Keys `onboarding_*`; values are enum raw names so a copy
+  change cannot split an answer; the sheet turns them into words.
+- **Out, and pinned by `OnboardingAnswerReportTests` and
+  `test_onlyTheApprovedOnboardingScreensSendAnswers`:** the stress answer
+  and the mind-wandering slider (self-rated stress is consumer health data
+  under the policy's Washington section, and sending it would pull PostHog
+  in), the mind profile's bar positions, and anything typed. A new screen
+  that sends an answer must be added to the list on purpose.
+- **The answers are NOT in the `person` dictionary** that `reset()`
+  re-sends, or a sign-out would hand one person's answers to the next.
+- Privacy: the policy names the eight ("Your setup answers"); the manifest's
+  Other User Content gained the Analytics purpose; App Store Connect needs
+  the same one edit (RELEASE_CHECKLIST.md, OPEN for 1.3). 1.1 and 1.2 sent
+  none of this, and the policy says so.
+- **The sheet's "Who they are" tab** counts each answer: people, share of
+  those asked, saw the paywall, subscribed, completed a session. Empty until
+  1.3 users arrive. Build PostHog tiles only once data exists, and ask
+  Melvin first, as with any PostHog change.
 
 ## RELEASE_CHECKLIST.md GATES EVERY SUBMISSION (2026-09-14)
 
