@@ -37,6 +37,39 @@ final class AnalyticsScreenNamesTests: XCTestCase {
         XCTAssertEqual(props["flow"] as? String, "1.1")
     }
 
+    /// The answer rides on the same event, and cannot overwrite the three
+    /// properties every funnel reads.
+    func test_onboardingStepCarriesItsAnswer() {
+        let answer: [String: Any] = ["onboarding_frequency": "mostWeeks", "step": "spoofed"]
+        let props = Analytics.Event.onboardingStep(id: "baseline", answer: answer).properties
+        XCTAssertEqual(props["onboarding_frequency"] as? String, "mostWeeks")
+        XCTAssertEqual(props["step"] as? String, "baseline")
+    }
+
+    /// Run over every real onboarding screen with every question answered:
+    /// only the eight on the approved list send anything. A new screen that
+    /// starts sending an answer has to be added to the list on purpose.
+    func test_onlyTheApprovedOnboardingScreensSendAnswers() {
+        var a = OnboardingAnswers()
+        a.motivations = [.sharperFocus]
+        a.obstacles = [.noTime]
+        a.stress = 0.9
+        a.stressLevel = 4
+        a.mindWandering = 0.8
+        a.role = .student
+        a.quietTime = .morning
+        a.habitHistory = .firstTry
+        a.ageBracket = "18 to 24"
+        a.currentFrequency = .never
+        let approved: Set = ["motivation", "obstacles", "role", "quietTime", "habitHistory",
+                             "age", "baseline", "mindProfile"]
+        for step in OnboardingView.Step.allCases {
+            let id = String(describing: step)
+            let sends = !OnboardingAnswerReport.properties(forStep: id, answers: a).isEmpty
+            XCTAssertEqual(sends, approved.contains(id), "`\(id)` answer reporting is off the list")
+        }
+    }
+
     func test_unknownScreenIsVisiblyUnnamed() {
         XCTAssertTrue(Analytics.onboardingScreenName(for: "somethingNew").hasPrefix("??"))
     }

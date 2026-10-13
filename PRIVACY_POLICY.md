@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**Last updated: October 1, 2026**
+**Last updated: October 13, 2026**
 
 This Privacy Policy explains how **Lock Out Inc. ("we," "us")** handles
 information in the **808 Meditate** app ("808") for iPhone, with optional
@@ -28,9 +28,10 @@ support for Apple Watch.
   own Screen Time system. See "Block" below.
 - **We don't sell your data, run ads, or track you.** There are no advertising
   identifiers and no cross-app tracking. We collect pseudonymous usage
-  analytics (which features are used, on what kind of iPhone, and roughly
-  where in the world), never what your body measured, and you can turn them
-  off in Settings. See "Usage analytics" below.
+  analytics (which features are used, on what kind of iPhone, roughly where
+  in the world, and some of your answers to the questions when you first open
+  the app), never what your body measured, and you can turn them off in
+  Settings. See "Usage analytics" below.
 - **808 never sends your health data off your devices** unless you choose to
   share or save a session card. It's measured on your Apple Watch and turned
   into your session results on your own devices; we never receive it, never
@@ -99,12 +100,20 @@ rate and movement, only during a session you started, only on your own devices.
 **Session and app data.** Session dates, durations, the type of session, your
 results and streak, and your **preferences** (reminder time, default length,
 and similar settings). Otto's glow, your points, and the hats you choose for
-him are worked out on your phone from your own sessions. In 808 1.1 and later,
-your answers to the questions when you first open the app are kept in the app
-and are never sent to us. The one exception is what you choose to put on a
-Friends profile, such as your name and username. Versions before 1.1 sent one
-answer with usage analytics: whether you said during setup that you own an
-Apple Watch.
+him are worked out on your phone from your own sessions.
+
+**Your setup answers.** Some of your answers to the questions when you first
+open the app are sent with usage analytics (see below), so we can understand
+who uses 808 and what helps them keep going: your goals, what usually gets in
+the way, which description fits you best, your age range, how often you
+meditate, whether you have tried to make it a habit before, when you could fit
+in a few quiet minutes, and the profile type the app shows you at the end.
+Your answers about how stressed you are and how much of your day your mind is
+somewhere else stay in the app and are never sent, and neither is anything you
+type. Versions 1.1 and 1.2 sent none of your answers. Versions before 1.1 sent
+one: whether you said during setup that you own an Apple Watch. What you choose
+to put on a Friends profile, such as your name and username, is described
+under "Friends."
 
 **Notifications.** Besides the optional reminders to meditate, 808 can send you three
 kinds of notification, all about something you started yourself: that a timed
@@ -130,7 +139,8 @@ which features are used and where people get stuck. They are processed for
 us by PostHog, Inc. on servers in the United States, and they include:
 
 - **What you do in the app**, for example: which setup screens you finished
-  (never your answers), whether you allowed reminders and Health access,
+  and the setup answers listed under "Your setup answers" above (never your
+  stress answers or anything you type), whether you allowed reminders and Health access,
   sessions started and completed with their rough length and your rough
   streak (in bands such as "3 to 7 minutes"), whether a session with your Watch saved its readings
   (never the readings themselves), sessions recorded by hand or deleted, Otto's
@@ -163,7 +173,7 @@ it is tied to. We also keep a copy of these analytics in a Google Sheet so
 we can read them more easily: one row per install, with its random
 identifier, when it was installed and last opened, its app and iOS version,
 iPhone model, approximate location, the plan bought if any, and counts of
-what was used.
+what was used, plus totals of how many people gave each setup answer.
 
 **You can turn usage analytics off** at any time in the app's Settings with
 the **Share usage analytics** switch. While it is off, the app sends no usage

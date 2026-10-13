@@ -32,14 +32,18 @@ enum Analytics {
     ///   skipped windows, Otto's ask). Apple's Family Controls terms forbid
     ///   it leaving the phone. The only Block-adjacent event is
     ///   `paywall_viewed` with placement "block".
-    /// - **No onboarding answers.** Which screen was left, never what was
-    ///   picked on it.
+    /// - **Onboarding answers: a closed list only** (reversed 2026-10-13,
+    ///   Melvin, for the customer profile; it was "never what was picked").
+    ///   `OnboardingAnswerReport` holds the list: goals, obstacles, role,
+    ///   age range, frequency, tried before, quiet time and the mind profile
+    ///   type. Never the stress answer, the mind-wandering slider, or text.
     /// - **No award that is a threshold on the score** (`Award.Group.depth`):
     ///   "reached 90" is a banded score by another name.
     enum Event {
         // Onboarding
-        /// A screen was LEFT. Pass-through hops never send it.
-        case onboardingStep(id: String)
+        /// A screen was LEFT. Pass-through hops never send it. `answer` is
+        /// what the screen collected, from `OnboardingAnswerReport` only.
+        case onboardingStep(id: String, answer: [String: Any] = [:])
         case onboardingCompleted
         /// Reopened onboarding on the screen they left (`OnboardingResume`).
         case onboardingResumed(id: String)
@@ -235,8 +239,10 @@ enum Analytics {
             // `step` is the routing id (what the code calls the screen);
             // `screen` is the numbered human name a dashboard can be read by.
             // Both ship, so old funnels keep working and new ones read plainly.
-            case .onboardingStep(let id):
-                ["step": id, "screen": Analytics.onboardingScreenName(for: id), "flow": Analytics.appFlow]
+            case .onboardingStep(let id, let answer):
+                (["step": id, "screen": Analytics.onboardingScreenName(for: id),
+                  "flow": Analytics.appFlow] as [String: Any])
+                    .merging(answer) { kept, _ in kept }
             case .onboardingResumed(let id): ["step": id, "screen": Analytics.onboardingScreenName(for: id)]
             case .signIn(let outcome), .reminderPermission(let outcome), .healthPermission(let outcome):
                 ["outcome": outcome]
@@ -425,7 +431,10 @@ enum Analytics {
     ///   or "none"), from the store's entitlement.
     /// - `has_paired_watch` (Bool), from WatchConnectivity.
     /// - `app_flow` ("1.1").
-    /// Nothing measured, nothing Block knows, no onboarding answer.
+    /// Nothing measured, nothing Block knows. Onboarding answers are person
+    /// properties too since 2026-10-13, but through `setOnboardingAnswer`,
+    /// never through this dictionary: they belong to the person who gave
+    /// them, and `reset` re-sends this dictionary to the NEXT person.
     private static var person: [String: Any] = ["app_flow": appFlow]
 
     static func setPersonProperties(_ props: [String: Any]) {
@@ -433,6 +442,15 @@ enum Analytics {
         // Kept locally so switching analytics back on sends the current
         // facts, but never sent while the switch is off.
         guard !isOptedOut else { return }
+        personSink(props)
+    }
+
+    /// One onboarding answer (`OnboardingAnswerReport`) on the anonymous
+    /// person, so funnels and retention can be split by it. Not kept in
+    /// `person`: after a sign-out the next person on this phone has not
+    /// given these answers.
+    static func setOnboardingAnswer(_ props: [String: Any]) {
+        guard !props.isEmpty, !isOptedOut else { return }
         personSink(props)
     }
 

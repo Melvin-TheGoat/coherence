@@ -1035,7 +1035,13 @@ struct OnboardingView: View {
         // Block or Watch screen this phone skips) send nothing, or the funnel
         // would count people through screens they never saw.
         if showedScreen(step) {
-            Analytics.track(.onboardingStep(id: String(describing: step)))
+            // A question sends its answer with it (the closed list in
+            // `OnboardingAnswerReport`), and the same value lands on the
+            // person, so a funnel can be split by it.
+            let id = String(describing: step)
+            let answer = OnboardingAnswerReport.properties(forStep: id, answers: answers)
+            Analytics.track(.onboardingStep(id: id, answer: answer))
+            Analytics.setOnboardingAnswer(answer)
         }
         show(next, motion: .forward)
     }
