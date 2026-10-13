@@ -86,6 +86,11 @@ struct ContentView: View {
     @State private var auraCount: Int?
     /// The session the toast above the tab bar is offering to fill in.
     @State private var detailsFor: UUID?
+    /// The session whose page opens by itself once the reward screen and any
+    /// award unlocks are done (Melvin, 2026-10-13: "have the how'd that go
+    /// notes page automatically pop up, instead of being a little banner").
+    /// In memory only: if the app goes away first, the toast is the fallback.
+    @State private var notesDueFor: UUID?
     #if DEBUG
     /// `PREVIEW_BREATHING=<seconds elapsed>` opens the sit at that moment, so
     /// the valley's whole arc can be reviewed without waiting ten minutes for
@@ -245,7 +250,7 @@ struct ContentView: View {
                     .background(AppColor.backgroundSecondary.opacity(0.92), in: Capsule())
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
-                if shownTab == .home, let id = detailsFor, auraGain == nil {
+                if shownTab == .home, let id = detailsFor, auraGain == nil, notesDueFor == nil {
                     detailsToast(id).environment(\.tileDim, Self.tileDim)
                 }
                 MainTabBar(selection: tabSelection) { sheet = .setup }
@@ -280,7 +285,13 @@ struct ContentView: View {
                               sessionActive: coordinator.active != nil) { d in
             if sheet == nil { sheet = .discarded(d) } else { pendingSheet = .discarded(d) }
         })
-        .modifier(BlockAppsAskHook(quiet: homeIsQuiet, eligible: appsAskEligible) { present(.pickApps) })
+        .modifier(QuietHomeHooks(quiet: homeIsQuiet, notesDue: notesDueFor, appsEligible: appsAskEligible,
+                                 openNotes: { id in
+                                     notesDueFor = nil
+                                     guard sessions.contains(where: { $0.id == id }) else { return }
+                                     present(.save(id))
+                                 },
+                                 askForApps: { present(.pickApps) }))
         .firstSessionHooks(offer: firstOffer, paid: store.entitlements.paid,
                            onOpenSetup: { present(.setup) },
                            onPaywallDue: { present(.paywall) })
@@ -466,6 +477,11 @@ struct ContentView: View {
             // demo session (18 minutes, streak 4 to 5) and that glow.
             if let raw = ProcessInfo.processInfo.environment["PREVIEW_REWARD"], sheet == nil {
                 let parts = raw.split(separator: ":").compactMap { Int($0) }
+                // With a stored session, its page opens after Continue, as
+                // after a real one (the auto-open, 2026-10-13).
+                if let newest = sessions.max(by: { $0.startedAt < $1.startedAt }), FeatureFlags.friends {
+                    notesDueFor = newest.id
+                }
                 sheet = .reward(SessionReward(id: UUID(), seconds: 18 * 60, streakBefore: 4, streakAfter: 5,
                                               points: 18, bankBefore: 124,
                                               glowBefore: parts.first ?? OttoAura.startLevel,
@@ -1092,6 +1108,7 @@ struct ContentView: View {
         if FeatureFlags.friends {
             SessionDetails.set(id)
             detailsFor = id
+            notesDueFor = id
         }
         let windows = FeatureFlags.block ? block.notNowWindows : []
         let dates = sessions.map(\.startedAt)
@@ -1529,24 +1546,37 @@ private struct SessionLandedHooks: ViewModifier {
 /// Opens "Too short to score" once the live-session cover has gone. The payload
 /// that says so arrives the same moment the cover is torn down, and presenting
 /// during that animation is the dropped-presentation trap (see FriendsHooks).
-/// Opens Otto's one-time app ask (`BlockAppsPrompt`) once Home has been
-/// quiet for a moment, so it never lands on top of a session, an award or the
-/// tour, and never in the same breath as the app opening.
-private struct BlockAppsAskHook: ViewModifier {
+/// What opens on Home by itself once nothing else is on it: first the page
+/// of the session that just landed ("How did that feel", photos, notes, who
+/// can see it), after the reward screen and any award unlocks; otherwise
+/// Otto's one-time app ask (`BlockAppsPrompt`). Never on top of a session,
+/// an award or the tour, and never in the same breath as the app opening.
+private struct QuietHomeHooks: ViewModifier {
     let quiet: Bool
-    let eligible: Bool
-    let open: () -> Void
+    let notesDue: UUID?
+    let appsEligible: Bool
+    let openNotes: (UUID) -> Void
+    let askForApps: () -> Void
 
-    private struct Gate: Equatable { let quiet: Bool; let eligible: Bool }
+    private struct Gate: Equatable { let quiet: Bool; let notesDue: UUID?; let appsEligible: Bool }
 
     func body(content: Content) -> some View {
-        content.task(id: Gate(quiet: quiet, eligible: eligible)) {
-            guard quiet, eligible else { return }
+        content.task(id: Gate(quiet: quiet, notesDue: notesDue, appsEligible: appsEligible)) {
+            guard quiet else { return }
+            if let id = notesDue {
+                // A beat after the last celebration closes, so the page
+                // arrives as the next thing rather than as a flicker.
+                try? await Task.sleep(for: .milliseconds(600))
+                // A cancelled sleep throws and falls through; Home changed.
+                guard !Task.isCancelled else { return }
+                openNotes(id)
+                return
+            }
+            guard appsEligible else { return }
             try? await Task.sleep(for: .seconds(1.5))
-            // A cancelled sleep throws and falls through; Home changed.
             guard !Task.isCancelled, !BlockAppsPrompt.wasAsked() else { return }
             BlockAppsPrompt.markAsked()
-            open()
+            askForApps()
         }
     }
 }

@@ -946,6 +946,26 @@ this release needs a NEW archive.
 
 ## OPEN for 1.2: the home screen widget (added 2026-10-05)
 
+**Added to 1.2 on 2026-10-13** (merged from `retention`, plus the auto-open
+session page): smarter reminders, the required Block app pick, Otto's
+one-time ask on Home, the session's page opening by itself after the reward.
+Music, sound effects and the Watch redesign joined on 2026-10-12. What's New
+covers all of it.
+
+- [ ] **Music licence:** confirm the track that ships came from a paid
+      ElevenLabs plan (the free plan forbids commercial use). Melvin sent a
+      new, longer take on 2026-10-13 (`Stone_Garden_Flow`); it replaces
+      `music-garden.m4a` once it is reachable from the repo.
+- [ ] **On a phone, Release build:** a reminder arrives on a day not yet
+      meditated and none after a session; Settings' "How many" switches to
+      once a day; onboarding's app pick refuses an empty pick and lets a
+      Screen Time "Don't Allow" through; Home asks a member with nothing held
+      once; the session page opens after the reward screen and any awards.
+- [ ] **Website redeploy** (`deploy-website`): the privacy policy's reminder
+      lines changed (`website/privacy.html` is regenerated).
+- [ ] **The what's-new screens for free 1.0 users**, if approved in time
+      (`mockups/whats-new-v1.html`); otherwise they wait for the next build.
+
 **1.2 (2026-10-07):** the widget, Otto's reworked screens, the new block
 screen, the Ask Otto mix, the are-you-sure before weakening a blocker, the
 end-of-session bell and the freeze fix. Plans, prices, feature flags, privacy

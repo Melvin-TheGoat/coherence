@@ -7790,3 +7790,32 @@ picker carries the tip as its `footerText`. The review notes say so.
   top-apps view is the next build (BACKLOG.md).
 - The reminder screen reads "Nudges at your time." and names the new
   cadence; Settings' row is "Reminders" with "Up to 3 a day / Once a day".
+
+## AFTER A SESSION, ITS PAGE OPENS BY ITSELF (2026-10-13, Melvin)
+
+"Have the how'd that go notes page automatically pop up, instead of being a
+little banner suggestion. Have it pop up after you finish seeing the
+streak/points update awards screen." So a landed session now goes: the
+reward screen (`SessionRewardView`), then any award unlocks, then the
+session's page (`SaveSessionView`, mode `.edit`: how it felt, what you did,
+notes, photos) opens on its own, 0.6 s after Home is quiet.
+
+- `ContentView.notesDueFor` is set in `celebrate`, in memory only; the
+  "Add how that felt" toast is hidden while it is set and stays the fallback
+  if the app goes away first (`SessionDetails` still persists).
+- `QuietHomeHooks` owns everything that opens by itself on a quiet Home:
+  the session page first, then Otto's one-time app ask, so the two never
+  collide. Quiet = no cover or queued cover, no session, no award unlock,
+  no tour, on Home.
+- `PREVIEW_REWARD` now arms the auto-open with the newest stored session, so
+  the hand-off can be checked on a simulator (with `PREVIEW_HISTORY=1`).
+  Verified there 2026-10-13: Continue on the reward, and the page opens.
+
+## 1.2 GAINED THE RETENTION WORK (2026-10-13, Melvin: "merge retention into 1.2")
+
+`retention` is merged into `block` (the 1.2 branch), with What's New
+extended (1,269 of 4,000 counted). The what's-new screens for free 1.0
+members (Melvin chose Aziz's option 2) are a mockup awaiting approval:
+`mockups/whats-new-v1.html`. The new longer music track Melvin sent sits in
+Messages' attachments, which macOS keeps out of reach of the shell (Full
+Disk Access); it goes in once it is copied somewhere readable.

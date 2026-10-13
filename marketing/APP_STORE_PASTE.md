@@ -215,10 +215,20 @@ https://meditate808.com/privacy
 © 2026 Lock Out Inc.
 ```
 
-**What's New in This Version, 1.2** (4000 max; this one is 691; approved by Melvin 2026-10-07. 1.1's text is in git history.)
+**What's New in This Version, 1.2** (4000 max; this one is 1249, 1269 counting line breaks twice; approved by Melvin 2026-10-07, extended 2026-10-13 with reminders, the app pick, music and sounds, the session page and the Watch. 1.1's text is in git history.)
 
 ```
 Otto now lives on your home screen. Add the 808 widget, small or medium, to see him, your streak and what he has to say, lit for the time of day.
+
+Smarter reminders: a nudge at your time, and a couple more on days you haven't meditated yet. They stop as soon as you do. Prefer one a day? Choose it in Settings.
+
+Otto now asks you to pick at least one app for him to hold until you've meditated.
+
+808 has music now, with gentle sounds and a soft tap on every button. Turn any of them off in Settings.
+
+After a session, its page opens so you can add how it felt, a photo or a note.
+
+On Apple Watch, Otto sits in his valley. Set a session's length with the Digital Crown and choose a sound from your wrist.
 
 The block screen is new every time you open a held app: thirteen lines, ten colours, each with its own Otto, and easier to read in light and dark mode. Tap Ask Otto and he's more likely to video call or text you.
 

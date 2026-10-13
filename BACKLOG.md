@@ -19,7 +19,17 @@ on-device chat (`FeatureFlags.ottoInRelease` is off), Block
 (`blockInRelease` is off) and Friends (1.1). Otto's seven aura states
 animated in Rive shipped to `block` on 2026-09-23 (`OttoAura.riv`).
 
-### What a free 1.0 user sees on updating (Aziz, 2026-10-07): discuss
+### What a free 1.0 user sees on updating (Aziz, 2026-10-07): option 2 chosen, MOCKUP AWAITING APPROVAL
+
+**Decided 2026-10-13 (Melvin): option 2, a few what's-new screens.** Mockup:
+`mockups/whats-new-v1.html` (artifact
+https://claude.ai/artifact/Psppdu6UpowTiM7kN1yHwm): "Welcome back!" with Otto
+glowing, "I hold your apps until you've meditated" with a real block screen,
+"Every minute earns points for my hats", then the paywall as today. Shown
+once, only to someone whose 808 was set up before this phone first ran 1.1
+(`Preferences.createdAt` before `OttoAura.glowStart()`) and who has no
+membership. Build after approval.
+
 
 Today an updater with no membership opens 1.1 straight onto the paywall
 (onboarding stays finished; `LaunchLock` shows `root_lock`). They never see
