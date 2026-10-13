@@ -507,7 +507,7 @@ declares no collected data.
 | Contact Info → Name | **Yes** | No | App Functionality | The display name on a Friends profile. |
 | Contact Info → Email Address | **Yes** | No | Developer's Advertising or Marketing | The old no-Watch waitlist. No 1.1 screen asks for it, but an email can still reach the waitlist sheet two ways: a saved onboarding record from an earlier version (`WaitlistClient.submit`) and a queued sign-up that flushes on launch (`WaitlistClient.flush`). It stays declared while the code can send one. |
 | User Content → Photos or Videos | **Yes** | No | App Functionality | The optional Friends profile photo. |
-| User Content → Other User Content | **Yes** | No | App Functionality | The text of a report someone files. |
+| User Content → Other User Content | **Yes** | No | App Functionality, Analytics | The text of a report someone files (App Functionality), and, since 1.3, eight onboarding answers sent with usage analytics (Analytics): goals, what gets in the way, role, age range, how often they meditate, whether they tried before, when quiet minutes fit, and the mind profile type. Never the stress answer, the mind-wandering slider, or anything typed (`OnboardingAnswerReport`). |
 
 Tracking question at the end: **No.** No IDFA, no ad networks, no data brokers,
 nothing linked across apps or websites.

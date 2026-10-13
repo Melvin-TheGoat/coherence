@@ -145,7 +145,7 @@ us by PostHog, Inc. on servers in the United States, and they include:
   streak (in bands such as "3 to 7 minutes"), whether a session with your Watch saved its readings
   (never the readings themselves), sessions recorded by hand or deleted, Otto's
   glow moving to a new stage, awards earned, which of 808's own notifications
-  you opened, which hat Otto wears, and counts of
+  you opened (for a reminder, also what it was about), which hat Otto wears, and counts of
   Friends actions such as creating a profile, sending a request, or blocking
   someone.
 - **Subscriptions:** when a plan screen or offer is shown, the plan you pick,
@@ -359,8 +359,10 @@ timing, or leave it on hold for a while, at any time in the app.
   notifications scheduled on your device: up to three on a day you haven't
   meditated yet, none once you have, and fewer the longer you've been away.
   Which reminder you get is chosen on your device from your practice, the
-  goals you gave during setup, and which earlier reminders you acted on. None
-  of that leaves your device.
+  goals you gave during setup, and which earlier reminders you acted on. The
+  choosing happens on your device. Your goals also reach usage analytics, as
+  described under "Your setup answers," and when you open a reminder, usage
+  analytics record that you opened it and what it was about.
 - To show your Friends profile to other people using 808, only if you create
   one, and to review and act on reports.
 - To understand which features are used and where people get stuck, through
