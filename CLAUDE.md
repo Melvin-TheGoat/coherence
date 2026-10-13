@@ -7811,10 +7811,12 @@ notes, photos) opens on its own, 0.6 s after Home is quiet.
   the hand-off can be checked on a simulator (with `PREVIEW_HISTORY=1`).
   Verified there 2026-10-13: Continue on the reward, and the page opens.
 
-## 1.2 GAINED THE RETENTION WORK (2026-10-13, Melvin: "merge retention into 1.2")
+## 1.3 IS RETENTION, MUSIC, THE WATCH AND ONBOARDING ANSWERS (2026-10-13)
 
-`retention` is merged into `block` (the 1.2 branch), with What's New
-extended (1,269 of 4,000 counted). The what's-new screens for free 1.0
+1.2 shipped on 2026-10-07; this is **1.3** (`MARKETING_VERSION` bumped),
+to go out the night of 2026-10-13 with nothing else added after the
+onboarding-answers work lands. `retention` is merged into `block`; What's
+New names only what is new since 1.2. The what's-new screens for free 1.0
 members (Melvin chose Aziz's option 2) are a mockup awaiting approval:
 `mockups/whats-new-v1.html`. The new longer music track Melvin sent sits in
 Messages' attachments, which macOS keeps out of reach of the shell (Full
@@ -7829,5 +7831,5 @@ seconds every pass), 161 s, mono RMS 0.1256, AAC 160 kbps, still
 `music-garden.m4a` so no code moved. It uses only C D E G A, the C major
 pentatonic the effects are already built on, so `SoundSynth.root` stays
 261.63 (chroma leans G major because G is its heaviest note; transposing the
-effects to G would have ADDED B, a note the track never plays). **Still owed:
-confirm it came from a paid ElevenLabs plan.**
+effects to G would have ADDED B, a note the track never plays). **Licence confirmed
+(Melvin, 2026-10-13): from a paid ElevenLabs plan.**

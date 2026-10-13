@@ -944,27 +944,36 @@ Archive from `mvp` at or after the commit that added `FeatureFlags`. It ships:
 The 1.0.2 build uploaded earlier (202609141719) predates all of this, so
 this release needs a NEW archive.
 
-## OPEN for 1.2: the home screen widget (added 2026-10-05)
+## OPEN for 1.3 (2026-10-13): retention, music, the Watch, onboarding answers
 
-**Added to 1.2 on 2026-10-13** (merged from `retention`, plus the auto-open
-session page): smarter reminders, the required Block app pick, Otto's
-one-time ask on Home, the session's page opening by itself after the reward.
-Music, sound effects and the Watch redesign joined on 2026-10-12. What's New
-covers all of it.
+1.2 shipped on 2026-10-07. **1.3 goes out tonight (Melvin, 2026-10-13) and
+nothing else joins it** after the onboarding-answers work lands.
+1.3 = smarter reminders, the required Block app pick, Otto's one-time ask on
+Home, the session page opening by itself after the reward, music and sound
+effects, the Watch redesign, and onboarding answers reported to analytics
+(branch `onboarding-answers`, another session's work).
 
-- [ ] **Music licence:** confirm "Stone Garden Flow" (in the app since
-      2026-10-13 as `music-garden.m4a`, a 161 s loop) came from a paid
-      ElevenLabs plan (the free plan forbids commercial use). Listen to the
-      loop's wrap on a phone, about every 2 min 41 s.
-- [ ] **On a phone, Release build:** a reminder arrives on a day not yet
+- [x] (2026-10-13, Melvin) **Music licence:** "Stone Garden Flow" came from a
+      paid ElevenLabs plan.
+- [ ] **On a phone (808 Beta):** a reminder arrives on a day not yet
       meditated and none after a session; Settings' "How many" switches to
       once a day; onboarding's app pick refuses an empty pick and lets a
       Screen Time "Don't Allow" through; Home asks a member with nothing held
-      once; the session page opens after the reward screen and any awards.
-- [ ] **Website redeploy** (`deploy-website`): the privacy policy's reminder
-      lines changed (`website/privacy.html` is regenerated).
-- [ ] **The what's-new screens for free 1.0 users**, if approved in time
-      (`mockups/whats-new-v1.html`); otherwise they wait for the next build.
+      once; the session page opens after the reward screen and any awards;
+      the music loop's wrap (every 2 min 41 s) sounds clean.
+- [ ] **Onboarding answers merged into `block`** with the privacy policy
+      (both copies), the privacy manifest and the App Privacy answers
+      updated by that work.
+- [ ] **App Store Connect:** version 1.3, What's New from
+      `marketing/APP_STORE_PASTE.md`, the App Privacy changes the
+      onboarding-answers work names.
+- [ ] **Website redeploy** (Aziz): the privacy policy changed twice for 1.3
+      (reminders; onboarding answers).
+- [ ] The what's-new screens for free 1.0 members
+      (`mockups/whats-new-v1.html`) are NOT in 1.3 unless Melvin says so.
+
+## OPEN for 1.2: the home screen widget (added 2026-10-05)
+
 
 **1.2 (2026-10-07):** the widget, Otto's reworked screens, the new block
 screen, the Ask Otto mix, the are-you-sure before weakening a blocker, the
