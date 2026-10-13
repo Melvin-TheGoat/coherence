@@ -177,13 +177,15 @@ struct BlockAppsScreen: View {
 /// Home's one-time ask (`BlockAppsPrompt`): the apps screen standing in the
 /// daytime valley, Otto seated where the scene seats him.
 struct BlockAppsAskView: View {
+    /// `.onboarding` only for the Settings rehearsal (`BlockAppsRehearsal`).
+    var context: BlockAppsScreen.Context = .home
     let onDone: () -> Void
 
     var body: some View {
         ZStack {
             ValleyScene(progress: 0)
                 .ignoresSafeArea()
-            BlockAppsScreen(context: .home, onContinue: onDone)
+            BlockAppsScreen(context: context, onContinue: onDone, onSkip: onDone)
                 .keepsDarkStatusBar()
         }
         // The meadow's footnote ink (white with a shadow) for "Not now".
@@ -191,6 +193,37 @@ struct BlockAppsAskView: View {
         .followsStatusBarRule()
     }
 }
+
+#if DEBUG
+/// Settings > Block (debug) > "Onboarding's app pick" (Melvin, 2026-10-13:
+/// "i dont want to have to go through onboarding again"). The onboarding
+/// version of the screen (no "Not now", an empty close stops you), with a
+/// close button the real one does not have. A pick is saved to Mindful day
+/// exactly as onboarding saves it, then the screen closes where onboarding
+/// would go on to the schedule.
+struct BlockAppsRehearsal: View {
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        BlockAppsAskView(context: .onboarding) { dismiss() }
+            .overlay(alignment: .topTrailing) {
+                Button { dismiss() } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(ValleyGround.ink)
+                        .frame(width: 38, height: 38)
+                        .background(AppColor.backgroundSecondary.opacity(0.9), in: Circle())
+                }
+                .buttonStyle(.tactile)
+                .accessibilityLabel("Close")
+                .padding(.trailing, 18)
+                .padding(.top, 8)
+            }
+            // Otto's line ticks as it types, as it does in onboarding.
+            .environment(\.typingHaptics, true)
+    }
+}
+#endif
 
 /// Screen: when Otto holds them. The question screens' layout (the title in
 /// the sky, white plates, Otto writing in the corner), over `BlockWhenPicker`,

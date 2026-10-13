@@ -372,6 +372,7 @@ private struct SettingsForm: View {
     @State private var primerMessage = ""
     @State private var cloudStatus = CloudStatus.unknown
     @AppStorage(TestTabBar.storageKey) private var tabBarStyle = TestTabBar.debugDefault.rawValue
+    @State private var rehearseAppPick = false
     #endif
     /// The Apple Watch switch: the same value as the Ready screen's. Outside
     /// the DEBUG block: the Watch section uses them in every build, and
@@ -812,6 +813,18 @@ private struct SettingsForm: View {
             navRow(icon: "bell.badge", title: "Otto's unblock screens", teal: true) {
                 InterventionGalleryView()
             }
+            divider
+            // Onboarding's required app pick, without redoing onboarding
+            // (Melvin, 2026-10-13).
+            Button { rehearseAppPick = true } label: {
+                row(icon: "app.badge.checkmark", title: "Onboarding's app pick", teal: true) {
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundStyle(AppColor.textSecondary)
+                }
+            }
+            .buttonStyle(CardButtonStyle())
+            .fullScreenCover(isPresented: $rehearseAppPick) { BlockAppsRehearsal() }
             divider
             // The tab bar test (2026-09-25), so the bars can be compared on
             // a phone.
