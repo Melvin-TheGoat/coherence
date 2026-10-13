@@ -961,18 +961,29 @@ effects, the Watch redesign, and onboarding answers reported to analytics
       Screen Time "Don't Allow" through; Home asks a member with nothing held
       once; the session page opens after the reward screen and any awards;
       the music loop's wrap (every 2 min 41 s) sounds clean.
-- [ ] **Onboarding answers merged into `block`** with the privacy policy
+- [x] **Onboarding answers merged into `block`** with the privacy policy
       (both copies), the privacy manifest and the App Privacy answers
       updated by that work.
-- [ ] **App Store Connect:** version 1.3, What's New from
+- [x] (2026-10-13, Melvin) **App Store Connect:** version 1.3, What's New from
       `marketing/APP_STORE_PASTE.md`, the App Privacy changes the
       onboarding-answers work names.
-- [ ] **App Store Connect > App Privacy, one edit for the onboarding answers:**
+- [x] (2026-10-13, Melvin) **App Store Connect > App Privacy, one edit for the onboarding answers:**
       Data Types > User Content > **Other User Content** > add the purpose
       **Analytics** beside App Functionality. Linked to you stays **Yes**,
       Used for tracking stays **No**, and no new data type is added. This
       matches `Coherence/PrivacyInfo.xcprivacy` and the label table in
       `APP_STORE.md`. Publish the label before submitting.
+- [x] (2026-10-13) **Phone checks done on 808 Beta:** a reminder arrived (after
+      the Preferences-row fix), the session page opened after the reward, and
+      onboarding's app pick refuses an empty close (it had passed only because
+      Block's debug test mode was on; that shortcut is now simulator only).
+      Not checked on a phone: Screen Time "Don't Allow", Home's one-time ask,
+      the music loop's wrap, the Watch.
+- [x] (2026-10-13) **Archived and uploaded:** 1.3 build 202610130616, every
+      archive check ok. Release: automatic (Melvin).
+- [ ] **Before Submit:** select build 202610130616 on version 1.3, upload
+      Aziz's ten screenshots (full size, one at a time in listing order),
+      set "Automatically release this version".
 - [ ] **Website redeploy** (Aziz): the privacy policy changed twice for 1.3
       (reminders; onboarding answers).
 - [ ] The what's-new screens for free 1.0 members
