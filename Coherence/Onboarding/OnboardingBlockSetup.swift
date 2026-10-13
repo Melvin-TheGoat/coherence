@@ -55,6 +55,10 @@ struct BlockAppsScreen: View {
     @State private var selection = FamilyActivitySelection()
     @State private var selectionChanged = false
     @State private var stage: Stage = .asking
+    /// How many times the picker closed with nothing ticked. Otto's line
+    /// alternates on it, so a second empty close still visibly answers
+    /// (the bubble retypes only when its words change).
+    @State private var emptyCloses = 0
 
     private enum Stage { case asking, nothingPicked, declined, done }
 
@@ -72,7 +76,11 @@ struct BlockAppsScreen: View {
                 ? "I'll hold it each day until you've meditated. Start with the one you open without thinking."
                 : "Start with the one you open without thinking. For most people that's Instagram, TikTok or YouTube."
         case .nothingPicked:
-            return "Pick at least one, even a small one. You can change it any time in Block."
+            // Melvin, 2026-10-13: "It should say like hold on you have to
+            // pick one".
+            return emptyCloses.isMultiple(of: 2)
+                ? "Still nothing picked. Just one app is enough to start."
+                : "Hold on, you have to pick at least one. Even a small one works."
         case .declined:
             return "No problem. You can set this up later in the Block tab."
         case .done:
@@ -106,15 +114,22 @@ struct BlockAppsScreen: View {
                                                  set: { selection = $0; selectionChanged = true }))
         .onChange(of: picking) { was, now in
             guard was, !now else { return }
-            #if DEBUG
+            #if DEBUG && targetEnvironment(simulator)
             // The simulator's picker has nothing real to offer; opening and
-            // closing it is the whole review, so any close counts.
+            // closing it is the whole review, so any close counts. Simulator
+            // only: on a phone the picker is real, and Block's test mode
+            // (often left on in 808 Beta) must not wave an empty close
+            // through, which is how Melvin got past this on 2026-10-13.
             if block.testMode { saveSelection(); return }
             #endif
             if selectionChanged, !selection.isEmptySelection {
                 saveSelection()
             } else {
+                emptyCloses += 1
                 stage = .nothingPicked
+                if Tactile.hapticsOn {
+                    UINotificationFeedbackGenerator().notificationOccurred(.warning)
+                }
             }
         }
         // Asked here counts as asked: Home's one-time ask never repeats it.
