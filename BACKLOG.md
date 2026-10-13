@@ -33,6 +33,33 @@ Home. Before the 1.2 archive: the portal steps in RELEASE_CHECKLIST.md
 
 ### Friends and social
 
+- **Friends who keep each other meditating (Melvin and Aziz, 2026-10-12).**
+  The retention push: "our users are not meditating... definitely increase
+  the friends thing." Deliberately NOT built yet ("a bit ambitious"). Three
+  shapes, in rough order of cost:
+  - **Streak duels.** Challenge a friend: whoever keeps the longer streak
+    over a week (or until one breaks) wins, maybe a hat or points. Compete
+    on SHOWING UP, never on the score: the 2026-09-14 decision that left
+    leaderboards out was about a score to beat raising heart rate, and a
+    streak race has no such problem. "Who meditated longest today" is the
+    riskier variant: it rewards long sits, while the research 808 cites
+    (Cearns & Clark 2023) says consistency predicts improvement and length
+    does not, so it should be a secondary stat at most.
+  - **Accountability pair.** Two friends share one streak, or each see the
+    other's day ("Maya meditated today"), with a one-tap nudge. Overlaps
+    the "accountability friend" entry below; merge when designed.
+  - **Meditate together.** Start a session with a friend at the same time
+    (both Ottos on one cushion row, both timers start together). Needs a
+    live channel: CloudKit has none, so it needs a backend or SharePlay
+    (GroupActivities works between iCloud contacts with no server).
+  What it waits on: friend data is only as fresh as the last app open,
+  because there is no server. **CloudKit query subscriptions on the public
+  database can push to a phone when a friend's Profile record changes**,
+  which would make "your friend just meditated" possible with no backend of
+  our own (aps-environment is already in the entitlements). Everything a
+  friend sees must come from sessions alone, never Block or Screen Time
+  data (Apple's Family Controls terms). The smarter reminders started
+  2026-10-12 should gain a friends message category once this exists.
 - **Meditate first, then see your friends' day (BeReal style).** Melvin,
   2026-09-23: "you can only see your friends meditations for the day (in the
   social tab) if you meditate first, just like BeReal. Maybe you can see a
@@ -140,6 +167,17 @@ Home. Before the 1.2 archive: the portal steps in RELEASE_CHECKLIST.md
 
 ### Block and consistency
 
+- **Show their real top apps on the pick screen (NEXT BUILD, decided
+  2026-10-13).** "Your top apps this week" with icons and minutes, above
+  "Choose apps" in onboarding and in Home's one-time ask. Apple lets 808
+  SHOW this, never read it: it is drawn by a DeviceActivityReport extension
+  whose writes to the App Group are dropped on purpose (Apple DTS), it can't
+  pass a token back, and the picker can't be preselected, so people still tap
+  the app themselves. Needs: a fourth Block extension target
+  (`com.lockout.meditate808.report`, and `.dev.report` for the beta) with
+  the App Group; a Family Controls (Distribution) request for that App ID,
+  made by the Account Holder (Melvin) in the portal; testing on a real phone
+  (the simulator can't). Mockup: `mockups/retention-v1.html`, fourth phone.
 - **Block setup inside onboarding.** Ask when you want to meditate and which
   apps to hold, then meet Otto. Today Mindful day waits on the Block tab,
   and onboarding's explain-only Block screen was cut on 2026-09-22.

@@ -297,8 +297,9 @@ own sandbox Apple Account.
 Apple emails this address about the review).
 
 **Notes** (4000 max, with line breaks possibly counted twice; checked
-against the code 2026-09-30 in a third review pass). Count again after any
-edit.
+against the code 2026-09-30 in a third review pass; the Block sentence
+reworded 2026-10-13 for the required app pick, 3,986 counted). Count again
+after any edit.
 
 ```
 808 is a meditation app for iPhone with an optional Apple Watch app. No part of this review needs an Apple Watch.
@@ -312,7 +313,7 @@ One free trial per account: an account that already had one skips the trial offe
 People updating from 1.0 without a subscription meet the paywall at launch, with an Account link (Manage subscription, Redeem a code, Restore, Sign out, Delete account). Subscribers and Lifetime owners keep full access.
 
 BLOCK (part of 808 Membership)
-Family Controls with individual authorization: a person manages their own iPhone, not a parental control. After the paywall, onboarding (or later the Block tab) asks for Screen Time permission, then apps are picked with Apple's picker. A held app shows Apple's shield. "Ask Otto" sends a notification that opens a short screen from Otto, ending in a meditation (five minutes or more opens the apps for the rest of that window) or "Not now" for 10, 20 or 30 minutes. If notifications are off, the shield says to open 808, and Otto appears there. Nothing from Screen Time leaves the device. A screen recording is available on request.
+Family Controls with individual authorization: a person manages their own iPhone, not a parental control. After the paywall, onboarding asks for Screen Time permission. Declining continues; once allowed, at least one app is picked in Apple's picker. A held app shows Apple's shield. "Ask Otto" sends a notification that opens a short screen from Otto, ending in a meditation (five minutes or more opens the apps for the rest of that window) or "Not now" for 10, 20 or 30 minutes. If notifications are off, the shield says to open 808, and Otto appears there. Nothing from Screen Time leaves the device. A screen recording is available on request.
 
 SESSIONS
 Tap the plus, then the first button ("Meditate") to choose:

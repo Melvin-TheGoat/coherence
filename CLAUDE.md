@@ -7472,3 +7472,97 @@ if it comes back. **Branch `fix/ask-otto-freeze`; unverified on a phone.**
   `DEVICECTL_CHILD_OS_ACTIVITY_DT_MODE=enable xcrun devicectl device process
   launch --console --terminate-existing --device <id> com.lockout.meditate808.dev`,
   then look for `MAIN THREAD NOT ANSWERING`.
+
+## REMINDERS ARE PLANNED, NOT REPEATED (2026-10-12, branch `retention`, Melvin and Aziz)
+
+"Our users are not meditating... notifications send once a day. That's
+absolutely pathetic." Until now 808 had ONE repeating notification at a fixed
+time: it fired every day, including days the person had already meditated,
+with the same sentence. Review page with the five open decisions:
+`mockups/retention-v1.html` (artifact
+https://claude.ai/artifact/4K1M41YdY12vNkhRpniRii). **All five decisions
+approved 2026-10-13** (Melvin: "they are all what i would say, and do it"):
+taper, three a day while active, the pick required only once Screen Time is
+allowed, Home asks existing members once, top apps in the next build.
+
+- **`ReminderPlanner` (Shared/Engine, pure, `ReminderPlannerTests`)** plans
+  15 days ahead from what is stored, assuming no new session. Only on days
+  not yet meditated. Slots from the person's time A: A, A+4h (if by 19:00 and
+  2h clear of the evening one), an evening last call (20:30, or A+90 for
+  evening people). Per day by days away (since the last session OR the last
+  time 808 was opened): 1 day: 3; 2-3: 2; 4-8: 1; then every other day;
+  **day 10: one farewell ("I'll give the reminders a rest"), then silence**
+  until 808 is opened again. After a week with no session, opening the app
+  never brings back more than two a day. "Once a day" caps every day at one.
+- **Why it tapers instead of escalating** (Melvin asked to increase for
+  people not meditating; this is the open decision 1): Duolingo sends LESS
+  after a few silent days and then stops. Its former CPO: sending more needed
+  CEO approval because people who switch notifications off in an aggressive
+  test stay off forever (Lenny's Newsletter). Luis von Ahn called the "these
+  reminders don't seem to be working" message remarkably effective.
+- **What it says is a bandit, per phone.** Topics: streak, glow, apps (Block
+  holding), goal (onboarding motivations), gentle (obstacle-aware lines),
+  shop (next hat), comeback, farewell. Eligibility first (each line must be
+  TRUE on the day it fires: streak and glow are projected for that day), then
+  Thompson sampling over Beta priors leaned by onboarding answers, with a
+  recency penalty (after Yancey and Settles, KDD 2020; theirs is additive
+  with a 15-day half-life, ours multiplicative and shorter for a small arm
+  set). The evening last call is always the streak saver when there's a
+  streak of 2+. A win = tapped, or a session within 2 h.
+- **`ReminderLedger` (Shared/Engine)** never asks iOS what was delivered: what
+  was pending and has passed was delivered; scored when its 2 h window
+  closes. Not counted when notifications are off. UserDefaults, this phone
+  only, wiped on sign-out and deletion (`ReminderScheduler.forget`).
+- **`ReminderScheduler` (Coherence/Reminders)** replans on: launch install,
+  every foreground, `sessions.count` changing, and the coordinator's
+  `active` session ending (a `didSet` on `active`; the replan is a Task so it
+  runs after the save that follows `active = nil` on every path). A session
+  STARTING withdraws the rest of today's reminders (`holdForSession`) so
+  nothing buzzes mid-meditation. `NotificationScheduler.apply` is now only
+  the permission door. The old repeating request (`daily-meditation-reminder`)
+  is taken back on the first replan.
+- **Interruption level is `.active`, never time sensitive.** Apple's HIG: time
+  sensitive only for things relevant within the hour, never marketing; a
+  reminder that cries wolf gets every notification switched off.
+- Onboarding now SAVES the goal and obstacle answers (`ReminderScheduler
+  .profile`, UserDefaults). Before this, every interview answer except the
+  reminder time was thrown away at the end of onboarding.
+- `notification_opened` gained `topic` (never for `apps`: Block's state stays
+  on the phone). The privacy policy's "daily reminder" lines were rewritten
+  (and `website/privacy.html` regenerated); the site needs the manual deploy
+  when this ships.
+- DEBUG: the plan is NSLogged on every replan ("Reminders: N planned...").
+  `PREVIEW_REMINDERS=1` plans from the real store and prints the whole plan
+  WITHOUT scheduling (a script can't flip the reminder switch: simulated taps
+  never move a SwiftUI Toggle). Read it with `simctl launch --console-pty`.
+- **A low glow is never printed as a number** ("Otto's glow is at 6%" is a
+  sentence about what they lack); the percentage appears from 40% up.
+
+### The required Block pick (built 2026-10-13)
+
+Every new member blocks at least one app in onboarding (`BlockAppsScreen`):
+no "Not now"; closing Apple's picker with nothing keeps them there ("Pick at
+least one, even a small one"); the one way through without a pick is
+declining Apple's Screen Time prompt, which skips the schedule screen too.
+App Review 5.1.1(iv) and 5.1.2(i) forbid requiring a system permission, and
+a 2023 rejection was exactly an onboarding permission screen with no way
+past. Otto suggests where to start (Instagram, TikTok, YouTube), and the
+picker carries the tip as its `footerText`. The review notes say so.
+
+- **Home asks existing members ONCE** (`BlockAppsPrompt`, `BlockAppsAskHook`,
+  `HomeSheet.pickApps`, `BlockAppsAskView`): "Pick one app for me to hold",
+  the same screen in the daytime valley, with "Not now" because they are
+  already in the app. Only a member with no apps held, only once Home is
+  quiet (no cover, session, award or tour) for 1.5 s. Seeing the onboarding
+  screen counts as asked. A pick there switches Mindful day on with its own
+  hours, then Otto says "Done".
+- `IntroScreen` now RETYPES Otto's line whenever it changes (`.task(id:
+  subtitle)`); before, a changed line kept the old letter count and a longer
+  one was cut short.
+- **Apple lets 808 show someone's top apps (a DeviceActivityReport
+  extension) but never read them**: the extension cannot write to the App
+  Group ("on purpose", Apple DTS, 2026), cannot pass a token back, and the
+  picker can only be preselected with tokens the person already picked. The
+  top-apps view is the next build (BACKLOG.md).
+- The reminder screen reads "Nudges at your time." and names the new
+  cadence; Settings' row is "Reminders" with "Up to 3 a day / Once a day".

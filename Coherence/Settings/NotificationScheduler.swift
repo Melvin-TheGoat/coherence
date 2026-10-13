@@ -1,43 +1,33 @@
 import Foundation
 import UserNotifications
 
-/// Schedules the single daily meditation reminder. One repeating local
-/// notification at the chosen time; rescheduled on change, cancelled when off.
+/// The reminder switch's front door: asks iOS for permission, then hands the
+/// scheduling to `ReminderScheduler`, which plans every reminder from what
+/// is stored (2026-10-12). Before that this file scheduled ONE repeating
+/// notification at the chosen time, every day, whether or not the person had
+/// already meditated.
 enum NotificationScheduler {
-    /// Also how a tap on it is recognised (`Analytics.notificationKind`).
-    static let reminderID = "daily-meditation-reminder"
+    /// The old repeating reminder's identifier, still recognised on a tap
+    /// (`Analytics.notificationKind`) until every phone has replanned.
+    static let reminderID = ReminderScheduler.legacyID
 
-    /// Requests permission then schedules (or cancels) based on `enabled`.
+    /// Requests permission then replans (or cancels) based on `enabled`. The
+    /// time is read from Preferences by the planner; callers set it first.
     /// `onDenied` fires on the main thread when the OS refuses, so the caller
     /// can flip its switch back OFF: a toggle showing ON while the system will
     /// never deliver anything is the settings screen lying.
+    @MainActor
     static func apply(enabled: Bool, at time: Date?,
                       onDenied: (() -> Void)? = nil) {
-        let center = UNUserNotificationCenter.current()
-        guard enabled, let time else {
-            center.removePendingNotificationRequests(withIdentifiers: [reminderID])
+        guard enabled, time != nil else {
+            ReminderScheduler.cancelAll()
             return
         }
-        center.requestAuthorization(options: [.alert, .sound]) { granted, _ in
-            guard granted else {
-                DispatchQueue.main.async { onDenied?() }
-                return
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { granted, _ in
+            DispatchQueue.main.async {
+                guard granted else { onDenied?(); return }
+                ReminderScheduler.replan()
             }
-            schedule(at: time)
         }
-    }
-
-    private static func schedule(at time: Date) {
-        let center = UNUserNotificationCenter.current()
-        center.removePendingNotificationRequests(withIdentifiers: [reminderID])
-
-        let content = UNMutableNotificationContent()
-        content.title = "Time to meditate"
-        content.body = "A few minutes of stillness. Your practice is waiting."
-        content.sound = .default
-
-        let comps = Calendar.current.dateComponents([.hour, .minute], from: time)
-        let trigger = UNCalendarNotificationTrigger(dateMatching: comps, repeats: true)
-        center.add(UNNotificationRequest(identifier: reminderID, content: content, trigger: trigger))
     }
 }

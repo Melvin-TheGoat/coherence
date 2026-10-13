@@ -9,23 +9,44 @@ import FamilyControls
 // Two screens, right after the wall, on Block builds only (`FeatureFlags
 // .block`; see `Step.blockApps` / `.blockSchedule` in `OnboardingView`). Both
 // work on the SAME "Mindful day" blocker `BlockController` already seeds for
-// everyone — neither screen invents a second one. Picking no apps and taking
-// the preselected schedule is a valid, thoughtless path all the way through:
-// Mindful day is left exactly as waiting as it is for someone who never opens
-// the Block tab at all.
+// everyone — neither screen invents a second one. Since 2026-10-13 at least
+// one app is required (see `BlockAppsScreen`); taking the preselected
+// schedule is still the thoughtless path through the second screen.
 
 /// Screen: which apps Otto holds. In the onboarding's own look (Melvin,
 /// 2026-09-27: it "looks different than the rest of the onboarding, like i
 /// want the text to type in like it did before"): the title in the sky and
 /// Otto, seated and writing, saying his line a letter at a time, the way the
-/// personalize screen does. "Choose apps" asks for Screen Time access if 808
-/// doesn't have it yet, then opens Apple's own picker. There is no error
-/// state and no dead end: a refusal, a failure, or picking nothing all just
-/// move on to the schedule, the same as tapping "Not now".
+/// personalize screen does.
+///
+/// **Picking at least one app is required** (Melvin and Aziz, 2026-10-13:
+/// "we want it mandatory that you block at least one app from the
+/// onboarding"). There is no "Not now". The one way through without a pick
+/// is declining Apple's Screen Time prompt: App Review 5.1.1(iv) and
+/// 5.1.2(i) forbid requiring a system permission, and a declined permission
+/// must never be a dead end. Closing the picker with nothing ticked keeps
+/// them here, with Otto saying so.
+///
+/// Apple lets 808 show, never read, which apps someone uses most, and the
+/// picker can only be preselected with apps they picked before, so the
+/// suggestion is Otto's line and the picker's footer (the top-apps view is
+/// the next build: BACKLOG.md).
+///
+/// The same screen is Home's one-time ask for members with nothing held
+/// (`context: .home`, `BlockAppsAskView`): titled for that, with "Not now",
+/// because they are already in the app.
 struct BlockAppsScreen: View {
+    enum Context { case onboarding, home }
+    var context: Context = .onboarding
+    /// Apps were picked: onboarding goes on to the schedule; Home is done.
     let onContinue: () -> Void
+    /// Nothing will be held: Screen Time was declined, or Home's "Not now".
+    /// Onboarding skips the schedule screen, which would ask when to hold
+    /// apps nobody picked.
+    var onSkip: (() -> Void)? = nil
 
     @ObservedObject private var block = BlockController.shared
+    @EnvironmentObject private var store: Store
     @State private var picking = false
     /// Nothing ticked when the picker opens (Melvin, 2026-09-27: "it
     /// shouldnt by default select all apps, it shouldnt select any"). It
@@ -33,20 +54,56 @@ struct BlockAppsScreen: View {
     /// that had been through onboarding before was everything.
     @State private var selection = FamilyActivitySelection()
     @State private var selectionChanged = false
+    @State private var stage: Stage = .asking
+
+    private enum Stage { case asking, nothingPicked, declined, done }
+
+    /// In Apple's picker, under its list.
+    static let pickerTip = "Start with the app you open most without thinking. You can change it any time in 808's Block tab."
+
+    private var title: String {
+        context == .home ? "Pick one app for me to hold" : "Which apps steal your time?"
+    }
+
+    private var line: String {
+        switch stage {
+        case .asking:
+            return context == .home
+                ? "I'll hold it each day until you've meditated. Start with the one you open without thinking."
+                : "Start with the one you open without thinking. For most people that's Instagram, TikTok or YouTube."
+        case .nothingPicked:
+            return "Pick at least one, even a small one. You can change it any time in Block."
+        case .declined:
+            return "No problem. You can set this up later in the Block tab."
+        case .done:
+            return "Done. I'll hold it each day until you've meditated."
+        }
+    }
+
+    private var cta: String {
+        switch stage {
+        case .asking, .nothingPicked: return "Choose apps"
+        case .declined: return "Continue"
+        case .done: return "Got it"
+        }
+    }
 
     var body: some View {
         IntroScreen(progress: 1,
-                    title: "Which apps steal your time?",
+                    title: title,
                     titleSize: 30,
-                    subtitle: "I'll hold them until you've meditated.",
-                    cta: "Choose apps",
+                    subtitle: line,
+                    cta: cta,
                     standing: false,
                     showsProgress: false,
-                    secondary: (title: "Not now", action: onContinue),
-                    onContinue: chooseApps) { _ in EmptyView() }
-        .familyActivityPicker(isPresented: $picking, selection: Binding(
-            get: { selection },
-            set: { selection = $0; selectionChanged = true }))
+                    // Home only: they are already in the app, so this asks.
+                    secondary: context == .home && (stage == .asking || stage == .nothingPicked)
+                        ? (title: "Not now", action: onSkip ?? onContinue) : nil,
+                    onContinue: primary) { _ in EmptyView() }
+        .familyActivityPicker(footerText: Self.pickerTip,
+                              isPresented: $picking,
+                              selection: Binding(get: { selection },
+                                                 set: { selection = $0; selectionChanged = true }))
         .onChange(of: picking) { was, now in
             guard was, !now else { return }
             #if DEBUG
@@ -54,28 +111,69 @@ struct BlockAppsScreen: View {
             // closing it is the whole review, so any close counts.
             if block.testMode { saveSelection(); return }
             #endif
-            guard selectionChanged, !selection.isEmptySelection else { return }
-            saveSelection()
+            if selectionChanged, !selection.isEmptySelection {
+                saveSelection()
+            } else {
+                stage = .nothingPicked
+            }
+        }
+        // Asked here counts as asked: Home's one-time ask never repeats it.
+        .onAppear { BlockAppsPrompt.markAsked() }
+    }
+
+    private func primary() {
+        switch stage {
+        case .asking, .nothingPicked: chooseApps()
+        case .declined: (onSkip ?? onContinue)()
+        case .done: onContinue()
         }
     }
 
     private func chooseApps() {
         Task {
             if !block.authorized, !(await block.requestAuthorization()) {
-                onContinue()
+                stage = .declined
                 return
             }
+            selectionChanged = false
             picking = true
         }
     }
 
     private func saveSelection() {
-        guard let mindfulDay = block.state.blockers.first(where: { $0.kind == .mindfulDay }) else {
+        guard var mindfulDay = block.state.blockers.first(where: { $0.kind == .mindfulDay }) else {
             onContinue()
             return
         }
-        block.save(mindfulDay, selection: selection)
-        onContinue()
+        if context == .home {
+            // No schedule screen follows here: Mindful day keeps its own
+            // hours (all day, until you meditate) and switches on, for
+            // someone Block is open to (`BlockAccess`).
+            mindfulDay.isOn = BlockAccess.allowed(store.entitlements)
+            block.save(mindfulDay, selection: selection)
+            stage = .done
+        } else {
+            block.save(mindfulDay, selection: selection)
+            onContinue()
+        }
+    }
+}
+
+/// Home's one-time ask (`BlockAppsPrompt`): the apps screen standing in the
+/// daytime valley, Otto seated where the scene seats him.
+struct BlockAppsAskView: View {
+    let onDone: () -> Void
+
+    var body: some View {
+        ZStack {
+            ValleyScene(progress: 0)
+                .ignoresSafeArea()
+            BlockAppsScreen(context: .home, onContinue: onDone)
+                .keepsDarkStatusBar()
+        }
+        // The meadow's footnote ink (white with a shadow) for "Not now".
+        .environment(\.onboardingSharedGround, true)
+        .followsStatusBarRule()
     }
 }
 

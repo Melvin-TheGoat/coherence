@@ -211,6 +211,8 @@ struct RootView: View {
             if phase == .active {
                 nightSky = Self.skyIsDark
                 OttoWidgetPublisher.publish(context: context, member: face == .app)
+                ReminderScheduler.noteOpened()
+                ReminderScheduler.replan()
                 WidgetPresence.shared.refresh()
             }
         }
@@ -246,6 +248,7 @@ struct RootView: View {
                 Analytics.reset()
                 SessionStore.signOut(in: context)
                 OttoChatStore.deleteAll()
+                ReminderScheduler.forget()
                 // Friends forgets them too, exactly as a tapped sign-out does
                 // (`AccountActions.signOut`): the profile stops showing and
                 // stops being published to.
