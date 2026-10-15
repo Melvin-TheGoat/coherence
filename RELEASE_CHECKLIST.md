@@ -954,8 +954,10 @@ privacy manifest, policy and App Privacy label do not change.
 
 - [ ] **App Store Connect:** version 1.3.1, What's New from
       `marketing/APP_STORE_PASTE.md`.
-- [ ] **Archive and upload** 1.3.1 (`TEAM=WLZQLLHUB3 ./tools/archive.sh`,
-      every check ok), select the build, choose the release setting.
+- [x] (2026-10-15) **Archived and uploaded:** 1.3.1 build 202610152144,
+      every archive check ok, uploaded headlessly. 1.3 is live. Release:
+      automatic (Melvin). What's New: the draft, approved.
+- [ ] **Before Submit:** select build 202610152144 on version 1.3.1.
 - [ ] **On a phone after release:** Apple's rating sheet appears on Home after
       a first session once its page is closed. TestFlight never shows it.
 
