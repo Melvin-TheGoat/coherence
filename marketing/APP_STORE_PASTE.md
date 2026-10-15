@@ -215,6 +215,14 @@ https://meditate808.com/privacy
 © 2026 Lock Out Inc.
 ```
 
+**What's New in This Version, 1.3.1** (4000 max; this one is 86, 88 counting line breaks twice; 2026-10-15, for Melvin to approve.)
+
+```
+Rate 808 anytime from Settings. Each rating helps someone else find 808.
+
+Small fixes.
+```
+
 **What's New in This Version, 1.3** (4000 max; this one is 556, 564 counting line breaks twice; 2026-10-13, for Melvin to approve. 1.2 shipped on 2026-10-07 with the widget, the new block screen, Otto's replies, the blocker check, the bell and the freeze fix; its text is in git history.)
 
 ```

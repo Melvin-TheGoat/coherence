@@ -578,6 +578,17 @@ private struct SettingsForm: View {
                         sendFeedback()
                     }
                     divider
+                    // Always here, for anyone who wants to rate 808 without
+                    // waiting for Apple's sheet (`ReviewPrompt` asks at a few
+                    // moments, and Apple shows it at most three times a year).
+                    membershipRow(icon: "star", title: "Rate 808 on the App Store",
+                                  subtitle: "It helps other people find 808") {
+                        Analytics.track(.rateLinkOpened)
+                        if let url = URL(string: "https://apps.apple.com/app/id6806785308?action=write-review") {
+                            UIApplication.shared.open(url)
+                        }
+                    }
+                    divider
                     navRow(icon: "sparkles", title: "Why 808 exists", teal: true) { docPage("PURPOSE") }
                     divider
                     navRow(icon: "atom", title: "The science", teal: true) { docPage("SCIENCE") }

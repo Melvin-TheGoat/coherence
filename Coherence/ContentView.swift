@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import Charts
+import StoreKit
 
 /// The app after onboarding: five tabs on a bottom bar (Melvin, 2026-09-12,
 /// "the layout most apps use, so people open it and instantly understand").
@@ -91,6 +92,12 @@ struct ContentView: View {
     /// notes page automatically pop up, instead of being a little banner").
     /// In memory only: if the app goes away first, the toast is the fallback.
     @State private var notesDueFor: UUID?
+    /// A session the person ran just landed, so an App Store rating may be
+    /// owed (`ReviewPrompt` decides). Asked on Home after the session's page
+    /// closes. In memory only: if the app goes away first, the next session
+    /// asks instead.
+    @State private var ratingDue = false
+    @Environment(\.requestReview) private var requestReview
     #if DEBUG
     /// `PREVIEW_BREATHING=<seconds elapsed>` opens the sit at that moment, so
     /// the valley's whole arc can be reviewed without waiting ten minutes for
@@ -285,12 +292,14 @@ struct ContentView: View {
                               sessionActive: coordinator.active != nil) { d in
             if sheet == nil { sheet = .discarded(d) } else { pendingSheet = .discarded(d) }
         })
-        .modifier(QuietHomeHooks(quiet: homeIsQuiet, notesDue: notesDueFor, appsEligible: appsAskEligible,
+        .modifier(QuietHomeHooks(quiet: homeIsQuiet, notesDue: notesDueFor, ratingDue: ratingDue,
+                                 appsEligible: appsAskEligible,
                                  openNotes: { id in
                                      notesDueFor = nil
                                      guard sessions.contains(where: { $0.id == id }) else { return }
                                      present(.save(id))
                                  },
+                                 askForRating: askForRating,
                                  askForApps: { present(.pickApps) }))
         .firstSessionHooks(offer: firstOffer, paid: store.entitlements.paid,
                            onOpenSetup: { present(.setup) },
@@ -468,6 +477,10 @@ struct ContentView: View {
     /// than an inline closure: as one expression on the body's chain it sent
     /// the type checker over its time limit (2026-09-15).
     private func debugPreviewHooks() {
+            // PREVIEW_RATING=1 marks a rating ask due, as a landed session
+            // does, so Apple's sheet appears once Home is quiet (`ReviewPrompt`
+            // still decides; pair with PREVIEW_HISTORY=1 so there is a session).
+            if ProcessInfo.processInfo.environment["PREVIEW_RATING"] == "1" { ratingDue = true }
             // PREVIEW_SETTINGS=1 opens Settings, to review its rows (the
             // Sound card, 2026-10-09) without the gear.
             if ProcessInfo.processInfo.environment["PREVIEW_SETTINGS"] == "1", sheet == nil {
@@ -482,6 +495,8 @@ struct ContentView: View {
                 if let newest = sessions.max(by: { $0.startedAt < $1.startedAt }), FeatureFlags.friends {
                     notesDueFor = newest.id
                 }
+                // And the rating ask after it, as after a real one.
+                ratingDue = true
                 sheet = .reward(SessionReward(id: UUID(), seconds: 18 * 60, streakBefore: 4, streakAfter: 5,
                                               points: 18, bankBefore: 124,
                                               glowBefore: parts.first ?? OttoAura.startLevel,
@@ -1103,6 +1118,9 @@ struct ContentView: View {
         landedWhileAway = nil
         tab = .home
         guard let landed = sessions.first(where: { $0.id == id }) else { holdAwards = false; return }
+        // A session typed in by hand is not a meditation in the app; a
+        // rating ask waits for one that was.
+        if !landed.isLogged { ratingDue = true }
         // The prompt to fill it in waits for the glow to finish; the toast
         // itself is hidden while `auraGain` is set.
         if FeatureFlags.friends {
@@ -1149,6 +1167,24 @@ struct ContentView: View {
             bankBefore: bankBefore,
             glowBefore: before, glowAfter: after)
         if sheet == nil { sheet = .reward(reward) } else { pendingSheet = .reward(reward) }
+    }
+
+    /// Apple's rating sheet, if one is owed (`ReviewPrompt`: the first
+    /// session, the first seven-day streak, then about every four months).
+    /// Returns whether it asked. Never reads how the session went.
+    private func askForRating() -> Bool {
+        ratingDue = false
+        let ask = ReviewPrompt.due(
+            sessionCount: sessions.count,
+            longestStreak: StreakCalculator.streak(from: sessions.map(\.startedAt)).longest,
+            onboardingComplete: prefsRows.contains { $0.onboardingComplete },
+            asked: ReviewPrompt.askedMoments(),
+            lastAskedAt: ReviewPrompt.lastAskedAt())
+        guard let ask else { return false }
+        ReviewPrompt.record(ask)
+        Analytics.track(.ratingPrompted(placement: ask.moment.rawValue))
+        requestReview()
+        return true
     }
 
     /// Otto's stage either side of a landed session, for ANALYTICS, worked
@@ -1543,25 +1579,32 @@ private struct SessionLandedHooks: ViewModifier {
 }
 
 
-/// Opens "Too short to score" once the live-session cover has gone. The payload
-/// that says so arrives the same moment the cover is torn down, and presenting
-/// during that animation is the dropped-presentation trap (see FriendsHooks).
-/// What opens on Home by itself once nothing else is on it: first the page
-/// of the session that just landed ("How did that feel", photos, notes, who
-/// can see it), after the reward screen and any award unlocks; otherwise
+/// What opens on Home by itself once nothing else is on it, in this order:
+/// the page of the session that just landed ("How did that feel", photos,
+/// notes, who can see it), after the reward screen and any award unlocks;
+/// then Apple's rating sheet, when `ReviewPrompt` says one is owed; then
 /// Otto's one-time app ask (`BlockAppsPrompt`). Never on top of a session,
-/// an award or the tour, and never in the same breath as the app opening.
+/// an award or the tour, and never two in the same breath.
 private struct QuietHomeHooks: ViewModifier {
     let quiet: Bool
     let notesDue: UUID?
+    let ratingDue: Bool
     let appsEligible: Bool
     let openNotes: (UUID) -> Void
+    /// Returns whether Apple's sheet was asked for.
+    let askForRating: () -> Bool
     let askForApps: () -> Void
 
-    private struct Gate: Equatable { let quiet: Bool; let notesDue: UUID?; let appsEligible: Bool }
+    /// When the rating sheet was asked for. Apple draws it in its own window,
+    /// which nothing here can see, so Otto's app ask keeps clear of it by time.
+    @State private var ratingAskedAt: Date?
+
+    private struct Gate: Equatable {
+        let quiet: Bool; let notesDue: UUID?; let ratingDue: Bool; let appsEligible: Bool
+    }
 
     func body(content: Content) -> some View {
-        content.task(id: Gate(quiet: quiet, notesDue: notesDue, appsEligible: appsEligible)) {
+        content.task(id: Gate(quiet: quiet, notesDue: notesDue, ratingDue: ratingDue, appsEligible: appsEligible)) {
             guard quiet else { return }
             if let id = notesDue {
                 // A beat after the last celebration closes, so the page
@@ -1572,7 +1615,15 @@ private struct QuietHomeHooks: ViewModifier {
                 openNotes(id)
                 return
             }
+            if ratingDue {
+                // Once the page has gone and Home has settled.
+                try? await Task.sleep(for: .seconds(1))
+                guard !Task.isCancelled else { return }
+                if askForRating() { ratingAskedAt = Date() }
+                return
+            }
             guard appsEligible else { return }
+            if let asked = ratingAskedAt, Date().timeIntervalSince(asked) < 60 { return }
             try? await Task.sleep(for: .seconds(1.5))
             guard !Task.isCancelled, !BlockAppsPrompt.wasAsked() else { return }
             BlockAppsPrompt.markAsked()
@@ -1581,6 +1632,9 @@ private struct QuietHomeHooks: ViewModifier {
     }
 }
 
+/// Opens "Too short to score" once the live-session cover has gone. The payload
+/// that says so arrives the same moment the cover is torn down, and presenting
+/// during that animation is the dropped-presentation trap (see FriendsHooks).
 private struct DiscardHook: ViewModifier {
     let discard: SessionCoordinator.Discard?
     let sessionActive: Bool

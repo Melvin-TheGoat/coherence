@@ -1054,7 +1054,7 @@ struct ResearchScreen: View {
 ///    before the person has done a single session is what 5.6.1 flags, so
 ///    the sheet and the laurel row that asked for it are gone and the old
 ///    "never inside onboarding" rule stands again: the only ask is
-///    `ReviewPrompt`, after the third completed session.
+///    `ReviewPrompt`, on Home after a completed session.
 /// 2. **Social proof from famous meditators, not user reviews.** 808 has too
 ///    few ratings to quote, and invented reviews are out. The three quotes
 ///    are the verbatim, on-the-record lines the old wall screen carried.
@@ -1238,7 +1238,7 @@ struct SocialProofScreen: View {
         }
         // No App Store rating request here (App Review pass, 2026-09-29,
         // Aziz): asking before the person has done a single session is what
-        // 5.6.1 flags, so the only ask is `ReviewPrompt`, after the third
+        // 5.6.1 flags, so the only ask is `ReviewPrompt`, on Home after a
         // completed session. The laurel row that asked for it went too.
     }
 

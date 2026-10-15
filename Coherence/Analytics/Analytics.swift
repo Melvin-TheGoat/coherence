@@ -81,9 +81,12 @@ enum Analytics {
         case glowStageChanged(from: String, to: String)
         case resultViewed
         case resultMissing                        // a measured session with no stats on this phone
-        /// Apple's rating sheet was requested (it decides whether to show):
-        /// "onboarding" | "results".
+        /// Apple's rating sheet was requested (it decides whether to show),
+        /// on Home after a session: "firstSession" | "weekStreak" | "later"
+        /// (`ReviewPrompt.Moment`). Before 1.3: "onboarding" | "results".
         case ratingPrompted(placement: String)
+        /// "Rate 808 on the App Store" in Settings opened the review page.
+        case rateLinkOpened
 
         // Monetization
         case paywallViewed(placement: String)
@@ -186,6 +189,7 @@ enum Analytics {
             case .resultViewed: "result_viewed"
             case .resultMissing: "result_missing"
             case .ratingPrompted: "rating_prompted"
+            case .rateLinkOpened: "rate_link_opened"
             case .paywallViewed: "paywall_viewed"
             case .paywallDismissed: "paywall_dismissed"
             case .planSelected: "plan_selected"

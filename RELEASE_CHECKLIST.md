@@ -944,6 +944,21 @@ Archive from `mvp` at or after the commit that added `FeatureFlags`. It ships:
 The 1.0.2 build uploaded earlier (202609141719) predates all of this, so
 this release needs a NEW archive.
 
+## OPEN for 1.3.1 (2026-10-15): the rating ask
+
+1.3.1 = 1.3 plus the App Store rating ask moved to Home (after the first
+session, the first seven-day streak, then about every four months) and a
+"Rate 808 on the App Store" row in Settings. No new data leaves the phone
+(one new analytics event name, `rate_link_opened`, carrying nothing), so the
+privacy manifest, policy and App Privacy label do not change.
+
+- [ ] **App Store Connect:** version 1.3.1, What's New from
+      `marketing/APP_STORE_PASTE.md`.
+- [ ] **Archive and upload** 1.3.1 (`TEAM=WLZQLLHUB3 ./tools/archive.sh`,
+      every check ok), select the build, choose the release setting.
+- [ ] **On a phone after release:** Apple's rating sheet appears on Home after
+      a first session once its page is closed. TestFlight never shows it.
+
 ## OPEN for 1.3 (2026-10-13): retention, music, the Watch, onboarding answers
 
 1.2 shipped on 2026-10-07. **1.3 goes out tonight (Melvin, 2026-10-13) and

@@ -1442,11 +1442,10 @@ them.
   codes (100 per version) gifted to Watch YouTubers with no ask; Product Hunt
   one Tuesday–Thursday in week 3–4 once 10+ ratings exist, worth one day, not
   a strategy.
-- **Rating prompt SHIPPED** (`ReviewPrompt`, `Shared/Session/`): fires from
-  the results screen on the third completed session or later, never inside
-  onboarding (double-gated on `onboardingComplete` and the tour environment),
-  90-day cooldown, and takes no score or sentiment by construction; the
-  signature is the guarantee and `ReviewPromptTests` locks it.
+- **Rating prompt SHIPPED** (`ReviewPrompt`, `Shared/Session/`). Since
+  2026-10-15 it asks on Home after a session, at the moments in "THE RATING
+  ASK MOVED TO HOME" at the end of this file. Takes no score or sentiment by
+  construction; the signature is the guarantee and `ReviewPromptTests` locks it.
 - **No-Watch churn is answered by the camera-vision session, not a subtitle
   warning** (Melvin, 2026-09-11). If campaign links show installs churning at
   the Watch gate, that is the signal to ship branch `camera-vision`.
@@ -7888,3 +7887,67 @@ check ALL rows (`contains { $0.onboardingComplete }`) are fine as they are.
 Not changed tonight, worth a look later: onboarding's `persistAnswers` writes
 the row whose `userID` matches before falling back to the oldest, which on a
 phone with several rows can differ from the oldest.
+
+## THE APP STORE CREATIVE ASSET (2026-10-13, Melvin)
+
+iOS 27 adds a product page **header** and a **search results** image (App
+Store Connect > Product Page Information > Header and Search Results; also
+the Asset Library, custom product pages and PPO). Specs, from Apple's
+creative assets page: header 21:9 (3840 x 1646) or search 3:2 (1920 x 1280
+to 3840 x 2560), or ONE **universal 16:9, 5244 x 2950 PNG** that Apple crops
+to both. No alpha. Video allowed (5 to 30 s, 30/60 fps, loops, muted). App
+Review checks it against guideline 2.3: no prices, URLs, Apple awards or
+other platforms' logos, 4+ content, a short line of text at most.
+
+- **The universal safe area, read off Apple's own Sketch template**
+  (`creative_assets-templates.sketch`, layer "Art Safe Area"): x 1921 to
+  3323, y 660 to 1622. Small, and high in the frame. The header template's
+  own safe area sits at the middle of a 21:9 frame, which only maps onto the
+  universal one if the header is cut from the TOP of the 16:9 image, so that
+  is the working assumption; check it in App Store Connect's Preview before
+  submitting. Search keeps the full height and trims the sides.
+- **`tools/store_art.swift` renders it** from the app's own painting
+  (`ValleyPainting.swift`, `DayLight`) and Otto's Nirvana still, compiled on
+  the Mac like `render_sounds.swift` (command in its header). The phone
+  scene is a portrait, so the ridges are tiled (alternate tiles mirrored, so
+  the ends meet) and the meadow is laid as jittered tiles plus a larger
+  foreground row; Otto fills the safe area. It writes an opaque PNG and a
+  1600 px preview with the safe area and both cuts drawn on.
+- Three options rendered (`marketing/creative-assets/`, untracked): Otto
+  alone, "Meditate every day with Otto", "Make meditation a habit".
+  **Melvin picked "Make meditation a habit" (`808-habit.png`) and uploaded
+  it to both Header and Search Results on 2026-10-13.**
+
+## THE RATING ASK MOVED TO HOME (2026-10-15, Melvin)
+
+"Find a place to prompt the users to give us a rating ... after they complete
+their first meditation and maybe a couple other places, it shouldn't be too
+persistent but definitely we wanna get our ratings up a lot more."
+
+- **Why ratings were low: almost nobody was ever asked.** The only ask lived
+  on `SessionResultsView`, which since 1.2 opens only from "See the
+  measurements" on a Watch-measured session, and it waited for the third
+  session. That ask is DELETED.
+- **Where it asks now:** Home, once a session the person ran has landed and
+  the reward screen, any award unlock and the session's own page have all
+  closed (`QuietHomeHooks` in ContentView, order: session page, then rating,
+  then Otto's one-time app ask, which keeps a minute clear of Apple's sheet).
+  Never during a sit, onboarding, the tour or a sheet. A session typed in by
+  hand ("Record one") does not set it off.
+- **When (`ReviewPrompt.due`):** the first completed session; the first time
+  the longest streak reaches seven days; then about every four months
+  (`laterGapSec`, 120 days) to someone still meditating. Never two asks within
+  a week; a moment earned inside that week is owed, not lost. A member who
+  already had a long streak is asked ONCE for both milestones
+  (`Ask.covers`). Stored per phone in `reviewPrompt.askedMoments.v1` beside
+  the old `reviewPrompt.lastAskedAt`. Apple still caps the sheet at three
+  showings a year whatever we ask.
+- **Settings > The foundation > "Rate 808 on the App Store"** opens the
+  write-review page (`apps.apple.com/app/id6806785308?action=write-review`),
+  always available. Analytics: `rating_prompted` now carries
+  `placement` = firstSession | weekStreak | later; the Settings row sends
+  `rate_link_opened`.
+- **Still never gated on how the session went** (App Review 2026-08-11).
+- `PREVIEW_RATING=1` (DEBUG, with `PREVIEW_HISTORY=1`) marks an ask due so the
+  sheet appears on a quiet Home. Verified on a throwaway simulator: the sheet
+  waited behind an award unlock and appeared once Home was clear.
