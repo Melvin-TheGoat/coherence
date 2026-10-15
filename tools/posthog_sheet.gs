@@ -15,6 +15,8 @@
  *   Installs      one row per new install: when, where, phone, how far they got
  *   Updaters      one row per person who updated from 1.0: did they subscribe
  *   Who they are  every onboarding answer: how many gave it, how many subscribed
+ *   Instagram     every post and reel on the account, ranked by bio link taps,
+ *                 pulled from Instagram (only once IG_TOKEN is set, step 6)
  *   Reels         the one tab you type into: a row per Instagram reel, ranked
  *                 by bio link taps. Made once, never cleared by a refresh.
  *
@@ -44,6 +46,16 @@
  *     The tabs fill in.
  *  5. Pick `installTrigger` and Run once. From now on it refreshes hourly.
  *     A "808" menu also appears in the sheet with a Refresh now item.
+ *  6. Optional, for the Instagram tab. The Instagram account must be a
+ *     professional one (Business or Creator).
+ *     developers.facebook.com → My Apps → Create app → use case "Manage
+ *     messaging & content on Instagram" → finish. In the app: Instagram →
+ *     API setup with Instagram business login → Generate access tokens →
+ *     Add account → log in as 808's Instagram and allow it. If Instagram asks
+ *     for a tester invite, accept it in the Instagram app (Settings → Website
+ *     permissions → Apps and websites → Tester invites), then generate again.
+ *     Copy the token, add Script Property IG_TOKEN = the token, and run
+ *     `refresh`. Read only; the script renews it weekly so it never expires.
  *
  * Internal traffic is excluded: locally built installs (App build 1),
  * TestFlight, sideloaded betas, phones flagged as team devices (seven taps on
@@ -245,6 +257,7 @@ function refreshAll() {
     ['Problems', writeProblems], ['Purchases', writePurchases],
     ['Apple Watch', writeAppleWatch], ['Installs', writeInstalls],
     ['Updaters', writeUpdaters], ['Who they are', writeWhoTheyAre],
+    ['Instagram', writeInstagram],
   ];
   var failed = [];
   try { ensureReelsTab(); } catch (e) { failed.push(REELS_TAB + ': ' + e.message); }
@@ -284,12 +297,15 @@ function removeTabs(names) {
  *
  * The tab is made the first time it is missing and never touched again, so
  * a refresh can never wipe what was typed. Delete the tab to get a fresh one.
+ * Once Instagram is connected (IG_TOKEN) it is not made again, so deleting
+ * it after the Instagram tab takes over sticks.
  */
 var REELS_TAB = 'Reels';
 
 function ensureReelsTab() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   if (ss.getSheetByName(REELS_TAB)) return;
+  if (PropertiesService.getScriptProperties().getProperty('IG_TOKEN')) return;
   var sheet = ss.insertSheet(REELS_TAB);
   var MAX = sheet.getMaxRows();
 
@@ -324,6 +340,179 @@ function ensureReelsTab() {
   [110, 240, 80, 110, 220, 24, 50, 240, 110, 110, 80, 160].forEach(function (w, i) {
     sheet.setColumnWidth(i + 1, w);
   });
+}
+
+/**
+ * Instagram: every post and reel, ranked by bio link taps, pulled straight
+ * from Instagram (Melvin, 2026-10-15: "all of our reels act as posts, try
+ * pulling from them").
+ *
+ * Meta documents the bio link number (profile_activity broken down by
+ * action_type, the bio_link_clicked row) for posts and stories, not reels.
+ * Instagram itself decides which kind each item is (media_product_type), so
+ * this asks for every item and shows what came back: a number, or
+ * Instagram's own reason in the last column. The first refresh after IG_TOKEN
+ * goes in answers whether 808's reels are covered.
+ *
+ * IG_TOKEN is an Instagram User access token with instagram_business_basic
+ * and instagram_business_manage_insights (SETUP step 6). Read only. It lasts
+ * 60 days, so the script renews it once a week and saves the new one over
+ * the old. With no token this tab is skipped and nothing fails.
+ */
+var IG_HOST = 'https://graph.instagram.com/v23.0';
+var IG_MEDIA_LIMIT = 50;
+
+function writeInstagram() {
+  var token = igToken();
+  if (!token) return;
+  var res = UrlFetchApp.fetch(igUrl('/me/media', {
+    fields: 'id,caption,media_type,media_product_type,timestamp,permalink',
+    limit: IG_MEDIA_LIMIT
+  }, token), { muteHttpExceptions: true });
+  var body = igJSON(res);
+  if (res.getResponseCode() >= 300) {
+    throw new Error('Instagram ' + res.getResponseCode() + ': ' + igReason(body));
+  }
+  var media = body.data || [];
+
+  // Two questions per item, asked separately: Instagram refuses a whole
+  // request if any metric in it does not take the breakdown.
+  var requests = [];
+  media.forEach(function (m) {
+    requests.push({ url: igUrl('/' + m.id + '/insights',
+      { metric: 'profile_activity', breakdown: 'action_type' }, token), muteHttpExceptions: true });
+    requests.push({ url: igUrl('/' + m.id + '/insights',
+      { metric: 'views' }, token), muteHttpExceptions: true });
+  });
+  var answers = [];
+  for (var i = 0; i < requests.length; i += 20) {
+    answers = answers.concat(UrlFetchApp.fetchAll(requests.slice(i, i + 20)));
+  }
+
+  var items = media.map(function (m, i) {
+    var taps = igBioTaps(answers[2 * i]);
+    return { m: m, taps: taps.value, why: taps.why, views: igViews(answers[2 * i + 1]) };
+  });
+  // Most taps first; equal taps put the item with fewer views first (the
+  // same clicks from fewer people). Items with no number sink, newest first.
+  items.sort(function (a, b) {
+    if ((a.taps === null) !== (b.taps === null)) return a.taps === null ? 1 : -1;
+    if (a.taps !== null && b.taps !== a.taps) return b.taps - a.taps;
+    if (a.taps !== null) return (a.views || 0) - (b.views || 0);
+    return igTime(b.m) - igTime(a.m);
+  });
+
+  var rows = [['Rank', 'Posted', 'What it is', 'Kind', 'Views', 'Bio link taps',
+    'Taps per 1,000 views', "Instagram's answer", 'Link']];
+  var rank = 0;
+  items.forEach(function (it) {
+    var m = it.m;
+    rows.push([
+      it.taps === null ? '' : ++rank,
+      Utilities.formatDate(new Date(igTime(m)), TZ, 'MMM d, yyyy'),
+      igCaption(m.caption),
+      igKind(m),
+      it.views === null ? '' : it.views,
+      it.taps === null ? '' : it.taps,
+      it.taps !== null && it.views ? Math.round(it.taps / it.views * 10000) / 10 : '',
+      it.why,
+      m.permalink || ''
+    ]);
+  });
+  if (!items.length) rows.push(['', '', 'Instagram returned no posts for this account.']);
+  rows.push([]);
+  rows.push(['', 'The last ' + IG_MEDIA_LIMIT + " posts and reels, from Instagram's own insights. " +
+    'Bio link taps are taps on the bio link by people who came from that item. ' +
+    'Instagram can be up to 48 hours behind.']);
+  write('Instagram', rows, [50, 110, 260, 110, 80, 110, 150, 320, 260]);
+}
+
+/** The token, renewed once a week (Instagram refuses to renew one under a day old). */
+function igToken() {
+  var props = PropertiesService.getScriptProperties();
+  var token = props.getProperty('IG_TOKEN');
+  if (!token) return null;
+  var renewed = Number(props.getProperty('IG_TOKEN_RENEWED') || 0);
+  if (!renewed) {
+    // A token pasted in today is fresh. Start the weekly clock from here.
+    props.setProperty('IG_TOKEN_RENEWED', String(Date.now()));
+  } else if (Date.now() - renewed > 7 * 86400000) {
+    var res = UrlFetchApp.fetch('https://graph.instagram.com/refresh_access_token' +
+      '?grant_type=ig_refresh_token&access_token=' + encodeURIComponent(token),
+      { muteHttpExceptions: true });
+    var fresh = res.getResponseCode() < 300 ? igJSON(res).access_token : null;
+    if (fresh) {
+      props.setProperty('IG_TOKEN', fresh);
+      props.setProperty('IG_TOKEN_RENEWED', String(Date.now()));
+      token = fresh;
+    }
+    // A failed renewal keeps the old token, which still has weeks left; the
+    // next refresh tries again.
+  }
+  return token;
+}
+
+function igUrl(path, params, token) {
+  var q = Object.keys(params).map(function (k) {
+    return k + '=' + encodeURIComponent(params[k]);
+  });
+  q.push('access_token=' + encodeURIComponent(token));
+  return IG_HOST + path + '?' + q.join('&');
+}
+
+function igJSON(res) {
+  try { return JSON.parse(res.getContentText()); } catch (e) { return {}; }
+}
+
+function igReason(body) {
+  if (body && body.error) {
+    return String(body.error.message || 'Instagram refused').replace(/^\(#\d+\)\s*/, '').slice(0, 160);
+  }
+  return 'No answer from Instagram';
+}
+
+/** {value, why}: the bio_link_clicked count, or null and Instagram's reason. */
+function igBioTaps(res) {
+  var body = igJSON(res);
+  if (res.getResponseCode() >= 300) return { value: null, why: igReason(body) };
+  var metric = (body.data || []).filter(function (d) { return d.name === 'profile_activity'; })[0];
+  // An empty answer means Instagram has no number for it (yet), not zero.
+  if (!metric) return { value: null, why: 'Instagram has no number for this yet' };
+  var total = metric.total_value || {};
+  var results = ((total.breakdowns || [])[0] || {}).results || [];
+  var row = results.filter(function (r) {
+    return String((r.dimension_values || [])[0] || '').toLowerCase() === 'bio_link_clicked';
+  })[0];
+  return { value: row ? Number(row.value) || 0 : 0, why: '' };
+}
+
+function igViews(res) {
+  if (res.getResponseCode() >= 300) return null;
+  var metric = (igJSON(res).data || []).filter(function (d) { return d.name === 'views'; })[0];
+  if (!metric) return null;
+  if (metric.total_value) return Number(metric.total_value.value) || 0;
+  var v = (metric.values || [])[0];
+  return v ? Number(v.value) || 0 : null;
+}
+
+/** Instagram writes "+0000"; Date wants "+00:00". */
+function igTime(m) {
+  return new Date(String(m.timestamp || '').replace(/([+-]\d\d)(\d\d)$/, '$1:$2')).getTime() || 0;
+}
+
+/** Shows how Instagram files each item, since that decides whether it answers. */
+function igKind(m) {
+  if (m.media_product_type === 'REELS') return 'Reel';
+  if (m.media_product_type === 'STORY') return 'Story';
+  var kinds = { VIDEO: 'Post (video)', IMAGE: 'Post (photo)', CAROUSEL_ALBUM: 'Post (carousel)' };
+  return kinds[m.media_type] || ('Post (' + String(m.media_type || '?').toLowerCase() + ')');
+}
+
+/** The caption's first line, short, and never read by Sheets as a formula. */
+function igCaption(caption) {
+  var line = String(caption || '').split('\n')[0].trim();
+  if (line.length > 60) line = line.slice(0, 59) + '…';
+  return /^[=+\-@]/.test(line) ? ' ' + line : (line || '(no caption)');
 }
 
 // ---------------------------------------------------------------------------
