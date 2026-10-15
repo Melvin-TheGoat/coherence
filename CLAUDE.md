@@ -2207,6 +2207,17 @@ so nobody reads the numbers the old way again.
   sheet keeps last hour's formats and looks broken when it is only stale.
 - **"Said no to every offer"**, not "both": the ladder is the paywall plus
   two rungs, three offers in all.
+- **The Reels tab is the one the founders type into** (Melvin, 2026-10-15):
+  a row per Instagram reel (posted, name, views, bio link taps, link), ranked
+  live by one `LET`/`MAP` formula in G3, with taps per 1,000 views beside it.
+  `ensureReelsTab` makes it only when it is missing and never touches it
+  again, so a refresh cannot wipe typed rows. **Instagram's app shows "Bio
+  link taps" on every reel (Insights, under Engagement); its API does not**:
+  `profile_activity` / `BIO_LINK_CLICKED` is documented for posts and stories
+  only, so the number cannot be pulled automatically. I told Melvin no
+  platform reported it per reel, which was wrong about the app; check the
+  app before saying a number does not exist. TikTok and YouTube report bio
+  clicks per account only.
 
 ## ONBOARDING ANSWERS REACH POSTHOG, A CLOSED LIST OF EIGHT (2026-10-13, Melvin, ships in 1.3)
 

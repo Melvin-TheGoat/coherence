@@ -15,6 +15,8 @@
  *   Installs      one row per new install: when, where, phone, how far they got
  *   Updaters      one row per person who updated from 1.0: did they subscribe
  *   Who they are  every onboarding answer: how many gave it, how many subscribed
+ *   Reels         the one tab you type into: a row per Instagram reel, ranked
+ *                 by bio link taps. Made once, never cleared by a refresh.
  *
  * Rebuilt for 1.1 (2026-10-07). Two kinds of people reach the money now, and
  * the sheet used to see only one. A NEW install goes through onboarding and
@@ -245,6 +247,7 @@ function refreshAll() {
     ['Updaters', writeUpdaters], ['Who they are', writeWhoTheyAre],
   ];
   var failed = [];
+  try { ensureReelsTab(); } catch (e) { failed.push(REELS_TAB + ': ' + e.message); }
   tabs.forEach(function (t) {
     try { t[1](); } catch (e) { failed.push(t[0] + ': ' + e.message); }
   });
@@ -265,6 +268,61 @@ function removeTabs(names) {
   names.forEach(function (n) {
     var s = ss.getSheetByName(n);
     if (s) ss.deleteSheet(s);
+  });
+}
+
+/**
+ * Reels: which reel sends people to the bio link (Melvin, 2026-10-15).
+ *
+ * Instagram shows "Bio link taps" on every reel (the reel's Insights, under
+ * Engagement), but its API does not hand that number out for reels: the
+ * metric behind it, profile_activity broken down by BIO_LINK_CLICKED, is
+ * documented for posts and stories only. So the numbers are typed in from
+ * the app, and the sheet does the ranking with one formula that updates as
+ * you type. TikTok and YouTube report link clicks for the whole account, not
+ * per video, so this is Instagram only.
+ *
+ * The tab is made the first time it is missing and never touched again, so
+ * a refresh can never wipe what was typed. Delete the tab to get a fresh one.
+ */
+var REELS_TAB = 'Reels';
+
+function ensureReelsTab() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  if (ss.getSheetByName(REELS_TAB)) return;
+  var sheet = ss.insertSheet(REELS_TAB);
+  var MAX = sheet.getMaxRows();
+
+  // Left, A to E: what you type. Right, G to L: the ranking.
+  sheet.getRange('A1').setValue(
+    "Type one row per reel from its Insights on Instagram: Views, and Bio link taps " +
+    "under Engagement. Update a reel's numbers whenever you check; they keep growing for days.");
+  sheet.getRange('G1').setValue('Ranked by bio link taps (updates as you type)');
+  sheet.getRange('A2:E2').setValues([['Posted', 'Reel', 'Views', 'Bio link taps', 'Link']]);
+  sheet.getRange('G2:L2').setValues([['Rank', 'Reel', 'Posted', 'Bio link taps', 'Views', 'Taps per 1,000 views']]);
+  sheet.getRange('A1:L2').setFontWeight('bold');
+  sheet.setFrozenRows(2);
+
+  sheet.getRange(3, 1, MAX - 2, 1).setNumberFormat('mmm d, yyyy');   // Posted
+  sheet.getRange(3, 2, MAX - 2, 1).setNumberFormat('@');             // Reel
+  sheet.getRange(3, 3, MAX - 2, 2).setNumberFormat('#,##0');         // Views, taps
+  sheet.getRange(3, 5, MAX - 2, 1).setNumberFormat('@');             // Link
+  sheet.getRange(3, 7, MAX - 2, 1).setNumberFormat('0');             // Rank
+  sheet.getRange(3, 9, MAX - 2, 1).setNumberFormat('mmm d, yyyy');   // Posted
+  sheet.getRange(3, 10, MAX - 2, 2).setNumberFormat('#,##0');        // Taps, views
+  sheet.getRange(3, 12, MAX - 2, 1).setNumberFormat('0.0');          // Per 1,000
+
+  // Every row with bio link taps typed, most taps first. Equal taps put the
+  // reel with fewer views first: it got the same clicks from fewer people.
+  // Taps per 1,000 views is the same ranking with reach taken out, so a reel
+  // that converts well but was shown to few people still stands out.
+  sheet.getRange('G3').setFormula(
+    '=IFERROR(LET(s, SORT(FILTER({B3:B, A3:A, D3:D, C3:C}, D3:D<>""), 3, FALSE, 4, TRUE), ' +
+    'HSTACK(SEQUENCE(ROWS(s)), s, MAP(INDEX(s,,3), INDEX(s,,4), ' +
+    'LAMBDA(t, v, IF(N(v)>0, ROUND(N(t)/v*1000, 1), ""))))), "")');
+
+  [110, 240, 80, 110, 220, 24, 50, 240, 110, 110, 80, 160].forEach(function (w, i) {
+    sheet.setColumnWidth(i + 1, w);
   });
 }
 
