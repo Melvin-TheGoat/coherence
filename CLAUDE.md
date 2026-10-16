@@ -7951,3 +7951,59 @@ persistent but definitely we wanna get our ratings up a lot more."
 - `PREVIEW_RATING=1` (DEBUG, with `PREVIEW_HISTORY=1`) marks an ask due so the
   sheet appears on a quiet Home. Verified on a throwaway simulator: the sheet
   waited behind an award unlock and appeared once Home was clear.
+
+## MEDITATING TOGETHER: SHARED WEEKLY GOALS WITH FRIENDS (2026-10-14, Aziz)
+
+Designed screen by screen with Aziz in `mockups/friend-goal-buttons.html`
+(sections A to I) and the renders in `mockups/friend-goals/`, then built on
+`block`. Two friends agree on N days a week they will EACH meditate; every
+week both hit it, a shared streak grows. Friends tab: "Meditate with a
+friend" as the first row of the list until a goal exists, then a "Meditating
+together" section of cards with a blue "+ Add" always at the right of its
+heading (one goal: the card centered; several: a row you swipe). A friend's
+page: "Friends ✓" and "Meditate together" side by side, the same size ("Your
+goal" once one exists). Requests: the invite card with a caret to a page that
+explains it. Home: a red count on the Friends circle for anything new. Reward
+screen: "Counted for Ana and Daniel".
+
+- **Rules, decided, do not relitigate:** one goal type (days each per week,
+  1 to 7; minutes was rejected as unfair to the person who sits short);
+  the week starts on the weekday the goal was ACCEPTED, not Monday; a missed
+  day never breaks the streak, only a missed week, and the running week never
+  breaks it; one session counts for every goal and the personal streak; a day
+  counts for a goal only through a MEASURED session of 5+ minutes
+  (`SharedGoal.minimumSeconds`, Block's bar), never a hand-logged one; you can
+  nudge only once you have meditated today or done your share of the week;
+  one nudge a day per friend; the first week says "First week", never "0".
+- **Colour:** blue (`AppColor.skyDeep`) for what reaches a friend (Add, Send,
+  Nudge, Let's do it, high five); green (`OnboardingGreen`) for meditating and
+  finishing; counts in the measured blue.
+- **Storage:** each person writes their own `GoalMember` half (the public
+  database lets only a creator edit), so an invite is the inviter's half and
+  the answer is the invitee's (`kind` invite / accept / decline, so a "Not
+  now" is never pushed as a yes). The half carries that person's qualifying
+  days since the start (`"yyyy-MM-dd:minutes"`), published from
+  `syncPracticeStats`. `Nudge` records are named per day, which is what makes
+  "once a day" true. Day keys are each person's LOCAL day.
+- **Pushes:** the first push the app has ever had. CloudKit query
+  subscriptions (`ensureGoalSubscriptions`) with alert text from
+  `Coherence/Resources/en.lproj/Localizable.strings`; foreground pushes are
+  shown and trigger a refresh, a tapped one opens Friends
+  (`BlockNotifications` delegate, `.openFriends`).
+- **`SharedGoal.swift` lives in `Coherence/Community`, not `Shared/`:** the
+  test target compiles `Shared/` into itself, so a Shared type the store
+  returns is a different type in the tests (the same trap as RewardLedger,
+  reversed). Only the iPhone app needs it.
+- **Release gate:** two new record types and their indexes must reach
+  Production after a two-phone round trip, and the privacy policy must say a
+  goal partner sees your days and minutes (RELEASE_CHECKLIST.md, "OPEN for
+  the build that ships Meditating together"). Never run on real iCloud yet.
+- **Not built, on purpose:** changing a goal's number (each half owns its own
+  copy; end it and start a new one), a daily shared streak (Aziz raised it;
+  the weekly one shipped first), Friends Quests.
+- Tests: `SharedGoalTests` (rules) and `GoalStoreTests` (two people over the
+  fake database). DEBUG review: Friends test mode seeds a running goal with
+  Melvin and an invite from Sam (`PREVIEW_GOALS=none` leaves them out);
+  `PREVIEW_GOAL_SCREEN=home|detail|invite|requests|setup|picker|person`
+  opens one screen; `PREVIEW_COUNTED=Ana,Daniel` with `PREVIEW_REWARD` shows
+  the reward line.

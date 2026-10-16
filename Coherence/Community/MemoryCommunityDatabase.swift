@@ -322,6 +322,27 @@ enum DemoCommunity {
                                       ]),
                                       practicedAt: Date().addingTimeInterval(-86_400 * 2),
                                       title: "Morning session", sound: "Silence"))
+        // Meditating together (2026-10-14): a running goal with Melvin, in
+        // its second day, and an invite from Sam waiting for an answer.
+        // `PREVIEW_GOALS=none` leaves them out; never in store screenshots.
+        if !shots, ProcessInfo.processInfo.environment["PREVIEW_GOALS"] != "none" {
+            let today = DayKey.key(Date())
+            let start = DayKey.adding(-2, to: today)
+            db.user = "_demo_me"
+            let goal = try? await me.inviteGoal(to: CommunityNames.profile(user: "_demo_melvin"), target: 4, myName: "Aziz")
+            db.user = "_demo_melvin"
+            if let goal, let pair = try? await melvin.goals(friends: [CommunityNames.profile(user: "_demo_me")])
+                .first(where: { $0.id == goal }) {
+                try? await melvin.acceptGoal(pair, today: start, myName: "Melvin")
+                try? await melvin.publishGoalDays(goal: goal, days: [
+                    GoalDay(day: start, minutes: 14), GoalDay(day: DayKey.adding(1, to: start), minutes: 22),
+                    GoalDay(day: today, minutes: 11),
+                ])
+            }
+            db.user = "_demo_sam"
+            try? await sam.inviteGoal(to: CommunityNames.profile(user: "_demo_me"), target: 3, myName: "Sam")
+            db.user = "_demo_me"
+        }
         // STORE_SHOTS=1: six more friends, so the list reads as a circle.
         if shots {
             let more: [(String, String, String, PracticeStats)] = [

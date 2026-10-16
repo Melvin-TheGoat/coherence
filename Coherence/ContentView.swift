@@ -288,6 +288,14 @@ struct ContentView: View {
         }
         // The widget's tap (`coherence808://home`).
         .onReceive(NotificationCenter.default.publisher(for: WidgetLink.openHome)) { _ in tab = .home }
+        // "Meditate now" on a goal page: Friends closes and the plus opens.
+        .onReceive(NotificationCenter.default.publisher(for: .openMeditate)) { _ in
+            if case .friends? = sheet { pendingSheet = .setup; sheet = nil } else { present(.setup) }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .openFriends)) { _ in
+            guard FeatureFlags.friends else { return }
+            if sheet == nil { sheet = .friends } else { pendingSheet = .friends }
+        }
         .modifier(DiscardHook(discard: coordinator.lastDiscard,
                               sessionActive: coordinator.active != nil) { d in
             if sheet == nil { sheet = .discarded(d) } else { pendingSheet = .discarded(d) }
@@ -500,7 +508,10 @@ struct ContentView: View {
                 sheet = .reward(SessionReward(id: UUID(), seconds: 18 * 60, streakBefore: 4, streakAfter: 5,
                                               points: 18, bankBefore: 124,
                                               glowBefore: parts.first ?? OttoAura.startLevel,
-                                              glowAfter: parts.count > 1 ? parts[1] : 50))
+                                              glowAfter: parts.count > 1 ? parts[1] : 50,
+                                              // PREVIEW_COUNTED=Ana,Daniel: the "Counted for" line.
+                                              countedFor: (ProcessInfo.processInfo.environment["PREVIEW_COUNTED"] ?? "")
+                                                  .split(separator: ",").map(String.init)))
             }
             // PREVIEW_AURA=<from>:<to> replays a landed session's glow on
             // Home, without waiting a day for a real one to earn it.
@@ -998,9 +1009,17 @@ struct ContentView: View {
             .frame(width: 54, height: 54)
             .background(TileFill(shape: Circle(), opacity: 0.9))
             .shadow(color: .black.opacity(0.10), radius: 5, y: 2)
+            // Anything new in Friends, like an unread message (Aziz,
+            // 2026-10-14): a request, a goal invite or answer, a nudge.
+            // Clears when Friends opens (`CommunityModel.markNewsSeen`).
+            .overlay(alignment: .topTrailing) {
+                if community.unseenCount > 0 {
+                    UnreadBadge(count: community.unseenCount).offset(x: 4, y: -4)
+                }
+            }
         }
         .buttonStyle(.tactile)
-        .accessibilityLabel("Friends")
+        .accessibilityLabel(community.unseenCount > 0 ? "Friends, \(community.unseenCount) new" : "Friends")
     }
 
     /// How bright Otto is, as a percentage, and the bar that fills as the
@@ -1165,7 +1184,10 @@ struct ContentView: View {
             streakAfter: StreakCalculator.streak(from: dates).current,
             points: points,
             bankBefore: bankBefore,
-            glowBefore: before, glowAfter: after)
+            glowBefore: before, glowAfter: after,
+            // "Counted for Ana and Daniel": one session counts for every
+            // shared goal (Aziz, 2026-10-14).
+            countedFor: community.countedFor(seconds: landed.durationSec, logged: landed.isLogged))
         if sheet == nil { sheet = .reward(reward) } else { pendingSheet = .reward(reward) }
     }
 
@@ -1441,6 +1463,14 @@ private struct FriendsHooks: ViewModifier {
     /// profile prompt opening then would cover the tour.
     let touring: Bool
 
+    /// `PREVIEW_GOAL_SCREEN` (DEBUG): a Meditating together screen on review,
+    /// with the demo seed's invite reward kept out of the way.
+    #if DEBUG
+    static var previewingGoals: Bool { ProcessInfo.processInfo.environment["PREVIEW_GOAL_SCREEN"] != nil }
+    #else
+    static let previewingGoals = false
+    #endif
+
     /// The intro has been shown (or declined on Create your profile). Set by
     /// `FriendsIntroView` itself, once it is actually on screen.
     @AppStorage(FriendsIntroView.shownKey) private var introShown = false
@@ -1458,7 +1488,7 @@ private struct FriendsHooks: ViewModifier {
         if FeatureFlags.friends {
             content
                 // The invite reward landing: a brought friend sat once.
-                .sheet(item: Binding(get: { touring ? nil : community.rewardNews },
+                .sheet(item: Binding(get: { touring || Self.previewingGoals ? nil : community.rewardNews },
                                      set: { community.rewardNews = $0 })) { news in
                     InviteRewardSheet(news: news).presentationDetents([.medium])
                 }

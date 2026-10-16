@@ -481,3 +481,55 @@ release-docs pass".
 - Store screenshots: ~~the Search tab is now Friends~~ every one must be
   re-shot from a 1.1 Release build (2026-09-29).
 - TestFlight with the founders plus a few friends.
+
+## Meditating together (added 2026-10-14): two new record types
+
+Shared weekly goals between friends, nudges and high fives. Nothing works on a
+real install until these exist in **Production** with their indexes, exactly
+like Friends in 1.1: the simulator's fake database will work perfectly while a
+phone fails. Development builds the types on first save; Production needs the
+deploy (Step 6) after a real round trip on two phones (Step 5).
+
+**`GoalMember`** (one person's half of a goal; the record name is
+`goal-<goalID>-<profileRecordName>`):
+
+| Field | Type | Index |
+|---|---|---|
+| `goal` | String | none |
+| `member` | Reference | **Queryable** |
+| `partner` | Reference | **Queryable** |
+| `kind` | String (`invite`, `accept`, `decline`) | **Queryable** (the push subscriptions filter on it) |
+| `target` | Int(64) | none |
+| `startDay` | String (`yyyy-MM-dd`) | none |
+| `days` | List(String) (`yyyy-MM-dd:minutes`) | none |
+| `endedAt` | Date/Time | none |
+| `declinedAt` | Date/Time | none |
+| `createdAt` | Date/Time | none |
+| `fromName` | String | none |
+
+**`Nudge`** (record name `nudge-<from>-<to>-<yyyy-MM-dd>`, so one a day):
+
+| Field | Type | Index |
+|---|---|---|
+| `from` | Reference | **Queryable** |
+| `to` | Reference | **Queryable** |
+| `day` | String | none |
+| `kind` | String (`nudge`, `cheer`) | **Queryable** (the push subscriptions) |
+| `fromName` | String | none |
+| `createdAt` | Date/Time | **Sortable** (the inbox sorts newest first) |
+
+Also add **`recordName` Queryable** to both, like the other Friends types.
+
+**Security roles:** the defaults (`_world` Read, `_icloud` Create, `_creator`
+Read/Write). A goal partner has to read the other half, so neither type can be
+creator-only the way Block is. What that means is stated in the privacy policy
+item in `RELEASE_CHECKLIST.md`.
+
+**Push subscriptions** are created by the app itself on launch
+(`CloudKitCommunityDatabase.ensureGoalSubscriptions`): four
+`CKQuerySubscription`s per person, on `GoalMember` (`partner == me AND kind`)
+and `Nudge` (`to == me AND kind`). They need the Queryable indexes above in
+the environment the build talks to, or saving them fails silently and nothing
+is pushed. Verify in Step 5: the Console's Subscriptions list should show
+four per tester, and a nudge from one phone should buzz the other with 808
+closed.

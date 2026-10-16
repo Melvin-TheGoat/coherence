@@ -30,6 +30,11 @@ enum CommunityType {
     /// A username reservation: record name `username-<handle>`, one field
     /// `profile` pointing at its owner. See `CommunityStore.claimUsername`.
     static let username = "Username"
+    /// One person's half of a shared goal (Meditating together, 2026-10-14).
+    /// See `GoalHalf`.
+    static let goalMember = "GoalMember"
+    /// A nudge or a high five from one friend to another, once a day.
+    static let nudge = "Nudge"
 }
 
 /// Record names are deterministic wherever a second save should overwrite
@@ -55,6 +60,154 @@ enum CommunityNames {
     /// A fresh, unguessable name for a new Block record.
     static func newBlock() -> String { "block-" + UUID().uuidString }
     static func username(_ handle: String) -> String { "username-" + handle }
+    /// My half of a goal: one per person per goal, so a second save
+    /// overwrites rather than duplicates.
+    static func goalMember(goal: String, member: String) -> String { "goal-" + goal + "-" + member }
+    /// At most one nudge from me to them per day, by construction.
+    static func nudge(from: String, to: String, day: String) -> String { "nudge-" + from + "-" + to + "-" + day }
+}
+
+/// One person's half of a shared goal (Meditating together, 2026-10-14).
+///
+/// Shaped by the same constraint as a friendship: only a record's creator can
+/// modify it in the public database, so each person writes their own half
+/// and nobody edits the other's. The inviter's half is the invite; the
+/// invitee's half, written when they say yes (or "Not now"), is the answer.
+///
+/// - `days` is THIS person's qualifying days since the goal began
+///   (`GoalDay`, `"yyyy-MM-dd:minutes"`), kept current by
+///   `CommunityStore.publishGoalDays`. Only days and minutes, never a score,
+///   a heart rate or anything measured off the body (the rule at the top of
+///   this file). They are published only while somebody is in a goal, and
+///   only from the goal's start.
+/// - `startDay` is set by the person who accepts: their local today, which
+///   becomes the first day of week one for both.
+/// - `kind` is "invite" on the inviter's half, and "accept" or "decline"
+///   ("Not now") on the answer, so the push subscriptions can tell an invite
+///   from an acceptance and never announce a "Not now" as a yes.
+/// - `endedAt` on either half ends the goal for both.
+///
+/// **New CloudKit record type, must be promoted to Production with its
+/// indexes before release** (`CLOUDKIT_SETUP.md`, "Meditating together").
+struct GoalHalf: Identifiable, Equatable {
+    enum Kind: String { case invite, accept, decline }
+
+    let goal: String
+    let member: String
+    let partner: String
+    var kind: Kind
+    var target: Int
+    var startDay: String?
+    var days: [GoalDay]
+    var endedAt: Date?
+    var declinedAt: Date?
+    var createdAt: Date
+    /// The writer's display name, for the push alert ("Maya wants to
+    /// meditate with you"): a subscription's notification can only quote
+    /// fields of the record it fires on.
+    var fromName: String
+
+    var id: String { CommunityNames.goalMember(goal: goal, member: member) }
+
+    init(goal: String, member: String, partner: String, kind: Kind, target: Int,
+         startDay: String? = nil, days: [GoalDay] = [], endedAt: Date? = nil,
+         declinedAt: Date? = nil, createdAt: Date = Date(), fromName: String = "") {
+        self.goal = goal; self.member = member; self.partner = partner; self.kind = kind
+        self.target = target; self.startDay = startDay; self.days = days; self.endedAt = endedAt
+        self.declinedAt = declinedAt; self.createdAt = createdAt; self.fromName = fromName
+    }
+
+    init?(record: CKRecord) {
+        guard record.recordType == CommunityType.goalMember,
+              let goal = record["goal"] as? String,
+              let member = (record["member"] as? CKRecord.Reference)?.recordID.recordName,
+              let partner = (record["partner"] as? CKRecord.Reference)?.recordID.recordName else { return nil }
+        self.init(goal: goal, member: member, partner: partner,
+                  kind: Kind(rawValue: record["kind"] as? String ?? "") ?? .invite,
+                  target: min(max(record["target"] as? Int ?? SharedGoal.defaultTarget, 1), 7),
+                  startDay: record["startDay"] as? String,
+                  days: ((record["days"] as? [String]) ?? []).compactMap(GoalDay.init(encoded:)),
+                  endedAt: record["endedAt"] as? Date,
+                  declinedAt: record["declinedAt"] as? Date,
+                  createdAt: record["createdAt"] as? Date ?? record.creationDate ?? Date(),
+                  fromName: record["fromName"] as? String ?? "")
+    }
+
+    func apply(to record: CKRecord) {
+        record["goal"] = goal
+        record["member"] = CommunityRecordValue.reference(member).ckValue
+        record["partner"] = CommunityRecordValue.reference(partner).ckValue
+        record["kind"] = kind.rawValue
+        record["target"] = target
+        record["startDay"] = startDay
+        record["days"] = days.map(\.encoded)
+        record["endedAt"] = endedAt
+        record["declinedAt"] = declinedAt
+        record["createdAt"] = createdAt
+        record["fromName"] = fromName
+    }
+
+    /// The pair as I see it, from my half and theirs (either may be missing).
+    static func pair(mine: GoalHalf?, theirs: GoalHalf?, me: String) -> GoalPair? {
+        guard let any = mine ?? theirs else { return nil }
+        let partner = any.member == me ? any.partner : any.member
+        let invite = [mine, theirs].compactMap { $0 }.first { $0.kind == .invite } ?? any
+        let answer = [mine, theirs].compactMap { $0 }.first { $0.kind != .invite }
+        let state: GoalPair.State
+        if mine?.endedAt != nil || theirs?.endedAt != nil || answer?.kind == .decline {
+            state = .over
+        } else if answer != nil, answer?.startDay != nil {
+            state = .active
+        } else {
+            state = invite.member == me ? .waitingForThem : .waitingForMe
+        }
+        return GoalPair(id: any.goal, partner: partner, target: invite.target,
+                        startDay: answer?.startDay, state: state,
+                        myDays: mine?.days ?? [], theirDays: theirs?.days ?? [],
+                        invitedByMe: invite.member == me,
+                        createdAt: invite.createdAt)
+    }
+}
+
+/// A nudge ("Meditate today?") or a high five ("You both hit it") from one
+/// friend to another, at most one a day (`CommunityNames.nudge`). The push
+/// alert quotes `fromName`. **New CloudKit record type** (see `GoalHalf`).
+struct Nudge: Identifiable, Equatable {
+    enum Kind: String { case nudge, cheer }
+
+    let from: String
+    let to: String
+    let day: String
+    var kind: Kind
+    var fromName: String
+    var createdAt: Date
+
+    var id: String { CommunityNames.nudge(from: from, to: to, day: day) }
+
+    init(from: String, to: String, day: String, kind: Kind = .nudge, fromName: String = "", createdAt: Date = Date()) {
+        self.from = from; self.to = to; self.day = day; self.kind = kind
+        self.fromName = fromName; self.createdAt = createdAt
+    }
+
+    init?(record: CKRecord) {
+        guard record.recordType == CommunityType.nudge,
+              let from = (record["from"] as? CKRecord.Reference)?.recordID.recordName,
+              let to = (record["to"] as? CKRecord.Reference)?.recordID.recordName,
+              let day = record["day"] as? String else { return nil }
+        self.init(from: from, to: to, day: day,
+                  kind: Kind(rawValue: record["kind"] as? String ?? "") ?? .nudge,
+                  fromName: record["fromName"] as? String ?? "",
+                  createdAt: record["createdAt"] as? Date ?? record.creationDate ?? Date())
+    }
+
+    func apply(to record: CKRecord) {
+        record["from"] = CommunityRecordValue.reference(from).ckValue
+        record["to"] = CommunityRecordValue.reference(to).ckValue
+        record["day"] = day
+        record["kind"] = kind.rawValue
+        record["fromName"] = fromName
+        record["createdAt"] = createdAt
+    }
 }
 
 struct Profile: Identifiable, Equatable {

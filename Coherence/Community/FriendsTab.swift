@@ -73,8 +73,17 @@ struct FriendsTab: View {
                         if handle == nil { (onClose ?? onDecline)?() }
                     }
                 case .ready:
+                    #if DEBUG
+                    if let screen = ProcessInfo.processInfo.environment["PREVIEW_GOAL_SCREEN"] {
+                        GoalPreviewRoot(model: model, screen: screen)
+                    } else {
+                        FriendsHomeView(model: model, myDisplayName: user?.displayName ?? "",
+                                        roomForClose: onClose != nil)
+                    }
+                    #else
                     FriendsHomeView(model: model, myDisplayName: user?.displayName ?? "",
                                     roomForClose: onClose != nil)
+                    #endif
                 }
             }
             // The valley, like Home, Profile and the guide (Aziz, 2026-09-22,
@@ -404,6 +413,8 @@ struct FriendsHomeView: View {
     @State private var query = ""
     @State private var result: Profile?
     @State private var searched = false
+    /// Meditating together: the friend picker, then the days (2026-10-14).
+    @State private var startingGoal = false
 
     var body: some View {
         GeometryReader { proxy in
@@ -417,6 +428,11 @@ struct FriendsHomeView: View {
                         #endif
                         searchField
                         if searched { searchResult }
+                        // Meditating together (2026-10-14): the goals, with a
+                        // blue Add that is always there once one exists.
+                        if !model.togetherGoals.isEmpty {
+                            TogetherSection(model: model) { startingGoal = true }
+                        }
                         GrassHeading(title: "Friends")
                         friendsSection
                         // The bar is a safe-area inset so the scroll clears it
@@ -446,6 +462,16 @@ struct FriendsHomeView: View {
             case .requests: RequestsView(model: model)
             }
         }
+        .navigationDestination(for: GoalRoute.self) { route in
+            switch route {
+            case .goal(let id): GoalDetailView(model: model, goalID: id)
+            case .invite(let id): GoalInviteDetailView(model: model, goalID: id)
+            }
+        }
+        .sheet(isPresented: $startingGoal) { GoalStartFlow(model: model) }
+        // Opening Friends reads the news: the badge on Home's circle clears.
+        .onAppear { model.markNewsSeen() }
+        .onChange(of: model.unseenCount) { _, n in if n > 0 { model.markNewsSeen() } }
     }
 
     /// Every mutual friend, with how often they meditate — the thing that
@@ -456,6 +482,12 @@ struct FriendsHomeView: View {
             EmptyFriends(model: model, username: model.profile?.username ?? "")
         } else {
             VStack(spacing: 0) {
+                // "Meditate with a friend" as the first row, the same height
+                // as a friend, until a goal exists (then it is the blue Add).
+                if model.togetherGoals.isEmpty {
+                    MeditateWithFriendRow { startingGoal = true }
+                    Rectangle().fill(ValleyGround.quiet).frame(height: 1)
+                }
                 ForEach(Array(model.friends.enumerated()), id: \.element) { i, id in
                     if let p = model.person(id) {
                         if i > 0 { Rectangle().fill(ValleyGround.quiet).frame(height: 1) }
@@ -895,7 +927,13 @@ struct RequestsView: View {
                     // Sky behind the back button; the title rides beside it.
                     FriendsSky(height: proxy.safeAreaInsets.top + 56) { EmptyView() }
                     VStack(alignment: .leading, spacing: 8) {
-                        if model.incoming.isEmpty && model.sent.isEmpty && model.blocked.isEmpty {
+                        if !model.goalInvites.isEmpty {
+                            GrassHeading(title: "Meditate together")
+                            ForEach(model.goalInvites) { goal in
+                                GoalInviteCard(model: model, goal: goal)
+                            }
+                        }
+                        if model.incoming.isEmpty && model.sent.isEmpty && model.blocked.isEmpty && model.goalInvites.isEmpty {
                             Text("No requests right now.")
                                 .font(AppFont.callout)
                                 .foregroundStyle(AppColor.textSecondary)
@@ -904,7 +942,7 @@ struct RequestsView: View {
                                 .whiteCard()
                         }
                         if !model.incoming.isEmpty {
-                            GrassHeading(title: "Asking to be your friend")
+                            GrassHeading(title: "Asking to be your friend").padding(.top, model.goalInvites.isEmpty ? 0 : 6)
                             group(model.incoming) { id in
                                 smallButton("Accept", gold: true) { Task { await model.accept(id) } }
                             }
@@ -1117,6 +1155,7 @@ struct PersonView: View {
     @State private var reportTarget: ReportSheet.Target?
     @State private var confirmBlock = false
     @State private var busy = false
+    @State private var startingGoal = false
 
     private var profile: Profile? { model.person(id) }
     private var isMe: Bool { id == model.myID }
@@ -1179,6 +1218,7 @@ struct PersonView: View {
             }
         }
         .sheet(item: $reportTarget) { target in ReportSheet(target: target, model: model) }
+        .sheet(isPresented: $startingGoal) { GoalStartFlow(model: model, preselected: id) }
         .confirmationDialog("Block \(profile?.displayName ?? "this person")?", isPresented: $confirmBlock, titleVisibility: .visible) {
             Button("Block", role: .destructive) {
                 Task { await model.block(id); dismiss() }
@@ -1273,11 +1313,9 @@ struct PersonView: View {
             Button { act { await model.accept(id) } } label: { Text(busy ? "Accepting…" : "Accept request") }
                 .buttonStyle(PrimaryButtonStyle())
         case .friends:
-            Text("Friends ✓")
-                .font(AppFont.caption.weight(.bold))
-                .foregroundStyle(AppColor.textSecondary)
-                .padding(.horizontal, 12).padding(.vertical, 6)
-                .overlay(Capsule().stroke(AppColor.textSecondary.opacity(0.35), lineWidth: 1))
+            // "Friends ✓" and "Meditate together", the same size (Aziz,
+            // 2026-10-14). With a goal going, the green one is "Your goal".
+            FriendPairButtons(model: model, friend: id) { startingGoal = true }
         }
     }
 

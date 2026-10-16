@@ -1,0 +1,839 @@
+<title>Meditate Together Buttons</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+/* Layout: four phone screens in a wrapping row, each with a short note under it, then the open questions. One appearance, like the app. */
+:root{
+  color-scheme: light;
+  --ground:#EEE6D8;      /* page behind the phones */
+  --ink:#2B2620;         /* TextPrimary */
+  --soft:#6F5D4F;        /* TextSecondary */
+  --sand:#F0E9DC;        /* BackgroundSecondary, every tile */
+  --lip:#E2D8C7;         /* Hairline under a tile */
+  --meadow:#9CBC85; --meadowDeep:#7FA87E; --meadowInk:#5E7A55;
+  --skyInk:#24414F; --skySoft:#47697A;
+  --green:#5AB950; --greenShade:#418E3A;   /* pressable */
+  --measure:#62A3D4; --measureInk:#1F4E70; --measureWash:#DCEBF6;  /* measured counts */
+  --blush:#C8553D;       /* streak text */
+  --font: ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--font);padding-block:28px 64px;padding-inline:clamp(16px,4vw,40px)}
+header.top{max-width:980px}
+h1{font-size:26px;font-weight:800;letter-spacing:-.01em;margin:0 0 8px;text-wrap:balance}
+.lede{color:var(--soft);font-size:15px;line-height:1.6;max-width:68ch;margin:0}
+.lede b{color:var(--ink)}
+.row{display:flex;flex-wrap:wrap;gap:28px;margin-top:28px;align-items:flex-start}
+.col{width:300px;max-width:100%;flex:none}
+.tag{font-size:10.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--soft);padding-bottom:9px}
+.note{color:var(--soft);font-size:13.5px;line-height:1.6;margin-top:12px}
+.note b{color:var(--ink)}
+h2{font-size:17px;font-weight:800;margin:40px 0 6px}
+ul.qs{max-width:72ch;color:var(--soft);font-size:14px;line-height:1.65;padding-left:20px;margin:0}
+ul.qs li{margin-bottom:6px}
+ul.qs b{color:var(--ink)}
+
+/* phone */
+.p{width:300px;max-width:100%;height:640px;border-radius:40px;overflow:hidden;position:relative;background:var(--meadow);
+  box-shadow:0 14px 36px rgba(80,55,30,.18), inset 0 0 0 7px #1d1b18}
+.p .clip{position:absolute;inset:7px;border-radius:33px;overflow:hidden;background:var(--meadow)}
+.island{position:absolute;left:50%;top:9px;transform:translateX(-50%);width:78px;height:22px;border-radius:12px;background:#111;z-index:9}
+.status{position:absolute;left:0;right:0;top:9px;display:flex;justify-content:space-between;padding:0 24px;font-size:11px;font-weight:700;color:var(--skyInk);z-index:8}
+
+/* valley band */
+.band{position:relative;height:178px;background:linear-gradient(180deg,#8CBBD4 0%,#BBD8E4 58%,#DCE6D6 100%);overflow:hidden}
+.band.tall{height:210px}
+.band .sun{position:absolute;left:14%;top:70px;width:26px;height:26px;border-radius:50%;background:#FFE9B8;box-shadow:0 0 30px 12px rgba(255,233,184,.6)}
+.band .cloud{position:absolute;right:-14px;top:52px;width:86px;height:26px;border-radius:20px;background:#fff;opacity:.95}
+.band .cloud:before{content:"";position:absolute;left:18px;top:-12px;width:38px;height:30px;border-radius:50%;background:#fff}
+.band svg{position:absolute;left:0;bottom:30px;width:100%;height:64px}
+.band .grass{position:absolute;left:0;right:0;bottom:0;height:42px;background:linear-gradient(180deg,var(--meadowDeep),var(--meadow))}
+.band .fl{position:absolute;bottom:14px;width:6px;height:6px;border-radius:50%}
+.title{position:absolute;left:18px;top:44px;font-size:24px;font-weight:800;letter-spacing:-.015em;color:var(--skyInk)}
+.title small{display:block;font-size:11px;font-weight:700;color:var(--skySoft);margin-top:1px;letter-spacing:0}
+.pill{position:absolute;top:48px;font-size:11px;font-weight:800;padding:7px 11px;border-radius:999px;background:rgba(254,249,242,.94);color:var(--skyInk);box-shadow:0 2px 6px rgba(40,25,15,.12)}
+.circ{position:absolute;top:44px;width:30px;height:30px;border-radius:50%;background:rgba(254,249,242,.94);display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--skyInk);font-size:15px;box-shadow:0 2px 6px rgba(40,25,15,.12)}
+
+/* page below */
+.page{padding:12px 13px 80px;display:flex;flex-direction:column;gap:11px}
+.tile{background:var(--sand);border-radius:20px;padding:13px;box-shadow:0 3px 0 var(--lip)}
+.white{background:#fff}
+.h{font-size:12px;font-weight:800;color:#fff;letter-spacing:.01em;text-shadow:0 1px 2px rgba(30,50,30,.45);margin:4px 2px -3px}
+.face{width:34px;height:34px;border-radius:50%;flex:none;border:2px solid #fff;background:#BBD8E4 url("friend-goals/otto-head.png") center 62%/84% no-repeat;box-shadow:0 1px 4px rgba(40,25,15,.18)}
+.face.me{background:linear-gradient(140deg,#C99A7A,#6E5140)}
+.face.ana{background:linear-gradient(140deg,#9AB6C9,#465E70)}
+.face.dan{background:linear-gradient(140deg,#D8B67C,#8A6433)}
+.face.jo{background:linear-gradient(140deg,#B5A3C9,#5F4E78)}
+.faces{display:flex}
+.faces .face+.face{margin-left:-10px}
+.gtop{display:flex;align-items:center;gap:9px}
+.gtop b{display:block;font-size:13.5px;font-weight:800}
+.gtop span{display:block;font-size:11px;color:var(--soft);font-weight:600}
+.streak{margin-left:auto;display:flex;align-items:center;gap:3px;font-weight:800;font-size:13px;color:var(--blush);white-space:nowrap}
+.streak img{width:17px;height:17px}
+.track{margin-top:11px;display:flex;flex-direction:column;gap:7px}
+.lane{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:700}
+.lane .nm{width:34px;color:var(--soft)}
+.dots{display:flex;gap:5px;flex:1}
+.d{flex:1;height:20px;border-radius:7px;background:rgba(43,38,32,.07);position:relative}
+.d.on{background:var(--measure)}
+.d.today{box-shadow:inset 0 0 0 2px var(--measureInk)}
+.lane .ct{width:30px;text-align:right;font-variant-numeric:tabular-nums;color:var(--measureInk);font-weight:800}
+.days{display:flex;gap:5px;margin-left:42px;margin-right:38px;font-size:8.5px;font-weight:800;color:var(--soft);letter-spacing:.04em}
+.days i{flex:1;text-align:center;font-style:normal}
+.status-line{margin-top:10px;font-size:11.5px;font-weight:700;color:var(--ink);line-height:1.4}
+.status-line em{font-style:normal;color:var(--soft);font-weight:600}
+.btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;border:0;border-radius:16px;padding:12px;font-family:var(--font);font-size:14px;font-weight:800;color:#fff;background:var(--green);box-shadow:0 4px 0 var(--greenShade);margin-top:11px}
+.btn.small{width:auto;padding:8px 13px;font-size:12px;border-radius:12px;box-shadow:0 3px 0 var(--greenShade);margin:0}
+.btn.ghost{background:var(--sand);color:var(--ink);box-shadow:0 3px 0 var(--lip)}
+.btn.done{background:rgba(43,38,32,.08);color:var(--soft);box-shadow:none}
+.mini{display:flex;align-items:center;gap:9px;font-size:12px}
+.mini b{display:block;font-weight:800;font-size:13px}
+.mini span{color:var(--soft);font-weight:600;font-size:11px}
+.bar{height:7px;border-radius:7px;background:rgba(43,38,32,.08);overflow:hidden;margin-top:5px}
+.bar i{display:block;height:100%;background:var(--measure);border-radius:7px}
+.list .r{display:flex;align-items:center;gap:9px;padding:9px 2px}
+.list .r+.r{border-top:1px solid rgba(43,38,32,.08)}
+.list .r b{display:block;font-size:13px;font-weight:800}
+.list .r span{font-size:11px;color:var(--soft);font-weight:600}
+.list .r .chev{margin-left:auto;color:var(--soft);font-weight:800}
+.tabbar{position:absolute;left:10px;right:10px;bottom:10px;height:52px;border-radius:26px;background:rgba(254,249,242,.97);box-shadow:0 4px 14px rgba(40,25,15,.14);display:flex;align-items:center;justify-content:space-around;font-size:8.5px;font-weight:800;color:var(--soft);z-index:6}
+.tabbar .plus{width:42px;height:42px;border-radius:50%;background:var(--green);color:#fff;font-size:26px;display:flex;align-items:center;justify-content:center;margin-top:-20px;box-shadow:0 4px 0 var(--greenShade)}
+
+/* friend page */
+.portrait{position:absolute;left:50%;transform:translateX(-50%);bottom:-30px;width:72px;height:72px;border-radius:50%;border:3px solid #fff;background:linear-gradient(140deg,#9AB6C9,#465E70);box-shadow:0 4px 10px rgba(40,25,15,.2);z-index:3}
+.id{margin-top:26px;text-align:center}
+.id b{display:block;font-size:17px;font-weight:800;color:#fff;text-shadow:0 1px 3px rgba(30,50,30,.45)}
+.id span{font-size:11.5px;color:#fff;font-weight:700;text-shadow:0 1px 2px rgba(30,50,30,.45)}
+.weeks{display:flex;gap:4px;margin-top:10px}
+.weeks i{flex:1;height:8px;border-radius:4px;background:var(--blush);opacity:.85}
+.weeks i.miss{background:rgba(43,38,32,.12)}
+.weeks i.now{background:repeating-linear-gradient(90deg,var(--blush) 0 4px,rgba(200,85,61,.35) 4px 8px)}
+.cap{font-size:10.5px;color:var(--soft);font-weight:700;margin-top:5px}
+
+/* sheet */
+.dim{position:absolute;inset:0;background:rgba(20,28,24,.35);z-index:4}
+.sheet{position:absolute;left:0;right:0;bottom:0;top:118px;background:#FEF9F2;border-radius:26px 26px 0 0;z-index:5;padding:14px 15px 18px;display:flex;flex-direction:column;gap:12px}
+.grab{width:38px;height:5px;border-radius:3px;background:rgba(43,38,32,.18);margin:0 auto}
+.sheet h3{margin:2px 0 0;font-size:18px;font-weight:800;text-align:center;text-wrap:balance}
+.seg{display:flex;background:rgba(43,38,32,.07);border-radius:12px;padding:3px}
+.seg i{flex:1;text-align:center;font-style:normal;font-size:12px;font-weight:800;padding:8px 4px;border-radius:9px;color:var(--soft)}
+.seg i.on{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(40,25,15,.12)}
+.stepper{display:flex;align-items:center;justify-content:space-between;background:var(--sand);border-radius:18px;padding:12px 14px;box-shadow:0 3px 0 var(--lip)}
+.stepper .k{width:36px;height:36px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:var(--ink);box-shadow:0 2px 0 var(--lip)}
+.stepper .v{text-align:center}
+.stepper .v b{display:block;font-size:30px;font-weight:800;color:var(--measureInk);font-variant-numeric:tabular-nums;line-height:1}
+.stepper .v span{font-size:11px;font-weight:700;color:var(--soft)}
+.explain{font-size:12px;color:var(--soft);line-height:1.5;font-weight:600;text-align:center;padding:0 6px}
+.ottoline{display:flex;align-items:flex-end;gap:6px}
+.ottoline img{width:62px}
+.bub{background:var(--sand);border-radius:16px;padding:9px 11px;font-size:12px;font-weight:700;line-height:1.4;box-shadow:0 3px 0 var(--lip);position:relative;margin-bottom:22px}
+
+/* lock screen */
+.lock{position:absolute;inset:0;background:linear-gradient(170deg,#2E4B64 0%,#5E86A3 45%,#C9B3A0 100%)}
+.lock .time{position:absolute;left:0;right:0;top:56px;text-align:center;color:#fff;font-size:58px;font-weight:700;letter-spacing:-.02em}
+.lock .date{position:absolute;left:0;right:0;top:44px;text-align:center;color:rgba(255,255,255,.85);font-size:12px;font-weight:700}
+.notes{position:absolute;left:10px;right:10px;top:170px;display:flex;flex-direction:column;gap:8px}
+.n{background:rgba(245,242,236,.82);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-radius:18px;padding:10px 11px;display:flex;gap:9px;color:#1b1a18}
+.n .ic{width:30px;height:30px;border-radius:8px;flex:none;background:#F3D9A4 url("friend-goals/otto-head.png") center 60%/86% no-repeat}
+.n .tx{flex:1;min-width:0}
+.n .tx .a{display:flex;justify-content:space-between;font-size:10px;font-weight:700;color:rgba(27,26,24,.55)}
+.n b{display:block;font-size:12.5px;font-weight:800;margin-top:1px}
+.n p{margin:1px 0 0;font-size:11.5px;line-height:1.35}
+@media (prefers-reduced-motion:no-preference){ .d.today{animation:pulse 2.4s ease-in-out infinite} @keyframes pulse{50%{box-shadow:inset 0 0 0 2px rgba(31,78,112,.35)}} }
+/* added for the entry points */
+.search{display:flex;align-items:center;gap:8px;background:rgba(254,249,242,.96);border-radius:999px;padding:10px 14px;font-size:12px;color:var(--soft);box-shadow:0 2px 6px rgba(40,25,15,.10)}
+.cta{display:flex;align-items:center;gap:11px;background:#fff;border-radius:20px;padding:12px 13px;box-shadow:0 3px 0 var(--lip);outline:3px solid rgba(90,185,80,.0)}
+.cta .art{width:46px;height:46px;flex:none;border-radius:14px;background:#E3F2DA url("friend-goals/otto-wave.png") center 30%/120% no-repeat}
+.cta b{display:block;font-size:14px;font-weight:800}
+.cta span{display:block;font-size:11px;color:var(--soft);font-weight:600;line-height:1.35;margin-top:1px}
+.cta .go{margin-left:auto;width:30px;height:30px;border-radius:50%;background:var(--green);color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 0 var(--greenShade);flex:none}
+.hl{position:relative}
+.hl:after{content:"";position:absolute;inset:-6px;border-radius:24px;border:2.5px dashed #E0702F;pointer-events:none}
+.callout{display:inline-block;background:#E0702F;color:#fff;font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:6px;margin-bottom:6px}
+.pick .r{cursor:default}
+.pick .r .sel{margin-left:auto;width:22px;height:22px;border-radius:50%;border:2px solid rgba(43,38,32,.2)}
+.pick .r.chosen .sel{border-color:var(--green);background:var(--green) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M5 10.5l3 3 7-7' fill='none' stroke='white' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/14px no-repeat}
+.pick .r .with{margin-left:auto;font-size:10.5px;font-weight:700;color:var(--soft)}
+.idcard{background:#fff;border-radius:20px;padding:40px 10px 12px;text-align:center;box-shadow:0 3px 0 var(--lip);margin-top:-6px}
+.idcard b{display:block;font-size:18px;font-weight:800}
+.idcard .hd{font-size:11.5px;color:var(--soft);font-weight:600}
+.idcard .fr{font-size:11.5px;font-weight:800;color:var(--measureInk);margin-top:6px}
+.idcard .rel{display:inline-block;margin-top:9px;font-size:11.5px;font-weight:800;padding:6px 12px;border-radius:999px;background:var(--sand);box-shadow:0 2px 0 var(--lip)}
+.stat3{display:flex;text-align:center}
+.stat3 div{flex:1}
+.stat3 b{display:block;font-size:17px;color:var(--measureInk)}
+.stat3 span{font-size:10px;color:var(--soft);font-weight:700}
+.portrait.on{bottom:-34px}
+/* review fixes: a shorter sky so the list starts near the top, Otto fitted in his tile */
+.band.slim{height:112px}
+.band.slim .sun{top:20px;left:auto;right:34%}
+.band.slim svg{bottom:20px;height:46px}
+.band.slim .grass{height:26px}
+.band.slim .cloud{top:18px}
+.cta .art{background:#E3F2DA url("friend-goals/otto-head.png") center/78% no-repeat}
+/* the button as the first row of the list, same height as a friend */
+.addrow .pf{width:34px;height:34px;border-radius:50%;flex:none;background:var(--green);color:#fff;font-size:20px;font-weight:800;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 0 var(--greenShade)}
+.addrow b{color:var(--ink)}
+.list .r.hl:after{inset:-2px -6px;border-radius:14px}
+/* profile variants */
+.pair{display:flex;gap:6px;margin-top:10px}
+.pair .rel2,.pair .go2{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;text-align:center;white-space:nowrap;height:54px;padding:0 4px;font-size:11px;letter-spacing:-.01em;font-weight:800;border-radius:12px}
+.pair .rel2{background:var(--sand);box-shadow:0 3px 0 var(--lip);color:var(--ink)}
+.pair i{font-style:normal;font-size:17px;line-height:1}
+.pair .go2{background:var(--green);box-shadow:0 3px 0 var(--greenShade);color:#fff}
+.rowcard{display:flex;align-items:center;gap:10px;background:#fff;border-radius:20px;padding:11px 13px;box-shadow:0 3px 0 var(--lip)}
+.rowcard b{display:block;font-size:13px;font-weight:800}
+.rowcard span{font-size:11px;color:var(--soft);font-weight:600}
+.rowcard .chev{margin-left:auto;color:var(--soft);font-weight:800}
+.pick-tag{display:inline-block;background:var(--green);color:#fff;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:6px;margin-left:6px}
+
+/* blue button + the four "meditating together" options */
+.blue{display:inline-flex;align-items:center;justify-content:center;gap:4px;background:#3F80AD;color:#fff;font-weight:800;font-size:11.5px;padding:7px 12px;border-radius:12px;box-shadow:0 3px 0 #2C628A;white-space:nowrap}
+.blue.full{display:flex;width:100%;padding:11px;font-size:13px;border-radius:14px}
+.sec{display:flex;align-items:center;justify-content:space-between;margin:2px 2px -2px}
+.sec .lbl{font-size:12px;font-weight:800;color:#fff;text-shadow:0 1px 2px rgba(30,50,30,.45)}
+/* option 2: rings */
+.rings{display:flex;justify-content:space-around;align-items:center;margin-top:8px}
+.ring{position:relative;width:76px;height:76px}
+.ring svg{width:76px;height:76px;transform:rotate(-90deg)}
+.ring .face{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:48px;height:48px;border-width:2px}
+.ring + .ringlbl{display:none}
+.rcol{text-align:center}
+.rcol b{display:block;font-size:12px;font-weight:800;margin-top:4px}
+.rcol span{font-size:11px;font-weight:800;color:var(--measureInk)}
+.mid{text-align:center}
+.mid .big{display:flex;align-items:center;gap:3px;justify-content:center;font-size:20px;font-weight:800;color:var(--blush)}
+.mid .big img{width:22px;height:22px}
+.mid small{display:block;font-size:10px;font-weight:700;color:var(--soft)}
+.foot{margin-top:10px;font-size:11.5px;font-weight:700;text-align:center}
+.foot em{font-style:normal;color:var(--soft);font-weight:600}
+/* option 3: rows */
+.grow{display:flex;align-items:center;gap:9px;padding:10px 2px}
+.grow+.grow{border-top:1px solid rgba(43,38,32,.08)}
+.grow .meta{flex:1;min-width:0}
+.grow b{display:block;font-size:13px;font-weight:800}
+.grow .split{display:flex;gap:3px;margin-top:5px}
+.grow .split i{flex:1;height:6px;border-radius:3px;background:rgba(43,38,32,.08)}
+.grow .split i.me{background:var(--measure)}
+.grow .split i.them{background:#9FC7E6}
+.grow .sub{font-size:10.5px;color:var(--soft);font-weight:600;margin-top:4px}
+.grow .wk{display:flex;align-items:center;gap:2px;font-weight:800;font-size:12px;color:var(--blush)}
+.grow .wk img{width:15px;height:15px}
+/* option 4: carousel */
+.car{display:flex;gap:9px;overflow:hidden;margin:0 -13px;padding:2px 13px 6px}
+.gc{flex:none;width:132px;background:#fff;border-radius:20px;padding:12px 11px;box-shadow:0 3px 0 var(--lip);text-align:center}
+.gc .faces{justify-content:center}
+.gc .faces .face{width:40px;height:40px}
+.gc b{display:block;font-size:12.5px;font-weight:800;margin-top:7px}
+.gc .n{font-size:22px;font-weight:800;color:var(--measureInk);margin-top:2px;font-variant-numeric:tabular-nums}
+.gc .n small{font-size:11px;color:var(--soft);font-weight:700}
+.gc .wk{display:flex;align-items:center;justify-content:center;gap:2px;font-size:11px;font-weight:800;color:var(--blush);margin-top:3px}
+.gc .wk img{width:14px;height:14px}
+.gc.add{background:#3F80AD;color:#fff;box-shadow:0 3px 0 #2C628A;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
+.gc.add .pl{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800}
+.gc.add b{color:#fff;margin:0}
+
+/* D4 refinements: one goal centred, and the goal's own page */
+.car.one{justify-content:center;margin:0;padding:2px 0 6px}
+.car.one .gc{width:168px;padding:16px 12px}
+.car.one .gc .faces .face{width:48px;height:48px}
+.car.one .gc .n{font-size:26px}
+.gc .tap{font-size:9.5px;font-weight:800;color:var(--soft);margin-top:5px;letter-spacing:.02em}
+.p.tall{height:760px}
+.hero{position:absolute;left:50%;transform:translateX(-50%);bottom:-26px;display:flex;z-index:3}
+.hero .face{width:58px;height:58px;border-width:3px}
+.hero .face+.face{margin-left:-14px}
+.gtitle{text-align:center;margin-top:24px}
+.gtitle b{display:block;font-size:18px;font-weight:800;color:#fff;text-shadow:0 1px 3px rgba(30,50,30,.45)}
+.gtitle span{font-size:11.5px;font-weight:700;color:#fff;text-shadow:0 1px 2px rgba(30,50,30,.45)}
+.ch{display:flex;justify-content:space-between;align-items:baseline}
+.ch b{font-size:14px;font-weight:800}
+.ch span{font-size:11px;font-weight:700;color:var(--soft)}
+.wgrid{display:grid;grid-template-columns:30px repeat(7,minmax(0,1fr)) 28px;gap:6px 3px;align-items:center;margin-top:10px}
+.wgrid .dl{font-size:9px;font-weight:800;color:var(--soft);text-align:center;letter-spacing:.04em}
+.wgrid .dl.now{color:var(--measureInk)}
+.wgrid .nm{font-size:11px;font-weight:800;color:var(--soft)}
+.wgrid .c{width:18px;height:18px;border-radius:50%;margin:0 auto;background:rgba(43,38,32,.07)}
+.wgrid .c.on{background:var(--measure) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M5 10.5l3 3 7-7' fill='none' stroke='white' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/11px no-repeat}
+.wgrid .c.today{box-shadow:inset 0 0 0 2px var(--measureInk)}
+.wgrid .c.later{background:transparent;box-shadow:inset 0 0 0 1.5px rgba(43,38,32,.12)}
+.wgrid .ct{font-size:12px;font-weight:800;color:var(--measureInk);text-align:right;font-variant-numeric:tabular-nums}
+.say{margin-top:10px;font-size:12px;font-weight:700;line-height:1.4;background:var(--sand);border-radius:12px;padding:8px 10px}
+.say em{font-style:normal;color:var(--soft);font-weight:600}
+.big2{display:flex;align-items:center;gap:6px}
+.big2 img{width:28px;height:28px}
+.big2 b{font-size:22px;font-weight:800;color:var(--blush)}
+.big2 span{font-size:11px;font-weight:700;color:var(--soft)}
+.mins{display:flex;gap:8px;margin-top:2px}
+.mins div{flex:1;background:var(--sand);border-radius:12px;padding:9px;text-align:center}
+.mins b{display:block;font-size:18px;font-weight:800;color:var(--measureInk);font-variant-numeric:tabular-nums}
+.mins span{font-size:10px;font-weight:700;color:var(--soft)}
+.links{display:flex;justify-content:center;gap:18px;font-size:12px;font-weight:800;color:var(--meadowInk);padding:4px 0}
+.links span{color:#fff;text-shadow:0 1px 2px rgba(30,50,30,.45)}
+.donebar{background:#E9F5E4;border-radius:12px;padding:9px 10px;font-size:12px;font-weight:800;color:#2F6B2A;margin-top:10px;text-align:center}
+.gchip{display:inline-flex;align-items:center;gap:4px;margin-top:7px;background:rgba(254,249,242,.95);color:var(--blush);font-size:12px;font-weight:800;padding:5px 11px 5px 8px;border-radius:999px;box-shadow:0 2px 0 var(--lip)}
+.gchip img{width:16px;height:16px}
+.gchip.first{color:var(--soft)}
+.gchip.first img{filter:saturate(.4);opacity:.8}
+.gtitle span{display:block}
+
+/* F: choosing the goal */
+.gpage{position:absolute;inset:0;background:#FEF9F2;z-index:5;display:flex;flex-direction:column}
+.gpage .nav{display:flex;align-items:center;justify-content:space-between;padding:44px 14px 0}
+.gpage .nav .circ{position:static;background:var(--sand);box-shadow:0 2px 0 var(--lip)}
+.gpage .nav b{font-size:13px;font-weight:800;color:var(--soft)}
+.gbody{padding:10px 16px 18px;display:flex;flex-direction:column;gap:14px;flex:1}
+.duo{display:flex;justify-content:center;margin-top:4px}
+.duo .face{width:56px;height:56px;border-width:3px}
+.duo .face+.face{margin-left:-14px}
+.gbody h3{margin:0;text-align:center;font-size:19px;font-weight:800;text-wrap:balance;line-height:1.25}
+.gbody h3+p{margin:-8px 0 0;text-align:center;font-size:12px;color:var(--soft);font-weight:600}
+.pickdays{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.pickdays i{font-style:normal;height:44px;border-radius:12px;background:var(--sand);box-shadow:0 2px 0 var(--lip);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:var(--ink)}
+.pickdays i.on{background:#3F80AD;color:#fff;box-shadow:0 3px 0 #2C628A}
+.pickcap{text-align:center;font-size:12.5px;font-weight:800;margin-top:-4px}
+.pickcap em{font-style:normal;color:var(--soft);font-weight:600}
+.preview{background:#fff;border-radius:18px;padding:12px;box-shadow:0 3px 0 var(--lip)}
+.preview .row7{display:flex;gap:5px;margin-top:8px}
+.preview .row7 i{flex:1;height:8px;border-radius:4px;background:rgba(43,38,32,.08)}
+.preview .row7 i.on{background:var(--measure)}
+.preview .lab{display:flex;justify-content:space-between;font-size:11px;font-weight:800}
+.preview .lab span{color:var(--soft);font-weight:700}
+.fine{font-size:11.5px;color:var(--soft);font-weight:600;line-height:1.5;text-align:center;padding:0 4px}
+.ottonote{display:flex;align-items:flex-end;gap:6px}
+.ottonote img{width:54px;flex:none}
+.ottonote .bub{margin-bottom:12px;font-size:11.5px}
+.sentcard{background:#fff;border-radius:22px;padding:18px 14px;text-align:center;box-shadow:0 3px 0 var(--lip)}
+.sentcard .duo .face{width:62px;height:62px}
+.sentcard b{display:block;font-size:17px;font-weight:800;margin-top:10px}
+.sentcard p{margin:6px 0 0;font-size:12px;color:var(--soft);font-weight:600;line-height:1.45}
+.pending{display:inline-flex;align-items:center;gap:6px;margin-top:10px;font-size:11px;font-weight:800;color:#3F80AD;background:#E1EDF6;border-radius:999px;padding:5px 10px}
+.req2{background:#fff;border-radius:20px;padding:13px;box-shadow:0 3px 0 var(--lip)}
+.req2 .top2{display:flex;align-items:center;gap:9px}
+.req2 b{font-size:13px;font-weight:800;display:block}
+.req2 span{font-size:11px;color:var(--soft);font-weight:600}
+.req2 .acts{display:flex;gap:7px;margin-top:11px}
+.req2 .acts span{flex:1;text-align:center;font-size:12px;font-weight:800;padding:9px;border-radius:12px}
+.req2 .acts .no{background:var(--sand);color:var(--ink);box-shadow:0 2px 0 var(--lip)}
+.req2 .acts .yes{background:#3F80AD;color:#fff;box-shadow:0 3px 0 #2C628A}
+
+/* G: the invite, with a caret to its details */
+.req2 .top2 .car2{margin-left:auto;color:var(--soft);font-weight:800;font-size:18px;padding-left:6px}
+.req2 .more{font-size:11px;font-weight:800;color:#3F80AD;margin-top:8px}
+.inv{background:#FEF9F2}
+.inv h3{margin:0;text-align:center;font-size:20px;font-weight:800;text-wrap:balance;line-height:1.25}
+.inv .sub{margin:-8px 0 0;text-align:center;font-size:12px;color:var(--soft);font-weight:600}
+.facts{display:flex;flex-direction:column;gap:10px}
+.fact{display:flex;gap:10px;align-items:flex-start;background:#fff;border-radius:16px;padding:11px 12px;box-shadow:0 3px 0 var(--lip)}
+.fact .ic{width:30px;height:30px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-size:15px;background:#E1EDF6}
+.fact b{display:block;font-size:12.5px;font-weight:800}
+.fact span{display:block;font-size:11.5px;color:var(--soft);font-weight:600;line-height:1.4;margin-top:1px}
+.fact .mini7{display:flex;gap:4px;margin-top:7px}
+.fact .mini7 i{width:20px;height:7px;border-radius:4px;background:rgba(43,38,32,.09)}
+.fact .mini7 i.on{background:var(--measure)}
+.duoact{display:flex;flex-direction:column;gap:8px;margin-top:auto}
+.duoact .quiet{text-align:center;font-size:12.5px;font-weight:800;color:var(--soft);padding:6px}
+
+/* on-theme goal screens */
+.vpage .gtitle span{display:block}
+.vtile{background:#fff;border-radius:20px;padding:13px;box-shadow:0 3px 0 var(--lip)}
+.vtile .ch{margin-bottom:9px}
+.onmeadow{color:#fff;text-shadow:0 1px 2px rgba(30,50,30,.45);font-size:11.5px;font-weight:700;line-height:1.45;text-align:center;padding:0 6px}
+.vbtns{display:flex;flex-direction:column;gap:6px;margin-top:2px}
+.vbtns .quiet{text-align:center;font-size:12.5px;font-weight:800;color:#fff;text-shadow:0 1px 2px rgba(30,50,30,.45);padding:5px}
+.ottonote .bub.white{background:#fff}
+
+/* H: pending and accepted */
+.gc.pend .faces .face.ana{opacity:.45;filter:grayscale(.6)}
+.gc .pchip{display:inline-flex;align-items:center;gap:5px;margin-top:8px;font-size:10.5px;font-weight:800;color:#3F80AD;background:#E1EDF6;border-radius:999px;padding:4px 9px}
+.gc .when{font-size:10px;font-weight:700;color:var(--soft);margin-top:6px}
+.gc .new{display:inline-block;font-size:10px;font-weight:800;color:#fff;background:#FF3B30;border-radius:999px;padding:3px 8px;margin-bottom:6px}
+.gc.fresh{box-shadow:0 3px 0 var(--lip),0 0 0 3px rgba(90,185,80,.55)}
+.gc .n{background:none;display:block;padding:0;border-radius:0;-webkit-backdrop-filter:none;backdrop-filter:none;gap:0}
+</style>
+
+<header class="top">
+  <h1>Where "Meditate together" starts</h1>
+  <p class="lede">Two buttons, same result. <b>On the Friends tab</b>, "Meditate with a friend" is the one people see; it asks which friend first. <b>On a friend's profile</b>, "Meditate together" skips that step. Both open the same setup screen, which we'll design next. Sections D and E below show the Friends tab after you've started a goal, and the goal's own page. The orange dashed outline only marks the new button for this review. Example people and numbers.</p>
+</header>
+
+<div class="row">
+
+  <!-- A. Friends tab, no goal yet -->
+  <div class="col">
+    <div class="tag"><b>A</b> · Friends tab, no goal yet</div>
+    <div class="p"><div class="clip">
+      <div class="island"></div><div class="status"><span>9:41</span><span>●●● ▮</span></div>
+      <div class="band slim">
+        <div class="sun"></div><div class="cloud"></div>
+        <svg viewBox="0 0 300 64" preserveAspectRatio="none"><path d="M0 64 L0 34 L60 8 L120 34 L180 12 L250 38 L300 20 L300 64 Z" fill="#9DB8C6"/><path d="M0 64 L0 46 L80 26 L150 48 L230 28 L300 44 L300 64 Z" fill="#86A88F"/></svg>
+        <div class="grass"></div>
+        <div class="title">Friends<small>@maya</small></div>
+        <div class="pill" style="right:96px">Invite</div>
+        <div class="pill" style="right:14px">1 request</div>
+      </div>
+      <div class="page">
+        <div class="search">🔍 Find a friend by @username</div>
+        <div class="h">Friends</div>
+        <div class="tile white list">
+          <div class="r hl addrow"><div class="pf">+</div><div><b>Meditate with a friend</b><span>Pick a friend and a weekly goal</span></div><span class="chev">›</span></div>
+          <div class="r"><div class="face ana"></div><div><b>Ana</b><span>5 sessions this week · 12 day streak</span></div><span class="chev">›</span></div>
+          <div class="r"><div class="face dan"></div><div><b>Daniel</b><span>3 sessions this week · 2 day streak</span></div><span class="chev">›</span></div>
+          <div class="r"><div class="face jo"></div><div><b>Jonas</b><span>6 sessions this week · 9 day streak</span></div><span class="chev">›</span></div>
+        </div>
+      </div>
+      <div class="tabbar"><span>Home</span><span>Block</span><span class="plus">+</span><span>Shop</span><span>Profile</span></div>
+    </div></div>
+    <p class="note">The button is <b>the first row of your friends list</b>, the same height as a friend, with a green "+" where the face would be. It reads as part of the list rather than an ad, and your friends stay near the top. With no friends yet, the row says "Invite a friend to meditate with" instead.</p>
+  </div>
+
+  <!-- B. Friend picker -->
+  <div class="col">
+    <div class="tag"><b>B</b> · After tapping it: pick a friend</div>
+    <div class="p"><div class="clip">
+      <div class="island"></div><div class="status"><span>9:41</span><span>●●● ▮</span></div>
+      <div class="band tall"><div class="sun"></div><div class="grass"></div></div>
+      <div class="dim"></div>
+      <div class="sheet" style="top:96px">
+        <div class="grab"></div>
+        <h3>Who do you want to meditate with?</h3>
+        <div class="tile white list pick" style="padding:4px 12px">
+          <div class="r chosen"><div class="face ana"></div><div><b>Ana</b><span>@ana.m</span></div><span class="sel"></span></div>
+          <div class="r"><div class="face dan"></div><div><b>Daniel</b><span>@dan.r</span></div><span class="sel"></span></div>
+          <div class="r"><div class="face jo"></div><div><b>Jonas</b><span>@jonas</span></div><span class="sel"></span></div>
+          <div class="r"><div class="face"></div><div><b>Priya</b><span>@priya</span></div><span class="sel"></span></div>
+        </div>
+        <button class="btn" type="button" style="margin-top:auto">Next</button>
+      </div>
+    </div></div>
+    <p class="note">One friend at a time, since a goal is between two people. A friend you already have a goal with shows <b>"Already together"</b> and can't be picked twice.</p>
+  </div>
+
+  <!-- C. Friend's profile -->
+  <div class="col">
+    <div class="tag"><b>C</b> · A friend's profile</div>
+    <div class="p"><div class="clip">
+      <div class="island"></div><div class="status"><span>9:41</span><span>●●● ▮</span></div>
+      <div class="band" style="height:140px;overflow:visible">
+        <div class="sun"></div><div class="cloud"></div>
+        <svg viewBox="0 0 300 64" preserveAspectRatio="none" style="bottom:22px"><path d="M0 64 L0 34 L60 8 L120 34 L180 12 L250 38 L300 20 L300 64 Z" fill="#9DB8C6"/><path d="M0 64 L0 46 L80 26 L150 48 L230 28 L300 44 L300 64 Z" fill="#86A88F"/></svg>
+        <div class="grass" style="height:30px"></div>
+        <div class="circ" style="left:14px">‹</div><div class="circ" style="right:14px">⋯</div>
+        <div class="portrait on"></div>
+      </div>
+      <div class="page" style="padding-top:12px">
+        <div class="idcard">
+          <b>Ana</b>
+          <div class="hd">@ana.m · meditating since August</div>
+          <div class="fr">6 friends</div>
+          <div class="pair"><span class="rel2">Friends<i>✓</i></span><span class="go2 hl">Meditate together<i>🧘</i></span></div>
+        </div>
+        <div class="tile white stat3">
+          <div><b>5</b><span>this week</span></div>
+          <div><b>12</b><span>day streak</span></div>
+          <div><b>84</b><span>sessions</span></div>
+        </div>
+      </div>
+    </div></div>
+    <p class="note">Two equal buttons <b>inside her card</b>, the way Instagram and Strava do it: a quiet "✓ Friends" and the green "Meditate together". Someone you haven't added yet sees "Add friend" in the green one's place. Once you have a goal with Ana, the green button reads "Your goal".</p>
+  </div>
+
+</div>
+
+<h2 style="margin-top:44px">D · The Friends tab once you have a goal</h2>
+<p class="lede">Swipeable cards. A small blue <b>＋ Add</b> always sits at the right of the "Meditating together" heading. One goal sits centered; several become a row you swipe. Tapping a card opens <b>E</b>, your week together.</p>
+<div class="row">
+  <div class="col">
+    <div class="tag"><b>D</b> · One goal</div>
+    <div class="p"><div class="clip">
+      <div class="island"></div><div class="status"><span>9:41</span><span>●●● ▮</span></div>
+      <div class="band slim">
+        <div class="sun"></div><div class="cloud"></div>
+        <svg viewBox="0 0 300 64" preserveAspectRatio="none"><path d="M0 64 L0 34 L60 8 L120 34 L180 12 L250 38 L300 20 L300 64 Z" fill="#9DB8C6"/><path d="M0 64 L0 46 L80 26 L150 48 L230 28 L300 44 L300 64 Z" fill="#86A88F"/></svg>
+        <div class="grass"></div>
+        <div class="title">Friends<small>@maya</small></div>
+        <div class="pill" style="right:96px">Invite</div>
+        <div class="pill" style="right:14px">1 request</div>
+      </div>
+      <div class="page">
+        <div class="search">🔍 Find a friend by @username</div>
+        <div class="sec"><span class="lbl">Meditating together</span><span class="blue">＋ Add</span></div>
+        <div class="car one"><div class="gc"><div class="faces"><div class="face me"></div><div class="face ana"></div></div><b>You and Ana</b><div class="n">5<small> of 8</small></div><div class="wk"><img src="friend-goals/flame.png" alt="">6 weeks</div></div></div>
+        <div class="h">Friends</div>
+        <div class="tile white list">
+          <div class="r"><div class="face jo"></div><div><b>Jonas</b><span>6 sessions this week · 9 day streak</span></div><span class="chev">›</span></div>
+          <div class="r"><div class="face"></div><div><b>Priya</b><span>5 sessions this week · 4 day streak</span></div><span class="chev">›</span></div>
+        </div>
+      </div>
+      <div class="tabbar"><span>Home</span><span>Block</span><span class="plus">+</span><span>Shop</span><span>Profile</span></div>
+    </div></div>
+    <p class="note">With a single goal, <b>its card sits alone in the middle of the screen</b>, a little larger. Starting another goal is the small blue <b>＋ Add</b> on the right of the heading.</p>
+  </div>
+  <div class="col">
+    <div class="tag"><b>D′</b> · Several goals</div>
+    <div class="p"><div class="clip">
+      <div class="island"></div><div class="status"><span>9:41</span><span>●●● ▮</span></div>
+      <div class="band slim">
+        <div class="sun"></div><div class="cloud"></div>
+        <svg viewBox="0 0 300 64" preserveAspectRatio="none"><path d="M0 64 L0 34 L60 8 L120 34 L180 12 L250 38 L300 20 L300 64 Z" fill="#9DB8C6"/><path d="M0 64 L0 46 L80 26 L150 48 L230 28 L300 44 L300 64 Z" fill="#86A88F"/></svg>
+        <div class="grass"></div>
+        <div class="title">Friends<small>@maya</small></div>
+        <div class="pill" style="right:96px">Invite</div>
+        <div class="pill" style="right:14px">1 request</div>
+      </div>
+      <div class="page">
+        <div class="search">🔍 Find a friend by @username</div>
+        <div class="sec"><span class="lbl">Meditating together</span><span class="blue">＋ Add</span></div>
+        <div class="car"><div class="gc"><div class="faces"><div class="face me"></div><div class="face ana"></div></div><b>You and Ana</b><div class="n">5<small> of 8</small></div><div class="wk"><img src="friend-goals/flame.png" alt="">6 weeks</div></div><div class="gc"><div class="faces"><div class="face me"></div><div class="face dan"></div></div><b>You and Daniel</b><div class="n">4<small> of 8</small></div><div class="wk"><img src="friend-goals/flame.png" alt="">2 weeks</div></div></div>
+        <div class="h">Friends</div>
+        <div class="tile white list">
+          <div class="r"><div class="face jo"></div><div><b>Jonas</b><span>6 sessions this week · 9 day streak</span></div><span class="chev">›</span></div>
+          <div class="r"><div class="face"></div><div><b>Priya</b><span>5 sessions this week · 4 day streak</span></div><span class="chev">›</span></div>
+        </div>
+      </div>
+      <div class="tabbar"><span>Home</span><span>Block</span><span class="plus">+</span><span>Shop</span><span>Profile</span></div>
+    </div></div>
+    <p class="note">Two or more and it becomes a row you swipe, starting from the left. The cut-off card on the right tells you there's more. The blue <b>＋ Add</b> stays in the same spot by the heading, however many goals you have.</p>
+  </div>
+</div>
+
+<h2 style="margin-top:44px">E · Your weekly goal, in detail</h2>
+<div class="row">
+  <div class="col">
+    <div class="tag"><b>E</b> · Tap a card: your week together</div>
+    <div class="p tall"><div class="clip">
+      <div class="island"></div><div class="status"><span>9:41</span><span>●●● ▮</span></div>
+      <div class="band" style="height:132px;overflow:visible">
+        <div class="sun"></div><div class="cloud"></div>
+        <svg viewBox="0 0 300 64" preserveAspectRatio="none" style="bottom:22px"><path d="M0 64 L0 34 L60 8 L120 34 L180 12 L250 38 L300 20 L300 64 Z" fill="#9DB8C6"/><path d="M0 64 L0 46 L80 26 L150 48 L230 28 L300 44 L300 64 Z" fill="#86A88F"/></svg>
+        <div class="grass" style="height:30px"></div>
+        <div class="circ" style="left:14px">‹</div><div class="circ" style="right:14px">⋯</div>
+        <div class="hero"><div class="face me"></div><div class="face ana"></div></div>
+      </div>
+      <div class="page" style="padding-top:8px">
+        <div class="gtitle"><b>You and Ana</b><span>4 days each, every week</span><div class="gchip"><img src="friend-goals/flame.png" alt="">6 weeks together</div></div>
+        <div class="tile white">
+          <div class="ch"><b>This week</b><span>3 days left</span></div>
+          <div class="wgrid">
+            <span></span><span class="dl">M</span><span class="dl">T</span><span class="dl">W</span><span class="dl now">T</span><span class="dl">F</span><span class="dl">S</span><span class="dl">S</span><span></span>
+            <span class="nm">You</span><i class="c on"></i><i class="c"></i><i class="c on"></i><i class="c today"></i><i class="c later"></i><i class="c later"></i><i class="c later"></i><span class="ct">2/4</span>
+              <span class="nm">Ana</span><i class="c on"></i><i class="c on"></i><i class="c on"></i><i class="c today"></i><i class="c later"></i><i class="c later"></i><i class="c later"></i><span class="ct">3/4</span>
+          </div>
+          <div class="say">Ana's one away. <em>You need 2 more by Sunday.</em></div>
+          <button class="blue full" type="button" style="margin-top:12px;border:0;font-family:var(--font)">👋 Nudge Ana</button><div class="cap" style="text-align:center;margin-top:8px">Ana hasn't meditated today</div>
+        </div>
+        <div class="tile white">
+          <div class="ch"><b>Streak</b><span>best 7 weeks</span></div>
+          <div class="big2" style="margin-top:6px"><img src="friend-goals/flame.png" alt=""><b>6</b><span>weeks in a row together</span></div>
+          <div class="weeks"><i></i><i class="miss"></i><i></i><i></i><i></i><i></i><i></i><i class="now"></i></div>
+          <div class="cap">Last 8 weeks</div>
+        </div>
+        <div class="tile white">
+          <div class="ch"><b>Minutes this week</b><span>86 together</span></div>
+          <div class="mins" style="margin-top:8px"><div><b>34</b><span>you</span></div><div><b>52</b><span>Ana</span></div></div>
+        </div>
+        <div class="links"><span>Change goal</span><span>End goal</span></div>
+      </div>
+    </div></div>
+    <p class="note">Opens like a friend's page. <b>A day-by-day grid</b> shows when each of you meditated this week (today is outlined), then what's left, then the one main button. Ana hasn't meditated today, so the button is a blue <b>👋 Nudge Ana</b>. After one tap it greys out until tomorrow; if she has meditated, it reads "Ana meditated today 🧘" instead. Below: your streak with the last 8 weeks, and minutes each. "Change goal" and "End goal" sit quietly at the bottom.</p>
+  </div>
+  <div class="col">
+    <div class="tag"><b>E′</b> · The same screen once you both hit it</div>
+    <div class="p tall"><div class="clip">
+      <div class="island"></div><div class="status"><span>9:41</span><span>●●● ▮</span></div>
+      <div class="band" style="height:132px;overflow:visible">
+        <div class="sun"></div><div class="cloud"></div>
+        <svg viewBox="0 0 300 64" preserveAspectRatio="none" style="bottom:22px"><path d="M0 64 L0 34 L60 8 L120 34 L180 12 L250 38 L300 20 L300 64 Z" fill="#9DB8C6"/><path d="M0 64 L0 46 L80 26 L150 48 L230 28 L300 44 L300 64 Z" fill="#86A88F"/></svg>
+        <div class="grass" style="height:30px"></div>
+        <div class="circ" style="left:14px">‹</div><div class="circ" style="right:14px">⋯</div>
+        <div class="hero"><div class="face me"></div><div class="face ana"></div></div>
+      </div>
+      <div class="page" style="padding-top:8px">
+        <div class="gtitle"><b>You and Ana</b><span>4 days each, every week</span><div class="gchip"><img src="friend-goals/flame.png" alt="">7 weeks together</div></div>
+        <div class="tile white">
+          <div class="ch"><b>This week</b><span>Done with 2 days to spare</span></div>
+          <div class="wgrid">
+            <span></span><span class="dl">M</span><span class="dl">T</span><span class="dl">W</span><span class="dl">T</span><span class="dl now">F</span><span class="dl">S</span><span class="dl">S</span><span></span>
+            <span class="nm">You</span><i class="c on"></i><i class="c"></i><i class="c on"></i><i class="c on"></i><i class="c on today"></i><i class="c later"></i><i class="c later"></i><span class="ct">4/4</span>
+              <span class="nm">Ana</span><i class="c on"></i><i class="c on"></i><i class="c"></i><i class="c on"></i><i class="c on today"></i><i class="c later"></i><i class="c later"></i><span class="ct">4/4</span>
+          </div>
+          <div class="donebar">You both hit 4 days. Week 7 is in the bag 🔥</div>
+          <button class="btn" type="button" style="margin-top:12px">🎉 Send Ana a high five</button>
+        </div>
+        <div class="tile white">
+          <div class="ch"><b>Streak</b><span>best 7 weeks</span></div>
+          <div class="big2" style="margin-top:6px"><img src="friend-goals/flame.png" alt=""><b>7</b><span>weeks in a row together</span></div>
+          <div class="weeks"><i></i><i class="miss"></i><i></i><i></i><i></i><i></i><i></i><i class=""></i></div>
+          <div class="cap">Last 8 weeks</div>
+        </div>
+        <div class="tile white">
+          <div class="ch"><b>Minutes this week</b><span>159 together</span></div>
+          <div class="mins" style="margin-top:8px"><div><b>71</b><span>you</span></div><div><b>88</b><span>Ana</span></div></div>
+        </div>
+        <div class="links"><span>Change goal</span><span>End goal</span></div>
+      </div>
+    </div></div>
+    <p class="note">When the week is met early, the grid fills in, a green line says <b>"Week 7 is in the bag"</b>, the streak ticks up, and the button becomes a high five to Ana. Nothing more to do until Monday.</p>
+  </div>
+  <div class="col">
+    <div class="tag"><b>E″</b> · You haven't meditated yet</div>
+    <div class="p tall"><div class="clip">
+      <div class="island"></div><div class="status"><span>9:41</span><span>●●● ▮</span></div>
+      <div class="band" style="height:132px;overflow:visible">
+        <div class="sun"></div><div class="cloud"></div>
+        <svg viewBox="0 0 300 64" preserveAspectRatio="none" style="bottom:22px"><path d="M0 64 L0 34 L60 8 L120 34 L180 12 L250 38 L300 20 L300 64 Z" fill="#9DB8C6"/><path d="M0 64 L0 46 L80 26 L150 48 L230 28 L300 44 L300 64 Z" fill="#86A88F"/></svg>
+        <div class="grass" style="height:30px"></div>
+        <div class="circ" style="left:14px">‹</div><div class="circ" style="right:14px">⋯</div>
+        <div class="hero"><div class="face me"></div><div class="face ana"></div></div>
+      </div>
+      <div class="page" style="padding-top:8px">
+        <div class="gtitle"><b>You and Ana</b><span>4 days each, every week</span><div class="gchip"><img src="friend-goals/flame.png" alt="">6 weeks together</div></div>
+        <div class="tile white">
+          <div class="ch"><b>This week</b><span>3 days left</span></div>
+          <div class="wgrid">
+            <span></span><span class="dl">M</span><span class="dl">T</span><span class="dl">W</span><span class="dl now">T</span><span class="dl">F</span><span class="dl">S</span><span class="dl">S</span><span></span>
+            <span class="nm">You</span><i class="c on"></i><i class="c"></i><i class="c on"></i><i class="c today"></i><i class="c later"></i><i class="c later"></i><i class="c later"></i><span class="ct">2/4</span>
+              <span class="nm">Ana</span><i class="c on"></i><i class="c on"></i><i class="c on"></i><i class="c today"></i><i class="c later"></i><i class="c later"></i><i class="c later"></i><span class="ct">3/4</span>
+          </div>
+          <div class="say">Ana's one away. <em>You need 2 more by Sunday.</em></div>
+          <button class="btn" type="button" style="margin-top:12px">🧘 Meditate now</button><div class="cap" style="text-align:center;margin-top:8px">Meditate first, then you can nudge Ana 👋</div>
+        </div>
+        <div class="tile white">
+          <div class="ch"><b>Streak</b><span>best 7 weeks</span></div>
+          <div class="big2" style="margin-top:6px"><img src="friend-goals/flame.png" alt=""><b>6</b><span>weeks in a row together</span></div>
+          <div class="weeks"><i></i><i class="miss"></i><i></i><i></i><i></i><i></i><i></i><i class="now"></i></div>
+          <div class="cap">Last 8 weeks</div>
+        </div>
+        <div class="tile white">
+          <div class="ch"><b>Minutes this week</b><span>86 together</span></div>
+          <div class="mins" style="margin-top:8px"><div><b>34</b><span>you</span></div><div><b>52</b><span>Ana</span></div></div>
+        </div>
+        <div class="links"><span>Change goal</span><span>End goal</span></div>
+      </div>
+    </div></div>
+    
+    <p class="note">Neither of you has meditated today, so <b>Nudge is locked</b>: the button becomes a green <b>Meditate now</b> with "Meditate first, then you can nudge Ana". It unlocks once you've meditated today, or once you've already done your 4 days this week. After a session, the reward screen says "You can nudge Ana now 👋".</p>
+  </div>
+  <div class="col">
+    <div class="tag"><b>E‴</b> · Your first week together</div>
+    <div class="p tall"><div class="clip">
+      <div class="island"></div><div class="status"><span>9:41</span><span>●●● ▮</span></div>
+      <div class="band" style="height:132px;overflow:visible">
+        <div class="sun"></div><div class="cloud"></div>
+        <svg viewBox="0 0 300 64" preserveAspectRatio="none" style="bottom:22px"><path d="M0 64 L0 34 L60 8 L120 34 L180 12 L250 38 L300 20 L300 64 Z" fill="#9DB8C6"/><path d="M0 64 L0 46 L80 26 L150 48 L230 28 L300 44 L300 64 Z" fill="#86A88F"/></svg>
+        <div class="grass" style="height:30px"></div>
+        <div class="circ" style="left:14px">‹</div><div class="circ" style="right:14px">⋯</div>
+        <div class="hero"><div class="face me"></div><div class="face ana"></div></div>
+      </div>
+      <div class="page" style="padding-top:8px">
+        <div class="gtitle"><b>You and Ana</b><span>4 days each, every week · started Monday</span><div class="gchip first"><img src="friend-goals/flame.png" alt="">First week</div></div>
+        <div class="tile white">
+          <div class="ch"><b>This week</b><span>3 days left</span></div>
+          <div class="wgrid">
+            <span></span><span class="dl">M</span><span class="dl">T</span><span class="dl">W</span><span class="dl now">T</span><span class="dl">F</span><span class="dl">S</span><span class="dl">S</span><span></span>
+            <span class="nm">You</span><i class="c on"></i><i class="c"></i><i class="c on"></i><i class="c on today"></i><i class="c later"></i><i class="c later"></i><i class="c later"></i><span class="ct">3/4</span>
+              <span class="nm">Ana</span><i class="c on"></i><i class="c"></i><i class="c"></i><i class="c today"></i><i class="c later"></i><i class="c later"></i><i class="c later"></i><span class="ct">1/4</span>
+          </div>
+          <div class="say">You're one away. <em>Ana needs 3 more by Sunday.</em></div>
+          <button class="blue full" type="button" style="margin-top:12px;border:0;font-family:var(--font)">👋 Nudge Ana</button><div class="cap" style="text-align:center;margin-top:8px">Ana hasn't meditated today</div>
+        </div>
+        <div class="tile white">
+          <div class="ch"><b>Streak</b><span>first week</span></div>
+          <div class="big2" style="margin-top:6px"><img src="friend-goals/flame.png" alt="" style="filter:saturate(.4);opacity:.75"><span style="font-size:12.5px;color:var(--ink);font-weight:800;line-height:1.35">Your first week together.<br><span style="color:var(--soft);font-weight:700">Both hit 4 days by Sunday and your streak starts.</span></span></div>
+          <div class="weeks" style="margin-top:12px"><i class="now"></i><i class="miss"></i><i class="miss"></i><i class="miss"></i><i class="miss"></i><i class="miss"></i><i class="miss"></i><i class="miss"></i></div>
+          <div class="cap">Week 1</div>
+        </div>
+        <div class="tile white">
+          <div class="ch"><b>Minutes this week</b><span>38 together</span></div>
+          <div class="mins" style="margin-top:8px"><div><b>28</b><span>you</span></div><div><b>10</b><span>Ana</span></div></div>
+        </div>
+        <div class="links"><span>Change goal</span><span>End goal</span></div>
+      </div>
+    </div></div>
+    
+    <p class="note">No "0 weeks". The streak card says <b>"Your first week together"</b> with what it takes to start the streak, and the week strip shows just week 1 in progress. On the Friends tab card the same goal reads <b>"First week"</b> instead of "🔥 0 weeks".</p>
+  </div>
+</div>
+
+<h2 style="margin-top:44px">F · Choosing the goal</h2>
+<p class="lede">The blue <b>＋ Add</b> opens <b>B</b> (pick a friend); <b>Next</b> lands here. One kind of goal for now: <b>days each per week</b>. It's the simplest to explain, and fair, since both of you have to show up.</p>
+<div class="row">
+  <div class="col">
+    <div class="tag"><b>F1</b> · Pick the number of days</div>
+    <div class="p tall" style="height:760px"><div class="clip">
+      <div class="island"></div><div class="status"><span>9:41</span><span>●●● ▮</span></div>
+      <div class="band" style="height:132px;overflow:visible">
+        <div class="sun"></div><div class="cloud"></div>
+        <svg viewBox="0 0 300 64" preserveAspectRatio="none" style="bottom:22px"><path d="M0 64 L0 34 L60 8 L120 34 L180 12 L250 38 L300 20 L300 64 Z" fill="#9DB8C6"/><path d="M0 64 L0 46 L80 26 L150 48 L230 28 L300 44 L300 64 Z" fill="#86A88F"/></svg>
+        <div class="grass" style="height:30px"></div>
+        <div class="circ" style="left:14px">‹</div>
+        <div class="hero"><div class="face me"></div><div class="face ana"></div></div>
+      </div>
+      <div class="page vpage" style="padding-top:8px;gap:10px">
+        <div class="gtitle"><b>Meditate together with Ana</b><span>How many days a week will you each meditate?</span></div>
+        <div class="vtile">
+          <div class="ch"><b>Days each week</b><span>pick one</span></div>
+          <div class="pickdays"><i>1</i><i>2</i><i>3</i><i class="on">4</i><i>5</i><i>6</i><i>7</i></div>
+          <div class="pickcap" style="margin-top:9px">4 days each <em>· any days you like</em></div>
+        </div>
+        <div class="vtile">
+          <div class="lab" style="display:flex;justify-content:space-between;font-size:11px;font-weight:800"><b>You</b><span style="color:var(--soft)">4 of 7 days</span></div>
+          <div class="row7" style="display:flex;gap:5px;margin-top:7px"><i style="flex:1;height:8px;border-radius:4px;background:var(--measure)"></i><i style="flex:1;height:8px;border-radius:4px;background:var(--measure)"></i><i style="flex:1;height:8px;border-radius:4px;background:var(--measure)"></i><i style="flex:1;height:8px;border-radius:4px;background:var(--measure)"></i><i style="flex:1;height:8px;border-radius:4px;background:rgba(43,38,32,.08)"></i><i style="flex:1;height:8px;border-radius:4px;background:rgba(43,38,32,.08)"></i><i style="flex:1;height:8px;border-radius:4px;background:rgba(43,38,32,.08)"></i></div>
+          <div class="lab" style="display:flex;justify-content:space-between;font-size:11px;font-weight:800;margin-top:10px"><b>Ana</b><span style="color:var(--soft)">4 of 7 days</span></div>
+          <div class="row7" style="display:flex;gap:5px;margin-top:7px"><i style="flex:1;height:8px;border-radius:4px;background:var(--measure)"></i><i style="flex:1;height:8px;border-radius:4px;background:var(--measure)"></i><i style="flex:1;height:8px;border-radius:4px;background:var(--measure)"></i><i style="flex:1;height:8px;border-radius:4px;background:var(--measure)"></i><i style="flex:1;height:8px;border-radius:4px;background:rgba(43,38,32,.08)"></i><i style="flex:1;height:8px;border-radius:4px;background:rgba(43,38,32,.08)"></i><i style="flex:1;height:8px;border-radius:4px;background:rgba(43,38,32,.08)"></i></div>
+        </div>
+        <div class="ottonote"><img src="friend-goals/otto-wave.png" alt=""><div class="bub white">3 or 4 is a good place to start. You can change it any time.</div></div>
+        <p class="onmeadow" style="margin:0">Your week starts the day Ana says yes. Both hit it within the week and your streak grows. A missed day is fine.</p>
+        <button class="blue full" type="button" style="border:0;font-family:var(--font);margin-top:2px">Send to Ana</button>
+      </div>
+    </div></div>
+    <p class="note">Same valley as the goal page: your two faces on the grass line, the question in white, the day picker and the preview in white tiles. <b>Send to Ana</b> stays blue.</p>
+  </div>
+  <div class="col">
+    <div class="tag"><b>F2</b> · Sent</div>
+    <div class="p tall" style="height:560px"><div class="clip">
+      <div class="island"></div><div class="status"><span>9:41</span><span>●●● ▮</span></div>
+      <div class="band" style="height:132px;overflow:visible">
+        <div class="sun"></div><div class="cloud"></div>
+        <svg viewBox="0 0 300 64" preserveAspectRatio="none" style="bottom:22px"><path d="M0 64 L0 34 L60 8 L120 34 L180 12 L250 38 L300 20 L300 64 Z" fill="#9DB8C6"/><path d="M0 64 L0 46 L80 26 L150 48 L230 28 L300 44 L300 64 Z" fill="#86A88F"/></svg>
+        <div class="grass" style="height:30px"></div>
+        <div class="circ" style="left:14px">‹</div>
+        <div class="hero"><div class="face me"></div><div class="face ana"></div></div>
+      </div>
+      <div class="page vpage" style="padding-top:8px;gap:10px">
+        <div class="gtitle"><b>Meditate together with Ana</b><span>4 days each, every week</span></div>
+        <div class="vtile" style="text-align:center;padding:20px 14px">
+          <b style="display:block;font-size:18px;font-weight:800">Sent to Ana 🎉</b>
+          <p style="margin:7px 0 0;font-size:12px;color:var(--soft);font-weight:600;line-height:1.45">Your first week starts the day she says yes. We'll let you know.</p>
+          <span class="pending">● Waiting for Ana</span>
+        </div>
+        <button class="btn" type="button" style="margin-top:6px">Done</button>
+      </div>
+    </div></div>
+    <p class="note">Just confirmation and <b>Done</b>. The goal waits for Ana to say yes; you get a notification when she does.</p>
+  </div>
+</div>
+
+<h2 style="margin-top:44px">G · The invite, explained</h2>
+<div class="row">
+  <div class="col">
+    <div class="tag"><b>G1</b> · Requests, with a caret</div>
+    <div class="p tall" style="height:740px"><div class="clip">
+      <div class="island"></div><div class="status"><span>9:41</span><span>●●● ▮</span></div>
+      <div class="band slim">
+        <div class="sun"></div><div class="cloud"></div><div class="grass"></div>
+        <div class="title">Requests</div>
+      </div>
+      <div class="page">
+        <div class="h">Meditate together</div>
+        <div class="req2 hl">
+          <div class="top2"><div class="faces"><div class="face me"></div></div><div><b>Maya wants to meditate with you</b><span>4 days each, every week</span></div><span class="car2">›</span></div>
+          <div class="acts"><span class="no">Not now</span><span class="yes">Let's do it</span></div>
+        </div>
+        <div class="h">Friend requests</div>
+        <div class="tile white list">
+          <div class="r"><div class="face jo"></div><div><b>Jonas</b><span>@jonas</span></div><span class="btn small" style="margin-left:auto;background:#3F80AD;box-shadow:0 3px 0 #2C628A;color:#fff">Accept</span></div>
+        </div>
+      </div>
+    </div></div>
+    <p class="note">The invite card gets a <b>caret</b>, and the whole card opens the details. <b>Not now</b> and <b>Let&#39;s do it</b> stay on the card for anyone who already gets it.</p>
+  </div>
+  <div class="col">
+    <div class="tag"><b>G2</b> · Tap it: what you're agreeing to</div>
+    <div class="p tall" style="height:820px"><div class="clip">
+      <div class="island"></div><div class="status"><span>9:41</span><span>●●● ▮</span></div>
+      <div class="band" style="height:132px;overflow:visible">
+        <div class="sun"></div><div class="cloud"></div>
+        <svg viewBox="0 0 300 64" preserveAspectRatio="none" style="bottom:22px"><path d="M0 64 L0 34 L60 8 L120 34 L180 12 L250 38 L300 20 L300 64 Z" fill="#9DB8C6"/><path d="M0 64 L0 46 L80 26 L150 48 L230 28 L300 44 L300 64 Z" fill="#86A88F"/></svg>
+        <div class="grass" style="height:30px"></div>
+        <div class="circ" style="left:14px">‹</div>
+        <div class="hero"><div class="face ana"></div><div class="face me"></div></div>
+      </div>
+      <div class="page vpage" style="padding-top:8px;gap:10px">
+        <div class="gtitle"><b>Meditate together with Maya</b><span>She'd like you two to keep each other going</span></div>
+        <div class="facts">
+          <div class="fact"><div class="ic">🎯</div><div><b>4 days each, every week</b><span>Any 4 days you like. Maya does her 4, you do yours.</span><div class="mini7"><i class="on"></i><i></i><i class="on"></i><i class="on"></i><i></i><i class="on"></i><i></i></div></div></div>
+          <div class="fact"><div class="ic">🔥</div><div><b>A streak you share</b><span>Your week starts the day you say yes. Say yes on a Thursday and each week runs Thursday to Wednesday. Both hit it and your streak grows.</span></div></div>
+          <div class="fact"><div class="ic">👋</div><div><b>Nudges, once a day</b><span>Either of you can nudge the other, once you've meditated yourself.</span></div></div>
+          <div class="fact"><div class="ic">👀</div><div><b>What Maya sees</b><span>Which days you meditated this week and your minutes. Nothing else.</span></div></div>
+        </div>
+        <div class="vbtns">
+          <button class="blue full" type="button" style="border:0;font-family:var(--font)">Let's do it</button>
+          <span class="quiet">Not now</span>
+        </div>
+      </div>
+    </div></div>
+    <p class="note">Same valley look as the goal page. The streak card now says the week <b>starts the day you say yes</b>, so it runs from that weekday to the same day next week, not Monday to Sunday.</p>
+  </div>
+</div>
+
+<h2 style="margin-top:44px">H · Waiting, and when they say yes</h2>
+<div class="row">
+  <div class="col">
+    <div class="tag"><b>H1</b> · Your invite is out</div>
+    <div class="p"><div class="clip">
+      <div class="island"></div><div class="status"><span>9:41</span><span>●●● ▮</span></div>
+      <div class="band slim">
+        <div class="sun"></div><div class="cloud"></div>
+        <svg viewBox="0 0 300 64" preserveAspectRatio="none"><path d="M0 64 L0 34 L60 8 L120 34 L180 12 L250 38 L300 20 L300 64 Z" fill="#9DB8C6"/><path d="M0 64 L0 46 L80 26 L150 48 L230 28 L300 44 L300 64 Z" fill="#86A88F"/></svg>
+        <div class="grass"></div>
+        <div class="title">Friends<small>@maya</small></div>
+        <div class="pill" style="right:96px">Invite</div>
+        <div class="pill" style="right:14px">Requests</div>
+      </div>
+      <div class="page">
+        <div class="search">🔍 Find a friend by @username</div>
+        <div class="sec"><span class="lbl">Meditating together</span><span class="blue">＋ Add</span></div>
+        <div class="car one"><div class="gc pend"><div class="faces"><div class="face me"></div><div class="face ana"></div></div><b>You and Ana</b><div class="pchip">● Waiting for Ana</div><div class="when">Invite sent today · 4 days each</div></div></div>
+        <div class="h">Friends</div>
+        <div class="tile white list">
+          <div class="r"><div class="face jo"></div><div><b>Jonas</b><span>6 sessions this week · 9 day streak</span></div><span class="chev">›</span></div>
+          <div class="r"><div class="face"></div><div><b>Priya</b><span>5 sessions this week · 4 day streak</span></div><span class="chev">›</span></div>
+        </div>
+      </div>
+      <div class="tabbar"><span>Home</span><span>Block</span><span class="plus">+</span><span>Shop</span><span>Profile</span></div>
+    </div></div>
+    <p class="note">While Ana decides, the card is already there: her face faded, <b>Waiting for Ana</b>, and when you sent it. Tap it to see the goal or cancel the invite.</p>
+  </div>
+  <div class="col">
+    <div class="tag"><b>H2</b> · She said yes: a badge on Home</div>
+    <img src="friend-goals/home-badge.png" alt="Home with a red 1 on the Friends circle" style="width:300px;max-width:100%;border-radius:40px;box-shadow:0 14px 36px rgba(80,55,30,.18), 0 0 0 7px #1d1b18">
+    <p class="note">A red <b>1</b> on the Friends circle, like an unread message. It counts anything new: an accepted goal, a nudge, a friend request. It clears once you open Friends.</p>
+  </div>
+  <div class="col">
+    <div class="tag"><b>H3</b> · Open Friends</div>
+    <div class="p"><div class="clip">
+      <div class="island"></div><div class="status"><span>9:41</span><span>●●● ▮</span></div>
+      <div class="band slim">
+        <div class="sun"></div><div class="cloud"></div>
+        <svg viewBox="0 0 300 64" preserveAspectRatio="none"><path d="M0 64 L0 34 L60 8 L120 34 L180 12 L250 38 L300 20 L300 64 Z" fill="#9DB8C6"/><path d="M0 64 L0 46 L80 26 L150 48 L230 28 L300 44 L300 64 Z" fill="#86A88F"/></svg>
+        <div class="grass"></div>
+        <div class="title">Friends<small>@maya</small></div>
+        <div class="pill" style="right:96px">Invite</div>
+        <div class="pill" style="right:14px">Requests</div>
+      </div>
+      <div class="page">
+        <div class="search">🔍 Find a friend by @username</div>
+        <div class="sec"><span class="lbl">Meditating together</span><span class="blue">＋ Add</span></div>
+        <div class="car one"><div class="gc fresh"><span class="new">Ana said yes</span><div class="faces"><div class="face me"></div><div class="face ana"></div></div><b>You and Ana</b><div class="n">0<small> of 8</small></div><div class="wk" style="color:var(--soft)"><img src="friend-goals/flame.png" alt="" style="filter:saturate(.4);opacity:.8">First week</div></div></div>
+        <div class="h">Friends</div>
+        <div class="tile white list">
+          <div class="r"><div class="face jo"></div><div><b>Jonas</b><span>6 sessions this week · 9 day streak</span></div><span class="chev">›</span></div>
+          <div class="r"><div class="face"></div><div><b>Priya</b><span>5 sessions this week · 4 day streak</span></div><span class="chev">›</span></div>
+        </div>
+      </div>
+      <div class="tabbar"><span>Home</span><span>Block</span><span class="plus">+</span><span>Shop</span><span>Profile</span></div>
+    </div></div>
+    <p class="note">The card lights up with <b>Ana said yes</b>, now live at 0 of 8 in your first week. The badge is gone.</p>
+  </div>
+</div>
+
+<h2 style="margin-top:44px">I · One session counts for every goal</h2>
+<p class="lede">You meditate once and it counts for <b>every shared goal</b>, your <b>personal streak</b>, Otto's glow and your points. The reward screen says so. Sessions under 5 minutes or logged by hand still count for your own streak, but not for shared goals.</p>
+<div class="row">
+  <div class="col">
+    <div class="tag"><b>I</b> · After a session</div>
+    <img src="friend-goals/reward-counted.png" alt="Reward screen with a line saying Counted for Ana and Daniel" style="width:300px;max-width:100%;border-radius:40px;box-shadow:0 14px 36px rgba(80,55,30,.18), 0 0 0 7px #1d1b18">
+    <p class="note">A small pill under "Session complete!": <b>"Counted for Ana and Daniel 🤝"</b> with their faces. One goal reads "Counted for Ana"; three or more, "Ana, Daniel and 1 more". It doesn't show if the session didn't count for any goal. Tapping it opens Friends.</p>
+  </div>
+</div>

@@ -1,0 +1,7 @@
+/* Meditating together (2026-10-14): the push alerts CloudKit sends for the
+   goal and nudge subscriptions (CloudKitCommunityDatabase.ensureGoalSubscriptions).
+   %@ is the sender's display name, read from the record's fromName field. */
+"GOAL_INVITE_ALERT" = "%@ wants to meditate with you. Tap to see the goal.";
+"GOAL_ACCEPT_ALERT" = "%@ said yes. Your first week together starts today 🔥";
+"GOAL_NUDGE_ALERT" = "%@ nudged you 👋 Meditate today?";
+"GOAL_CHEER_ALERT" = "%@ sent you a high five 🎉 You both hit this week's goal.";

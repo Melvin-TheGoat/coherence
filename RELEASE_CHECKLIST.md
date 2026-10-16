@@ -1007,6 +1007,35 @@ effects, the Watch redesign, and onboarding answers reported to analytics
 - [ ] The what's-new screens for free 1.0 members
       (`mockups/whats-new-v1.html`) are NOT in 1.3 unless Melvin says so.
 
+## OPEN for the build that ships Meditating together (added 2026-10-14)
+
+Shared weekly goals with friends, nudges, the badge on Home, and the reward
+screen's "Counted for" line. Built on branch `block`, behind
+`FeatureFlags.friends` like the rest of Friends. None of it has run on real
+iCloud yet.
+
+- [ ] **CloudKit: create `GoalMember` and `Nudge` in Development with their
+      indexes, run the two-phone round trip, then deploy to Production**
+      (`CLOUDKIT_SETUP.md`, "Meditating together"). Without the Production
+      indexes the goals simply never appear, and the friends list still works
+      (the goal refresh is isolated so it can't break Friends).
+- [ ] **Two-phone test:** invite, accept, both meditate 5+ minutes, check the
+      week grid and "Counted for" on both phones; "Not now"; end a goal; nudge
+      with 808 closed on the other phone (the push), and the red badge on Home.
+- [ ] **Privacy policy (both copies) and App Privacy labels:** a friend you
+      start a goal with sees which days you meditated and your minutes on those
+      days, from the goal's start, and the records sit in the PUBLIC iCloud
+      database like the rest of Friends (readable to anyone who knows where to
+      look, as profiles already are). Nudges carry your display name. Never a
+      score or anything measured off the body. The founders decide the exact
+      wording; nothing is published until then.
+- [ ] **Push notifications:** the app now calls
+      `registerForRemoteNotifications` and CloudKit sends alerts for goal
+      invites, answers and nudges. `aps-environment` must be `production` in
+      the archived build (it is set by signing; check the ipa as for 1.0).
+- [ ] **Review notes:** add how to see the feature (Friends → "Meditate with a
+      friend") and that nudges are limited to once a day per friend.
+
 ## OPEN for 1.2: the home screen widget (added 2026-10-05)
 
 

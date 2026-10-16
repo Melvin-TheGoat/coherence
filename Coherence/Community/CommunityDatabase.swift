@@ -65,6 +65,14 @@ protocol CommunityDatabase {
     func fetch(_ recordName: String) async throws -> CKRecord?
     func query(_ query: CommunityQuery) async throws -> [CKRecord]
     func delete(_ recordName: String) async throws
+    /// Push alerts for Meditating together: an invite to me, an answer to my
+    /// invite, a nudge to me. Best effort; a database that cannot push (the
+    /// in-memory one) does nothing.
+    func ensureGoalSubscriptions(me: String) async
+}
+
+extension CommunityDatabase {
+    func ensureGoalSubscriptions(me: String) async {}
 }
 
 enum CommunityError: Error, Equatable {
@@ -203,6 +211,51 @@ final class CloudKitCommunityDatabase: CommunityDatabase {
             _ = try await db.deleteRecord(withID: CKRecord.ID(recordName: recordName))
         } catch let error as CKError where error.code == .unknownItem {
             // Already gone is the outcome we wanted.
+        }
+    }
+
+    /// Three query subscriptions, so CloudKit itself pushes the alert: no
+    /// server of ours is involved (Meditating together, 2026-10-14). Until
+    /// now the public database pushed nothing and Friends refreshed on a
+    /// timer while open; a nudge has to reach a phone in a pocket.
+    ///
+    /// The alert text is a localization key in `Localizable.strings` with the
+    /// writer's name as its argument (a subscription can only quote fields of
+    /// the record it fires on, hence `fromName`). Saved once per person; a
+    /// later save with the same ids replaces them, so calling this on every
+    /// launch is harmless. Needs the queried fields QUERYABLE in Production
+    /// (`CLOUDKIT_SETUP.md`), and notification permission to show anything.
+    func ensureGoalSubscriptions(me: String) async {
+        let ref = CKRecord.Reference(recordID: CKRecord.ID(recordName: me), action: .none)
+        func sub(_ id: String, type: String, predicate: NSPredicate, key: String) -> CKQuerySubscription {
+            let s = CKQuerySubscription(recordType: type, predicate: predicate,
+                                        subscriptionID: id + "-" + me, options: [.firesOnRecordCreation])
+            let info = CKSubscription.NotificationInfo()
+            info.alertLocalizationKey = key
+            info.alertLocalizationArgs = ["fromName"]
+            info.soundName = "default"
+            s.notificationInfo = info
+            return s
+        }
+        let subs = [
+            sub("goal-invite", type: CommunityType.goalMember,
+                predicate: NSPredicate(format: "partner == %@ AND kind == %@", ref, "invite"),
+                key: "GOAL_INVITE_ALERT"),
+            sub("goal-accept", type: CommunityType.goalMember,
+                predicate: NSPredicate(format: "partner == %@ AND kind == %@", ref, "accept"),
+                key: "GOAL_ACCEPT_ALERT"),
+            sub("goal-nudge", type: CommunityType.nudge,
+                predicate: NSPredicate(format: "to == %@ AND kind == %@", ref, "nudge"),
+                key: "GOAL_NUDGE_ALERT"),
+            sub("goal-cheer", type: CommunityType.nudge,
+                predicate: NSPredicate(format: "to == %@ AND kind == %@", ref, "cheer"),
+                key: "GOAL_CHEER_ALERT"),
+        ]
+        do {
+            _ = try await db.modifySubscriptions(saving: subs, deleting: [])
+        } catch {
+            // A missing record type or index in this environment, or no
+            // network: the app still works, it just won't push until it can.
         }
     }
 }

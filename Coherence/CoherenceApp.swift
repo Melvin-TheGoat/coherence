@@ -59,6 +59,13 @@ struct CoherenceApp: App {
             let d = FetchDescriptor<Session>()
             return ((try? mainContext.fetch(d)) ?? []).map { ($0.startedAt, $0.durationSec) }
         }
+        // The same sessions with whether each was logged by hand: a shared
+        // goal counts only measured sessions of 5 minutes or more
+        // (`GoalDay.qualifying`, Meditating together, 2026-10-14).
+        community.goalSessions = {
+            let d = FetchDescriptor<Session>()
+            return ((try? mainContext.fetch(d)) ?? []).map { ($0.startedAt, $0.durationSec, $0.isLogged) }
+        }
         community.onPostRemoved = { sessionID in
             if let row = SessionStore.reflection(for: sessionID, in: mainContext) {
                 row.visibility = "private"
@@ -140,7 +147,14 @@ struct CoherenceApp: App {
                         // `syncPracticeStats`, so coming back to the app
                         // repeatedly costs at most one write.
                         Task { await community.syncPracticeStats() }
+                        // Goals, nudges and requests that arrived while 808
+                        // was away, for the badge on Home's Friends circle.
+                        if FeatureFlags.friends { Task { await community.refresh(quiet: true) } }
                     }
+                }
+                // A push about a goal or a nudge with 808 open: fetch it now.
+                .onReceive(NotificationCenter.default.publisher(for: .communityNewsArrived)) { _ in
+                    if FeatureFlags.friends { Task { await community.refresh(quiet: true) } }
                 }
         }
         .modelContainer(modelContainer)

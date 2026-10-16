@@ -511,6 +511,11 @@ final class BlockNotifications: NSObject, UNUserNotificationCenterDelegate {
         if info["block"] != nil {
             BlockTrace.step("\"Otto wants a word\" arrived with 808 open")
             completionHandler([.banner, .sound])
+        } else if info["ck"] != nil {
+            // CloudKit's push for a goal invite, an answer or a nudge
+            // (Meditating together, 2026-10-14): show it, and fetch the news.
+            NotificationCenter.default.post(name: .communityNewsArrived, object: nil)
+            completionHandler([.banner, .sound])
         } else if info[SessionEndNotice.userInfoKey] != nil {
             // The sit screen is already saying it is over, and `SessionBell`
             // is ringing (it sounds on silent; this sound would not), so
@@ -528,6 +533,12 @@ final class BlockNotifications: NSObject, UNUserNotificationCenterDelegate {
         if request.content.userInfo["block"] != nil {
             BlockTrace.step("\"Otto wants a word\" tapped")
             Task { @MainActor in BlockController.shared.requestIntervention() }
+        } else if request.content.userInfo["ck"] != nil {
+            // A goal invite, an answer or a nudge: open Friends.
+            Task { @MainActor in
+                NotificationCenter.default.post(name: .communityNewsArrived, object: nil)
+                NotificationCenter.default.post(name: .openFriends, object: nil)
+            }
         } else if let kind = Analytics.notificationKind(identifier: request.identifier,
                                                         userInfo: request.content.userInfo) {
             // 808's own notifications only. Block's ask is never tracked:

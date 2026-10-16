@@ -47,6 +47,25 @@ final class CommunityModel: ObservableObject {
     @Published private(set) var reactions: [String: [String]] = [:]
     @Published var errorText: String?
 
+    // MARK: Meditating together (see CommunityModel+Goals.swift)
+
+    /// Every shared goal I am in or have been asked to join, not yet over.
+    @Published var goals: [GoalPair] = []
+    /// Nudges and high fives sent to me, newest first.
+    @Published var nudgesToMe: [Nudge] = []
+    /// Friends I already nudged today (one a day each).
+    @Published var nudgedToday: Set<String> = []
+    /// Goals whose acceptance I had not seen when Friends last opened: their
+    /// card says "Ana said yes" for the rest of this launch.
+    @Published var freshlyAccepted: Set<String> = []
+    /// What Home's Friends circle counts: anything new since Friends was last
+    /// opened (a friend request, a goal invite or answer, a nudge).
+    @Published var unseenCount = 0
+    /// Every local session's start, length, and whether it was logged by
+    /// hand, for the days a shared goal counts (`GoalDay.qualifying`).
+    /// Supplied by the app, which owns SwiftData.
+    var goalSessions: (() -> [(startedAt: Date, durationSec: Int, logged: Bool)])?
+
     /// The reward landing, shown once as a sheet by ContentView.
     @Published var rewardNews: RewardNews?
 
@@ -211,6 +230,8 @@ final class CommunityModel: ObservableObject {
         if !force, let last = lastPracticeStatsAttemptAt, Date().timeIntervalSince(last) < 180 { return }
         lastPracticeStatsAttemptAt = Date()
         let stats = PracticeStats.compute(from: allSessions())
+        // The days each shared goal counts, on my halves of them.
+        await publishGoalDays()
         guard stats != lastSyncedPracticeStats else { return }
         guard let updated = try? await store.updatePracticeStats(stats) else { return }
         lastSyncedPracticeStats = stats
@@ -249,6 +270,8 @@ final class CommunityModel: ObservableObject {
             guard let profile, !profile.username.isEmpty else { phase = .needsUsername; return }
             try await refreshLists(store)
             phase = .ready
+            // Push alerts for goal invites, answers and nudges (2026-10-14).
+            Task { await subscribeToGoalNews() }
         } catch {
             // A missing account is the common case. Anything else, before a
             // profile exists, is a failure the card states plainly; with a
@@ -295,6 +318,9 @@ final class CommunityModel: ObservableObject {
         // (found on two phones, 2026-10-01).
         try await cache(names: Set(fr + inc + sn), refetch: true)
         try await checkRewards(store)
+        // Never lets a goal problem break the friends list: a container where
+        // the goal types or their indexes are missing still shows friends.
+        await refreshGoals(store)
     }
 
     /// Bring a friend, see the evidence (`InviteReward`). Runs after every
@@ -310,7 +336,7 @@ final class CommunityModel: ObservableObject {
         }
     }
 
-    private func cache(names: Set<String>, refetch: Bool = false) async throws {
+    func cache(names: Set<String>, refetch: Bool = false) async throws {
         guard let store else { return }
         let wanted = refetch ? names : names.filter { people[$0] == nil }
         for p in try await store.profiles(named: Array(wanted)) { people[p.id] = p }

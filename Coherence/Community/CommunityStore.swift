@@ -466,6 +466,158 @@ actor CommunityStore {
         try await db.delete(CommunityNames.edge(from: mine, to: other))
     }
 
+    // MARK: - Meditating together
+
+    /// My halves of every goal (invites I sent and answers I gave).
+    private func myGoalHalves() async throws -> [GoalHalf] {
+        let mine = try await me()
+        let records = try await db.query(CommunityQuery(type: CommunityType.goalMember,
+                                                        filters: [.equals("member", .reference(mine))], limit: 200))
+        return records.filter { authored($0, by: "member") }.compactMap(GoalHalf.init(record:))
+    }
+
+    /// Halves other people wrote naming me as their partner: invites to me,
+    /// and the answers to mine. Only ones their writer really wrote.
+    private func goalHalvesToMe() async throws -> [GoalHalf] {
+        let mine = try await me()
+        let records = try await db.query(CommunityQuery(type: CommunityType.goalMember,
+                                                        filters: [.equals("partner", .reference(mine))], limit: 200))
+        return records.filter { authored($0, by: "member") }.compactMap(GoalHalf.init(record:))
+    }
+
+    /// Every shared goal I am in or have been asked to join, as pairs, minus
+    /// anything with someone I blocked, and minus any from somebody who is
+    /// not (or no longer) my friend: a goal is between friends.
+    /// `friends` is passed in so one refresh reads the edges once.
+    func goals(friends: Set<String>) async throws -> [GoalPair] {
+        let mine = try await me()
+        async let a = myGoalHalves()
+        async let b = goalHalvesToMe()
+        let (my, theirs) = try await (a, b)
+        let blocked = try await myBlockedSet()
+        var byGoal: [String: (mine: GoalHalf?, theirs: GoalHalf?)] = [:]
+        for h in my { byGoal[h.goal, default: (nil, nil)].mine = h }
+        // Only a half that names the same pair as mine (or the only half).
+        for h in theirs {
+            if let m = byGoal[h.goal]?.mine, m.partner != h.member { continue }
+            byGoal[h.goal, default: (nil, nil)].theirs = h
+        }
+        return byGoal.values.compactMap { GoalHalf.pair(mine: $0.mine, theirs: $0.theirs, me: mine) }
+            .filter { friends.contains($0.partner) && !blocked.contains($0.partner) }
+            .sorted { $0.createdAt < $1.createdAt }
+    }
+
+    /// Ask a friend to meditate together. Returns the new goal's id.
+    @discardableResult
+    func inviteGoal(to partner: String, target: Int, myName: String) async throws -> String {
+        let mine = try await me()
+        guard partner != mine else { throw CommunityError.blocked }
+        if try await iBlocked(partner) { throw CommunityError.blocked }
+        let goal = UUID().uuidString
+        let half = GoalHalf(goal: goal, member: mine, partner: partner, kind: .invite,
+                            target: min(max(target, 1), 7), fromName: myName)
+        let record = CKRecord(recordType: CommunityType.goalMember, recordID: CKRecord.ID(recordName: half.id))
+        half.apply(to: record)
+        _ = try await db.save(record)
+        return goal
+    }
+
+    /// Say yes. `today` (my local day key) becomes the first day of week one
+    /// for both of us.
+    func acceptGoal(_ goal: GoalPair, today: String, myName: String) async throws {
+        try await answer(goal, kind: .accept, startDay: today, myName: myName)
+    }
+
+    /// "Not now". Their invite stays theirs; my answer ends it for both.
+    func declineGoal(_ goal: GoalPair, myName: String) async throws {
+        try await answer(goal, kind: .decline, startDay: nil, myName: myName)
+    }
+
+    private func answer(_ goal: GoalPair, kind: GoalHalf.Kind, startDay: String?, myName: String) async throws {
+        let mine = try await me()
+        if try await iBlocked(goal.partner) { throw CommunityError.blocked }
+        let half = GoalHalf(goal: goal.id, member: mine, partner: goal.partner, kind: kind,
+                            target: goal.target, startDay: startDay,
+                            declinedAt: kind == .decline ? Date() : nil, fromName: myName)
+        let record = CKRecord(recordType: CommunityType.goalMember, recordID: CKRecord.ID(recordName: half.id))
+        half.apply(to: record)
+        _ = try await db.save(record)
+    }
+
+    /// End a goal for both of us, or withdraw an invite nobody answered.
+    /// A withdrawn invite is deleted outright; a running goal keeps my half
+    /// with `endedAt`, so their app learns it is over.
+    func endGoal(_ goal: GoalPair, myName: String) async throws {
+        let mine = try await me()
+        let name = CommunityNames.goalMember(goal: goal.id, member: mine)
+        if goal.state == .waitingForThem {
+            try await db.delete(name)
+            return
+        }
+        if let record = try await db.fetch(name), var half = GoalHalf(record: record) {
+            half.endedAt = Date()
+            half.apply(to: record)
+            _ = try await db.save(record)
+        } else {
+            // An invite to me I never answered: end it by answering.
+            let half = GoalHalf(goal: goal.id, member: mine, partner: goal.partner, kind: .decline,
+                                target: goal.target, declinedAt: Date(), fromName: myName)
+            let record = CKRecord(recordType: CommunityType.goalMember, recordID: CKRecord.ID(recordName: half.id))
+            half.apply(to: record)
+            _ = try await db.save(record)
+        }
+    }
+
+    /// Publishes my qualifying days on my half of one goal. A no-op when
+    /// nothing changed, so a foreground tick costs a fetch at most.
+    func publishGoalDays(goal: String, days: [GoalDay]) async throws {
+        let mine = try await me()
+        guard let record = try await db.fetch(CommunityNames.goalMember(goal: goal, member: mine)),
+              var half = GoalHalf(record: record), half.endedAt == nil, half.days != days else { return }
+        half.days = days
+        half.apply(to: record)
+        _ = try await db.save(record)
+    }
+
+    /// Nudge (or high-five) a friend, once a day. Returns false when today's
+    /// was already sent.
+    @discardableResult
+    func nudge(_ other: String, kind: Nudge.Kind, today: String, myName: String) async throws -> Bool {
+        let mine = try await me()
+        if try await iBlocked(other) { throw CommunityError.blocked }
+        let name = CommunityNames.nudge(from: mine, to: other, day: today)
+        if try await db.fetch(name) != nil { return false }
+        let n = Nudge(from: mine, to: other, day: today, kind: kind, fromName: myName)
+        let record = CKRecord(recordType: CommunityType.nudge, recordID: CKRecord.ID(recordName: name))
+        n.apply(to: record)
+        _ = try await db.save(record)
+        return true
+    }
+
+    /// Whether I already nudged them today.
+    func nudged(_ other: String, today: String) async throws -> Bool {
+        try await db.fetch(CommunityNames.nudge(from: try await me(), to: other, day: today)) != nil
+    }
+
+    /// Nudges and high fives sent to me, newest first, minus anyone I blocked.
+    func nudgesToMe(limit: Int = 30) async throws -> [Nudge] {
+        let mine = try await me()
+        let records = try await db.query(CommunityQuery(type: CommunityType.nudge,
+                                                        filters: [.equals("to", .reference(mine))],
+                                                        sortField: "createdAt", ascending: false, limit: limit))
+        let blocked = try await myBlockedSet()
+        return records.filter { authored($0, by: "from") }.compactMap(Nudge.init(record:))
+            .filter { !blocked.contains($0.from) }
+            .sorted { $0.createdAt > $1.createdAt }
+    }
+
+    /// Asks CloudKit to push an alert for an invite, an acceptance and a
+    /// nudge addressed to me (no-op where the database cannot).
+    func subscribeToGoalNews() async {
+        guard let mine = try? await me() else { return }
+        await db.ensureGoalSubscriptions(me: mine)
+    }
+
     // MARK: - Posts
 
     /// One photo or video to upload, as the session's own page prepares it
@@ -761,6 +913,14 @@ actor CommunityStore {
         do { try await deleteMine(CommunityType.edge, field: "from") }
         catch { firstError = firstError ?? error }
         do { try await deleteMine(CommunityType.block, field: "from") }
+        catch { firstError = firstError ?? error }
+        // Meditating together (2026-10-14): my halves of every goal, with the
+        // days they carry, and every nudge I sent. Tolerant like the retired
+        // types: a container where either type was never created has nothing
+        // of mine in it to delete.
+        do { try await deleteMine(CommunityType.goalMember, field: "member", retired: true) }
+        catch { firstError = firstError ?? error }
+        do { try await deleteMine(CommunityType.nudge, field: "from", retired: true) }
         catch { firstError = firstError ?? error }
         do {
             // The username reservation is its own record, named by the
