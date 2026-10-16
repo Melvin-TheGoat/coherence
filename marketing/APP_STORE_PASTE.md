@@ -119,30 +119,33 @@ public claim, and none of the features they list has been verified in 808.
 
 ## Version 1.1
 
-**Promotional Text** (170 max; this one is 151; editable later without a new
+**Promotional Text** (170 max; this one is 148; editable later without a new
 review)
 
 ```
-Meditate consistently with Otto. He glows brighter every day you do, and blocks your apps when you don't. Collect points to buy him hats from the Shop.
+Meditate consistently with Otto. He glows brighter every day you do, blocks your apps when you don't, and now lives on your home screen as a widget.
 ```
 
-**Description** (4000 max; this one is 3975)
+**Description** (4000 max; this one is 3993)
 
 ```
-Meditate consistently with Otto, a sloth who meditates with you. He glows brighter every day you do, and blocks your apps when you don't. Every minute you meditate earns points to buy him hats from the Shop.
+Meditate consistently with Otto, a sloth who meditates with you. He glows brighter every day you do and blocks your apps when you don't. Every minute earns points for his hats.
 
 OTTO GLOWS WITH YOUR PRACTICE
 Every day you meditate, Otto glows a little brighter, and your streak grows with him. Your streak allows one rest day a week.
 
+OTTO ON YOUR HOME SCREEN
+Add the 808 widget, small or medium, to see Otto, your streak and what he has to say, lit for the time of day.
+
 HE BLOCKS YOUR APPS UNTIL YOU MEDITATE
-Pick the apps that pull you away with Apple's own picker and choose when Otto holds them: all day, during hours you set, or once you reach a daily limit. Open one and Otto asks you to meditate first. Five minutes or more opens them for the rest of that window, or tell Otto "Not now" for 10, 20 or 30 minutes. Block manages your own iPhone, and the apps you pick stay private to your phone.
+Pick the apps that pull you away and choose when Otto holds them: all day, during hours you set, or once you reach a daily limit. Open one and Otto asks you to meditate first. Tap Ask Otto and he may text you or call. Meditate and they open for the rest of that window, or tell Otto "Not now" for 5, 10 or 30 minutes. Block manages your own iPhone, and the apps you pick stay private to your phone.
 
 COLLECT POINTS, BUY HIM HATS
 Every minute you meditate earns a point. Spend your points in the Shop on hats for Otto, from a beanie to a golden crown.
 
 MEDITATE YOUR WAY
-Set a timer or leave the session open. Sit in silence, with rain, ocean, forest or campfire, with brainwave paced tones for delta, theta and alpha, or with traditional tunings at 432, 528, 852 and 963 Hz. Or follow a professionally narrated 25 minute guided journey.
-Have a meditation you like in another app? Start its audio there first, then begin your session in 808.
+Set a timer or leave it open. Sit in silence, with rain, ocean, forest or campfire, with brainwave paced tones for delta, theta and alpha, or with traditional tunings at 432, 528, 852 and 963 Hz. Or follow a professionally narrated 25 minute guided journey.
+Like a meditation in another app? Play it there, then begin your session in 808.
 Meditated somewhere else? Record the session by hand and it counts toward your streak.
 
 WITH AN APPLE WATCH, SEE WHAT YOUR BODY DID
@@ -152,10 +155,7 @@ MEDITATE WITH FRIENDS
 Add friends by @username and see how often each of them meditates: sessions and minutes this week, their streak and their total. A profile is optional, and anyone who looks up your username can see it.
 
 EVERY DAY ADDS UP
-Your streak, your week at a glance, your full history, and more than fifty awards for showing up, going longer and trying new ways in.
-
-IF YOU ARE NEW TO THIS
-A written guide to different ways to meditate, easiest first.
+Your streak, your week at a glance, your full history, more than fifty awards, and a written guide to different ways to meditate, easiest first.
 
 PRIVATE BY DESIGN
 Heart rate and every reading from your Watch stay on your iPhone and are never uploaded to us. Your sessions sync through your own private iCloud, which we cannot read. Our analytics are pseudonymous and never include a body measurement or anything from Screen Time. No ads. No data sales. Sign in with Apple is optional.
@@ -163,7 +163,7 @@ Heart rate and every reading from your Watch stay on your iPhone and are never u
 HONEST SCIENCE
 The Watch readings are grounded in peer reviewed research on wrist worn motion sensing. The 432, 528, 852 and 963 Hz tunings are offered as a tradition, not as science. 808 is a wellness app, not a medical device, and does not diagnose, treat or prevent any condition.
 
-808 PREMIUM
+808 MEMBERSHIP
 808 is a membership, and every feature is included in it.
 
 SUBSCRIPTION INFORMATION
@@ -241,8 +241,8 @@ On Apple Watch, Otto sits in his valley. Set a session's length with the Digital
 
 ## Screenshots
 
-**Re-shot for 1.1 on 2026-09-29** into `marketing/appstore/` (`01-otto.png`
-... `08-awards.png`, the 6.5 inch copies in `appstore/65/`, the Watch pair in
+**Re-shot for 1.1 on 2026-09-29** into `marketing/appstore/` (the eight that are live). **The next version's ten are in `marketing/appstore-new/`** (`01-otto.png`
+... `10-awards.png`, with `65/` beside them), the 6.5 inch copies in `appstore/65/`, the Watch pair in
 `appstore/watch/`). Framed by `tools/store_shots.swift` in the valley's
 daytime sky, SF Pro Rounded captions, a drawn generic bezel. Captured on the
 iPhone 17 Pro Max simulator from a Debug build with `STORE_SHOTS=1`, which
@@ -256,13 +256,22 @@ just one feature"). Upload in this order:
 | # | File | Screen | Headline | Subhead |
 |---|---|---|---|---|
 | 1 | 01-otto | Home, Otto glowing at 100%, 7-day streak | Meditate consistently with Otto | He glows brighter every day you do |
-| 2 | 02-block | Block tab: Mindful day holding, Wind down, Weekend unplug | Otto blocks your apps until you meditate | Pick the apps and the hours. Meditate and they open. |
+| 2 | 02-shield | A held app's block screen ("not the doom scroll"), Otto gold | Otto blocks your apps until you meditate | Open one too soon and he lets you know |
 | 3 | 03-shop | Shop, Otto trying on the Straw Sun Hat | Collect points, buy him hats | Every minute you meditate earns a point |
-| 4 | 04-sounds | The plus: the Ready screen's sound list | Meditate your way | Silence, nature, tones, a guided journey or your own audio |
-| 5 | 05-profile | Profile: streak, stats, your minutes | Every day adds up | Your streak and your minutes at a glance |
-| 6 | 06-watch | A measured Watch session's results | Wear an Apple Watch for more | Heart rate, stillness and breathing, after each session |
-| 7 | 07-friends | Friends list, eight friends | Meditate with friends | See how often your friends meditate each week |
-| 8 | 08-awards | The awards shelf, 30 of 58 | More than fifty awards | For showing up, going longer and trying new ways in |
+| 4 | 04-widget | Home screen with the medium and two small widgets | Otto on your home screen | Your streak and his glow at a glance |
+| 5 | 05-sounds | The plus: the Ready screen's sound list | Meditate your way | Silence, nature, tones, a guided journey or your own audio |
+| 6 | 06-texts | Otto's text thread after Ask Otto | Otto texts you before you scroll | Open a held app and he asks you to meditate first |
+| 7 | 07-profile | Profile: streak, stats, your minutes | Every day adds up | Your streak and your minutes at a glance |
+| 8 | 08-watch | A measured Watch session's results | Wear an Apple Watch for more | Heart rate, stillness and breathing, after each session |
+| 9 | 09-friends | Friends list, eight friends | Meditate with friends | See how often your friends meditate each week |
+| 10 | 10-awards | The awards shelf, 30 of 58 | More than fifty awards | For showing up, going longer and trying new ways in |
+
+**Reworked 2026-10-13 (Aziz), in `marketing/appstore-new/`,** for the release after 1.2; `marketing/appstore/` still holds the live eight: the Block-list shot
+(2) became the block screen itself, and the widget (4) and Otto's texts (6)
+were added, ten in all, Apple's maximum. Otto still leads. The widget shot is
+the simulator's home screen with the widget's own renders
+(`mockups/widget/v3/`) laid on it, because the simulator's widget gallery
+would not take scripted taps. The 1.1 eight were in this table before.
 
 **Superseded 2026-09-29 (evening), kept for the record:** the morning's
 Block-first order below.

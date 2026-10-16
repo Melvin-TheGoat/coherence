@@ -2,8 +2,8 @@
 
 ## `appstore/`
 
-The eight iPhone 6.9" screenshots (1320x2868) for the App Store listing, in
-upload order: `01-otto` ... `08-awards`. Real screens captured on the iPhone 17
+The eight live iPhone 6.9" screenshots (1320x2868) for the App Store listing, in
+upload order: `01-otto` ... `08-awards`. The next version's ten (with the block screen, the widget and Otto's texts) are in `appstore-new/`, same layout. Real screens captured on the iPhone 17
 Pro Max simulator with a 9:41 status bar, then framed by
 `tools/store_shots.swift`: the valley's daytime sky easing into cream, the far
 ridges behind the phone, SF Pro Rounded captions in the sky's ink, one warm sun
