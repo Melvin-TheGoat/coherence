@@ -952,12 +952,13 @@ session, the first seven-day streak, then about every four months) and a
 (one new analytics event name, `rate_link_opened`, carrying nothing), so the
 privacy manifest, policy and App Privacy label do not change.
 
-- [ ] **App Store Connect:** version 1.3.1, What's New from
-      `marketing/APP_STORE_PASTE.md`.
+- [x] (2026-10-15, Melvin) **App Store Connect:** version 1.3.1, What's New
+      from `marketing/APP_STORE_PASTE.md`.
 - [x] (2026-10-15) **Archived and uploaded:** 1.3.1 build 202610152144,
       every archive check ok, uploaded headlessly. 1.3 is live. Release:
       automatic (Melvin). What's New: the draft, approved.
-- [ ] **Before Submit:** select build 202610152144 on version 1.3.1.
+- [x] (2026-10-15, Melvin) **Submitted for review** with build 202610152144,
+      automatic release.
 - [ ] **On a phone after release:** Apple's rating sheet appears on Home after
       a first session once its page is closed. TestFlight never shows it.
 
