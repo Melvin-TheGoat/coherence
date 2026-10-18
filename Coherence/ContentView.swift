@@ -278,7 +278,12 @@ struct ContentView: View {
                 unlockQueue.removeFirst()
             }
         }
-        .onAppear(perform: refreshAwards)
+        .onAppear {
+            refreshAwards()
+            // A goal push tapped from a cold launch: the post went out before
+            // this view existed (2026-10-18 review).
+            if FriendsPush.pending { openFriendsFromPush() }
+        }
         .onChange(of: sessions.count) { _, _ in
             refreshAwards(); readDetailsPrompt()
             // A session landed or was deleted: Otto's glow and the streak on
@@ -292,10 +297,7 @@ struct ContentView: View {
         .onReceive(NotificationCenter.default.publisher(for: .openMeditate)) { _ in
             if case .friends? = sheet { pendingSheet = .setup; sheet = nil } else { present(.setup) }
         }
-        .onReceive(NotificationCenter.default.publisher(for: .openFriends)) { _ in
-            guard FeatureFlags.friends else { return }
-            if sheet == nil { sheet = .friends } else { pendingSheet = .friends }
-        }
+        .onReceive(NotificationCenter.default.publisher(for: .openFriends)) { _ in openFriendsFromPush() }
         .modifier(DiscardHook(discard: coordinator.lastDiscard,
                               sessionActive: coordinator.active != nil) { d in
             if sheet == nil { sheet = .discarded(d) } else { pendingSheet = .discarded(d) }
@@ -1187,8 +1189,19 @@ struct ContentView: View {
             glowBefore: before, glowAfter: after,
             // "Counted for Ana and Daniel": one session counts for every
             // shared goal (Aziz, 2026-10-14).
-            countedFor: community.countedFor(seconds: landed.durationSec, logged: landed.isLogged))
+            countedFor: community.countedFor(seconds: landed.durationSec, logged: landed.isLogged,
+                                              startedAt: landed.startedAt))
         if sheet == nil { sheet = .reward(reward) } else { pendingSheet = .reward(reward) }
+    }
+
+    /// A tapped goal push opens Friends: never twice, and never over
+    /// something already queued (a reward waiting behind setup stays queued).
+    private func openFriendsFromPush() {
+        FriendsPush.pending = false
+        guard FeatureFlags.friends else { return }
+        if case .friends? = sheet { return }
+        if case .friends? = pendingSheet { return }
+        if sheet == nil { sheet = .friends } else if pendingSheet == nil { pendingSheet = .friends }
     }
 
     /// Apple's rating sheet, if one is owed (`ReviewPrompt`: the first

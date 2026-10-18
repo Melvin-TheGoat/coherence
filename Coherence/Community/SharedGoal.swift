@@ -79,8 +79,14 @@ enum DayKey {
         return c
     }()
 
+    /// Always the GREGORIAN date in the calendar's time zone: a phone set to
+    /// the Japanese or Buddhist calendar would otherwise write "0008-10-18"
+    /// or "2569-10-18", which no friend's key and no arithmetic here agrees
+    /// with (found in review, 2026-10-18).
     static func key(_ date: Date, calendar: Calendar = .current) -> String {
-        let c = calendar.dateComponents([.year, .month, .day], from: date)
+        var gregorian = Calendar(identifier: .gregorian)
+        gregorian.timeZone = calendar.timeZone
+        let c = gregorian.dateComponents([.year, .month, .day], from: date)
         return String(format: "%04d-%02d-%02d", c.year ?? 0, c.month ?? 0, c.day ?? 0)
     }
 
@@ -197,7 +203,9 @@ struct GoalPair: Identifiable, Equatable {
                     target: target,
                     minutesMine: Self.minutes(myDays, from: w.first, to: w.last),
                     minutesTheirs: Self.minutes(theirDays, from: w.first, to: w.last),
-                    daysLeft: max(0, DayKey.distance(from: today, to: w.last) + 1))
+                    // At most 7: a friend whose day is behind the
+                    // accepter's can be "before" week one for a few hours.
+                    daysLeft: min(7, max(0, DayKey.distance(from: today, to: w.last) + 1)))
     }
 
     /// The shared streak, in weeks.

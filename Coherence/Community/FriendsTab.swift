@@ -606,9 +606,12 @@ struct FriendsHomeView: View {
     /// revealed the profile. Every link in this stack goes by value.
     private var requestsButton: some View {
         NavigationLink(value: FriendsRoute.requests) {
-            let waiting = !model.incoming.isEmpty
+            // Goal invites wait on the same page, so they count here too: it
+            // said "1 request" over a page holding two (2026-10-18 review).
+            let count = model.incoming.count + model.goalInvites.count
+            let waiting = count > 0
             Text(waiting
-                 ? "\(model.incoming.count) request\(model.incoming.count == 1 ? "" : "s")"
+                 ? "\(count) request\(count == 1 ? "" : "s")"
                  : "Requests")
                 .font(.system(size: 13, weight: .bold, design: .rounded))
                 .lineLimit(1)
@@ -1131,6 +1134,14 @@ struct FriendsListView: View {
             .navigationTitle("Friends")
             .navigationBarTitleDisplayMode(.inline)
             .navigationDestination(for: String.self) { PersonView(id: $0, model: model) }
+            // "Your goal" on a person page opened from this list (2026-10-18
+            // review): without it the tap went nowhere.
+            .navigationDestination(for: GoalRoute.self) { route in
+                switch route {
+                case .goal(let id): GoalDetailView(model: model, goalID: id)
+                case .invite(let id): GoalInviteDetailView(model: model, goalID: id)
+                }
+            }
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }.tint(AppColor.accentGoldText)
@@ -1156,6 +1167,19 @@ struct PersonView: View {
     @State private var confirmBlock = false
     @State private var busy = false
     @State private var startingGoal = false
+    private enum PersonSheet: Identifiable {
+        case report(ReportSheet.Target), goal
+        var id: String {
+            switch self {
+            case .report(let t): return "report-" + t.id
+            case .goal: return "goal"
+            }
+        }
+    }
+    private var personSheet: PersonSheet? {
+        if let reportTarget { return .report(reportTarget) }
+        return startingGoal ? .goal : nil
+    }
 
     private var profile: Profile? { model.person(id) }
     private var isMe: Bool { id == model.myID }
@@ -1217,8 +1241,14 @@ struct PersonView: View {
                 }
             }
         }
-        .sheet(item: $reportTarget) { target in ReportSheet(target: target, model: model) }
-        .sheet(isPresented: $startingGoal) { GoalStartFlow(model: model, preselected: id) }
+        // One sheet for both (SwiftUI presents only one of several stacked
+        // on a view): Report, or starting a goal with this person.
+        .sheet(item: Binding(get: { personSheet }, set: { if $0 == nil { reportTarget = nil; startingGoal = false } })) { sheet in
+            switch sheet {
+            case .report(let target): ReportSheet(target: target, model: model)
+            case .goal: GoalStartFlow(model: model, preselected: id)
+            }
+        }
         .confirmationDialog("Block \(profile?.displayName ?? "this person")?", isPresented: $confirmBlock, titleVisibility: .visible) {
             Button("Block", role: .destructive) {
                 Task { await model.block(id); dismiss() }

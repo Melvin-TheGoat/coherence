@@ -76,6 +76,7 @@ final class SessionCoordinator: NSObject, ObservableObject {
     /// payload lands.
     @Published private(set) var active: ActiveSession? {
         didSet {
+            FriendsPush.sessionRunning = active != nil
             // Reminders (2026-10-12): nothing buzzes mid-meditation, and a
             // finished session takes back the rest of today's nudges. Every
             // way a session starts or ends passes through here.

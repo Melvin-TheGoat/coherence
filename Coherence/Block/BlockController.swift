@@ -497,6 +497,15 @@ enum BlockAccess {
 /// **808 had no notification delegate before Block**, and the reminder
 /// behaves as it always did: shown only when 808 is not on screen, and
 /// tapping it simply opens the app.
+/// What a goal push needs to know outside SwiftUI (2026-10-18 review).
+enum FriendsPush {
+    /// A goal push was tapped and Friends has not opened for it yet.
+    @MainActor static var pending = false
+    /// A session is running (`SessionCoordinator.active`), so a nudge goes
+    /// quietly to Notification Center instead of a banner.
+    nonisolated(unsafe) static var sessionRunning = false
+}
+
 final class BlockNotifications: NSObject, UNUserNotificationCenterDelegate {
     static let shared = BlockNotifications()
 
@@ -514,8 +523,10 @@ final class BlockNotifications: NSObject, UNUserNotificationCenterDelegate {
         } else if info["ck"] != nil {
             // CloudKit's push for a goal invite, an answer or a nudge
             // (Meditating together, 2026-10-14): show it, and fetch the news.
+            // Never a banner mid-session: a friend can nudge somebody who is
+            // meditating right now, since the session is not saved yet.
             NotificationCenter.default.post(name: .communityNewsArrived, object: nil)
-            completionHandler([.banner, .sound])
+            completionHandler(FriendsPush.sessionRunning ? [.list] : [.banner, .sound])
         } else if info[SessionEndNotice.userInfoKey] != nil {
             // The sit screen is already saying it is over, and `SessionBell`
             // is ringing (it sounds on silent; this sound would not), so
@@ -536,6 +547,8 @@ final class BlockNotifications: NSObject, UNUserNotificationCenterDelegate {
         } else if request.content.userInfo["ck"] != nil {
             // A goal invite, an answer or a nudge: open Friends.
             Task { @MainActor in
+                // Remembered too, for a cold launch: Home may not exist yet.
+                FriendsPush.pending = true
                 NotificationCenter.default.post(name: .communityNewsArrived, object: nil)
                 NotificationCenter.default.post(name: .openFriends, object: nil)
             }

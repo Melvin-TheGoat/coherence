@@ -731,11 +731,19 @@ final class CommunityModel: ObservableObject {
         errorText = nil
         lastSyncedPracticeStats = nil
         lastPracticeStatsAttemptAt = nil
+        // Meditating together (2026-10-18 review): the next person to use the
+        // phone never sees the last one's goals, badge or "Counted for".
+        goals = []
+        nudgesToMe = []
+        nudgedToday = []
+        freshlyAccepted = []
+        unseenCount = 0
         phase = .loading
         let defaults = UserDefaults.standard
         defaults.set(true, forKey: Self.publishingPausedKey)
         defaults.removeObject(forKey: CreateProfileView.rulesAcceptedKey)
         defaults.removeObject(forKey: FriendsIntroView.shownKey)
+        defaults.removeObject(forKey: Self.seenKey)
     }
 
     /// The person signed out of 808. Their Friends profile stays in iCloud

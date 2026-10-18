@@ -680,7 +680,7 @@ struct GoalDetailView: View {
     private func action(_ goal: GoalPair, _ week: GoalPair.Week, _ name: String, _ today: String) -> some View {
         let nudged = model.nudgedToday.contains(goal.partner)
         if week.bothDone {
-            Button { send(goal, .cheer) } label: { Text(nudged ? "High five sent 🎉" : "🎉 Send \(name) a high five") }
+            Button { send(goal, .cheer) } label: { Text(nudged ? "Already sent \(name) one today" : "🎉 Send \(name) a high five") }
                 .buttonStyle(TogetherStyle.blue)
                 .disabled(nudged || sending)
                 .opacity(nudged ? 0.55 : 1)
@@ -716,7 +716,7 @@ struct GoalDetailView: View {
             }
         }
         if let n = model.todaysNudge(from: goal.partner) {
-            caption(n.kind == .cheer ? "\(name) sent you a high five 🎉" : "\(name) nudged you today 👋")
+            caption(n.kind == .cheer ? "\(name) sent you a high five 🎉" : "\(name) nudged you 👋")
         }
     }
 
@@ -730,8 +730,7 @@ struct GoalDetailView: View {
     private func send(_ goal: GoalPair, _ kind: Nudge.Kind) {
         sending = true
         Task {
-            await model.nudge(goal, kind: kind)
-            RewardHaptics.success()
+            if await model.nudge(goal, kind: kind) { RewardHaptics.success() }
             sending = false
         }
     }
@@ -753,6 +752,17 @@ struct GoalDetailView: View {
                         Text("Your first week together.")
                             .font(AppFont.callout.weight(.bold)).foregroundStyle(AppColor.textPrimary)
                         Text("Both hit it within the week and your streak starts.")
+                            .font(AppFont.caption).foregroundStyle(AppColor.textSecondary)
+                    }
+                }
+            } else if (streak?.current ?? 0) == 0 {
+                // After a week one of you missed: "New streak", never "0".
+                HStack(spacing: 10) {
+                    SitArt(name: "home-streak", size: 28).saturation(0.35).opacity(0.8)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("New streak")
+                            .font(AppFont.callout.weight(.bold)).foregroundStyle(AppColor.textPrimary)
+                        Text("Both hit it this week and it starts again.")
                             .font(AppFont.caption).foregroundStyle(AppColor.textSecondary)
                     }
                 }
@@ -886,8 +896,12 @@ struct GoalAnswerButtons: View {
     private func answer(_ yes: Bool) {
         busy = true
         Task {
-            if yes { await model.acceptGoal(goal); RewardHaptics.success() } else { await model.declineGoal(goal) }
+            let done = yes ? await model.acceptGoal(goal) : await model.declineGoal(goal)
             busy = false
+            // A failure stays on the invite (the error shows on Friends),
+            // never celebrates and never closes as if it worked.
+            guard done else { return }
+            if yes { RewardHaptics.success() }
             onAnswered?()
         }
     }
@@ -983,7 +997,14 @@ struct FriendPairButtons: View {
         let goal = model.goal(with: friend)
         HStack(spacing: 8) {
             pill(top: "Friends", bottom: "✓", filled: false)
-            if let goal {
+            if let goal, goal.state == .waitingForMe {
+                // They asked: the invite page, where it can be answered. The
+                // goal page has nothing to show before a yes.
+                NavigationLink(value: GoalRoute.invite(goal.id)) {
+                    pill(top: "See invite", bottom: "🧘", filled: true)
+                }
+                .buttonStyle(TactilePlainButtonStyle(main: true))
+            } else if let goal {
                 NavigationLink(value: GoalRoute.goal(goal.id)) {
                     pill(top: "Your goal", bottom: "🧘", filled: true)
                 }

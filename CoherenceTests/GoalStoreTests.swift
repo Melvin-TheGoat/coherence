@@ -81,6 +81,21 @@ final class GoalStoreTests: XCTestCase {
         XCTAssertNil(db.records[CommunityNames.goalMember(goal: pending.id, member: azizID)])
     }
 
+    /// Aziz withdraws his invite in the same moment Melvin says yes: the
+    /// answer on its own must not bring back a running goal for either of
+    /// them (found in review, 2026-10-18).
+    func test_aWithdrawnInviteStaysOverEvenIfItWasAcceptedInTheSameMoment() async throws {
+        try await aziz.inviteGoal(to: melvinID, target: 4, myName: "Aziz")
+        let invite = try await goals(melvin, friend: azizID)[0]
+        let pending = try await goals(aziz, friend: melvinID)[0]
+        try await aziz.endGoal(pending, myName: "Aziz")
+        try await melvin.acceptGoal(invite, today: "2026-10-15", myName: "Melvin")
+        let a = try await goals(aziz, friend: melvinID)
+        let m = try await goals(melvin, friend: azizID)
+        XCTAssertEqual(a.map(\.state), [.over])
+        XCTAssertEqual(m.map(\.state), [.over])
+    }
+
     func test_goalsWithSomeoneWhoIsNotAFriendAreHidden() async throws {
         try await aziz.inviteGoal(to: melvinID, target: 4, myName: "Aziz")
         let none = try await melvin.goals(friends: [])

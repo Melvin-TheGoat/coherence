@@ -151,10 +151,15 @@ struct GoalHalf: Identifiable, Equatable {
     static func pair(mine: GoalHalf?, theirs: GoalHalf?, me: String) -> GoalPair? {
         guard let any = mine ?? theirs else { return nil }
         let partner = any.member == me ? any.partner : any.member
-        let invite = [mine, theirs].compactMap { $0 }.first { $0.kind == .invite } ?? any
+        let inviteHalf = [mine, theirs].compactMap { $0 }.first { $0.kind == .invite }
+        let invite = inviteHalf ?? any
         let answer = [mine, theirs].compactMap { $0 }.first { $0.kind != .invite }
         let state: GoalPair.State
-        if mine?.endedAt != nil || theirs?.endedAt != nil || answer?.kind == .decline {
+        // No invite half means it was withdrawn (or its writer deleted their
+        // account), possibly in the same moment the friend said yes: an
+        // answer on its own is a goal that no longer exists, never a running
+        // one (found in review, 2026-10-18).
+        if inviteHalf == nil || mine?.endedAt != nil || theirs?.endedAt != nil || answer?.kind == .decline {
             state = .over
         } else if answer != nil, answer?.startDay != nil {
             state = .active

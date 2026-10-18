@@ -26,6 +26,41 @@ final class SharedGoalTests: XCTestCase {
         XCTAssertNil(GoalDay(encoded: "nonsense"))
     }
 
+    /// A phone on the Japanese or Buddhist calendar still writes the
+    /// Gregorian date: its friend's keys and all the week arithmetic are
+    /// Gregorian (found in review, 2026-10-18).
+    func test_dayKeyIsGregorianWhateverTheCalendar() {
+        let date = Date(timeIntervalSince1970: 1_792_238_400) // 2026-10-17, 12:00 UTC
+        for id in [Calendar.Identifier.japanese, .buddhist, .islamicUmmAlQura, .gregorian] {
+            var cal = Calendar(identifier: id)
+            cal.timeZone = TimeZone(identifier: "UTC")!
+            XCTAssertEqual(DayKey.key(date, calendar: cal), "2026-10-17", "\(id)")
+        }
+    }
+
+    /// Before week one (a friend's day is behind the accepter's) the card
+    /// never says more than 7 days left.
+    func test_daysLeftNeverExceedsAWeek() {
+        let p = pair(start: "2026-10-15")
+        XCTAssertEqual(p.thisWeek(today: "2026-10-14")?.daysLeft, 7)
+    }
+
+    /// Both friends asked each other before seeing the other's invite: one
+    /// card per friend, and the one shown is the invite that can be answered.
+    @MainActor
+    func test_onePerFriend() {
+        func g(_ id: String, _ partner: String, _ state: GoalPair.State, _ t: TimeInterval) -> GoalPair {
+            GoalPair(id: id, partner: partner, target: 4, startDay: state == .active ? "2026-10-15" : nil,
+                     state: state, myDays: [], theirDays: [], invitedByMe: state == .waitingForThem,
+                     createdAt: Date(timeIntervalSince1970: t))
+        }
+        let mutual = CommunityModel.onePerFriend([g("a", "ana", .waitingForThem, 1), g("b", "ana", .waitingForMe, 2)])
+        XCTAssertEqual(mutual.map(\.id), ["b"])
+        let running = CommunityModel.onePerFriend([g("c", "ana", .waitingForMe, 1), g("d", "ana", .active, 2),
+                                                    g("e", "sam", .waitingForThem, 3)])
+        XCTAssertEqual(running.map(\.id), ["d", "e"])
+    }
+
     // MARK: Which sessions count
 
     func test_onlyMeasuredSessionsOfFiveMinutesCount_andOneDayIsOneDay() {

@@ -50,7 +50,7 @@ extension CommunityModel {
             async let g = store.goals(friends: Set(friends))
             async let n = store.nudgesToMe()
             let (gs, ns) = try await (g, n)
-            goals = gs.filter { $0.state != .over }
+            goals = Self.onePerFriend(gs.filter { $0.state != .over })
             nudgesToMe = ns
             var nudged = Set<String>()
             for goal in activeGoals where (try? await store.nudged(goal.partner, today: todayKey)) == true {
@@ -63,6 +63,28 @@ extension CommunityModel {
         }
         recountUnseen()
         await publishGoalDays()
+    }
+
+    /// One goal per friend on screen. Two can exist when both friends asked
+    /// each other before either saw the other's invite, or one of them asked
+    /// twice from two phones: a running goal wins, then an invite to me (so
+    /// it can be answered), then the oldest. Found in review, 2026-10-18.
+    static func onePerFriend(_ goals: [GoalPair]) -> [GoalPair] {
+        func rank(_ g: GoalPair) -> Int {
+            switch g.state {
+            case .active: return 0
+            case .waitingForMe: return 1
+            case .waitingForThem: return 2
+            case .over: return 3
+            }
+        }
+        var best: [String: GoalPair] = [:]
+        for g in goals {
+            if let kept = best[g.partner],
+               (rank(kept), kept.createdAt) <= (rank(g), g.createdAt) { continue }
+            best[g.partner] = g
+        }
+        return goals.filter { best[$0.partner]?.id == $0.id }
     }
 
     /// Publishes my qualifying days on my half of every goal I'm in, from
@@ -100,6 +122,12 @@ extension CommunityModel {
     /// Ask a friend. Returns true when the invite went out.
     func inviteGoal(_ friend: String, target: Int) async -> Bool {
         guard let store else { return false }
+        // Never a second goal with the same friend: if they already asked
+        // me, saying yes to theirs is what this person meant.
+        if let existing = goal(with: friend) {
+            if existing.state == .waitingForMe { await acceptGoal(existing) }
+            return true
+        }
         do {
             try await store.inviteGoal(to: friend, target: target, myName: myAlertName)
             await refreshGoals(store)
@@ -107,22 +135,27 @@ extension CommunityModel {
         } catch { errorText = Self.plain(error); return false }
     }
 
-    func acceptGoal(_ goal: GoalPair) async {
-        guard let store else { return }
+    /// True when the answer reached iCloud.
+    @discardableResult
+    func acceptGoal(_ goal: GoalPair) async -> Bool {
+        guard let store else { return false }
         do {
             try await store.acceptGoal(goal, today: todayKey, myName: myAlertName)
             markSeen("invite-" + goal.id)
             await refreshGoals(store)
-        } catch { errorText = Self.plain(error) }
+            return true
+        } catch { errorText = Self.plain(error); return false }
     }
 
-    func declineGoal(_ goal: GoalPair) async {
-        guard let store else { return }
+    @discardableResult
+    func declineGoal(_ goal: GoalPair) async -> Bool {
+        guard let store else { return false }
         do {
             try await store.declineGoal(goal, myName: myAlertName)
             markSeen("invite-" + goal.id)
             await refreshGoals(store)
-        } catch { errorText = Self.plain(error) }
+            return true
+        } catch { errorText = Self.plain(error); return false }
     }
 
     func endGoal(_ goal: GoalPair) async {
@@ -134,30 +167,45 @@ extension CommunityModel {
     }
 
     /// Nudge, or high-five once the week is done. Once a day per friend.
-    func nudge(_ goal: GoalPair, kind: Nudge.Kind) async {
-        guard let store else { return }
+    /// True when it went out (or today's had already gone).
+    @discardableResult
+    func nudge(_ goal: GoalPair, kind: Nudge.Kind) async -> Bool {
+        guard let store else { return false }
         do {
             _ = try await store.nudge(goal.partner, kind: kind, today: todayKey, myName: myAlertName)
             nudgedToday.insert(goal.partner)
-        } catch { errorText = Self.plain(error) }
+            return true
+        } catch { errorText = Self.plain(error); return false }
     }
 
     // MARK: The reward screen
 
     /// The friends a session just counted for: everyone I have a running
     /// goal with, when the session qualifies (5 minutes or more, measured).
-    func countedFor(seconds: Int, logged: Bool) -> [String] {
+    /// Only goals that had started by the session's own day: a friend a
+    /// time zone ahead can accept on a day that is still tomorrow here, and
+    /// a late Watch payload can predate the goal (2026-10-18 review).
+    func countedFor(seconds: Int, logged: Bool, startedAt: Date) -> [String] {
         guard !logged, seconds >= SharedGoal.minimumSeconds else { return [] }
-        return activeGoals.map { shortName($0.partner) }
+        let day = DayKey.key(startedAt)
+        return activeGoals.filter { ($0.startDay ?? day) <= day }.map { shortName($0.partner) }
     }
 
     // MARK: The badge on Home
 
-    private static let seenKey = "community.seen.v1"
+    static let seenKey = "community.seen.v1"
 
+    /// Kept in the order things were seen, so trimming drops the OLDEST.
+    /// It was trimmed from an unordered set, which could drop any id once
+    /// past 400, and a running goal's "said yes" would come back as news.
     private var seen: Set<String> {
         get { Set(UserDefaults.standard.stringArray(forKey: Self.seenKey) ?? []) }
-        set { UserDefaults.standard.set(Array(newValue.suffix(400)), forKey: Self.seenKey) }
+        set {
+            let old = UserDefaults.standard.stringArray(forKey: Self.seenKey) ?? []
+            let kept = old.filter(newValue.contains)
+            let added = newValue.subtracting(old).sorted()
+            UserDefaults.standard.set(Array((kept + added).suffix(400)), forKey: Self.seenKey)
+        }
     }
 
     /// Everything that counts as news, as stable ids.
