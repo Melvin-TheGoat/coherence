@@ -186,7 +186,7 @@ final class OnboardingBranchTests: XCTestCase {
     /// asks today) left the bar stuck short of full on the last question.
     /// The flow shows everything up to the frequency slider and nothing after.
     func test_shownInterviewEndsOnTheLastQuestionAsked() {
-        let asked: [InterviewStep] = [.motivation, .obstacles, .stress, .wandering, .role,
+        let asked: [InterviewStep] = [.motivation, .obstacles, .stress, .wandering,
                                       .quietTime, .habitHistory, .age, .baseline]
         for frequency in CurrentFrequency.allCases.map(Optional.some) + [nil] {
             var a = OnboardingAnswers()

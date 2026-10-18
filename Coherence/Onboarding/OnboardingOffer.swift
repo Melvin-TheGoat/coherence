@@ -345,6 +345,8 @@ struct PaywallScreen: View {
     /// free, so an update meets them here, and the first thing to say is that
     /// nothing they did is gone (Melvin, 2026-09-29).
     var memberNotice: Bool = false
+    /// Under the onboarding's one progress bar, the words start below it.
+    @Environment(\.onboardingFlowBar) private var underFlowBar
     @State private var trackedView = false
 
     @State private var started = false
@@ -411,7 +413,7 @@ struct PaywallScreen: View {
     private var anchorPriceLine: String {
         let monthly = store.displayPrice(for: .monthly) ?? SubscriptionPlan.monthly.price
         let yearly = store.displayPrice(for: .yearly) ?? SubscriptionPlan.yearly.price
-        let base = "808 Premium is \(monthly) a month or \(yearly) a year"
+        let base = "808 Membership is \(monthly) a month or \(yearly) a year"
         return offerTrial ? base + ", and the first \(TrialCopy.length(store.trialDays)) are free." : base + "."
     }
 
@@ -627,7 +629,7 @@ struct PaywallScreen: View {
         // Named before anything is bought (3.1.2: the purchase screen names
         // the subscription; Melvin, 2026-09-29), and the same name the App
         // Store listing and the purchase sheet use.
-        return "808 Premium: full access to \(block)timed and guided sessions, sounds, Otto's glow\(hats), streaks and awards\(friends), and heart, stillness and breathing readings with an Apple Watch."
+        return "808 Membership: full access to \(block)timed and guided sessions, sounds, Otto's glow\(hats), streaks and awards\(friends), and heart, stillness and breathing readings with an Apple Watch."
     }
 
     /// The includes line in small type under a subtitle that says something
@@ -726,6 +728,11 @@ struct PaywallScreen: View {
                                 ottoSize: compact ? (showsIncludesBelow ? 90 : 110) : 150)
                     fixedLayout(compact: compact, geo: geo,
                                 ottoSize: compact ? 72 : 96)
+                    // Under the onboarding's progress bar the header sits
+                    // lower, which left no room for him at 96 on an iPhone 17
+                    // and dropped him for the scroll (2026-10-18).
+                    fixedLayout(compact: compact, geo: geo,
+                                ottoSize: compact ? 56 : 72)
 
                     // No Otto here: at a text size this large the screen is
                     // for reading, and a second rig beside the first is not
@@ -897,7 +904,7 @@ struct PaywallScreen: View {
         .multilineTextAlignment(.center)
         .fixedSize(horizontal: false, vertical: true)
         .padding(.horizontal, AppMetrics.screenPadding + 4)
-        .padding(.top, compact ? 8 : 20)
+        .padding(.top, underFlowBar ? 46 : (compact ? 8 : 20))
     }
 
     /// Restore, the two documents and Account. One row wherever the words

@@ -483,7 +483,7 @@ final class PaywallLadderTests: XCTestCase {
         XCTAssertEqual(line.contains("Block"), FeatureFlags.block)
         XCTAssertEqual(line.contains("hats"), FeatureFlags.shop)
         XCTAssertEqual(line.contains("Friends"), FeatureFlags.friends)
-        XCTAssertTrue(line.hasPrefix("808 Premium: "), "the subscription is named before purchase (3.1.2)")
+        XCTAssertTrue(line.hasPrefix("808 Membership: "), "the subscription is named before purchase (3.1.2)")
         XCTAssertFalse(line.contains("\u{2014}") || line.contains("\u{2013}"), "no em dashes")
     }
 

@@ -7998,6 +7998,19 @@ screen: "Counted for Ana and Daniel".
   Production after a two-phone round trip, and the privacy policy must say a
   goal partner sees your days and minutes (RELEASE_CHECKLIST.md, "OPEN for
   the build that ships Meditating together"). Never run on real iCloud yet.
+- **Bug review, 2026-10-18 (Aziz asked), all fixed, 4 new tests (789 green):**
+  day keys are always the GREGORIAN date (a Japanese or Buddhist calendar
+  phone wrote "0008-10-18"); an answer with no invite half is OVER (a
+  withdrawn invite accepted in the same moment came back as running); one
+  goal per friend on screen (`onePerFriend`), and inviting a friend who
+  already asked you accepts theirs; sign-out and deletion forget goals,
+  nudges and the badge; "Your goal" on a person page opened from a friends
+  list works (that stack lacked the `GoalRoute` destination) and shows "See
+  invite" when THEY asked; a tapped goal push survives a cold launch
+  (`FriendsPush.pending`) and never stacks Friends twice; no nudge banner
+  mid-session; "Counted for" honours the goal's start day; the requests pill
+  counts goal invites; failures never celebrate; "0 weeks in a row" reads
+  "New streak". Still unchecked: anything only real iCloud can show.
 - **Not built, on purpose:** changing a goal's number (each half owns its own
   copy; end it and start a new one), a daily shared streak (Aziz raised it;
   the weekly one shipped first), Friends Quests.
@@ -8007,3 +8020,72 @@ screen: "Counted for Ana and Daniel".
   `PREVIEW_GOAL_SCREEN=home|detail|invite|requests|setup|picker|person`
   opens one screen; `PREVIEW_COUNTED=Ana,Daniel` with `PREVIEW_REWARD` shows
   the reward line.
+
+## ONBOARDING: THE SCIENCE SCREENS, ONE PROGRESS BAR, A PERSONAL PAYWALL (2026-10-17, Aziz)
+
+Designed in the "Onboarding neuroscience screens" canvas (N1 to N3, the
+progress bar, the paywall, the audited storyboard), then built. Not
+committed yet. The reasoning, from the sales and habit research that pass
+used: name the win in the reader's own goal, frame it as a gain (Gallagher &
+Updegraff 2012, gain framing for prevention habits), at most three claims a
+screen (Shu & Carlson), and a progress bar that fills fast first and slow
+later (Villar 2013, fewer drop-offs).
+
+- **Three science screens after "N more years of…"**, white pages, no Otto
+  (`OnboardingScience.swift`; Steps `neuroBrain`, `neuroPick`, `neuroPlan`,
+  last in the enum, raw 72 to 74):
+  1. "Your brain becomes what you do every day." Neuroplasticity, a brain
+     that grows, gray matter after eight weeks (Hölzel 2011) and 4 to 7 days
+     a week improving the most (Cearns & Clark 2023).
+  2. "Which would change your days the most?" One pick from four benefits
+     (`Benefit`: calm when the pressure is on, good days more often, read it
+     once, fall into better sleep), each a finding from a study. Preselected
+     from their goal (`Benefit.suggested`), saved as `answers.benefit`.
+  3. "Just a few minutes a day." (Lally 2010, UCL: a habit forms by repeating
+     something in the same part of the day; one missed day did not set it
+     back.) A week of six checks and one gap, "Missed a day? You haven't lost
+     your progress." It was "It takes 13 minutes a day" with a day ring and
+     their time and goal read back; Aziz cut both (2026-10-18): 13 minutes
+     could overwhelm, and the readback read awkwardly. **No number on this
+     screen, and never the five minutes that open Block's apps.**
+  **"Brain cells" was refused**: no study shows meditation adds neurons.
+  Gray matter is the honest claim; do not upgrade it.
+- **Cut, routed past (cases and answers kept):** "Which one sounds most like
+  you?" (`asks(.role)` false), Did you know, the pause, the life dots,
+  "Your attention has been hacked", the research logos, "In 1 week". The
+  first question is now single-select, "What matters most to you?". The
+  welcome says "Let's make meditation part of your day."; the clutter line
+  asks "Does your mind feel cluttered?".
+- **How 808 makes it stick stays a CHAIN with arrows**, each step the reason
+  the next one works (Aziz, 2026-10-18: a per-answer feature list was tried
+  and lost the flow he liked): friction before your apps, then Otto's
+  reminder every time you open one "until you do", then "Invite a friend
+  and set weekly goals to meditate together" (Friends builds), then the habit sinking in. A
+  tighter layout takes over on short phones (an iPhone SE squashed the
+  title under the progress bar), and a scroll at the largest text sizes.
+- **ONE progress bar, drawn by `OnboardingView` over every screen from
+  Welcome to the paywall** (`OnboardingFlowBar`, `flowSteps`), fixed while
+  screens slide, full on the paywall, none after it. It fills by the square
+  root of position (fast to slow). Each screen's own bar hides itself under
+  `\.onboardingFlowBar` and keeps its 14pt slot, so no layout moved.
+  **It is the SAME bar on every screen** (Aziz, 2026-10-18, after a first
+  build moved it around): always 78pt from the left (room for Back even
+  where there is none), always to the right gutter, one track colour. So
+  the corner Otto on the questions sits UNDER the bar, beside the question
+  (`SeatedClipLayer.cornerTop`), and the question reads from the left with
+  his width kept clear (`CornerQuestionTitle`). The three years moments
+  ("16 years", "4 years back", "4 more years of…") show NO bar (Aziz,
+  2026-10-18) but still count toward it. **A new onboarding screen goes
+  into `flowSteps` or shows no bar.**
+- **The onboarding paywall stays "Keep Otto glowing."** A personal version
+  ("YOUR PLAN IS READY", "13 minutes a day, {time}.", a checklist of their
+  answers, "Start my plan") was built and reverted the same week (Aziz,
+  2026-10-18: "just revert back to the old paywall"). Do not re-propose it
+  without being asked. Only the top padding moved, to clear the progress bar.
+- **"808 Premium" is "808 Membership" everywhere in the app**, the name App
+  Store Connect uses.
+- Analytics: the new screens are "26a/26b/26c", the cuts are "zz … (cut)",
+  09 and 07 carry their new wording; `tools/posthog_sheet.gs` matches (paste
+  it into Apps Script when this ships). The sample answers behind
+  `ONBOARDING_STEP` now include a time and two obstacles.
+- 785 tests green; checked on a throwaway iPhone 17 simulator, deleted after.

@@ -246,19 +246,12 @@ struct BlockScheduleScreen: View {
             HStack(spacing: 14) {
                 if let back { OnboardingBackButton(action: back) }
                 Spacer()
-                // Otto's corner (`SeatedClipLayer.cornerWidth`).
-                Color.clear.frame(width: SeatedClipLayer.cornerWidth)
             }
             .frame(height: 40)
 
             ScrollView {
                 VStack(spacing: 0) {
-                    Text("When should I hold them?")
-                        .font(.system(size: 28, weight: .heavy, design: .rounded))
-                        .foregroundStyle(AppColor.textPrimary)
-                        .multilineTextAlignment(.center)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .frame(maxWidth: .infinity)
+                    CornerQuestionTitle("When should I hold them?", size: 28)
                         .padding(.top, 30)
 
                     BlockWhenPicker(choice: $choice, hours: $hours)

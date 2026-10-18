@@ -77,7 +77,7 @@ struct BlockIntroScreen: View {
             }
             .padding(.top, 18)
 
-            Text("Part of 808 Premium.")
+            Text("Part of 808 Membership.")
                 .font(.system(size: 13))
                 .foregroundStyle(AppColor.textSecondary)
                 .padding(.top, 12)

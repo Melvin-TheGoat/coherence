@@ -76,8 +76,9 @@ var APPLE =
  * 2026-10-07 because the team-device switch only flags events sent after it
  * is turned on.
  */
-var MARKED_INTERNAL =
-  "person_id IN (SELECT id FROM persons WHERE toString(properties.$internal_or_test_user) = 'true')";
+// (Read once per run by `people()` below and inlined as an id list. As a
+// `person_id IN (SELECT id FROM persons ...)` subquery inside every query it
+// was the main reason PostHog started timing the sheet out, 2026-10-16.)
 
 /**
  * Extra people to leave out, by PostHog person id, from the Script Property
@@ -102,17 +103,15 @@ var EXTRA_INTERNAL_IDS = (function () {
  * any extra ids above. ifNull because a property an old build never sent
  * must read as "not internal", not as unknown.
  */
-var NOT_INTERNAL =
-  "NOT (ifNull(toString(properties.$app_build), '') = '1' " +
-  "OR ifNull(toString(properties.$is_testflight), '') = 'true' " +
-  "OR ifNull(toString(properties.$is_sideloaded), '') = 'true' " +
-  "OR ifNull(toString(properties.team_device), '') = 'true' " +
-  "OR " + APPLE + " " +
-  "OR " + MARKED_INTERNAL +
-  (EXTRA_INTERNAL_IDS.length
-    ? " OR toString(person_id) IN ('" + EXTRA_INTERNAL_IDS.join("', '") + "')"
-    : '') +
-  ")";
+function notInternal() {
+  return "NOT (ifNull(toString(properties.$app_build), '') = '1' " +
+    "OR ifNull(toString(properties.$is_testflight), '') = 'true' " +
+    "OR ifNull(toString(properties.$is_sideloaded), '') = 'true' " +
+    "OR ifNull(toString(properties.team_device), '') = 'true' " +
+    "OR " + APPLE + " " +
+    "OR " + personIn(people().internal.concat(EXTRA_INTERNAL_IDS)) +
+    ")";
+}
 
 /** Version strings starting with this are the old app. */
 var OLD = "startsWith(ifNull(toString(properties.$app_version), ''), '1.0')";
@@ -122,8 +121,54 @@ var OLD = "startsWith(ifNull(toString(properties.$app_version), ''), '1.0')";
  * Lifetime purchase, which has no trial (the family Lifetime, 2026-09-12),
  * so a 1.0 trial from someone who bought Lifetime is left out.
  */
-var REAL_TRIAL = "event = 'trial_started' AND NOT (" + OLD + " AND person_id IN " +
-  "(SELECT person_id FROM events WHERE event = 'purchase' AND toString(properties.plan) = 'lifetime'))";
+function realTrial() {
+  return "event = 'trial_started' AND NOT (" + OLD + " AND " + personIn(people().lifetime) + ")";
+}
+
+/** Run with a paired Apple Watch, by the person property 1.1 sets at launch. */
+function pairedWatch() {
+  return personIn(Object.keys(people().watch).filter(function (id) { return people().watch[id] === 'true'; }));
+}
+
+/** `person_id IN (...)` for a list of ids, or `false` for none. */
+function personIn(ids) {
+  if (!ids.length) return 'false';
+  return "toString(person_id) IN ('" + ids.join("', '") + "')";
+}
+
+/**
+ * Everything the sheet needs from PostHog's persons table, read ONCE per run:
+ * who is marked internal, who has a paired Watch, each person's plan, and the
+ * 1.0 Lifetime buyers. Until 2026-10-16 these were a persons subquery in every
+ * query and `person.properties` lookups on every event row, which joins the
+ * persons table into the scan; with nine queries an hour PostHog began
+ * answering 504 "max execution time" on most of them. Inlined as id lists
+ * the scans touch events only. Cached on success only, so a failed read is
+ * retried by the next tab.
+ */
+var PEOPLE = null;
+function people() {
+  if (PEOPLE) return PEOPLE;
+  var rows = query(
+    "SELECT toString(id), ifNull(toString(properties.$internal_or_test_user), ''), " +
+    "ifNull(toString(properties.has_paired_watch), ''), ifNull(toString(properties.plan), '') " +
+    "FROM persons WHERE ifNull(toString(properties.$internal_or_test_user), '') = 'true' " +
+    "OR notEmpty(ifNull(toString(properties.has_paired_watch), '')) " +
+    "OR notEmpty(ifNull(toString(properties.plan), '')) LIMIT 100000").results || [];
+  var p = { internal: [], watch: {}, plan: {}, lifetime: [] };
+  rows.forEach(function (r) {
+    var id = String(r[0]).toLowerCase();
+    if (r[1] === 'true') p.internal.push(id);
+    if (r[2]) p.watch[id] = r[2];
+    if (r[3]) p.plan[id] = r[3];
+  });
+  p.lifetime = (query(
+    "SELECT DISTINCT toString(person_id) FROM events WHERE event = 'purchase' " +
+    "AND toString(properties.plan) = 'lifetime' LIMIT 10000").results || [])
+    .map(function (r) { return String(r[0]).toLowerCase(); });
+  PEOPLE = p;
+  return p;
+}
 
 /** The plans by the app's raw values (`SubscriptionPlan`), as people say them. */
 var PLAN_NAMES = {
@@ -163,7 +208,8 @@ function namesOf(csv, map) {
  * lines that do not start "zz"). Rewritten 2026-10-01 for the 1.1 onboarding:
  * the 1.0 list (Watch gate, calculating your plan, the sample session) named
  * screens 1.1 never shows, so the tab read as zeros. When the app's list
- * changes, change this one to match.
+ * changes, change this one to match. Updated 2026-10-17 for the science
+ * screens and the cuts that made room for them.
  */
 var SCREEN_NAMES = {
   relief:           "01 Welcome, Otto waves",
@@ -172,30 +218,26 @@ var SCREEN_NAMES = {
   meetOtto:         "04 Meet your meditating partner: Otto",
   ottoGrows:        "05 The more you meditate, the brighter he gets",
   seeForYourself:   "06 See for yourself (drag Otto's glow)",
-  clutter:          "07 Your mind is just cluttered",
+  clutter:          "07 Does your mind feel cluttered?",
   questionCount:    "08 Let's personalize 808 for you",
-  motivation:       "09 What's your goal with meditation?",
+  motivation:       "09 What matters most to you? (one pick)",
   obstacles:        "10 What usually gets in the way?",
   stress:           "11 How stressed have you been lately?",
   wandering:        "12 How much of your day is your mind elsewhere?",
-  role:             "13 Which one sounds most like you?",
   quietTime:        "14 When could you fit in a few quiet minutes?",
   habitHistory:     "15 Tried to make meditation a habit before?",
   age:              "16 How old are you?",
-  didYouKnow:       "17 Did you know? (four sourced facts)",
   baseline:         "18 How often do you meditate right now?",
   buildingPlan:     "19 Tailoring 808 to you",
   mindProfile:      "20 Your mind profile",
   lifeNumber:       "21 N years with your mind elsewhere (seasons clip)",
-  lifePause:        "22 What would you do with N years?",
-  lifeDots:         "23 This is your life (the dots)",
   goodNews:         "24 The good news (a quarter back)",
   lifeMoments:      "25 N more years of family, fun, this world",
-  attentionHacked:  "26 Your attention has been hacked",
+  neuroBrain:       "26a Your brain becomes what you do every day",
+  neuroPick:        "26b Which would change your days the most?",
+  neuroPlan:        "26c Just a few minutes a day",
   whyItWorks:       "27 How 808 makes meditation stick",
-  research:         "28 808 is built on research",
   socialProof:      "29 Made for people like you",
-  thisWeek:         "30 In 1 week, 808 will help you",
   ascend:           "31 Ready to take control? (hold to ascend)",
   paywall:          "32 Paywall",
   permission:       "33 One nudge at your time (notifications)",
@@ -250,7 +292,25 @@ function refreshAll() {
   });
   removeTabs(OBSOLETE_TABS);
   stamp(failed);
-  if (failed.length) throw new Error(failed.join(' | '));
+  // Only a tab that has failed three refreshes in a row fails the run, which
+  // is what sends Google's "Summary of failures" email. PostHog's own servers
+  // have bad hours (2026-10-16: 504 "max execution time" and 503
+  // "clickhouse_at_capacity" on queries that normally take under three
+  // seconds over about 10,000 events), and an email for every one of those
+  // hours says something is broken when nothing on our side is. Three in a
+  // row is a real problem, and the stamp on Overview names every stale tab
+  // in the meantime.
+  var props = PropertiesService.getScriptProperties();
+  var stuck = [];
+  tabs.forEach(function (t) {
+    var key = 'FAIL_STREAK_' + t[0];
+    var msg = failed.filter(function (f) { return f.indexOf(t[0] + ':') === 0; })[0];
+    if (!msg) { props.deleteProperty(key); return; }
+    var streak = Number(props.getProperty(key) || 0) + 1;
+    props.setProperty(key, String(streak));
+    if (streak >= 3) stuck.push(msg + ' (failed ' + streak + ' refreshes in a row)');
+  });
+  if (stuck.length) throw new Error(stuck.join(' | '));
 }
 
 /**
@@ -276,7 +336,7 @@ function writeOverview() {
   // [label, condition, 'people' or 'events', what it means]
   var metrics = [
     ['Active people', "event = 'Application Opened'", 'people', 'Opened the app at least once'],
-    ['Active with a paired Apple Watch', "event = 'Application Opened' AND ifNull(toString(person.properties.has_paired_watch), '') = 'true'", 'people', 'From 1.1 on; 1.0 never sent it'],
+    ['Active with a paired Apple Watch', "event = 'Application Opened' AND " + pairedWatch(), 'people', 'From 1.1 on; 1.0 never sent it'],
     ['New installs', "event = 'Application Installed'", 'people', 'First launch after an App Store install. A reinstall counts again.'],
     ['Updated to 1.1 or later', "event = 'Application Updated' AND NOT " + OLD, 'people', 'First launch after updating to 1.1. The same people as the Updaters tab. (Updates from 1.0 to 1.0.1 are not counted.)'],
     ['Finished onboarding', "event = 'onboarding_completed'", 'people', 'Reached the end of the tour, in any version. Includes the rare updater who never finished 1.0’s onboarding and goes through 1.1’s.'],
@@ -284,7 +344,7 @@ function writeOverview() {
     ['Saw the onboarding paywall (1.1)', "event = 'paywall_viewed' AND toString(properties.placement) = 'onboarding' AND NOT " + OLD, 'people', 'Screen 32 of 1.1’s onboarding: new installs, and updaters who never finished 1.0’s onboarding. Anyone who already pays skips it.'],
     ['Saw the launch paywall', "event = 'paywall_viewed' AND toString(properties.placement) = 'root_lock'", 'people', 'Opened 1.1 without a membership: a 1.0 user updating, or a plan that lapsed'],
     ['Turned down every offer', "event = 'offer_declined' AND toString(properties.rung) = 'half_month'", 'people', 'Said no to the plans, then the free trial, then the half-price month, at least once. Someone who already used a free trial is never offered another, so for them it is the plans and the half-price month. Some come back: the first 1.1 buyer turned down every offer, reopened the app, and took the half-price month.'],
-    ['Started a free trial', REAL_TRIAL, 'people', "1.1: 3 days, offered only after \"No, I don't want to pay\". 1.0: a 7-day week on the paywall."],
+    ['Started a free trial', realTrial(), 'people', "1.1: 3 days, offered only after \"No, I don't want to pay\". 1.0: a 7-day week on the paywall."],
     ['Subscribed (any plan)', "event = 'purchase'", 'people', 'Any plan, Lifetime included, confirmed by StoreKit. A trial counts the moment it starts: PostHog never hears whether it renewed (App Store Connect does).'],
     ['Subscribed in onboarding (1.1)', "event = 'purchase' AND toString(properties.placement) = 'onboarding' AND NOT " + OLD, 'people', 'Bought at screen 32 of 1.1’s onboarding. (1.0 purchases did not record where they happened.)'],
     ['Subscribed at the launch paywall', "event = 'purchase' AND toString(properties.placement) = 'root_lock'", 'people', 'Mostly 1.0 users updating to 1.1. See the Updaters tab.'],
@@ -320,8 +380,16 @@ function writeOverview() {
         : 'countIf(' + cond + ') AS m' + i + '_' + w[1]);
     });
   });
-  var res = query('SELECT ' + selects.join(', ') + ' FROM events WHERE ' +
-                  'timestamp > now() - INTERVAL 3650 DAY AND ' + NOT_INTERNAL);
+  // Only the events the metrics read. Without this the scan read every event
+  // ever sent (every screen, tap and app state) to fill 87 cells.
+  var events = ['Application Opened', 'Application Installed', 'Application Updated',
+    'onboarding_completed', 'paywall_viewed', 'offer_declined', 'trial_started', 'purchase',
+    'session_started', 'session_completed', 'session_logged', 'result_viewed', 'result_missing',
+    'session_start_failed', 'watch_fallback', 'session_discarded', 'profile_created',
+    'hat_bought', 'share_opened', 'account_deleted'];
+  var res = query('SELECT ' + selects.join(', ') + " FROM events WHERE event IN ('" +
+                  events.join("', '") + "') AND " +
+                  'timestamp > now() - INTERVAL 3650 DAY AND ' + notInternal());
   var v = (res.results && res.results[0]) || [];
 
   metrics.forEach(function (m, i) {
@@ -339,7 +407,8 @@ function writeOverview() {
     " FROM (SELECT person_id, minIf(timestamp, event = 'Application Installed') AS installed, " +
     "countIf(event = 'purchase') > 0 AS bought, countIf(event = 'session_completed') > 0 AS sat, " +
     "countIf(event = 'onboarding_completed') > 0 AS finished " +
-    "FROM events WHERE timestamp > now() - INTERVAL 3650 DAY AND " + NOT_INTERNAL + " " +
+    "FROM events WHERE event IN ('Application Installed', 'purchase', 'session_completed', 'onboarding_completed') " +
+    "AND timestamp > now() - INTERVAL 3650 DAY AND " + notInternal() + " " +
     "GROUP BY person_id HAVING countIf(event = 'Application Installed') > 0)").results || [[]])[0] || [];
 
   rows.push(['']);
@@ -369,13 +438,16 @@ function writeDaily() {
     "uniqExactIf(person_id, event = 'Application Updated' AND NOT " + OLD + ") AS updated, " +
     "uniqExactIf(person_id, event = 'onboarding_completed') AS finished_onboarding, " +
     "uniqExactIf(person_id, event = 'paywall_viewed') AS saw_paywall, " +
-    "uniqExactIf(person_id, " + REAL_TRIAL + ") AS trials, " +
+    "uniqExactIf(person_id, " + realTrial() + ") AS trials, " +
     "uniqExactIf(person_id, event = 'purchase') AS subscribed, " +
     "uniqExactIf(person_id, event = 'session_started') AS pressed_begin, " +
     "countIf(event = 'session_completed') AS sessions_completed, " +
     "countIf(event = 'session_start_failed') AS start_failures, " +
     "countIf(event = 'result_missing') AS result_missing " +
-    "FROM events WHERE timestamp > now() - INTERVAL 31 DAY AND " + NOT_INTERNAL + " " +
+    "FROM events WHERE event IN ('Application Installed', 'Application Updated', 'onboarding_completed', " +
+    "'paywall_viewed', 'trial_started', 'purchase', 'session_started', 'session_completed', " +
+    "'session_start_failed', 'result_missing') " +
+    "AND timestamp > now() - INTERVAL 31 DAY AND " + notInternal() + " " +
     "GROUP BY day ORDER BY day DESC LIMIT 60";
   var res = query(sql);
   var rows = [['Day (Detroit)', 'New installs', 'Updated to 1.1+', 'Finished onboarding',
@@ -396,7 +468,7 @@ function writeScreens() {
     "SELECT if(event = 'onboarding_completed', '__finished', toString(properties.step)) AS step, " +
     "count(DISTINCT person_id) AS people " +
     "FROM events WHERE event IN ('onboarding_step', 'onboarding_completed') " +
-    "AND timestamp > now() - INTERVAL 30 DAY AND " + NOT_INTERNAL + " " +
+    "AND timestamp > now() - INTERVAL 30 DAY AND " + notInternal() + " " +
     // 1.1 onwards only: 1.0 used some of the same step ids (relief, breath,
     // stress) for different screens in a different order.
     "AND NOT " + OLD + " " +
@@ -484,7 +556,7 @@ function writeProblems() {
     "count() AS times, count(DISTINCT person_id) AS people " +
     "FROM events WHERE event IN ('session_start_failed', 'watch_fallback', 'session_discarded', " +
     "'purchase_failed', 'result_missing') " +
-    "AND timestamp > now() - INTERVAL 30 DAY AND " + NOT_INTERNAL + " " +
+    "AND timestamp > now() - INTERVAL 30 DAY AND " + notInternal() + " " +
     "GROUP BY event, reason, ver ORDER BY times DESC LIMIT 100";
   var res = query(sql);
   var rows = [['Kind', 'Reason', 'Version', 'Times (30d)', 'People', 'What it means']];
@@ -508,11 +580,11 @@ function writePurchases() {
     "arrayStringConcat(groupUniqArrayIf(toString(properties.placement), event = 'purchase'), ',') AS places, " +
     "argMin(toString(properties.$app_version), timestamp) AS ver, " +
     "countIf(event = 'purchase') AS purchase_events, " +
-    "countIf(" + REAL_TRIAL + ") AS trial_events, " +
+    "countIf(" + realTrial() + ") AS trial_events, " +
     "argMinIf(toString(properties.$geoip_country_name), timestamp, " +
     "notEmpty(ifNull(toString(properties.$geoip_country_name), ''))) AS country " +
     "FROM events WHERE event IN ('trial_started', 'purchase') " +
-    "AND timestamp > now() - INTERVAL 3650 DAY AND " + NOT_INTERNAL + " " +
+    "AND timestamp > now() - INTERVAL 3650 DAY AND " + notInternal() + " " +
     "GROUP BY person_id ORDER BY first_bought DESC LIMIT 500";
   var res = query(sql);
   var rows = [['Buyer (anonymous id)', 'First bought (Detroit)', 'Plan', 'Where', 'Version',
@@ -539,7 +611,7 @@ function writeAppleWatch() {
     "SELECT toStartOfWeek(toTimeZone(timestamp, '" + TZ + "'), 1) AS week, " +
     "uniqExactIf(person_id, event = 'Application Opened') AS active, " +
     "uniqExactIf(person_id, event = 'Application Opened' AND " +
-    "ifNull(toString(person.properties.has_paired_watch), '') = 'true') AS with_watch, " +
+    "" + pairedWatch() + ") AS with_watch, " +
     "uniqExactIf(person_id, event = 'watch_switch' AND toString(properties.on) = 'true') AS switched_on, " +
     "uniqExactIf(person_id, event = 'watch_connected') AS first_connection, " +
     // 1.0 sent source "phone" for a session started on the phone, but
@@ -547,7 +619,9 @@ function writeAppleWatch() {
     "countIf(event = 'session_started' AND (toString(properties.source) IN ('phone_watch', 'watch') OR " + OLD + ")) AS watch_started, " +
     "countIf(event = 'session_completed' AND (toString(properties.measured) = 'true' OR " + OLD + ")) AS measured, " +
     "countIf(event = 'watch_fallback') AS fell_back " +
-    "FROM events WHERE timestamp > now() - INTERVAL 91 DAY AND " + NOT_INTERNAL + " " +
+    "FROM events WHERE event IN ('Application Opened', 'watch_switch', 'watch_connected', " +
+    "'session_started', 'session_completed', 'watch_fallback') " +
+    "AND timestamp > now() - INTERVAL 91 DAY AND " + notInternal() + " " +
     "GROUP BY week ORDER BY week DESC LIMIT 20";
   var res = query(sql);
   var rows = [['Week of (Monday)', 'Active people', 'Active with a paired Watch',
@@ -598,14 +672,34 @@ function personColumns() {
     "any(properties.$device_model) AS device, " +
     "argMax(toString(properties.$os_version), timestamp) AS os, " +
     "argMax(toString(properties.$app_version), timestamp) AS ver, " +
-    "argMax(ifNull(toString(person.properties.has_paired_watch), ''), timestamp) AS watch, " +
+    "'' AS watch, " +  // filled from people() by fillPerson
     "anyIf(toString(properties.outcome), event = 'watch_gate') AS gate, " +
     "argMaxIf(toString(properties.plan), timestamp, event = 'purchase') AS plan, " +
     "countIf(event = 'trial_started') AS trials, " +
-    "argMax(ifNull(toString(person.properties.plan), ''), timestamp) AS plan_prop, " +
+    "'' AS plan_prop, " +  // filled from people() by fillPerson
     "countIf(event = 'offer_declined' AND toString(properties.rung) = 'half_month') AS said_no, " +
     "countIf(event = 'free_tier_entered') AS free, "
   );
+}
+
+/**
+ * The paired-Watch and plan person properties for one row, from people().
+ * Read there once instead of joining the persons table into the scan.
+ */
+function fillPerson(r, C) {
+  var id = String(r[C.id] || '').toLowerCase();
+  r[C.watch] = people().watch[id] || '';
+  r[C.planProp] = people().plan[id] || '';
+}
+
+/**
+ * Only the events of people who did this at least once. Decided by a scan of
+ * one event name, which PostHog's table is ordered for, so the per-person
+ * scan that follows skips everyone else's events.
+ */
+function onlyPeopleWith(cond) {
+  return "person_id IN (SELECT person_id FROM events WHERE " + cond +
+    " AND timestamp > now() - INTERVAL 3650 DAY)";
 }
 
 /** "Yes" / "No" for the paired-Watch column, falling back to 1.0's question. */
@@ -640,7 +734,7 @@ function writeInstalls() {
     "countIf(event = 'session_start_failed') AS failed, " +
     "countIf(event = 'purchase') AS taps, " +
     "toTimeZone(max(timestamp), '" + TZ + "') AS last_seen " +
-    "FROM events WHERE timestamp > now() - INTERVAL 3650 DAY AND " + NOT_INTERNAL + " " +
+    "FROM events WHERE " + onlyPeopleWith("event = 'Application Installed'") + " AND timestamp > now() - INTERVAL 3650 DAY AND " + notInternal() + " " +
     "GROUP BY person_id HAVING countIf(event = 'Application Installed') > 0 " +
     "ORDER BY installed_at DESC LIMIT 2000";
   var res = query(sql);
@@ -653,6 +747,7 @@ function writeInstalls() {
                'Sessions completed', 'Start failures', 'Purchase taps', 'Last seen', 'Note',
                'PostHog person id']];
   res.results.forEach(function (r) {
+    fillPerson(r, C);
     var when = String(r[C.at] || '').replace('T', ' ').split(' ');
     var city = r[C.city] || '', device = r[C.device] || '';
     var note = '';
@@ -731,7 +826,8 @@ function writeWhoTheyAre() {
     "countIf(event = 'paywall_viewed') > 0 AS paywall, " +
     "countIf(event = 'purchase') > 0 AS bought, " +
     "countIf(event = 'session_completed') > 0 AS sat " +
-    "FROM events WHERE timestamp > now() - INTERVAL 3650 DAY AND " + NOT_INTERNAL + " " +
+    "FROM events WHERE event IN ('onboarding_step', 'paywall_viewed', 'purchase', 'session_completed') " +
+    "AND timestamp > now() - INTERVAL 3650 DAY AND " + notInternal() + " " +
     "GROUP BY person_id HAVING " +
     ANSWER_QUESTIONS.map(function (q) { return 'notEmpty(' + q[0] + ')'; }).join(' OR ') + " " +
     "LIMIT 20000";
@@ -797,7 +893,7 @@ function writeUpdaters() {
     "countIf(event = 'session_started' AND NOT " + OLD + ") AS began, " +
     "countIf(event = 'session_completed' AND NOT " + OLD + ") AS completed, " +
     "toTimeZone(max(timestamp), '" + TZ + "') AS last_seen " +
-    "FROM events WHERE timestamp > now() - INTERVAL 3650 DAY AND " + NOT_INTERNAL + " " +
+    "FROM events WHERE " + onlyPeopleWith(updatedToNew) + " AND timestamp > now() - INTERVAL 3650 DAY AND " + notInternal() + " " +
     "GROUP BY person_id HAVING countIf(" + updatedToNew + ") > 0 " +
     "ORDER BY updated_at DESC LIMIT 2000";
   var res = query(sql);
@@ -810,6 +906,7 @@ function writeUpdaters() {
                'PostHog person id']];
   var bought = 0, met = 0;
   res.results.forEach(function (r) {
+    fillPerson(r, C);
     var when = String(r[C.at] || '').replace('T', ' ').split(' ');
     var words = membership(r[C.newPlan], r[C.planProp], r[C.saidNo], r[C.paywall], 0);
     if (r[C.newPlan]) bought++;
@@ -838,10 +935,12 @@ var RUN_STARTED = Date.now();
 function query(sql) {
   var key = PropertiesService.getScriptProperties().getProperty('POSTHOG_KEY');
   if (!key) throw new Error('Set POSTHOG_KEY in Project Settings → Script Properties first.');
-  // PostHog rate-limits (429) and times queries out (504) under its own load,
-  // neither of which says anything is wrong with the query. Retry twice, and
-  // only while there is room inside the execution limit: a retry that runs
-  // into the 6-minute cap kills the whole run instead of one tab.
+  // PostHog rate-limits (429) and times queries out (504, 503) under its own
+  // load, none of which says anything is wrong with the query. Retry three
+  // times, waiting longer each time (15, 30, 45 seconds) because an
+  // overloaded cluster needs a moment, and only while there is room inside
+  // the execution limit: a retry that runs into the 6-minute cap kills the
+  // whole run instead of one tab.
   var attempt = 0;
   for (;;) {
     var res = UrlFetchApp.fetch(HOST + '/api/projects/' + PROJECT_ID + '/query/', {
@@ -854,12 +953,12 @@ function query(sql) {
     var code = res.getResponseCode();
     if (code < 300) return JSON.parse(res.getContentText());
     var worthRetrying = (code === 429 || code >= 500);
-    var roomLeft = (Date.now() - RUN_STARTED) < 200000;
-    if (!worthRetrying || attempt >= 2 || !roomLeft) {
+    var roomLeft = (Date.now() - RUN_STARTED) < 240000;
+    if (!worthRetrying || attempt >= 3 || !roomLeft) {
       throw new Error('PostHog ' + code + ': ' + res.getContentText().slice(0, 300));
     }
     attempt++;
-    Utilities.sleep(attempt * 5000);
+    Utilities.sleep(attempt * 15000);
   }
 }
 

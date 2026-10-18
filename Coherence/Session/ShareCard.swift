@@ -768,7 +768,7 @@ struct ShareSessionSheet: View {
                             Analytics.track(.skinLockedTapped(skin: "share_more_cards"))
                             showPlans = true
                         } label: {
-                            Text("\(lockedCardCount) more cards with 808 Premium")
+                            Text("\(lockedCardCount) more cards with 808 Membership")
                                 .font(.caption)
                                 .foregroundStyle(AppColor.textSecondary)
                         }

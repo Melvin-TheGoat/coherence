@@ -27,20 +27,16 @@ struct WanderingScreen: View {
                 if let back { OnboardingBackButton(action: back) }
                 OnboardingProgress(from: Double(count.index - 1) / Double(max(count.total, 1)),
                                    to: Double(count.index) / Double(max(count.total, 1)))
-                Color.clear.frame(width: SeatedClipLayer.cornerWidth)
             }
             .frame(height: 40)
 
-            // Clear of the corner Otto: it touched him at 24 (Aziz).
-            Text("How much of your day is your mind somewhere else?")
-                .font(.system(size: 26, weight: .heavy, design: .rounded))
-                .foregroundStyle(AppColor.textPrimary)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(.top, 44)
+            // Beside the corner Otto, under the progress bar.
+            CornerQuestionTitle("How much of your day is your mind somewhere else?", size: 26)
+                .padding(.top, 30)
             Text("Your best guess. There's no wrong answer.")
                 .font(.system(size: 16, weight: .medium, design: .rounded))
                 .foregroundStyle(AppColor.textPrimary.opacity(0.7))
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.top, 8)
 
             Text(level.label)
@@ -800,81 +796,109 @@ struct WhyItWorksScreen: View {
     @State private var ctaShown = false
 
     /// With Block, a chain (Aziz, 2026-09-25): friction, then a reminder
-    /// every time, then the habit sinking in. Without it, the features the
-    /// build does have, so the screen never sells what is not there.
+    /// every time, then the habit sinking in. Each step says why the one
+    /// before it works, joined by arrows, so the screen reads as one story
+    /// rather than a feature list (Aziz, 2026-10-18, after a list version:
+    /// "I liked how it was flowing from one screen to the next"). Friends
+    /// joins as its own step on builds that have it. Without Block, the
+    /// features the build does have, so the screen never sells what is not
+    /// there.
     private static var chain: Bool { FeatureFlags.block }
 
     /// The icons are "In 1 week"'s (Melvin, 2026-09-27): a filled symbol in
-    /// its own colour on a white disc with a soft shadow, the same four
-    /// colours that screen uses.
+    /// its own colour on a white disc with a soft shadow.
     private static let blue = Color(red: 0.25, green: 0.55, blue: 0.85)
     private static let orange = Color(red: 0.93, green: 0.62, blue: 0.24)
+    private static let pink = Color(red: 0.86, green: 0.38, blue: 0.52)
 
     private static var rows: [(icon: String, tint: Color, title: String, line: String)] {
+        let friend = ("person.2.fill", pink,
+                      "Invite a friend and set weekly goals to meditate together", "")
         if chain {
-            return [
+            var steps = [
                 ("lock.fill", blue, "808 puts a little friction between you and your apps", ""),
-                ("bell.fill", orange, "Every time you open one, Otto reminds you to meditate", ""),
-                ("sparkles", OnboardingGreen.shade, "Over time it sinks into your subconscious, and meditating becomes a habit you enjoy instead of dread", ""),
+                ("bell.fill", orange, "Every time you open one, Otto reminds you to meditate until you do", ""),
             ]
+            if FeatureFlags.friends { steps.append(friend) }
+            steps.append(("sparkles", OnboardingGreen.shade, "Over time, meditating sinks into your subconscious and becomes a habit you enjoy instead of dread", ""))
+            return steps
         }
-        return [
+        var list = [
             ("sparkles", orange, "Otto's glow", "Meditate and he glows brighter. Skip days and he fades."),
             ("bell.fill", blue, "A nudge at your time", "One reminder a day, at the time you picked."),
-            ("clock.fill", OnboardingGreen.shade, "Meditate first", "Then get on with your day."),
         ]
+        list.append(FeatureFlags.friends
+            ? ("person.2.fill", pink, "Meditate with a friend", "Keep each other showing up.")
+            : ("clock.fill", OnboardingGreen.shade, "Meditate first", "Then get on with your day."))
+        return list
     }
 
-    var body: some View {
+    private func stack(compact: Bool) -> some View {
         VStack(spacing: 0) {
+            // Clear of the onboarding's progress bar.
+            Color.clear.frame(height: compact ? 44 : 30)
             Spacer(minLength: 0)
             Text("How 808 makes meditation stick")
-                .font(.system(size: 30, weight: .heavy, design: .rounded))
+                .font(.system(size: compact ? 25 : 30, weight: .heavy, design: .rounded))
                 .foregroundStyle(AppColor.textPrimary)
                 .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
                 .opacity(headShown ? 1 : 0)
                 .scaleEffect(headShown ? 1 : 0.94)
 
-            VStack(spacing: Self.chain ? 6 : 12) {
+            VStack(spacing: Self.chain ? (compact ? 2 : 6) : 12) {
                 ForEach(Array(Self.rows.enumerated()), id: \.offset) { i, row in
                     if Self.chain && i > 0 {
                         Image(systemName: "arrow.down")
-                            .font(.system(size: 18, weight: .bold))
+                            .font(.system(size: compact ? 15 : 18, weight: .bold))
                             .foregroundStyle(OnboardingGreen.shade.opacity(0.7))
                             .opacity(i < shownRows ? 1 : 0)
                     }
-                    HStack(alignment: .center, spacing: 14) {
+                    HStack(alignment: .center, spacing: compact ? 12 : 14) {
                         Image(systemName: row.icon)
-                            .font(.system(size: 22, weight: .semibold))
+                            .font(.system(size: compact ? 18 : 22, weight: .semibold))
                             .foregroundStyle(row.tint)
-                            .frame(width: 48, height: 48)
+                            .frame(width: compact ? 40 : 48, height: compact ? 40 : 48)
                             .background(Circle().fill(.white))
                             .shadow(color: .black.opacity(0.06), radius: 4, y: 2)
                         VStack(alignment: .leading, spacing: 3) {
                             Text(row.title)
-                                .font(.system(size: Self.chain ? 17 : 18, weight: .heavy, design: .rounded))
+                                .font(.system(size: Self.chain ? (compact ? 15 : 17) : 18,
+                                              weight: .heavy, design: .rounded))
                                 .foregroundStyle(AppColor.textPrimary)
                                 .fixedSize(horizontal: false, vertical: true)
                             if !row.line.isEmpty {
                                 Text(row.line)
-                                    .font(.system(size: 15, weight: .medium, design: .rounded))
+                                    .font(.system(size: compact ? 14 : 15, weight: .medium, design: .rounded))
                                     .foregroundStyle(AppColor.textPrimary.opacity(0.75))
                                     .fixedSize(horizontal: false, vertical: true)
                             }
                         }
                         Spacer(minLength: 0)
                     }
-                    .padding(16)
-                    .background(RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .padding(compact ? 12 : 16)
+                    .background(RoundedRectangle(cornerRadius: compact ? 16 : 20, style: .continuous)
                         .fill(Color(white: 0.965)))
                     .opacity(i < shownRows ? 1 : 0)
                     .offset(y: i < shownRows ? 0 : 14)
                     .accessibilityElement(children: .combine)
                 }
             }
-            .padding(.top, 32)
+            .padding(.top, compact ? 18 : 32)
             Spacer(minLength: 0)
             Spacer(minLength: 0)
+        }
+    }
+
+    var body: some View {
+        // Full size where it fits, a tighter version on a short phone (an
+        // iPhone SE squashed the title under the progress bar), and a
+        // scroll at the largest text sizes.
+        ViewThatFits(in: .vertical) {
+            stack(compact: false)
+            stack(compact: true)
+            ScrollView { stack(compact: true) }
+                .scrollIndicators(.hidden)
         }
         .padding(.horizontal, AppMetrics.screenPadding + 4)
         .frame(maxWidth: .infinity, maxHeight: .infinity)

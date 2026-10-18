@@ -164,6 +164,11 @@ struct OnboardingView: View {
         /// Added 2026-09-26: "Ready to take control?", hold the button and
         /// Otto ascends. Last in the enum.
         case ascend
+        /// Added 2026-10-17: the science section (`OnboardingScience.swift`),
+        /// "Your brain becomes what you do every day", "Which would change
+        /// your days the most?" and "It takes 13 minutes a day", after the
+        /// life moments clip. Last in the enum, for the reason above.
+        case neuroBrain, neuroPick, neuroPlan
 
         /// Progress rail: only the interview shows one. Once we're reflecting
         /// back and selling, a progress bar just tells them how much sales
@@ -196,7 +201,12 @@ struct OnboardingView: View {
                  // The old questions after the frequency slider: no screen
                  // asks them while the interview is redone, so a resume
                  // record on one rejoins the flow (`rejoinPoint`).
-                 .referral, .restarts, .intendedFor, .bodyTracking, .blindSpot:
+                 .referral, .restarts, .intendedFor, .bodyTracking, .blindSpot,
+                 // Cut 2026-10-17 (Aziz, the sales-research pass): the role
+                 // question, Did you know, the two "N years" repeats,
+                 // "attention hacked", the research logos and "In 1 week".
+                 .role, .didYouKnow, .lifePause, .lifeDots, .attentionHacked,
+                 .research, .thisWeek:
                 return true
             // Real screens on Block builds, so leaving one belongs in the
             // Back history like any other question. Off Block builds they
@@ -214,7 +224,7 @@ struct OnboardingView: View {
             switch self {
             // Only the breath now: the welcome and Meet Otto went back to
             // the valley (Aziz, 2026-09-23).
-            case .breath, .breathing, .lifePause, .lifeDots, .attentionHacked, .whyItWorks, .research, .socialProof, .thisWeek: return true
+            case .breath, .breathing, .neuroBrain, .neuroPick, .neuroPlan, .whyItWorks, .socialProof: return true
             default: return false
             }
         }
@@ -288,6 +298,52 @@ struct OnboardingView: View {
         // model's full list: counting the unasked ones left the bar stuck
         // short of full on the last question.
         return InterviewCount(index: i + 1, total: answers.shownInterview.count)
+    }
+
+    /// Every screen the progress bar counts, in order, from Welcome to the
+    /// paywall (Aziz, 2026-10-17). The questions are THIS person's, so the
+    /// bar never counts one they are not asked. Screens after the paywall
+    /// (reminders, Block's setup, sign-in, the tour) show no bar.
+    private var flowSteps: [Step] {
+        let opening: [Step] = [.relief, .breath, .meetOtto, .ottoGrows, .seeForYourself, .clutter, .questionCount]
+        let questions: [Step] = answers.shownInterview.compactMap { q in
+            Self.interviewPairs.first { $0.1 == q }?.0
+        }
+        let rest: [Step] = [.buildingPlan, .mindProfile, .lifeNumber, .goodNews, .lifeMoments,
+                            .neuroBrain, .neuroPick, .neuroPlan, .whyItWorks, .socialProof,
+                            .ascend, .paywall]
+        return opening + questions + rest
+    }
+
+    /// Where the bar stands on this step, or nil where it does not show.
+    private var flowFraction: Double? {
+        let here: Step = step == .breathing ? .breath : step
+        // The three years moments are full-screen pictures and show no bar
+        // (Aziz, 2026-10-18). They still count toward it, so it picks up
+        // where it would have been on the next screen.
+        if [.lifeNumber, .goodNews, .lifeMoments].contains(here) { return nil }
+        let steps = flowSteps
+        guard let i = steps.firstIndex(of: here) else { return nil }
+        // The paywall does not draw over the bar: it is full there, and the
+        // offer is a different place from the questions.
+        return OnboardingFlowBar.fraction(position: i + 1, of: steps.count)
+    }
+
+    /// The one bar, in exactly the same place, length and colour on every
+    /// screen from Welcome to the paywall (Aziz, 2026-10-18: "the same
+    /// progress bar from start to finish"). It always leaves room for the Back
+    /// chevron, even on a screen without one, and always runs to the gutter;
+    /// the corner Otto sits below it, beside the question.
+    @ViewBuilder private var flowBar: some View {
+        if let fraction = flowFraction {
+            OnboardingFlowBar(fraction: fraction, track: Color(red: 0.925, green: 0.906, blue: 0.886))
+                .padding(.leading, 78)
+                .padding(.trailing, 24)
+                .padding(.top, 25)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                .allowsHitTesting(false)
+                .transition(.opacity)
+        }
     }
 
     /// The interview screens, paired with their pure-Foundation counterpart in
@@ -579,6 +635,11 @@ struct OnboardingView: View {
                 // 2026-09-23: "showing the garden area in between screens").
                 .zIndex(1)
 
+            // The flow's one progress bar, over every screen and fixed while
+            // they slide (Aziz, 2026-10-17).
+            flowBar
+                .zIndex(3)
+
             // The welcome's Otto stands on the meadow above the scene, so the
             // grasshoppers nearer than his feet are drawn here, over him, with
             // the scene's own seed; the farther ones stay in the scene, behind
@@ -602,6 +663,7 @@ struct OnboardingView: View {
                 }
             }
             .environment(\.onboardingSharedGround, true)
+            .environment(\.onboardingFlowBar, true)
             .environment(\.typingHaptics, true)
             .environment(\.whiteSpeechBubbles, true)
             .environment(\.onboardingBack,
@@ -687,34 +749,54 @@ struct OnboardingView: View {
             MindProfileScreen(answers: answers) { go(.lifeNumber) }
 
         case .lifeNumber:
-            LifeNumberScreen(answers: answers) { go(.lifePause) }
+            LifeNumberScreen(answers: answers) { go(.goodNews) }
 
-        case .lifePause:
-            LifePauseScreen(answers: answers) { go(.lifeDots) }
-
-        case .lifeDots:
-            LifeDotsScreen(answers: answers) { go(.goodNews) }
+        // Cut 2026-10-17 (Aziz): both repeated the number the years clip had
+        // just landed. Kept as cases for resume records.
+        case .lifePause, .lifeDots:
+            Color.clear.onAppear { go(.goodNews) }
 
         case .goodNews:
             GoodNewsScreen(answers: answers) { go(.lifeMoments) }
 
         case .lifeMoments:
-            LifeMomentsScreen(answers: answers) { go(.attentionHacked) }
+            LifeMomentsScreen(answers: answers) { go(.neuroBrain) }
 
+        // Cut 2026-10-17: the science section says it without blame, and a
+        // second loss screen after the years clip works against the offer
+        // (gain framing persuades better for a habit; Gallagher & Updegraff
+        // 2012). Kept as a case for resume records.
         case .attentionHacked:
-            AttentionHackedScreen { go(.whyItWorks) }
+            Color.clear.onAppear { go(.neuroBrain) }
+
+        // The science section (`OnboardingScience.swift`, 2026-10-17).
+        case .neuroBrain:
+            NeuroBrainScreen { go(.neuroPick) }
+
+        case .neuroPick:
+            NeuroPickScreen(benefit: $answers.benefit,
+                            suggested: Benefit.suggested(for: answers.motivations)) { go(.neuroPlan) }
+
+        case .neuroPlan:
+            NeuroPlanScreen {
+                go(.whyItWorks)
+            }
 
         case .whyItWorks:
-            WhyItWorksScreen { go(.research) }
+            WhyItWorksScreen { go(.socialProof) }
 
+        // Cut 2026-10-17: the science section replaces the logos. Kept as a
+        // case for resume records.
         case .research:
-            ResearchScreen { go(.socialProof) }
+            Color.clear.onAppear { go(.socialProof) }
 
         case .socialProof:
-            SocialProofScreen { go(.thisWeek) }
+            SocialProofScreen { go(.ascend) }
 
+        // Cut 2026-10-17: the one screen before the price that lost people
+        // (5 in the 30 days to 2026-10-17). Kept as a case for resume records.
         case .thisWeek:
-            ThisWeekScreen(answers: answers) { go(.ascend) }
+            Color.clear.onAppear { go(.ascend) }
 
         case .ascend:
             // The offer comes straight after "Let's go!" (Aziz, 2026-09-26,
@@ -743,8 +825,11 @@ struct OnboardingView: View {
                                               set: { answers.obstacles = $0 }),
                             count: interviewCount) { go(nextAfter(.obstacles)) }
 
+        // Cut 2026-10-17 (Aziz): nothing read the answer. The model no longer
+        // asks it (`asks(.role)`); a resume record here moves on from the
+        // question before it.
         case .role:
-            RoleScreen(role: $answers.role, count: interviewCount) { go(nextAfter(.role)) }
+            Color.clear.onAppear { go(nextAfter(.wandering)) }
 
         case .quietTime:
             QuietTimeScreen(quietTime: Binding(get: { answers.quietTime },
@@ -769,14 +854,13 @@ struct OnboardingView: View {
                                  // "25–34" shows as picked.
                                  selected: Binding(get: { AgeRange(stored: answers.ageBracket).map { [$0] } ?? [] },
                                                    set: { answers.ageBracket = $0.first?.rawValue }),
-                                 count: interviewCount) { go(.didYouKnow) }
+                                 count: interviewCount) { go(nextAfter(.age)) }
 
-        // Not a question, so not in the interview list: it sits between the
-        // habit question and whatever the interview asks next.
+        // Cut 2026-10-17 (Aziz): four claims is past the point where more
+        // convince less, and its facts now live in the science section.
+        // Kept as a case for resume records.
         case .didYouKnow:
-            DidYouKnowScreen(progress: countFraction(after: .age)) {
-                go(nextAfter(.age))
-            }
+            Color.clear.onAppear { go(nextAfter(.age)) }
 
         // The stress question and the aura slider are one screen (Melvin,
         // 2026-09-22): the answer is drawn on Otto as it is dragged.

@@ -290,7 +290,9 @@ struct WelcomeScreen: View {
     var body: some View {
         IntroScreen(progress: 0,
                     title: "Welcome to 808!",
-                    subtitle: "It's time to regain control of your mind.",
+                    // Names the win, not a loss (2026-10-17, Aziz: "regain control"
+                    // told a newcomer they had lost it).
+                    subtitle: "Let's make meditation part of your day.",
                     cta: "Let's go!",
                     onContinue: onContinue) { playing in
             OttoClip(name: "otto-welcome-wave", playing: playing, loops: true)
@@ -441,6 +443,7 @@ struct IntroScreen<Figure: View>: View {
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.onboardingBack) private var back
+    @Environment(\.onboardingFlowBar) private var flowBar
     /// Flips once: fades Otto and the title in and starts him moving.
     @State private var shown = false
     @State private var subtitleShown = 0
@@ -501,12 +504,16 @@ struct IntroScreen<Figure: View>: View {
                     HStack(spacing: 14) {
                         // Held to the bar's height so the words below do not
                         // move; the chevron still draws, and is hit, at 40pt.
-                        if let back { OnboardingBackButton(action: back).frame(height: 14) }
+                        // Under the flow's one bar the row is the question
+                        // screens' 40pt, so this chevron sits where theirs
+                        // does, beside the bar (the title moves up to match).
+                        if let back { OnboardingBackButton(action: back).frame(height: flowBar ? 40 : 14) }
                         OnboardingProgress(from: progressFrom ?? progress, to: progress)
                             // A second page of one screen moves the bar instead
                             // of rebuilding it.
                             .id(progress)
                     }
+                    .frame(height: flowBar ? 40 : nil)
                     .padding(.top, 12)
                     .padding(.horizontal, back == nil ? 8 : AppMetrics.screenPadding)
                 } else {
@@ -534,7 +541,7 @@ struct IntroScreen<Figure: View>: View {
                 }
                 .animation(.easeInOut(duration: 0.3), value: title)
                 .padding(.horizontal, AppMetrics.screenPadding + 4)
-                .padding(.top, 44)
+                .padding(.top, flowBar ? 18 : 44)
                 .frame(maxWidth: .infinity)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel([title, subtitle].compactMap { $0 }.joined(separator: " "))
@@ -672,7 +679,13 @@ struct SeatedClipLayer: View {
 
     /// How much of the header row he takes; the screen leaves this clear.
     static let cornerWidth: CGFloat = 80
-    private static let cornerHeight: CGFloat = 92
+    static let cornerHeight: CGFloat = 92
+    /// His top, below the safe area: just under the header row.
+    static let cornerTop: CGFloat = 58
+    /// How tall a question's title block is kept beside him, so the answers
+    /// start below his feet: from the title's top (12 + 40 + 30 below the
+    /// safe area) to his bottom.
+    static let besideHeight: CGFloat = cornerTop + cornerHeight - (12 + 40 + 30)
 
     var body: some View {
         GeometryReader { outer in
@@ -687,11 +700,14 @@ struct SeatedClipLayer: View {
                 let clipHeight = seated * 0.95 / clip.bodyShare
                 let bottom = size.height * (0.76 + drop) + clipHeight * clip.marginBelow
                 let centre = CGPoint(x: size.width / 2, y: bottom - clipHeight / 2)
-                // In the corner: level with the header row (12 below the safe
-                // area, 40 tall), right-aligned to the screen's gutter.
+                // In the corner: under the progress bar's row (12 below the
+                // safe area, 40 tall), beside the question, right-aligned to
+                // the gutter. He sat IN the row until 2026-10-18, which cut
+                // the bar short on the questions; the bar is now the same
+                // length everywhere (Aziz).
                 let k = Self.cornerHeight / clipHeight
                 let corner = CGPoint(x: size.width - AppMetrics.screenPadding - Self.cornerWidth / 2,
-                                     y: insetTop + 12 + 20 + 6)
+                                     y: insetTop + Self.cornerTop + Self.cornerHeight / 2)
                 OttoClip(name: clip.name, playing: !reduceMotion, loops: true, fallback: .meditating)
                     .aspectRatio(clip.aspect, contentMode: .fit)
                     .frame(height: clipHeight)
@@ -828,7 +844,10 @@ struct ClutterScreen: View {
     private static let pop = UIImpactFeedbackGenerator(style: .rigid)
     private static let answer = "Meditation is how you clear it. Doing it every day is how it stays clear. That's what 808 is for."
 
-    private static let cluttered = "Your mind is just cluttered."
+    // Asked, never told (2026-10-17): "Your mind is just cluttered" was a
+    // claim about their mind 808 cannot make. The thoughts that follow
+    // answer the question for them.
+    private static let cluttered = "Does your mind feel cluttered?"
     @State private var clutteredLetters = 0
 
     private var answerTyped: AttributedString {
@@ -1283,6 +1302,8 @@ struct MindProfileScreen: View {
 
     private var profile: MindProfile { MindProfile.of(answers) }
 
+    @Environment(\.onboardingFlowBar) private var flowBar
+
     var body: some View {
         GeometryReader { geo in
             let head = SitLayout.ottoTop(in: geo.size) + geo.size.height * DidYouKnowScreen.ottoDrop
@@ -1294,7 +1315,9 @@ struct MindProfileScreen: View {
                     Text("Your mind profile is")
                         .font(.system(size: 18, weight: .semibold, design: .rounded))
                         .foregroundStyle(AppColor.skyDeep)
-                        .padding(.top, 36)
+                        // Below the onboarding's progress bar, which it ran
+                        // into at 36 (2026-10-18).
+                        .padding(.top, flowBar ? 58 : 36)
                     Text(profile.name)
                         .font(.system(size: 34, weight: .heavy, design: .rounded))
                         .foregroundStyle(AppColor.textPrimary)

@@ -602,6 +602,67 @@ struct OnboardingScreen<Content: View>: View {
     }
 }
 
+private struct OnboardingFlowBarKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+extension EnvironmentValues {
+    /// True under `OnboardingView`, which draws ONE progress bar for the whole
+    /// flow (`OnboardingFlowBar`, Aziz, 2026-10-17: "one comprehensive thing,
+    /// even for the questions"). Each screen's own `OnboardingProgress` then
+    /// keeps its place in the layout and draws nothing, so no screen moves.
+    var onboardingFlowBar: Bool {
+        get { self[OnboardingFlowBarKey.self] }
+        set { self[OnboardingFlowBarKey.self] = newValue }
+    }
+}
+
+/// The one progress bar from Welcome to the paywall (Aziz, 2026-10-17). It
+/// stays put while the screens slide under it, sits in the row where the
+/// question screens put their bar (beside the Back chevron), and is full
+/// when the paywall appears.
+///
+/// **It fills fast at the start and slower near the end** (`fraction`), the
+/// shape the research found works: a meta-analysis of 32 experiments
+/// (Villar, Callegaro & Yang 2013) found constant-speed bars did not reduce
+/// drop-off, fast-to-slow bars reduced it, and slow-to-fast increased it.
+struct OnboardingFlowBar: View {
+    let fraction: Double
+    /// Track colour for the ground under it: the valley, a white page, or the
+    /// night over the lake.
+    var track: Color = AppColor.textSecondary.opacity(0.16)
+
+    var body: some View {
+        GeometryReader { geo in
+            let height = geo.size.height
+            ZStack(alignment: .leading) {
+                Capsule().fill(track)
+                Capsule()
+                    .fill(OnboardingGreen.fill)
+                    .overlay(alignment: .top) {
+                        Capsule()
+                            .fill(Color.white.opacity(0.35))
+                            .frame(height: height * 0.22)
+                            .padding(.horizontal, height * 0.45)
+                            .padding(.top, height * 0.2)
+                    }
+                    .frame(width: max(height, geo.size.width * min(max(fraction, 0), 1)))
+            }
+        }
+        .frame(height: 14)
+        .animation(.easeOut(duration: 0.5), value: fraction)
+        .accessibilityElement()
+        .accessibilityLabel("Progress")
+        .accessibilityValue("\(Int((fraction * 100).rounded())) percent")
+    }
+
+    /// Fast to slow: the square root of how far along they are.
+    static func fraction(position: Int, of total: Int) -> Double {
+        guard total > 0 else { return 0 }
+        return (Double(min(max(position, 1), total)) / Double(total)).squareRoot()
+    }
+}
+
 /// Duolingo's progress bar: a thick rounded track with the filled part
 /// growing into it as you answer (Melvin, 2026-09-21). It replaced "3 of 8"
 /// beside a corner Otto, which read as a form counting at you.
@@ -615,8 +676,18 @@ struct OnboardingProgress: View {
     let to: Double
 
     @State private var value: Double = 0
+    @Environment(\.onboardingFlowBar) private var flowBar
 
     var body: some View {
+        if flowBar {
+            // The flow's one bar is drawn over this spot by `OnboardingView`.
+            Color.clear.frame(height: 14).accessibilityHidden(true)
+        } else {
+            bar
+        }
+    }
+
+    private var bar: some View {
         GeometryReader { geo in
             let height = geo.size.height
             ZStack(alignment: .leading) {

@@ -492,10 +492,87 @@ public enum QuietTime: String, CaseIterable, Identifiable, Codable {
         }
     }
 
+    /// The answer said back inside a sentence ("13 minutes a day, first
+    /// thing in the morning."), lowercase, on the science and paywall screens.
+    public var phrase: String {
+        switch self {
+        case .morning:    return "first thing in the morning"
+        case .breakInDay: return "on a break in your day"
+        case .afternoon:  return "in the afternoon"
+        case .evening:    return "in the evening"
+        case .beforeBed:  return "right before bed"
+        }
+    }
+
+    /// The reminder's time as a person reads it: "8:00 AM", "12:30 PM".
+    public var clockLabel: String {
+        let (h, m) = reminder
+        let hour12 = h % 12 == 0 ? 12 : h % 12
+        return String(format: "%d:%02d %@", hour12, m, h < 12 ? "AM" : "PM")
+    }
+
     /// Today at that time, which is how `OnboardingAnswers.reminderTime`
     /// holds a time of day.
     public func reminderDate(calendar: Calendar = .current, now: Date = Date()) -> Date? {
         calendar.date(bySettingHour: reminder.hour, minute: reminder.minute, second: 0, of: now)
+    }
+}
+
+/// "Which would change your days the most?", the benefit the reader picks on
+/// the science screens (Aziz, 2026-10-17, from the sales research: a buyer
+/// who names the value convinces themselves better than any claim). Each is
+/// something a study measured, said as a moment in their day:
+///
+/// - `calm`: Basso et al. 2019 (NYU), lower state anxiety on the Trier
+///   Social Stress Test, a speech in front of a panel, after 8 weeks of 13
+///   minutes a day.
+/// - `goodDays`: Cearns & Clark 2023 (University of Adelaide, JMIR), about
+///   one extra day of improved mood for every five days meditated.
+/// - `focus`: Mrazek et al. 2013 (UC Santa Barbara), less mind wandering
+///   and better reading comprehension after two weeks.
+/// - `sleep`: Black et al. 2015 (UCLA, JAMA Internal Medicine), better sleep
+///   quality after six weeks in adults who slept badly.
+///
+/// Never a health promise: each line reports what people in a study saw.
+public enum Benefit: String, CaseIterable, Identifiable, Codable {
+    case calm, goodDays, focus, sleep
+
+    public var id: String { rawValue }
+
+    public var title: String {
+        switch self {
+        case .calm:     return "Calm when the pressure is on"
+        case .goodDays: return "Good days more often"
+        case .focus:    return "Read it once"
+        case .sleep:    return "Fall into better sleep"
+        }
+    }
+
+    public var line: String {
+        switch self {
+        case .calm:     return "Walk into the big meeting or the hard conversation steady."
+        case .goodDays: return "For every five days people meditated, they got about one extra day of better mood."
+        case .focus:    return "Stay with the page, the email, the lecture, instead of drifting off mid-way."
+        case .sleep:    return "People who slept badly were sleeping better within six weeks."
+        }
+    }
+
+    /// Lowercase, to finish "on your way to being …" / "Working toward: …".
+    public var goal: String {
+        switch self {
+        case .calm:     return "calm when the pressure is on"
+        case .goodDays: return "more good days"
+        case .focus:    return "staying with what you read"
+        case .sleep:    return "better sleep"
+        }
+    }
+
+    /// The one preselected, read off the goal they picked earlier, so the
+    /// screen opens on what they already said they want.
+    public static func suggested(for motivations: Set<Motivation>) -> Benefit {
+        if motivations.contains(.betterSleep) { return .sleep }
+        if motivations.contains(.sharperFocus) { return .focus }
+        return .calm
     }
 }
 
@@ -1073,6 +1150,10 @@ public struct OnboardingAnswers: Codable, Equatable {
     public var quietTime: QuietTime?
     /// Whether they have tried to make it a habit (`HabitHistory`). Optional.
     public var habitHistory: HabitHistory?
+    /// The benefit they picked on "Which would change your days the most?"
+    /// (`Benefit`, 2026-10-17). Optional, as above, and said back on the
+    /// next screen and on the paywall.
+    public var benefit: Benefit?
     /// Their own words, only when "Something else" is picked. Never required.
     public var motivationOther: String = ""
     /// 0 = "Fine", 1 = "Fried".
@@ -1128,6 +1209,8 @@ public struct OnboardingAnswers: Codable, Equatable {
         a.firstName = "Melvin"
         a.ageBracket = "25-34"
         a.daysPerWeek = 5
+        a.quietTime = .morning
+        a.obstacles = [.forget, .loseMotivation]
 
         // Only ever fill what this persona is actually asked. Leaving a field
         // set that the interview never collects is precisely the bug the
@@ -1358,8 +1441,14 @@ extension OnboardingAnswers {
     public func asks(_ step: InterviewStep) -> Bool {
         switch step {
         // Everyone. These work regardless of history.
-        case .baseline, .motivation, .obstacles, .role, .quietTime, .habitHistory, .age, .stress, .wandering, .referral:
+        case .baseline, .motivation, .obstacles, .quietTime, .habitHistory, .age, .stress, .wandering, .referral:
             return true
+
+        // CUT 2026-10-17 (Aziz): "Which one sounds most like you?". Nothing
+        // read the answer, and the first questions are where people leave.
+        // The case and `OnboardingAnswers.role` stay so resume records decode.
+        case .role:
+            return false
 
         // Presumes previous attempts.
         case .restarts:

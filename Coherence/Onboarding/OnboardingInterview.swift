@@ -469,8 +469,6 @@ struct CornerQuestionScreen<Option: Identifiable & Hashable>: View {
                 if let back { OnboardingBackButton(action: back) }
                 OnboardingProgress(from: Double(count.index - 1) / Double(max(count.total, 1)),
                                    to: Double(count.index) / Double(max(count.total, 1)))
-                // Otto's corner (`SeatedClipLayer.cornerWidth`).
-                Color.clear.frame(width: SeatedClipLayer.cornerWidth)
             }
             .frame(height: 40)
 
@@ -480,12 +478,7 @@ struct CornerQuestionScreen<Option: Identifiable & Hashable>: View {
             // be finished. At normal sizes it fits and does not bounce.
             ScrollView {
                 VStack(spacing: 0) {
-                    Text(title)
-                        .font(.system(size: 28, weight: .heavy, design: .rounded))
-                        .foregroundStyle(AppColor.textPrimary)
-                        .multilineTextAlignment(.center)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .frame(maxWidth: .infinity)
+                    CornerQuestionTitle(title, size: 28)
                         .padding(.top, 30)
 
                     VStack(spacing: 10) {
@@ -520,6 +513,33 @@ struct CornerQuestionScreen<Option: Identifiable & Hashable>: View {
     }
 }
 
+/// A question set beside the corner Otto (2026-10-18): read from the left,
+/// with his width kept clear on the right, and at least as tall as he is, so
+/// the answers start below his feet. He sits under the progress bar now,
+/// beside the question, instead of in the bar's row.
+struct CornerQuestionTitle: View {
+    let text: String
+    let size: CGFloat
+    init(_ text: String, size: CGFloat) { self.text = text; self.size = size }
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 8) {
+            Text(text)
+                .font(.system(size: size, weight: .heavy, design: .rounded))
+                .foregroundStyle(AppColor.textPrimary)
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Color.clear.frame(width: SeatedClipLayer.cornerWidth - 8)
+        }
+        .frame(minHeight: SeatedClipLayer.besideHeight, alignment: .top)
+        // Its own height, never the space a parent offers: a min-height
+        // frame otherwise stretches to fill a VStack with spacers (the
+        // wandering question's slider fell to the bottom of the screen).
+        .fixedSize(horizontal: false, vertical: true)
+    }
+}
+
 /// "What's your goal with meditation?", the first question. Six answers;
 /// making it a daily habit is left out because that is the whole app.
 struct MotivationScreen: View {
@@ -529,9 +549,16 @@ struct MotivationScreen: View {
     let onContinue: () -> Void
 
     var body: some View {
-        CornerQuestionScreen(title: "What's your goal with meditation?",
-                             options: Motivation.offered, label: \.label, icon: \.icon,
-                             selected: $selected, count: count, onContinue: onContinue)
+        // ONE pick since 2026-10-17 (Aziz, the sales-research pass): the
+        // first question was the most work in the flow, a pick-any list, and
+        // the most people left on it (3 in the 30 days to 2026-10-17). One
+        // clear goal is also what the science screens and the paywall can
+        // say back. Stored in the same set, so nothing downstream changes.
+        CornerQuestionScreen(title: "What matters most to you?",
+                             options: Motivation.offered, single: true, label: \.label, icon: \.icon,
+                             selected: Binding(get: { selected.count > 1 ? [] : selected },
+                                               set: { selected = $0 }),
+                             count: count, onContinue: onContinue)
     }
 }
 
@@ -1017,7 +1044,7 @@ struct BodyTrackingScreen: View {
 /// the wish, the price, and "something similar for everyone". No product
 /// photos: silhouettes keep the screen ours.
 struct HardwareScreen: View {
-    /// Where 808 Premium's price lands once the anchor has been set. Only the
+    /// Where 808 Membership's price lands once the anchor has been set. Only the
     /// paywall ladder passes one; the interview path never did and no longer
     /// shows this screen at all (Melvin, 2026-09-14).
     var priceLine: String? = nil
