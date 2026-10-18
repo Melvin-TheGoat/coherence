@@ -7667,6 +7667,17 @@ Watch screens and the teal breathing orb of 2026-08-08.
   and a Watch app can update before the phone. `armWatchTimedEnd` (shared
   with the start ack) stops the sound, sends the end notice and rings the
   bell when the Watch's timer runs out.
+- **The length tape moves smoothly, and the number takes typed minutes**
+  (Aziz, 2026-10-18: "super glitchy"). It used to jump a whole minute per
+  crown click, and the drag measured each step from the already-moved
+  position, so it ran away. Now the tape follows a continuous position (the
+  crown's own offset via `digitalCrownRotation(detent:)`, and a drag measured
+  from where the finger came down, flung with its speed) and springs onto a
+  whole minute when it rests. Tapping the number opens `MinutesPad`: 808's
+  own numbers-only pad (1 to 9, delete, 0, check), because watchOS offers
+  apps no numbers-only keyboard and the system input showed letters. Up to
+  three digits; 0 is Open, 1 to 4 is 5, at most 600 (`SessionLength.typed`).
+  Verified on a Series 11 simulator: swipe, slow drag, and 90 typed.
 - **Sound** is the iPhone's full list as sand pills over the blurred valley.
   It still plays from the iPhone; out of reach, the session is silent and
   says so.

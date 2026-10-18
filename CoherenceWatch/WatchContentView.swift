@@ -554,22 +554,48 @@ private struct SendingDots: View {
 
 // MARK: - Length
 
-/// The + screen's tape at Watch size: the Digital Crown slides it, Open at
-/// the left end, then every minute from 5 to 120 (`SessionLength`). The
-/// crown's detent is watchOS's own; the app plays no haptic.
+/// The + screen's tape at Watch size: the Digital Crown or a drag slides it,
+/// Open at the left end, then every minute from 5 to 120 (`SessionLength`).
+/// The crown's detent is watchOS's own; the app plays no haptic.
+///
+/// **Smooth, then settles** (Aziz, 2026-10-18: "the swiping is super
+/// glitchy"). The tape follows a CONTINUOUS position, from the crown's own
+/// offset and from the drag measured from where it began, and springs onto
+/// the nearest minute when the crown rests or the finger lifts. It used to
+/// move only in whole-minute jumps, and the drag measured each step from the
+/// already-moved position, so it ran away and stuttered.
+///
+/// Tapping the number lets the length be written, said or typed (the
+/// system's own input: Scribble, dictation or the keyboard), five minutes to
+/// ten hours, 0 for Open, like the + screen's typed length.
 private struct LengthPickerView: View {
     let onDone: (Int?) -> Void
-    @State private var crown: Double
+    /// The crown's detent: a whole tape index.
+    @State private var detent: Double
+    /// Where the tape is drawn, between ticks while it moves.
+    @State private var position: Double
+    @State private var dragStart: Double?
+    /// A typed length the tape does not carry (a typed 300), shown until
+    /// the tape moves again.
+    @State private var typed: Int?
+    @State private var typedOpen = false
+    @State private var entry = ""
+    @State private var padOpen = false
 
     init(minutes: Int?, onDone: @escaping (Int?) -> Void) {
         self.onDone = onDone
-        _crown = State(initialValue: Double(SessionLength.nearestIndex(for: minutes)))
+        let start = Double(SessionLength.nearestIndex(for: minutes))
+        _detent = State(initialValue: start)
+        _position = State(initialValue: start)
+        if let minutes, !SessionLength.values.contains(minutes) { _typed = State(initialValue: minutes) }
     }
 
-    private var index: Int {
-        min(max(Int(crown.rounded()), 0), SessionLength.values.count - 1)
+    private static var last: Double { Double(SessionLength.values.count - 1) }
+    private var index: Int { min(max(Int(position.rounded()), 0), SessionLength.values.count - 1) }
+    private var minutes: Int? {
+        if typedOpen { return nil }
+        return typed ?? SessionLength.values[index]
     }
-    private var minutes: Int? { SessionLength.values[index] }
     private var day: DayLight { DayLight.at(WatchValley.quantize(DayLight.clockProgress())) }
 
     private static let spacing: CGFloat = 9
@@ -580,11 +606,7 @@ private struct LengthPickerView: View {
                 .equatable()
                 .ignoresSafeArea()
             VStack(spacing: 2) {
-                Text(minutes.map(String.init) ?? "\u{221E}")
-                    .font(.system(size: 48, weight: .heavy, design: .rounded))
-                    .monospacedDigit()
-                    .contentTransition(.numericText())
-                    .onSky(day)
+                number
                 Text(minutes == nil ? "Open, end when you like" : (minutes == 1 ? "minute" : "minutes"))
                     .font(.system(size: 12, weight: .bold, design: .rounded))
                     .onSky(day)
@@ -597,23 +619,89 @@ private struct LengthPickerView: View {
             .padding(.horizontal, 4)
         }
         .focusable()
-        .digitalCrownRotation($crown,
+        .digitalCrownRotation(detent: $detent,
                               from: 0,
-                              through: Double(SessionLength.values.count - 1),
+                              through: Self.last,
                               by: 1,
                               sensitivity: .medium,
                               isContinuous: false,
-                              isHapticFeedbackEnabled: true)
+                              isHapticFeedbackEnabled: true,
+                              onChange: { event in
+                                  guard dragStart == nil else { return }
+                                  position = min(max(event.offset, 0), Self.last)
+                                  clearTyped()
+                              },
+                              onIdle: { settle(on: detent) })
+        .onAppear { entry = Self.text(minutes) }
+        .onChange(of: index) { _, _ in if typed == nil, !typedOpen { entry = Self.text(minutes) } }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Length")
         .accessibilityValue(SessionLength.words(minutes))
         .accessibilityAdjustableAction { direction in
             switch direction {
-            case .increment: crown = min(crown.rounded() + 1, Double(SessionLength.values.count - 1))
-            case .decrement: crown = max(crown.rounded() - 1, 0)
+            case .increment: settle(on: min(Double(index) + 1, Self.last))
+            case .decrement: settle(on: max(Double(index) - 1, 0))
             @unknown default: break
             }
         }
+    }
+
+    /// The big number. Tapping it opens 808's own number pad (Aziz,
+    /// 2026-10-18: "should only show numbers"): watchOS gives apps no
+    /// numbers-only keyboard, so the system input offered letters too. The
+    /// pencil says it can be tapped.
+    private var number: some View {
+        Button { padOpen = true } label: {
+            HStack(alignment: .center, spacing: 4) {
+                Text(Self.text(minutes))
+                    .font(.system(size: 48, weight: .heavy, design: .rounded))
+                    .monospacedDigit()
+                    .contentTransition(.numericText())
+                    .onSky(day)
+                Image(systemName: "pencil")
+                    .font(.system(size: 13, weight: .bold))
+                    .onSky(day)
+                    .opacity(0.7)
+            }
+            .frame(height: 56)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Length, \(SessionLength.words(minutes)). Tap to enter minutes")
+        .sheet(isPresented: $padOpen) {
+            MinutesPad { written in
+                padOpen = false
+                take(written)
+            }
+        }
+    }
+
+    private static func text(_ minutes: Int?) -> String { minutes.map(String.init) ?? "\u{221E}" }
+
+    /// A written or typed length: 0 is Open, 1 to 4 is 5, at most 600.
+    private func take(_ raw: String) {
+        let (value, valid) = SessionLength.typed(raw)
+        guard valid else { entry = Self.text(minutes); return }
+        let target = Double(SessionLength.nearestIndex(for: value))
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.86)) { position = target }
+        detent = target
+        typedOpen = value == nil
+        typed = value.flatMap { SessionLength.values.contains($0) ? nil : $0 }
+        entry = Self.text(value)
+    }
+
+    private func clearTyped() {
+        if typed != nil || typedOpen {
+            typed = nil
+            typedOpen = false
+        }
+    }
+
+    /// Springs the tape onto a whole minute, and keeps the crown there too.
+    private func settle(on target: Double) {
+        let t = min(max(target.rounded(), 0), Self.last)
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.86)) { position = t }
+        detent = t
     }
 
     /// Ticks on a sand strip, sliding under a fixed needle. A tick a minute,
@@ -623,7 +711,7 @@ private struct LengthPickerView: View {
             let mid = geo.size.width / 2
             ZStack(alignment: .topLeading) {
                 ForEach(Array(SessionLength.values.enumerated()), id: \.offset) { i, value in
-                    let x = mid + (CGFloat(i) - CGFloat(crown)) * Self.spacing
+                    let x = mid + (CGFloat(i) - CGFloat(position)) * Self.spacing
                     if x > -12, x < geo.size.width + 12 {
                         tick(value)
                             .position(x: x, y: geo.size.height / 2)
@@ -635,10 +723,21 @@ private struct LengthPickerView: View {
                     .position(x: mid, y: geo.size.height / 2)
             }
             .contentShape(Rectangle())
-            .gesture(DragGesture(minimumDistance: 2).onChanged { g in
-                let delta = -g.translation.width / Self.spacing
-                crown = min(max(Double(index) + delta * 0.2, 0), Double(SessionLength.values.count - 1))
-            })
+            // Measured from where the finger came down, never from the
+            // moved position, then flung with the finger's speed and settled
+            // on a whole minute.
+            .gesture(DragGesture(minimumDistance: 1)
+                .onChanged { g in
+                    if dragStart == nil { dragStart = position }
+                    let start = dragStart ?? position
+                    position = min(max(start - Double(g.translation.width / Self.spacing), 0), Self.last)
+                    clearTyped()
+                }
+                .onEnded { g in
+                    let start = dragStart ?? position
+                    dragStart = nil
+                    settle(on: start - Double(g.predictedEndTranslation.width / Self.spacing))
+                })
         }
         .frame(height: 44)
         .background(RoundedRectangle(cornerRadius: 12, style: .continuous)
@@ -666,6 +765,74 @@ private struct LengthPickerView: View {
                 .font(.system(size: 14, weight: .heavy, design: .rounded))
                 .foregroundStyle(WatchPalette.sandInk)
                 .frame(height: 30, alignment: .bottom)
+        }
+    }
+}
+
+// MARK: - Minutes pad
+
+/// Numbers only: 1 to 9, delete, 0 and a check, with what has been typed
+/// above. Up to three digits (600 is the longest length); 0 means Open, as
+/// on the + screen. Sized from the screen, so it fits every Watch.
+private struct MinutesPad: View {
+    let onDone: (String) -> Void
+    @State private var digits = ""
+
+    private let keys: [String] = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "del", "0", "ok"]
+
+    var body: some View {
+        GeometryReader { geo in
+            let gap: CGFloat = 4
+            let keyW = (geo.size.width - gap * 2) / 3
+            let keyH = max(24, (geo.size.height - 34 - gap * 4) / 4)
+            VStack(spacing: gap) {
+                Text(digits.isEmpty ? "min" : digits + " min")
+                    .font(.system(size: 22, weight: .heavy, design: .rounded))
+                    .monospacedDigit()
+                    // On the sheet's dark glass: white, dimmer before any digit.
+                    .foregroundStyle(.white.opacity(digits.isEmpty ? 0.55 : 1))
+                    .frame(height: 30)
+                    .accessibilityLabel(digits.isEmpty ? "No minutes yet" : "\(digits) minutes")
+                LazyVGrid(columns: Array(repeating: GridItem(.fixed(keyW), spacing: gap), count: 3), spacing: gap) {
+                    ForEach(keys, id: \.self) { key in
+                        Button { press(key) } label: { label(for: key) }
+                            .buttonStyle(.plain)
+                            .frame(width: keyW, height: keyH)
+                            .background(RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .fill(key == "ok" ? WatchPalette.gold : WatchPalette.sand))
+                            .opacity(key == "ok" && digits.isEmpty ? 0.45 : 1)
+                            .disabled(key == "ok" && digits.isEmpty)
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .padding(.horizontal, 2)
+    }
+
+    @ViewBuilder private func label(for key: String) -> some View {
+        switch key {
+        case "del":
+            Image(systemName: "delete.left").font(.system(size: 16, weight: .bold))
+                .foregroundStyle(WatchPalette.sandInk)
+                .accessibilityLabel("Delete")
+        case "ok":
+            Image(systemName: "checkmark").font(.system(size: 16, weight: .heavy))
+                .foregroundStyle(WatchPalette.sandInk)
+                .accessibilityLabel("Done")
+        default:
+            Text(key).font(.system(size: 20, weight: .heavy, design: .rounded))
+                .foregroundStyle(WatchPalette.sandInk)
+        }
+    }
+
+    private func press(_ key: String) {
+        switch key {
+        case "del": if !digits.isEmpty { digits.removeLast() }
+        case "ok": onDone(digits)
+        default:
+            guard digits.count < 3 else { return }
+            if digits == "0" { digits = key } else { digits += key }
         }
     }
 }
