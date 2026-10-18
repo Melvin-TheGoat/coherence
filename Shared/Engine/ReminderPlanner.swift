@@ -112,9 +112,10 @@ enum ReminderPlanner {
     /// The farewell goes out on this many days away; after it, silence.
     /// Duolingo's "these reminders don't seem to be working" comes after
     /// about five ignored reminders, and its CEO called it remarkably
-    /// effective at bringing people back. Ten days here is roughly ten
-    /// ignored reminders after the last active day.
-    static let farewellDay = 10
+    /// effective at bringing people back. Two weeks here (Aziz, 2026-10-18:
+    /// one a day for the first two weeks, every day, at their time, rather
+    /// than every other day after the first week).
+    static let farewellDay = 14
 
     /// Nothing earlier or later than these, except the person's own time.
     static let earliest = 7 * 60
@@ -134,7 +135,8 @@ enum ReminderPlanner {
     static func slots(daysAway d: Int, sinceSession: Int?, cadence: ReminderCadence) -> [ReminderSlot] {
         if d > farewellDay { return [] }
         if d == farewellDay { return [.first] }               // the farewell
-        if d >= 8 { return (d - 8) % 2 == 0 ? [.first] : [] } // every other day, then the farewell
+        // One a day at their time from day 4 until the farewell: the same
+        // cue every day is what builds a habit (Aziz, 2026-10-18).
         if d >= 4 || cadence == .once { return [.first] }
         var slots: [ReminderSlot] = d <= 1 ? [.first, .followUp, .lastCall] : [.first, .lastCall]
         if let s = sinceSession, s >= 7, slots.count > 2 { slots = [.first, .lastCall] }

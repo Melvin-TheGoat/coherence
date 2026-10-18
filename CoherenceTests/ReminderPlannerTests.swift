@@ -59,7 +59,9 @@ final class ReminderPlannerTests: XCTestCase {
         let p = plan(input(now: at(0, 6), sessions: [at(-1, 9)]))
         let perDay = (0..<ReminderPlanner.horizonDays).map { count(on: $0, in: p) }
         // days away:  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15
-        XCTAssertEqual(perDay, [3, 2, 2, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0])
+        // One a day through the first two weeks, the farewell on day 14
+        // (Aziz, 2026-10-18), then silence.
+        XCTAssertEqual(perDay, [3, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0])
         XCTAssertEqual(p.last?.topic, .farewell)
         XCTAssertEqual(p.filter { $0.topic == .farewell }.count, 1)
     }
