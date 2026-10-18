@@ -255,19 +255,32 @@ actor CommunityStore {
     enum Relationship: Equatable { case none, requested, incoming, friends }
 
     /// Edges I wrote (my requests and my half of every friendship).
-    private func edgesFromMe() async throws -> Set<String> {
+    private func edgeListFromMe() async throws -> [FriendEdge] {
         let mine = try await me()
         let records = try await db.query(CommunityQuery(type: CommunityType.edge,
                                                         filters: [.equals("from", .reference(mine))], limit: 500))
-        return Set(try await live(records.filter { authored($0, by: "from") }).map(\.to))
+        return try await live(records.filter { authored($0, by: "from") })
     }
 
     /// Edges written towards me (requests to me and their half of friendships).
-    private func edgesToMe() async throws -> Set<String> {
+    private func edgeListToMe() async throws -> [FriendEdge] {
         let mine = try await me()
         let records = try await db.query(CommunityQuery(type: CommunityType.edge,
                                                         filters: [.equals("to", .reference(mine))], limit: 500))
-        return Set(try await live(records.filter { authored($0, by: "from") }).map(\.from))
+        return try await live(records.filter { authored($0, by: "from") })
+    }
+
+    private func edgesFromMe() async throws -> Set<String> { Set(try await edgeListFromMe().map(\.to)) }
+    private func edgesToMe() async throws -> Set<String> { Set(try await edgeListToMe().map(\.from)) }
+
+    /// Where I stand with everyone, read once: the edges both ways, and the
+    /// friendships an invite code made (`codeFriends`).
+    private func standing() async throws -> (out: Set<String>, inn: Set<String>, code: Set<String>) {
+        async let o = edgeListFromMe()
+        async let i = edgeListToMe()
+        let (out, inn) = try await (o, i)
+        let code = try await codeFriends(out: out, inn: inn)
+        return (Set(out.map(\.to)), Set(inn.map(\.from)), code)
     }
 
     // MARK: Edges that outlived a profile
@@ -326,8 +339,10 @@ actor CommunityStore {
     /// never reads as `.incoming`, so their page never offers Accept.
     func relationship(with other: String) async throws -> Relationship {
         if try await iBlocked(other) { return .none }
-        let out = try await edgesFromMe().contains(other)
-        let back = try await edgesToMe().contains(other)
+        let s = try await standing()
+        if s.code.contains(other) { return .friends }
+        let out = s.out.contains(other)
+        let back = s.inn.contains(other)
         switch (out, back) {
         case (true, true):   return .friends
         case (true, false):  return .requested
@@ -349,10 +364,26 @@ actor CommunityStore {
                                 .map { ($0.to, $0.createdAt) }, uniquingKeysWith: { a, _ in a })
         let received = Dictionary(inn.filter { authored($0, by: "from") }.compactMap(FriendEdge.init(record:))
                                     .map { ($0.from, $0.createdAt) }, uniquingKeysWith: { a, _ in a })
+        // Someone who joined with MY code was brought by me, whichever edge
+        // landed first (mine is written after theirs, by `answerCodeJoins`).
+        let myCode = try await myProfile()?.inviteCode
+        let joinedWithMyCode = Set(inn.filter { authored($0, by: "from") }.compactMap(FriendEdge.init(record:))
+                                     .filter { myCode != nil && $0.viaCode == myCode }.map(\.from))
+        // And the reverse: someone whose code I joined with was not brought
+        // by me, though my edge to them is the older one.
+        var joinedTheirCode = Set<String>()
+        for e in try await edgeListFromMe() {
+            if let code = e.viaCode, try await codeOwner(code) == e.to { joinedTheirCode.insert(e.to) }
+        }
         var facts: [InviteReward.FriendFact] = []
-        for id in try await friends() {
-            guard let mineAt = sent[id], let theirsAt = received[id] else { continue }
+        for id in try await friends() where !joinedTheirCode.contains(id) {
             let profile = try await db.fetch(id).flatMap(Profile.init(record:))
+            if joinedWithMyCode.contains(id), let joinedAt = received[id] {
+                let satAfter = profile?.firstSessionAt.map { $0 >= joinedAt } ?? false
+                facts.append(.init(id: id, iAskedFirst: true, hasFirstSession: satAfter))
+                continue
+            }
+            guard let mineAt = sent[id], let theirsAt = received[id] else { continue }
             // "Brought" means they sat for the first time AFTER I asked.
             // Without this, adding someone who has practised for months paid
             // out as if I had brought them, and could be farmed.
@@ -414,7 +445,8 @@ actor CommunityStore {
     /// blocking deleted the edge they wrote towards me, so the pair is no
     /// longer mutual.
     func friends() async throws -> [String] {
-        let mutual = try await edgesFromMe().intersection(edgesToMe())
+        let s = try await standing()
+        let mutual = s.out.intersection(s.inn).union(s.code)
         let blocked = try await myBlockedSet()
         return mutual.subtracting(blocked).sorted()
     }
@@ -422,7 +454,8 @@ actor CommunityStore {
     /// People who asked me and whom I have not answered, minus anyone I
     /// blocked: a request from someone I blocked never arrives.
     func incomingRequests() async throws -> [String] {
-        let pending = try await edgesToMe().subtracting(edgesFromMe())
+        let s = try await standing()
+        let pending = s.inn.subtracting(s.out).subtracting(s.code)
         let blocked = try await myBlockedSet()
         return pending.subtracting(blocked).sorted()
     }
@@ -433,7 +466,8 @@ actor CommunityStore {
     /// Someone who blocked me stays here, as a request nobody answers. My app
     /// cannot read their block, and that is the point.
     func sentRequests() async throws -> [String] {
-        let pending = try await edgesFromMe().subtracting(edgesToMe())
+        let s = try await standing()
+        let pending = s.out.subtracting(s.inn).subtracting(s.code)
         let blocked = try await myBlockedSet()
         return pending.subtracting(blocked).sorted()
     }
@@ -464,6 +498,149 @@ actor CommunityStore {
     func removeFriend(_ other: String) async throws {
         let mine = try await me()
         try await db.delete(CommunityNames.edge(from: mine, to: other))
+    }
+
+    // MARK: - Invite codes (2026-10-18)
+
+    /// Who owns a code, nil when nobody does. Only a reservation its owner
+    /// really wrote counts (`authored`), so nobody can claim to be someone
+    /// else's code. Remembered for the session: a code never changes owner.
+    private func codeOwner(_ code: String) async throws -> String? {
+        if let known = codeOwners[code] { return known }
+        guard let record = try await db.fetch(CommunityNames.inviteCode(code)),
+              authored(record, by: "profile"),
+              let owner = (record["profile"] as? CKRecord.Reference)?.recordID.recordName else { return nil }
+        codeOwners[code] = owner
+        return owner
+    }
+    private var codeOwners: [String: String] = [:]
+
+    /// My invite code, made the first time it is asked for. Reserved by
+    /// record NAME like a username (a fetch needs no index), CREATED so two
+    /// people can never hold one code, then written on my profile so every
+    /// device shows the same one.
+    func myInviteCode() async throws -> String {
+        let mine = try await me()
+        guard let record = try await db.fetch(mine), let profile = Profile(record: record),
+              !profile.username.isEmpty else { throw CommunityError.noProfile }
+        if let code = profile.inviteCode, try await codeOwner(code) == mine { return code }
+        var rng = SystemRandomNumberGenerator()
+        for _ in 0..<12 {
+            let code = InviteCode.make(username: profile.username, using: &rng)
+            let reservation = CKRecord(recordType: CommunityType.inviteCode,
+                                       recordID: CKRecord.ID(recordName: CommunityNames.inviteCode(code)))
+            reservation["profile"] = CommunityRecordValue.reference(mine).ckValue
+            do {
+                _ = try await db.create(reservation)
+            } catch CommunityError.alreadyExists {
+                continue
+            }
+            record["inviteCode"] = code
+            do {
+                _ = try await db.save(record)
+            } catch {
+                try? await db.delete(CommunityNames.inviteCode(code))
+                throw error
+            }
+            codeOwners[code] = mine
+            return code
+        }
+        throw CommunityError.alreadyExists
+    }
+
+    /// The person a code belongs to, or nil when it is nobody's, theirs no
+    /// longer (their profile carries a different code), or someone I blocked.
+    /// Works before I have a profile: onboarding looks codes up this way.
+    func inviter(forCode raw: String) async throws -> Profile? {
+        guard let code = InviteCode.normalize(raw), let owner = try await codeOwner(code),
+              let profile = try await db.fetch(owner).flatMap(Profile.init(record:)),
+              profile.inviteCode == code, !profile.username.isEmpty else { return nil }
+        if try await iBlocked(owner) { return nil }
+        return profile
+    }
+
+    /// Join with a code: my edge to its owner, carrying the code, which makes
+    /// us friends at once (`codeFriends`). Needs my profile. An edge I had
+    /// already written (a request they never answered) gains the code.
+    @discardableResult
+    func redeem(code raw: String, myName: String) async throws -> Profile {
+        let mine = try await me()
+        guard let code = InviteCode.normalize(raw),
+              let inviter = try await inviter(forCode: code) else { throw CommunityError.inviteCodeUnknown }
+        guard inviter.id != mine else { throw CommunityError.inviteCodeIsYours }
+        guard try await db.fetch(mine) != nil else { throw CommunityError.noProfile }
+        let name = CommunityNames.edge(from: mine, to: inviter.id)
+        let record = try await db.fetch(name)
+            ?? CKRecord(recordType: CommunityType.edge, recordID: CKRecord.ID(recordName: name))
+        var edge = FriendEdge(record: record) ?? FriendEdge(from: mine, to: inviter.id)
+        edge.viaCode = code
+        edge.fromName = myName
+        edge.apply(to: record)
+        _ = try await db.save(record)
+        return inviter
+    }
+
+    /// Friendships an invite code made, with one edge so far: someone who
+    /// joined with MY code (their edge carries it), and the owner of a code
+    /// I joined with (verified against the reservation, so a forged code on
+    /// my own edge proves nothing). The owner's app writes its half too
+    /// (`answerCodeJoins`); until it runs, this is what makes them friends.
+    ///
+    /// **Only until the owner's app has answered** (`Profile.answeredJoins`).
+    /// After that the two edges carry the friendship like any other, so the
+    /// owner removing or blocking the joiner sticks, on both phones: the
+    /// code on the joiner's edge stops counting the moment they are answered.
+    private func codeFriends(out: [FriendEdge], inn: [FriendEdge]) async throws -> Set<String> {
+        let mine = try await me()
+        var friends = Set<String>()
+        let joiners = inn.filter { $0.viaCode != nil }
+        if !joiners.isEmpty, let profile = try await myProfile(), let myCode = profile.inviteCode {
+            let answered = Set(profile.answeredJoins)
+            for e in joiners where e.viaCode == myCode && !answered.contains(e.from) { friends.insert(e.from) }
+        }
+        for e in out {
+            guard let code = e.viaCode, try await codeOwner(code) == e.to else { continue }
+            let owner = try await db.fetch(e.to).flatMap(Profile.init(record:))
+            if owner?.answeredJoins.contains(mine) != true { friends.insert(e.to) }
+        }
+        return friends
+    }
+
+    /// Writes my half for everyone who joined with my code and does not have
+    /// it yet, so the friendship looks like any other to everyone else
+    /// (`friends(of:)` reads both edges). Returns who joined, new or not, so
+    /// the friends list can tag them.
+    func answerCodeJoins() async throws -> Set<String> {
+        let mine = try await me()
+        guard let record = try await db.fetch(mine), let profile = Profile(record: record),
+              let myCode = profile.inviteCode else { return [] }
+        let answered = Set(profile.answeredJoins)
+        let joiners = Set(try await edgeListToMe().filter { $0.viaCode == myCode }.map(\.from))
+        let blocked = try await myBlockedSet()
+        // Each joiner is answered ONCE: someone removed or blocked after that
+        // is never written back.
+        var nowAnswered = answered
+        for id in joiners.subtracting(answered).subtracting(blocked) {
+            do {
+                try await sendRequest(to: id)
+                nowAnswered.insert(id)
+            } catch { continue }
+        }
+        if nowAnswered != answered {
+            // Fetched again: the copy above may be seconds old, and saving
+            // it would roll back practice stats or a photo saved meanwhile.
+            let fresh = try await db.fetch(mine) ?? record
+            let already = Set((fresh["answeredJoins"] as? [String]) ?? [])
+            fresh["answeredJoins"] = already.union(nowAnswered).sorted()
+            _ = try await db.save(fresh)
+        }
+        return joiners.subtracting(blocked)
+    }
+
+    /// The push for someone joining with my code, once I have one.
+    func subscribeToCodeJoins() async {
+        guard let mine = try? await me(), let code = try? await myProfile()?.inviteCode else { return }
+        await db.ensureCodeJoinSubscription(me: mine, code: code)
     }
 
     // MARK: - Meditating together
@@ -928,6 +1105,13 @@ actor CommunityStore {
             // profile's own `username` field.
             if let record = try await db.fetch(mine), let handle = Profile(record: record)?.username, !handle.isEmpty {
                 try await db.delete(CommunityNames.username(handle))
+            }
+        } catch { firstError = firstError ?? error }
+        do {
+            // The invite code's reservation (2026-10-18), found the same way.
+            if let code = try await db.fetch(mine).flatMap(Profile.init(record:))?.inviteCode {
+                try await db.delete(CommunityNames.inviteCode(code))
+                codeOwners[code] = nil
             }
         } catch { firstError = firstError ?? error }
         do { try await db.delete(mine) }

@@ -7749,8 +7749,9 @@ allowed, Home asks existing members once, top apps in the next build.
   not yet meditated. Slots from the person's time A: A, A+4h (if by 19:00 and
   2h clear of the evening one), an evening last call (20:30, or A+90 for
   evening people). Per day by days away (since the last session OR the last
-  time 808 was opened): 1 day: 3; 2-3: 2; 4-8: 1; then every other day;
-  **day 10: one farewell ("I'll give the reminders a rest"), then silence**
+  time 808 was opened): 1 day: 3; 2-3: 2; 4-13: 1 (one a day for the
+  first two weeks, Aziz 2026-10-18; it was every other day after day 8);
+  **day 14: one farewell ("I'll give the reminders a rest"), then silence**
   until 808 is opened again. After a week with no session, opening the app
   never brings back more than two a day. "Once a day" caps every day at one.
 - **Why it tapers instead of escalating** (Melvin asked to increase for
@@ -8089,3 +8090,56 @@ later (Villar 2013, fewer drop-offs).
   it into Apps Script when this ships). The sample answers behind
   `ONBOARDING_STEP` now include a time and two obstacles.
 - 785 tests green; checked on a throwaway iPhone 17 simulator, deleted after.
+
+## INVITE CODES: A FRIEND WHO JOINS WITH YOUR CODE IS YOUR FRIEND AT ONCE (2026-10-18, Aziz)
+
+Designed in the "808 Invite Codes" canvas (9 screens), then built. Replaces
+"search my @username and send a request", which lost people at five steps.
+
+- **The code** (`Coherence/Community/InviteCode.swift`, pure): up to 5
+  letters of the username plus **5** random characters from an alphabet with
+  no look-alikes (no 0/O, 1/I/L, 2/Z, 5/S, 8/B), shown `AZIZ-K7QX4`, stored
+  canonical `AZIZK7QX4`. Permanent. `normalize` forgives case, spaces,
+  dashes and a whole pasted message. **Five, not three** (review, same day):
+  the username half is public, so three random characters left 15,625
+  guesses to friend someone without their yes; five leave ~9.8 million.
+- **Storage:** an `InviteCode` record named `invitecode-<CODE>` pointing at
+  its owner, reserved by NAME and CREATED like a username (`myInviteCode`),
+  and `Profile.inviteCode` so every device shows the same one. Joining
+  writes MY edge to the owner with `viaCode` and `fromName` (`redeem`).
+- **A code edge is a friendship on both sides immediately**
+  (`CommunityStore.codeFriends`): for the joiner, verified against the code's
+  reservation, so a code on the wrong person's edge proves nothing; for the
+  owner, an incoming edge carrying their own code. The owner's app then
+  writes its half too (`answerCodeJoins`, every list refresh) so everyone
+  else sees an ordinary friendship, and records the joiner in
+  `Profile.answeredJoins`: **from then on the code stops counting**, so
+  removing or blocking a code friend sticks on both phones (it used to be
+  re-added on every refresh). A code join counts for "Brought a friend" for
+  the code's OWNER only, never the joiner.
+- **Search never joins on its own.** A code typed into Friends search shows
+  its owner with a Join button; joining is the reader's tap.
+- **Where it shows:** a blue "Invite a friend" pill right under Requests
+  (Aziz) opens `InviteCodeSheet` (code, Copy, Share invite); Friends search
+  takes a code ("Find a friend by @username or code"); onboarding's welcome
+  has "Got an invite code?" (`InviteCodeEntrySheet`, with the system
+  PasteButton, so no paste prompt), after which Otto says "Aziz invited you!
+  Let's make meditation part of your day, together."; the profile step says
+  "Pick a username so Aziz can find you."; a new last `Step`,
+  `.invitedFriends`, says "You and Aziz are friends 🎉" with "Set a weekly
+  goal with Aziz" (the existing goal setup) or "Maybe later"; the owner gets
+  a push ("Sam joined 808 with your code") and a "Joined with your code" tag.
+- **The code is entered, never carried by the link.** iOS passes nothing
+  through an App Store install without a third-party attribution SDK, which
+  would change the privacy labels. Do not add one for this.
+- **A code entered before there is a profile is kept** (`PendingInvite`,
+  this phone only) and redeemed on the first list refresh after a profile
+  exists, so skipping the profile step loses nothing. Cleared on sign-out.
+- **Nothing for the person who joins** (App Review), and the inviter's
+  reward is the existing "Brought a friend" award. Hat points were floated
+  and not decided.
+- 12 tests (`InviteCodeTests`). Never run on real iCloud: the
+  type, three fields and the push index must reach Production after a
+  two-phone check (`CLOUDKIT_SETUP.md`, "Invite codes";
+  RELEASE_CHECKLIST.md). `PREVIEW_GOAL_SCREEN=invitecode|entercode|
+  invitedfriends` (DEBUG) opens each screen.

@@ -1035,7 +1035,7 @@ struct FriendPairButtons: View {
 }
 
 #if DEBUG
-/// `PREVIEW_GOAL_SCREEN=home|detail|invite|requests|setup|picker|person`
+/// `PREVIEW_GOAL_SCREEN=home|detail|invite|requests|setup|picker|person|invitecode|entercode|invitedfriends`
 /// (DEBUG, Friends test mode): one Meditating together screen at the root of
 /// Friends, for review on a simulator without tapping through.
 struct GoalPreviewRoot: View {
@@ -1057,6 +1057,17 @@ struct GoalPreviewRoot: View {
                 FriendPickerView(model: model) { _ in }
             case "person":
                 if let f = model.friends.first { PersonView(id: f, model: model) }
+            // Invite codes (2026-10-18).
+            case "invitecode":
+                InviteCodeSheet(model: model)
+            case "entercode":
+                InviteCodeEntrySheet(model: model) { _, _ in }
+            case "invitedfriends":
+                if let f = model.friends.first, let p = model.person(f) {
+                    InvitedFriendsScreen(model: model,
+                                         inviter: PendingInvite(code: "AZIZK7QX4", inviter: f,
+                                                                name: p.displayName, username: p.username)) {}
+                }
             default:
                 FriendsHomeView(model: model, myDisplayName: "", roomForClose: false)
             }

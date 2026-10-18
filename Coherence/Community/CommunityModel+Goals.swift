@@ -214,6 +214,8 @@ extension CommunityModel {
             + goalInvites.map { "invite-" + $0.id }
             + activeGoals.filter(\.invitedByMe).map { "accepted-" + $0.id }
             + nudgesToMe.filter { $0.day >= DayKey.adding(-2, to: todayKey) }.map { "nudge-" + $0.id }
+            // Someone joined with my invite code (2026-10-18).
+            + joinedWithCode.sorted().map { "joined-" + $0 }
     }
 
     func recountUnseen() {

@@ -120,7 +120,11 @@ struct CreateProfileView: View {
                             Text(editing ? "Edit profile" : "Create your profile")
                                 .font(DisplayFont.display(28, .heavy))
                                 .onValley()
-                            Text("Your username is how friends find you. It's yours alone.")
+                            // Someone's invite code is waiting (2026-10-18):
+                            // name them, so the username has a reason.
+                            Text(!editing && PendingInvite.saved != nil
+                                 ? "Pick a username so \(PendingInvite.saved?.firstName ?? "your friend") can find you."
+                                 : "Your username is how friends find you. It's yours alone.")
                                 .font(AppFont.callout)
                                 .onValley(soft: true)
                                 .multilineTextAlignment(.center)

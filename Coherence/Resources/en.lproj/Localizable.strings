@@ -5,3 +5,4 @@
 "GOAL_ACCEPT_ALERT" = "%@ said yes. Your first week together starts today 🔥";
 "GOAL_NUDGE_ALERT" = "%@ nudged you 👋 Meditate today?";
 "GOAL_CHEER_ALERT" = "%@ sent you a high five 🎉 You both hit this week's goal.";
+"CODE_JOIN_ALERT" = "%@ joined 808 with your code. You're friends now 🎉";

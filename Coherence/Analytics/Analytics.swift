@@ -161,6 +161,7 @@ enum Analytics {
         case friendRequestSent
         case friendAccepted
         case inviteShared
+        case inviteCodeRedeemed              // joined Friends with someone's invite code (2026-10-18)
         case userBlocked
         case contentReported(kind: String)   // "profile" (posts are gone)
         case inviteRewarded                  // a brought friend sat; the grant landed
@@ -226,6 +227,7 @@ enum Analytics {
             case .friendRequestSent: "friend_request_sent"
             case .friendAccepted: "friend_accepted"
             case .inviteShared: "invite_shared"
+            case .inviteCodeRedeemed: "invite_code_redeemed"
             case .userBlocked: "user_blocked"
             case .contentReported: "content_reported"
             case .inviteRewarded: "invite_rewarded"
@@ -592,6 +594,7 @@ enum Analytics {
         "blockSchedule":     "33c When should Otto hold them? (Block builds)",
         "signIn":            "34 Sign in with Apple",
         "profile":           "34a Create your profile (Friends builds)",
+        "invitedFriends":    "34b You and your friend are friends (invite code)",
         "tourHome":          "35 Tour: this is home",
 
         // Cut. Never sent any more (`go` skips pass-through hops); named so

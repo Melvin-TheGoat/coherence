@@ -413,6 +413,11 @@ struct FriendsHomeView: View {
     @State private var query = ""
     @State private var result: Profile?
     @State private var searched = false
+    /// The owner of an invite code typed into search, waiting for the reader
+    /// to choose to join (2026-10-18 review: never join on a search alone).
+    @State private var codeOwner: Profile?
+    @State private var codeNote: String?
+    @State private var joining = false
     /// Meditating together: the friend picker, then the days (2026-10-14).
     @State private var startingGoal = false
 
@@ -492,7 +497,8 @@ struct FriendsHomeView: View {
                     if let p = model.person(id) {
                         if i > 0 { Rectangle().fill(ValleyGround.quiet).frame(height: 1) }
                         NavigationLink(value: id) {
-                            PersonRow(profile: p, subtitle: "@" + p.username, practice: practiceLine(p.practice)) {
+                            PersonRow(profile: p, subtitle: "@" + p.username, practice: practiceLine(p.practice),
+                                      tag: model.joinedWithCode.contains(id) ? "Joined with your code" : nil) {
                                 Image(systemName: "chevron.right")
                                     .font(.system(size: 12, weight: .bold))
                                     .foregroundStyle(AppColor.skyDeep)
@@ -541,9 +547,11 @@ struct FriendsHomeView: View {
                     // (Melvin, 2026-09-27, the last "s" alone underneath).
                     .layoutPriority(-1)
                     Spacer(minLength: 8)
-                    HStack(spacing: 8) {
-                        inviteButton
+                    // Requests, and right under it the way to bring someone
+                    // new (Aziz, 2026-10-18).
+                    VStack(alignment: .trailing, spacing: 8) {
                         requestsButton
+                        InviteCodeButton(model: model)
                     }
                     .padding(.top, 6)
                 }
@@ -552,25 +560,6 @@ struct FriendsHomeView: View {
                 Spacer(minLength: 0)
             }
         }
-    }
-
-    /// Invite, a cream pill like Requests at rest: never gold, which is kept
-    /// for a request somebody is waiting on.
-    private var inviteButton: some View {
-        ShareLink(item: InviteButton.message(for: model.profile?.username ?? "")) {
-            Label("Invite", systemImage: "person.badge.plus")
-                .font(.system(size: 13, weight: .bold, design: .rounded))
-                .lineLimit(1)
-                .fixedSize()
-                .foregroundStyle(ValleyGround.ink)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .background(Capsule().fill(AppColor.backgroundPrimary.opacity(0.94))
-                    .shadow(color: .black.opacity(0.12), radius: 5, y: 2))
-                .padding(.bottom, 3)
-        }
-        .simultaneousGesture(TapGesture().onEnded { Analytics.track(.inviteShared) })
-        .accessibilityLabel("Invite a friend")
     }
 
     #if DEBUG
@@ -635,16 +624,19 @@ struct FriendsHomeView: View {
     private var searchField: some View {
         HStack(spacing: 10) {
             Image(systemName: "magnifyingglass").foregroundStyle(AppColor.skyDeep)
-            TextField("Find a friend by @username", text: $query)
+            TextField("Find a friend by @username or code", text: $query)
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
                 .font(AppFont.callout)
                 .foregroundStyle(AppColor.textPrimary)
                 .submitLabel(.search)
                 .onSubmit { search() }
-                .onChange(of: query) { _, new in if new.isEmpty { searched = false; result = nil } }
+                .onChange(of: query) { _, new in
+                    codeOwner = nil; codeNote = nil
+                    if new.isEmpty { searched = false; result = nil }
+                }
             if !query.isEmpty {
-                Button { query = ""; searched = false; result = nil } label: {
+                Button { query = ""; searched = false; result = nil; codeOwner = nil; codeNote = nil } label: {
                     Image(systemName: "xmark.circle.fill").foregroundStyle(AppColor.textSecondary)
                 }
                 .buttonStyle(.tactile)
@@ -659,7 +651,17 @@ struct FriendsHomeView: View {
     @ViewBuilder
     private var searchResult: some View {
         Group {
-            if let result {
+            if let codeOwner {
+                PersonRow(profile: codeOwner, subtitle: "@" + codeOwner.username + " · this is their invite code") {
+                    Button(joining ? "Joining…" : "Join") { join(codeOwner) }
+                        .buttonStyle(.tactile)
+                        .font(.system(size: 14, weight: .heavy, design: .rounded))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 14).padding(.vertical, 8)
+                        .background(Capsule().fill(AppColor.skyDeep))
+                        .disabled(joining)
+                }
+            } else if let result {
                 NavigationLink(value: result.id) {
                     PersonRow(profile: result, subtitle: "@" + result.username,
                              practice: practiceLine(result.practice)) {
@@ -669,6 +671,11 @@ struct FriendsHomeView: View {
                     }
                 }
                 .buttonStyle(CardButtonStyle())
+            } else if let codeNote {
+                Text(codeNote)
+                    .font(AppFont.caption)
+                    .foregroundStyle(AppColor.textSecondary)
+                    .padding(.vertical, 14)
             } else {
                 Text("Nobody with that name yet. Check the spelling, or invite them.")
                     .font(AppFont.caption)
@@ -683,10 +690,40 @@ struct FriendsHomeView: View {
 
     private func search() {
         let q = query
-        guard Username.normalize(q) != nil else { return }
+        let maybeCode = InviteCode.normalize(q) != nil && !q.contains("@")
+        guard Username.normalize(q) != nil || maybeCode else { return }
+        codeOwner = nil
+        codeNote = nil
         Task {
-            result = await model.search(q)
+            result = Username.normalize(q) != nil ? await model.search(q) : nil
+            // Not a username: maybe an invite code (2026-10-18). Shown with a
+            // Join button; joining is the reader's choice, never the search's.
+            if result == nil, maybeCode {
+                switch await model.lookUpInvite(q) {
+                case .success(let inviter):
+                    guard query == q else { return }
+                    if model.friends.contains(inviter.id) { result = inviter } else { codeOwner = inviter }
+                case .failure(let e) where e == .inviteCodeIsYours:
+                    codeNote = e.localizedDescription
+                default: break
+                }
+            }
             searched = true
+        }
+    }
+
+    private func join(_ inviter: Profile) {
+        let q = query
+        joining = true
+        Task {
+            if await model.joinWithCode(q, inviter: inviter) {
+                codeOwner = nil
+                result = inviter
+            } else {
+                codeNote = model.errorText ?? "Couldn't join just now. Try again in a moment."
+                codeOwner = nil
+            }
+            joining = false
         }
     }
 }
@@ -706,7 +743,7 @@ private struct EmptyFriends: View {
                 .foregroundStyle(AppColor.textSecondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 18)
-            InviteButton(username: username, style: .gold)
+            InviteCodeButton(model: model, style: .wide)
                 .padding(.top, 8)
             if !model.sent.isEmpty {
                 Text("\(model.sent.count) request\(model.sent.count == 1 ? "" : "s") waiting for an answer")
@@ -868,6 +905,8 @@ struct PersonRow<Trailing: View>: View {
     /// "5 sessions this week · 7 day streak", or nil to leave it off (a
     /// blocked person's row, say, where the fact is not the point).
     var practice: String? = nil
+    /// A small blue chip under the rest ("Joined with your code").
+    var tag: String? = nil
     @ViewBuilder let trailing: () -> Trailing
 
     var body: some View {
@@ -884,6 +923,14 @@ struct PersonRow<Trailing: View>: View {
                     Text(practice)
                         .font(.system(size: 11, weight: .medium, design: .rounded))
                         .foregroundStyle(AppColor.calmAccent)
+                }
+                if let tag {
+                    Text(tag)
+                        .font(.system(size: 11, weight: .heavy, design: .rounded))
+                        .foregroundStyle(AppColor.skyDeepEdge)
+                        .padding(.horizontal, 8).padding(.vertical, 2)
+                        .background(Capsule().fill(AppColor.skyDeep.opacity(0.13)))
+                        .padding(.top, 2)
                 }
             }
             Spacer()
@@ -980,7 +1027,7 @@ struct RequestsView: View {
                             .padding(.horizontal, 14)
                             .whiteCard()
                         }
-                        InviteButton(username: model.profile?.username ?? "", style: .quiet)
+                        InviteCodeButton(model: model, style: .wide)
                             .padding(.top, 10)
                     }
                     .padding(.horizontal, AppMetrics.screenPadding)

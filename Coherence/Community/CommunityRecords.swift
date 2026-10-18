@@ -35,6 +35,10 @@ enum CommunityType {
     static let goalMember = "GoalMember"
     /// A nudge or a high five from one friend to another, once a day.
     static let nudge = "Nudge"
+    /// An invite code (2026-10-18): record name `invitecode-<CODE>`, one
+    /// field `profile` pointing at its owner, like a username reservation.
+    /// See `InviteCode` and `CommunityStore.myInviteCode`.
+    static let inviteCode = "InviteCode"
 }
 
 /// Record names are deterministic wherever a second save should overwrite
@@ -65,6 +69,8 @@ enum CommunityNames {
     static func goalMember(goal: String, member: String) -> String { "goal-" + goal + "-" + member }
     /// At most one nudge from me to them per day, by construction.
     static func nudge(from: String, to: String, day: String) -> String { "nudge-" + from + "-" + to + "-" + day }
+    /// An invite code, by its canonical form (`InviteCode.normalize`).
+    static func inviteCode(_ code: String) -> String { "invitecode-" + code }
 }
 
 /// One person's half of a shared goal (Meditating together, 2026-10-14).
@@ -232,9 +238,19 @@ struct Profile: Identifiable, Equatable {
     /// only through `setAvatar`, so claiming or renaming a handle never
     /// resets it.
     var practice: PracticeStats = .empty
+    /// This person's invite code, canonical (`InviteCode`), once they have
+    /// one. Set only through `CommunityStore.myInviteCode`, never by `apply`,
+    /// so a rename keeps it.
+    var inviteCode: String?
+    /// People who joined with my code and whom my app has since answered
+    /// with its own edge (`CommunityStore.answerCodeJoins`). From then on the
+    /// friendship is an ordinary one, so removing or blocking them sticks:
+    /// the code on their edge no longer counts. Written only by that call.
+    var answeredJoins: [String] = []
 
     init(id: String, username: String, displayName: String, firstSessionAt: Date? = nil,
-         createdAt: Date = Date(), avatarURL: URL? = nil, practice: PracticeStats = .empty) {
+         createdAt: Date = Date(), avatarURL: URL? = nil, practice: PracticeStats = .empty,
+         inviteCode: String? = nil, answeredJoins: [String] = []) {
         self.id = id
         self.username = username
         self.displayName = displayName
@@ -242,6 +258,8 @@ struct Profile: Identifiable, Equatable {
         self.createdAt = createdAt
         self.avatarURL = avatarURL
         self.practice = practice
+        self.inviteCode = inviteCode
+        self.answeredJoins = answeredJoins
     }
 
     init?(record: CKRecord) {
@@ -253,7 +271,9 @@ struct Profile: Identifiable, Equatable {
                   firstSessionAt: record["firstSessionAt"] as? Date,
                   createdAt: record["createdAt"] as? Date ?? Date(),
                   avatarURL: (record["avatar"] as? CKAsset)?.fileURL,
-                  practice: PracticeStats(record: record))
+                  practice: PracticeStats(record: record),
+                  inviteCode: record["inviteCode"] as? String,
+                  answeredJoins: record["answeredJoins"] as? [String] ?? [])
     }
 
     /// Writes everything but the photo and the practice stats, which change
@@ -296,24 +316,36 @@ struct FriendEdge: Identifiable, Equatable {
     let from: String
     let to: String
     var createdAt: Date
+    /// The invite code this edge was written with (2026-10-18): the code of
+    /// `to`, whose yes it carries, so the pair are friends without `to`
+    /// answering (`CommunityStore.codeFriends`). Nil on an ordinary request.
+    var viaCode: String?
+    /// The writer's name, for the push to `to` ("Sam joined 808 with your
+    /// code"): a subscription can only quote fields of its own record.
+    var fromName: String?
 
     var id: String { CommunityNames.edge(from: from, to: to) }
 
-    init(from: String, to: String, createdAt: Date = Date()) {
+    init(from: String, to: String, createdAt: Date = Date(), viaCode: String? = nil, fromName: String? = nil) {
         self.from = from; self.to = to; self.createdAt = createdAt
+        self.viaCode = viaCode; self.fromName = fromName
     }
 
     init?(record: CKRecord) {
         guard record.recordType == CommunityType.edge,
               let from = (record["from"] as? CKRecord.Reference)?.recordID.recordName,
               let to = (record["to"] as? CKRecord.Reference)?.recordID.recordName else { return nil }
-        self.init(from: from, to: to, createdAt: record["createdAt"] as? Date ?? Date())
+        self.init(from: from, to: to, createdAt: record["createdAt"] as? Date ?? Date(),
+                  viaCode: record["viaCode"] as? String, fromName: record["fromName"] as? String)
     }
 
     func apply(to record: CKRecord) {
         record["from"] = CommunityRecordValue.reference(from).ckValue
         record["to"] = CommunityRecordValue.reference(to).ckValue
         record["createdAt"] = createdAt
+        // Only on a code edge: an ordinary request carries neither field.
+        if let viaCode { record["viaCode"] = viaCode }
+        if let fromName { record["fromName"] = fromName }
     }
 }
 

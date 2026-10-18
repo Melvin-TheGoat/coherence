@@ -34,7 +34,7 @@ final class CommunityModel: ObservableObject {
     @Published private(set) var profile: Profile?
     @Published private(set) var feed: [Post] = []
     /// Profiles by record name, for everyone the feed and the lists mention.
-    @Published private(set) var people: [String: Profile] = [:]
+    @Published var people: [String: Profile] = [:]
     @Published private(set) var friends: [String] = []
     @Published private(set) var incoming: [String] = []
     @Published private(set) var sent: [String] = []
@@ -61,6 +61,16 @@ final class CommunityModel: ObservableObject {
     /// What Home's Friends circle counts: anything new since Friends was last
     /// opened (a friend request, a goal invite or answer, a nudge).
     @Published var unseenCount = 0
+    // MARK: Invite codes (see CommunityModel+Invite.swift)
+
+    /// My invite code, canonical, once it has been made or loaded.
+    @Published var inviteCode: String?
+    /// Friends who joined with my code, for the "Joined with your code" tag.
+    @Published var joinedWithCode: Set<String> = []
+    /// The person whose code I just joined with, set when a pending invite is
+    /// redeemed, so onboarding can say "You and Aziz are friends".
+    @Published var joinedInviter: PendingInvite?
+
     /// Every local session's start, length, and whether it was logged by
     /// hand, for the days a shared goal counts (`GoalDay.qualifying`).
     /// Supplied by the app, which owns SwiftData.
@@ -270,8 +280,10 @@ final class CommunityModel: ObservableObject {
             guard let profile, !profile.username.isEmpty else { phase = .needsUsername; return }
             try await refreshLists(store)
             phase = .ready
-            // Push alerts for goal invites, answers and nudges (2026-10-14).
+            // Push alerts for goal invites, answers and nudges (2026-10-14),
+            // and for someone joining with my invite code (2026-10-18).
             Task { await subscribeToGoalNews() }
+            Task { await store.subscribeToCodeJoins() }
         } catch {
             // A missing account is the common case. Anything else, before a
             // profile exists, is a failure the card states plainly; with a
@@ -297,7 +309,11 @@ final class CommunityModel: ObservableObject {
         do { try await refreshLists(store) } catch { if !quiet { errorText = Self.plain(error) } }
     }
 
-    private func refreshLists(_ store: CommunityStore) async throws {
+    func refreshLists(_ store: CommunityStore) async throws {
+        // Invite codes (2026-10-18), FIRST so the lists below include them: a
+        // pending invite redeemed once a profile exists, and my half written
+        // for anyone who joined with my code. Never breaks the friends list.
+        await refreshInvites(store)
         async let f = store.friends()
         async let i = store.incomingRequests()
         async let s = store.sentRequests()
@@ -738,12 +754,16 @@ final class CommunityModel: ObservableObject {
         nudgedToday = []
         freshlyAccepted = []
         unseenCount = 0
+        inviteCode = nil
+        joinedWithCode = []
+        joinedInviter = nil
         phase = .loading
         let defaults = UserDefaults.standard
         defaults.set(true, forKey: Self.publishingPausedKey)
         defaults.removeObject(forKey: CreateProfileView.rulesAcceptedKey)
         defaults.removeObject(forKey: FriendsIntroView.shownKey)
         defaults.removeObject(forKey: Self.seenKey)
+        PendingInvite.saved = nil
     }
 
     /// The person signed out of 808. Their Friends profile stays in iCloud

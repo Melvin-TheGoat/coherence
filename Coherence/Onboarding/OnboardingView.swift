@@ -169,6 +169,9 @@ struct OnboardingView: View {
         /// your days the most?" and "It takes 13 minutes a day", after the
         /// life moments clip. Last in the enum, for the reason above.
         case neuroBrain, neuroPick, neuroPlan
+        /// Added 2026-10-18: "You and Aziz are friends", after the profile,
+        /// for someone who joined with an invite code. Last, for the reason above.
+        case invitedFriends
 
         /// Progress rail: only the interview shows one. Once we're reflecting
         /// back and selling, a progress bar just tells them how much sales
@@ -231,7 +234,7 @@ struct OnboardingView: View {
 
         var allowsBack: Bool {
             switch self {
-            case .paywall, .signIn, .profile: return false
+            case .paywall, .signIn, .profile, .invitedFriends: return false
             // The tour comes after sign-in and the profile, both one way, so
             // Back from it could only land on a screen with no way back.
             case .tourHome, .watchConnect: return false
@@ -272,7 +275,7 @@ struct OnboardingView: View {
         var comesAfterOffer: Bool {
             switch self {
             case .permission, .week, .rating, .health, .wall, .blockApps, .blockSchedule,
-                 .signIn, .profile, .tourHome, .watchConnect, .breathe, .sessionResults:
+                 .signIn, .profile, .invitedFriends, .tourHome, .watchConnect, .breathe, .sessionResults:
                 return true
             default:
                 return false
@@ -1071,7 +1074,19 @@ struct OnboardingView: View {
                               suggested: answers.username,
                               nickname: answers.firstName) { handle in
                 if let handle { answers.username = handle }
-                afterAccount()
+                // Joined with an invite code: the two are friends now, so
+                // say so and offer the goal (2026-10-18).
+                if community.joinedInviter != nil { go(.invitedFriends) } else { afterAccount() }
+            }
+
+        case .invitedFriends:
+            if let inviter = community.joinedInviter {
+                InvitedFriendsScreen(model: community, inviter: inviter) {
+                    community.joinedInviter = nil
+                    afterAccount()
+                }
+            } else {
+                Color.clear.onAppear { afterAccount() }
             }
         }
     }
@@ -1139,6 +1154,9 @@ struct OnboardingView: View {
         case .paywall: return Self.paywallInsideOnboarding
         case .health: return watchPaired
         case .profile: return FeatureFlags.friends
+        // Only when there was a friend to announce: resumed without one, it
+        // passes straight to the tour.
+        case .invitedFriends: return community.joinedInviter != nil
         default: return !s.onlyPassesThrough && !s.isLegacy
         }
     }

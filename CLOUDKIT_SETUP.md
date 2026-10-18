@@ -533,3 +533,37 @@ the environment the build talks to, or saving them fails silently and nothing
 is pushed. Verify in Step 5: the Console's Subscriptions list should show
 four per tester, and a nudge from one phone should buzz the other with 808
 closed.
+
+## Invite codes (added 2026-10-18): one new record type, four new fields
+
+A friend who joins with your code is your friend at once (`InviteCode`,
+`CommunityStore.redeem`). Like everything in Friends, nothing works on a real
+install until this exists in **Production**: the simulator's fake database
+works perfectly while a phone fails.
+
+**`InviteCode`** (new type; record name `invitecode-<CODE>`, for example
+`invitecode-AZIZK7QX4`, found by NAME like a username, so no index is needed):
+
+| Field | Type | Index |
+|---|---|---|
+| `profile` | Reference | none |
+
+**Security role**: like `Username`. `_world` Read, `_icloud` Create,
+`_creator` Write. Anyone may look a code up; only its owner may change it.
+
+**New fields on existing types** (four):
+
+| Type | Field | Type | Index |
+|---|---|---|---|
+| `Profile` | `inviteCode` | String | none |
+| `Profile` | `answeredJoins` | List(String) | none |
+| `FriendEdge` | `viaCode` | String | **Queryable** (the "joined with your code" push filters on it) |
+| `FriendEdge` | `fromName` | String | none |
+
+**Two-phone check before deploying:** phone A opens Friends > Invite a
+friend and gets a code. Phone B, fresh install, taps "Got an invite code?" on
+the welcome screen, enters it, sees A's name, finishes onboarding, makes a
+profile, and lands on "You and A are friends". Both phones show each other
+under Friends with no request on either side, A gets the "joined with your
+code" notification, and A's list tags B "Joined with your code". Then deploy
+Development to Production.

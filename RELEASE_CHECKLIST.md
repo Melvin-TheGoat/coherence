@@ -1007,6 +1007,22 @@ effects, the Watch redesign, and onboarding answers reported to analytics
 - [ ] The what's-new screens for free 1.0 members
       (`mockups/whats-new-v1.html`) are NOT in 1.3 unless Melvin says so.
 
+## OPEN for the build that ships invite codes (added 2026-10-18)
+
+"Invite a friend" under Requests, a permanent code (AZIZ-K7QX4), and joining
+with it from the welcome screen or Friends search, which makes the two
+friends at once. Behind `FeatureFlags.friends`. Never run on real iCloud yet.
+
+- [ ] **CloudKit:** the new `InviteCode` type and four new fields
+      (`CLOUDKIT_SETUP.md`, "Invite codes"), the two-phone check there, then
+      deploy to Production. Without it, making a code fails on a real phone.
+- [ ] **Privacy policy (both copies), the founders' wording:** a person's
+      invite code is public like their username, and anyone who has it can
+      see their name and @username. Who joined with whose code is public like
+      the rest of a friendship (it sits on the friend edge and on the owner's
+      profile, `answeredJoins`). Nothing about the code or who joined goes to
+      PostHog beyond the `invite_code_redeemed` event, which carries no names.
+
 ## OPEN for the build that ships Meditating together (added 2026-10-14)
 
 Shared weekly goals with friends, nudges, the badge on Home, and the reward

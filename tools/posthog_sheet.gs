@@ -246,6 +246,7 @@ var SCREEN_NAMES = {
   blockSchedule:    "33c When should Otto hold them? (Block builds)",
   signIn:           "34 Sign in with Apple",
   profile:          "34a Create your profile (Friends builds)",
+  invitedFriends:   "34b You and your friend are friends (invite code)",
   tourHome:         "35 Tour: this is home"
 };
 

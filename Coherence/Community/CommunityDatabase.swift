@@ -69,10 +69,13 @@ protocol CommunityDatabase {
     /// invite, a nudge to me. Best effort; a database that cannot push (the
     /// in-memory one) does nothing.
     func ensureGoalSubscriptions(me: String) async
+    /// A push when someone joins with my invite code (2026-10-18).
+    func ensureCodeJoinSubscription(me: String, code: String) async
 }
 
 extension CommunityDatabase {
     func ensureGoalSubscriptions(me: String) async {}
+    func ensureCodeJoinSubscription(me: String, code: String) async {}
 }
 
 enum CommunityError: Error, Equatable {
@@ -88,6 +91,10 @@ enum CommunityError: Error, Equatable {
     case contentBlocked
     /// A photo Sensitive Content Analysis flagged.
     case photoBlocked
+    /// No invite code by that name (2026-10-18).
+    case inviteCodeUnknown
+    /// Someone entered their own invite code.
+    case inviteCodeIsYours
 }
 
 extension CommunityError: LocalizedError {
@@ -101,6 +108,8 @@ extension CommunityError: LocalizedError {
         case .alreadyExists:   return "That already exists."
         case .contentBlocked:  return "That has words 808 doesn't allow. Change it and try again."
         case .photoBlocked:    return "That photo can't be shared on 808. Take another."
+        case .inviteCodeUnknown: return "That code doesn't match anyone. Check it and try again."
+        case .inviteCodeIsYours: return "That's your own code. Send it to a friend."
         }
     }
 }
@@ -257,5 +266,22 @@ final class CloudKitCommunityDatabase: CommunityDatabase {
             // A missing record type or index in this environment, or no
             // network: the app still works, it just won't push until it can.
         }
+    }
+
+    /// "Sam joined 808 with your code": a push on an edge written to me
+    /// carrying my code. Needs `FriendEdge.viaCode` QUERYABLE in Production
+    /// (`CLOUDKIT_SETUP.md`, "Invite codes"). Saved again on every launch,
+    /// which replaces it in place.
+    func ensureCodeJoinSubscription(me: String, code: String) async {
+        let ref = CKRecord.Reference(recordID: CKRecord.ID(recordName: me), action: .none)
+        let sub = CKQuerySubscription(recordType: CommunityType.edge,
+                                      predicate: NSPredicate(format: "to == %@ AND viaCode == %@", ref, code),
+                                      subscriptionID: "code-join-" + me, options: [.firesOnRecordCreation])
+        let info = CKSubscription.NotificationInfo()
+        info.alertLocalizationKey = "CODE_JOIN_ALERT"
+        info.alertLocalizationArgs = ["fromName"]
+        info.soundName = "default"
+        sub.notificationInfo = info
+        _ = try? await db.modifySubscriptions(saving: [sub], deleting: [])
     }
 }

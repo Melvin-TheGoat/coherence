@@ -287,16 +287,44 @@ struct OttoInMeadow: View {
 struct WelcomeScreen: View {
     let onContinue: () -> Void
 
+    @EnvironmentObject private var community: CommunityModel
+    /// An invite code entered here (2026-10-18): Otto greets them by their
+    /// friend's name, and the friendship is made once they have a profile.
+    @State private var invite: PendingInvite? = PendingInvite.saved
+    @State private var entering = false
+
+    private var line: String {
+        if let invite { return "\(invite.firstName) invited you! Let's make meditation part of your day, together." }
+        // Names the win, not a loss (2026-10-17, Aziz: "regain control"
+        // told a newcomer they had lost it).
+        return "Let's make meditation part of your day."
+    }
+
     var body: some View {
         IntroScreen(progress: 0,
                     title: "Welcome to 808!",
-                    // Names the win, not a loss (2026-10-17, Aziz: "regain control"
-                    // told a newcomer they had lost it).
-                    subtitle: "Let's make meditation part of your day.",
+                    subtitle: line,
                     cta: "Let's go!",
+                    // With a code in, the same place lets a wrong one be
+                    // changed: the saved invite would otherwise redeem itself.
+                    secondary: !FeatureFlags.friends ? nil
+                        : invite == nil ? ("Got an invite code?", { entering = true })
+                        : ("Use a different code", {
+                            PendingInvite.saved = nil
+                            invite = nil
+                            entering = true
+                        }),
                     onContinue: onContinue) { playing in
             OttoClip(name: "otto-welcome-wave", playing: playing, loops: true)
                 .aspectRatio(710.0 / 700.0, contentMode: .fit)
+        }
+        .sheet(isPresented: $entering) {
+            InviteCodeEntrySheet(model: community) { code, inviter in
+                invite = PendingInvite(code: code, inviter: inviter.id,
+                                       name: inviter.displayName, username: inviter.username)
+                Task { await community.acceptInvite(code: code, from: inviter) }
+            }
+            .presentationDragIndicator(.visible)
         }
     }
 }
