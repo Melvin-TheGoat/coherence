@@ -238,6 +238,14 @@ enum DemoCommunity {
         return items
     }
 
+    /// Gives a demo person one of the bundled preset pictures (2026-10-19,
+    /// Melvin: "no profile photo should be empty" in a store screenshot, and
+    /// test mode is the better for looking like the real thing).
+    private static func picture(_ store: CommunityStore, _ preset: String) async {
+        guard let image = UIImage(named: "avatar-\(preset).jpg"), let url = PostPhoto.prepare(image) else { return }
+        _ = try? await store.setAvatar(url)
+    }
+
     static func store() async -> CommunityStore {
         let db = MemoryCommunityDatabase(user: "_demo_me")
         let me = CommunityStore(database: db)
@@ -248,6 +256,9 @@ enum DemoCommunity {
             let env = ProcessInfo.processInfo.environment
             try? await me.claimUsername(env["DEMO_USERNAME"] ?? "aziz",
                                         displayName: env["DEMO_NAME"] ?? "Aziz")
+            // My own picture only in store screenshots: everywhere else test
+            // mode leaves it empty, so Friends' picture prompt can be reviewed.
+            if StoreShots.on { await picture(me, "red-panda") }
         }
 
         // STORE_SHOTS=1: no founder's name in a store screenshot.
@@ -255,6 +266,7 @@ enum DemoCommunity {
         db.user = "_demo_melvin"
         let melvin = CommunityStore(database: db)
         try? await melvin.claimUsername(shots ? "priya" : "melvin", displayName: shots ? "Priya" : "Melvin")
+        await picture(melvin, "mountains")
         try? await melvin.markFirstSession(at: Date().addingTimeInterval(-86_400 * 40))
         try? await melvin.sendRequest(to: CommunityNames.profile(user: "_demo_me"))
         // How often Melvin meditates, so the friends list and his page have
@@ -281,12 +293,14 @@ enum DemoCommunity {
         db.user = "_demo_jordan"
         let jordan = CommunityStore(database: db)
         try? await jordan.claimUsername("jordan.k", displayName: "Jordan")
+        await picture(jordan, "frog")
         try? await jordan.sendRequest(to: CommunityNames.profile(user: "_demo_me"))
         // Jordan asked but has never sat: the "No sessions yet" case.
 
         db.user = "_demo_lena"
         let lena = CommunityStore(database: db)
         try? await lena.claimUsername("lena", displayName: "Lena")
+        await picture(lena, "moon-lake")
         try? await lena.updatePracticeStats(.init(sessions7d: 0, minutes7d: 0, currentStreak: 0,
                                                    totalSessions: 15, lastSessionAt: Date().addingTimeInterval(-86_400 * 4)))
 
@@ -294,6 +308,7 @@ enum DemoCommunity {
         db.user = "_demo_sam"
         let sam = CommunityStore(database: db)
         try? await sam.claimUsername("sam_p", displayName: "Sam")
+        await picture(sam, "owl")
 
         db.user = "_demo_me"
         try? await me.sendRequest(to: CommunityNames.profile(user: "_demo_sam"))
@@ -324,16 +339,19 @@ enum DemoCommunity {
                                       title: "Morning session", sound: "Silence"))
         // Meditating together (2026-10-14): a running goal with Melvin, in
         // its second day, and an invite from Sam waiting for an answer.
-        // `PREVIEW_GOALS=none` leaves them out; never in store screenshots.
-        if !shots, ProcessInfo.processInfo.environment["PREVIEW_GOALS"] != "none" {
+        // `PREVIEW_GOALS=none` leaves them out. In store screenshots since 1.4
+        // ships the feature (2026-10-19), with Priya and Maya in place of the
+        // founders' names.
+        if ProcessInfo.processInfo.environment["PREVIEW_GOALS"] != "none" {
             let today = DayKey.key(Date())
             let start = DayKey.adding(-2, to: today)
             db.user = "_demo_me"
-            let goal = try? await me.inviteGoal(to: CommunityNames.profile(user: "_demo_melvin"), target: 4, myName: "Aziz")
+            let myName = shots ? (ProcessInfo.processInfo.environment["DEMO_NAME"] ?? "Maya") : "Aziz"
+            let goal = try? await me.inviteGoal(to: CommunityNames.profile(user: "_demo_melvin"), target: 4, myName: myName)
             db.user = "_demo_melvin"
             if let goal, let pair = try? await melvin.goals(friends: [CommunityNames.profile(user: "_demo_me")])
                 .first(where: { $0.id == goal }) {
-                try? await melvin.acceptGoal(pair, today: start, myName: "Melvin")
+                try? await melvin.acceptGoal(pair, today: start, myName: shots ? "Priya" : "Melvin")
                 try? await melvin.publishGoalDays(goal: goal, days: [
                     GoalDay(day: start, minutes: 14), GoalDay(day: DayKey.adding(1, to: start), minutes: 22),
                     GoalDay(day: today, minutes: 11),
@@ -345,6 +363,8 @@ enum DemoCommunity {
         }
         // STORE_SHOTS=1: six more friends, so the list reads as a circle.
         if shots {
+            let pictures = ["_demo_theo": "bonsai", "_demo_ana": "cat", "_demo_dan": "turtle",
+                            "_demo_jonas": "wave", "_demo_mei": "lotus", "_demo_noah": "misty-pines"]
             let more: [(String, String, String, PracticeStats)] = [
                 ("_demo_theo", "theo", "Theo", .init(sessions7d: 7, minutes7d: 118, currentStreak: 21,
                                                      totalSessions: 64, lastSessionAt: Date().addingTimeInterval(-5_400))),
@@ -363,6 +383,7 @@ enum DemoCommunity {
                 db.user = user
                 let friend = CommunityStore(database: db)
                 try? await friend.claimUsername(handle, displayName: name)
+                if let preset = pictures[user] { await picture(friend, preset) }
                 try? await friend.markFirstSession(at: Date().addingTimeInterval(-86_400 * 30))
                 try? await friend.sendRequest(to: CommunityNames.profile(user: "_demo_me"))
                 try? await friend.updatePracticeStats(stats)

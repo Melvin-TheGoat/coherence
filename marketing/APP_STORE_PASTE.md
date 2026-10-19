@@ -273,9 +273,9 @@ just one feature"). Upload in this order:
 | 4 | 04-widget | Home screen with the medium and two small widgets | Otto on your home screen | Your streak and his glow at a glance |
 | 5 | 05-sounds | The plus: the Ready screen's sound list | Meditate your way | Silence, nature, tones, a guided journey or your own audio |
 | 6 | 06-texts | Otto's text thread after Ask Otto | Otto texts you before you scroll | Open a held app and he asks you to meditate first |
-| 7 | 07-profile | Profile: streak, stats, your minutes | Every day adds up | Your streak and your minutes at a glance |
+| 7 | 07-profile | Profile: a preset picture, "8 friends", streak, stats, your minutes (retaken 2026-10-19 for 1.4) | Every day adds up | Your streak and your minutes at a glance |
 | 8 | 08-watch | A measured Watch session's results | Wear an Apple Watch for more | Heart rate, stillness and breathing, after each session |
-| 9 | 09-friends | Friends list, eight friends | Meditate with friends | See how often your friends meditate each week |
+| 9 | 09-friends | Friends: a weekly goal with Priya, eight friends, every one with a picture (retaken 2026-10-19 for 1.4) | Meditate with friends | See how often your friends meditate each week |
 | 10 | 10-awards | The awards shelf, 30 of 58 | More than fifty awards | For showing up, going longer and trying new ways in |
 
 **Reworked 2026-10-13 (Aziz), in `marketing/appstore-new/`,** for the release after 1.2; `marketing/appstore/` still holds the live eight: the Block-list shot

@@ -30,8 +30,10 @@ To regenerate after a UI change (every hook below is DEBUG only):
    `VALLEY_HOUR=9.7` (a morning sky and "Good Morning" to match 9:41),
    `PREVIEW_PAID=1` (the curves unlocked) and `STORE_SHOTS=1` (hides the Block
    and Friends test-mode cards, switches Otto's chat off as Release has it, and
-   seeds non-founder friends). Add `PREVIEW_HISTORY=1` for everything except
-   the Block shot.
+   seeds non-founder friends, each with a preset picture, Maya's own a red
+   panda, plus a running weekly goal with Priya, since 2026-10-19: no profile
+   photo in a store screenshot is ever the empty default). Add
+   `PREVIEW_HISTORY=1` for everything except the Block shot.
 4. Per shot, in this order (the Block shot needs a day with no session, and
    `PREVIEW_RESULTS` inserts a session every launch, so it goes last):
    - 02 Block, FIRST, without `PREVIEW_HISTORY`: `PREVIEW_BLOCK=full PREVIEW_TAB=block`
