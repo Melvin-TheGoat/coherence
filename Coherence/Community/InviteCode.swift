@@ -61,11 +61,18 @@ enum InviteCode {
         return code[..<cut] + "-" + code[cut...]
     }
 
-    /// The message the share sheet sends. The App Store link carries the
-    /// invite campaign tag, so installs from invites show in App Store Connect.
+    /// Where an invite points: our own page, whose preview in Messages is
+    /// Otto with "Meditate with me on 808" (website/invite.html), and which
+    /// sends the reader on to the App Store with the invite campaign tag, so
+    /// installs still show in App Store Connect. The App Store link itself
+    /// previewed as the listing's old Apple Watch screenshot (2026-10-18).
+    static let link = URL(string: "https://meditate808.com/invite")!
+
+    /// The first message the share sheet sends. The code then goes again as
+    /// a text of its own (`InviteCodeSheet`), so it can be copied in one tap.
     static func message(for code: String) -> String {
-        "Meditate with me on 808 🧘 Use my code \(display(code)) when you join and we'll be friends right away.\n"
-            + InviteButton.storeLink.absoluteString
+        "Meditate with me on 808 🧘 Use my invite code \(display(code)) when you join and we'll be friends right away.\n"
+            + link.absoluteString
     }
 }
 

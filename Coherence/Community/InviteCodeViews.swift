@@ -54,11 +54,17 @@ struct InviteCodeButton: View {
     }
 }
 
-/// My code, big, with Copy and Share invite.
+/// A code made for this invite, big, with Copy, then two sends: the invite
+/// itself, and the code again as a text of its own so the friend can copy it
+/// in one tap (Aziz, 2026-10-18). Every time the sheet opens it is a new code.
 struct InviteCodeSheet: View {
     @ObservedObject var model: CommunityModel
+    @State private var code: String?
     @State private var copied = false
     @State private var failed = false
+    /// Where this invite is: the invite to send, then the code, then sent.
+    private enum Step { case invite, code, sent }
+    @State private var step: Step = .invite
 
     var body: some View {
         VStack(spacing: 0) {
@@ -85,7 +91,7 @@ struct InviteCodeSheet: View {
                     .font(.system(size: 12, weight: .heavy, design: .rounded))
                     .tracking(1)
                     .foregroundStyle(AppColor.textSecondary)
-                if let code = model.inviteCode {
+                if let code {
                     Text(InviteCode.display(code))
                         .font(.system(size: 38, weight: .heavy, design: .rounded))
                         .tracking(2)
@@ -126,17 +132,37 @@ struct InviteCodeSheet: View {
 
             Spacer(minLength: 16)
 
-            if let code = model.inviteCode {
-                ShareLink(item: InviteCode.message(for: code)) {
-                    Text("Share invite")
+            if let code {
+                switch step {
+                case .invite:
+                    Button("Share invite") {
+                        SystemShare.present([InviteCode.message(for: code)]) { done in
+                            guard done else { return }
+                            Analytics.track(.inviteShared)
+                            withAnimation(.snappy) { step = .code }
+                        }
+                    }
+                    .buttonStyle(TogetherStyle.blue)
+                case .code:
+                    Button("Now send the code") {
+                        SystemShare.present([InviteCode.display(code)]) { done in
+                            guard done else { return }
+                            withAnimation(.snappy) { step = .sent }
+                        }
+                    }
+                    .buttonStyle(TogetherStyle.blue)
+                case .sent:
+                    Button("Invite someone else") {
+                        Task { await make() }
+                    }
+                    .buttonStyle(TogetherStyle.blue)
                 }
-                .buttonStyle(TogetherStyle.blue)
-                .simultaneousGesture(TapGesture().onEnded { Analytics.track(.inviteShared) })
             }
-            Text("Your code never changes, so you can share it anywhere.")
+            Text(footnote)
                 .font(AppFont.caption.weight(.semibold))
                 .foregroundStyle(AppColor.textSecondary)
                 .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
                 .padding(.top, 14)
         }
         .padding(.horizontal, AppMetrics.screenPadding + 4)
@@ -146,9 +172,23 @@ struct InviteCodeSheet: View {
         .task { await make() }
     }
 
+    private var footnote: String {
+        switch step {
+        case .invite: return "Each invite gets its own code."
+        case .code: return "It goes as its own text, so your friend can copy it in one tap."
+        case .sent: return "Invite sent. The next one gets a new code."
+        }
+    }
+
     private func make() async {
         failed = false
-        if await model.loadInviteCode() == nil { failed = true }
+        let made = await model.makeInviteCode()
+        withAnimation(.snappy) {
+            code = made
+            step = .invite
+            copied = false
+        }
+        if made == nil { failed = true }
     }
 }
 
@@ -286,5 +326,21 @@ struct InviteCodeEntrySheet: View {
                     : e.localizedDescription
             }
         }
+    }
+}
+
+/// The system share sheet, with word of whether something was actually sent
+/// (`ShareLink` gives none), so the invite can move on to sending the code.
+enum SystemShare {
+    @MainActor
+    static func present(_ items: [Any], completion: @escaping (Bool) -> Void) {
+        guard let scene = UIApplication.shared.connectedScenes
+                .compactMap({ $0 as? UIWindowScene })
+                .first(where: { $0.activationState == .foregroundActive }),
+              var top = scene.keyWindow?.rootViewController else { completion(false); return }
+        while let next = top.presentedViewController { top = next }
+        let sheet = UIActivityViewController(activityItems: items, applicationActivities: nil)
+        sheet.completionWithItemsHandler = { _, completed, _, _ in completion(completed) }
+        top.present(sheet, animated: true)
     }
 }

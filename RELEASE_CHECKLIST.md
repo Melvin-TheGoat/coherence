@@ -1009,13 +1009,24 @@ effects, the Watch redesign, and onboarding answers reported to analytics
 
 ## OPEN for the build that ships invite codes (added 2026-10-18)
 
-"Invite a friend" under Requests, a permanent code (AZIZ-K7QX4), and joining
+"Invite a friend" under Requests, a new code for every invite (AZIZ-K7QX4), and joining
 with it from the welcome screen or Friends search, which makes the two
 friends at once. Behind `FeatureFlags.friends`. Never run on real iCloud yet.
 
-- [ ] **CloudKit:** the new `InviteCode` type and four new fields
+- [ ] **CloudKit:** the new `InviteCode` type and five new fields
       (`CLOUDKIT_SETUP.md`, "Invite codes"), the two-phone check there, then
       deploy to Production. Without it, making a code fails on a real phone.
+      Before trusting the two-phone check, make sure NEITHER phone shows the
+      Friends "Test mode" banner (2026-10-18: Melvin's did, and nothing he
+      did reached iCloud).
+- [ ] **Deploy the website first** (`deploy-website`): every invite links to
+      `meditate808.com/invite`, which does not exist until `website/invite.html`
+      and `img/invite.jpg` are live. Check that a link pasted into Messages
+      previews as Otto, not the old Apple Watch screenshot.
+- [ ] **App Store Connect: replace the two Apple Watch screenshots** (still
+      the 1.0 black Watch screens) with the valley Watch screens, in the next
+      version (`PREVIEW_WATCH_SCREEN`, Watch simulator). Anything that links
+      straight to the App Store can still preview them.
 - [x] (2026-10-18, approved by Melvin) **Privacy policy (both copies), the founders' wording:** a person's
       invite code is public like their username, and anyone who has it can
       see their name and @username. Who joined with whose code is public like

@@ -8110,13 +8110,16 @@ Designed in the "808 Invite Codes" canvas (9 screens), then built. Replaces
 - **The code** (`Coherence/Community/InviteCode.swift`, pure): up to 5
   letters of the username plus **5** random characters from an alphabet with
   no look-alikes (no 0/O, 1/I/L, 2/Z, 5/S, 8/B), shown `AZIZ-K7QX4`, stored
-  canonical `AZIZK7QX4`. Permanent. `normalize` forgives case, spaces,
+  canonical `AZIZK7QX4`. **A new code for every invite** (Aziz, same night:
+  two invites to Melvin carried the same code): each opening of the Invite
+  sheet mints one (`newInviteCode`), `Profile.inviteCodes` lists every code
+  sent (last 100), and any of them still finds the person. `normalize` forgives case, spaces,
   dashes and a whole pasted message. **Five, not three** (review, same day):
   the username half is public, so three random characters left 15,625
   guesses to friend someone without their yes; five leave ~9.8 million.
 - **Storage:** an `InviteCode` record named `invitecode-<CODE>` pointing at
-  its owner, reserved by NAME and CREATED like a username (`myInviteCode`),
-  and `Profile.inviteCode` so every device shows the same one. Joining
+  its owner, reserved by NAME and CREATED like a username (`newInviteCode`),
+  and `Profile.inviteCode` (newest) plus `Profile.inviteCodes` (all). Joining
   writes MY edge to the owner with `viaCode` and `fromName` (`redeem`).
 - **A code edge is a friendship on both sides immediately**
   (`CommunityStore.codeFriends`): for the joiner, verified against the code's
@@ -8140,6 +8143,23 @@ Designed in the "808 Invite Codes" canvas (9 screens), then built. Replaces
   `.invitedFriends`, says "You and Aziz are friends 🎉" with "Set a weekly
   goal with Aziz" (the existing goal setup) or "Maybe later"; the owner gets
   a push ("Sam joined 808 with your code") and a "Joined with your code" tag.
+- **The invite goes as two texts** (`InviteCodeSheet`, `SystemShare`):
+  "Share invite" sends the message and the link, then "Now send the code"
+  sends the code on its own so the friend copies it in one tap. Messages
+  merges several text items into one bubble, so it has to be two sends.
+- **The link is `meditate808.com/invite`** (`website/invite.html`), whose
+  preview is Otto with "Meditate with me on 808" (`website/img/invite.jpg`,
+  the `invite` variant of `tools/store_art.swift`), and which forwards to
+  the App Store with `ct=invite`. The App Store link previewed as the
+  listing's old Apple Watch screenshot. **It only works once the site is
+  deployed.**
+- **Friends test mode is off on any phone whose build can reach iCloud**
+  (`testModeWanted`). Melvin's beta kept test mode from an older no-iCloud
+  install, so his code and his goal answers never left his phone, and both
+  features looked broken for a night. **Look for the Test mode banner on
+  both phones before trusting a two-phone Friends test.**
+- **Friends search runs by itself** 0.6 s after typing or pasting stops,
+  and an unknown code says so ("No one has that invite code").
 - **The code is entered, never carried by the link.** iOS passes nothing
   through an App Store install without a third-party attribution SDK, which
   would change the privacy labels. Do not add one for this.

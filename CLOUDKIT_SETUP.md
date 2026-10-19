@@ -551,12 +551,13 @@ works perfectly while a phone fails.
 **Security role**: like `Username`. `_world` Read, `_icloud` Create,
 `_creator` Write. Anyone may look a code up; only its owner may change it.
 
-**New fields on existing types** (four):
+**New fields on existing types** (five):
 
 | Type | Field | Type | Index |
 |---|---|---|---|
 | `Profile` | `inviteCode` | String | none |
 | `Profile` | `answeredJoins` | List(String) | none |
+| `Profile` | `inviteCodes` | List(String) | none (every code sent, since each invite gets its own, 2026-10-18) |
 | `FriendEdge` | `viaCode` | String | **Queryable** (the "joined with your code" push filters on it) |
 | `FriendEdge` | `fromName` | String | none |
 

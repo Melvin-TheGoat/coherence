@@ -418,6 +418,10 @@ struct FriendsHomeView: View {
     @State private var codeOwner: Profile?
     @State private var codeNote: String?
     @State private var joining = false
+    /// Searches by itself a moment after typing or pasting stops, so a pasted
+    /// code works without the keyboard's Search key (2026-10-18: Aziz pasted
+    /// Melvin's code and nothing happened).
+    @State private var pendingSearch: Task<Void, Never>?
     /// Meditating together: the friend picker, then the days (2026-10-14).
     @State private var startingGoal = false
 
@@ -633,7 +637,13 @@ struct FriendsHomeView: View {
                 .onSubmit { search() }
                 .onChange(of: query) { _, new in
                     codeOwner = nil; codeNote = nil
-                    if new.isEmpty { searched = false; result = nil }
+                    pendingSearch?.cancel()
+                    if new.isEmpty { searched = false; result = nil; return }
+                    pendingSearch = Task {
+                        try? await Task.sleep(for: .milliseconds(600))
+                        guard !Task.isCancelled else { return }
+                        search()
+                    }
                 }
             if !query.isEmpty {
                 Button { query = ""; searched = false; result = nil; codeOwner = nil; codeNote = nil } label: {
@@ -704,8 +714,16 @@ struct FriendsHomeView: View {
                     guard query == q else { return }
                     if model.friends.contains(inviter.id) { result = inviter } else { codeOwner = inviter }
                 case .failure(let e) where e == .inviteCodeIsYours:
+                    guard query == q else { return }
                     codeNote = e.localizedDescription
-                default: break
+                case .failure(.unavailable):
+                    guard query == q else { return }
+                    codeNote = "Couldn't check that just now. Make sure you're online and signed in to iCloud."
+                case .failure:
+                    // Written like a code (a dash, or a pasted message), so
+                    // "nobody with that name" would be the wrong answer.
+                    guard query == q, q.contains("-") || q.contains(where: \.isWhitespace) else { break }
+                    codeNote = "No one has that invite code. Check it with your friend and try again."
                 }
             }
             searched = true
@@ -821,14 +839,13 @@ struct InviteButton: View {
     let style: Style
     var title: String = "Invite a friend"
 
-    static let storeLink = URL(string: "https://apps.apple.com/app/apple-store/id6806785308?pt=129152995&ct=invite&mt=8")!
 
     private var message: String { Self.message(for: username) }
 
     /// Aziz's wording (2026-09-14). The App Store link stays on its own line
     /// so the message still gets a friend to the download.
     static func message(for username: String) -> String {
-        "Add me on 808 Meditate: @\(username)\n\(storeLink.absoluteString)"
+        "Add me on 808 Meditate: @\(username)\n\(InviteCode.link.absoluteString)"
     }
 
     var body: some View {

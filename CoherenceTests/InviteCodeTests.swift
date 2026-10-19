@@ -48,18 +48,37 @@ final class InviteCodeTests: XCTestCase {
         try await aziz.claimUsername("aziz", displayName: "Aziz")
     }
 
-    func test_myCodeIsMadeOnceAndKept() async throws {
-        let first = try await aziz.myInviteCode()
-        let again = try await aziz.myInviteCode()
-        XCTAssertEqual(first, again)
-        XCTAssertTrue(first.hasPrefix("AZIZ"))
+    /// Each invite gets its own code, and every code sent still works
+    /// (Aziz, 2026-10-18: two invites to Melvin carried the same code).
+    func test_everyInviteGetsANewCodeAndOldOnesStillWork() async throws {
+        let first = try await aziz.newInviteCode()
+        let again = try await aziz.newInviteCode()
+        XCTAssertNotEqual(first, again)
+        XCTAssertTrue(first.hasPrefix("AZIZ") && again.hasPrefix("AZIZ"))
         XCTAssertNotNil(db.records[CommunityNames.inviteCode(first)])
         let profile = try await aziz.myProfile()
-        XCTAssertEqual(profile?.inviteCode, first)
+        XCTAssertEqual(profile?.inviteCode, again)
+        XCTAssertEqual(profile?.allInviteCodes, [first, again])
+        let byOld = try await sam.inviter(forCode: first)
+        let byNew = try await sam.inviter(forCode: again)
+        XCTAssertEqual(byOld?.username, "aziz")
+        XCTAssertEqual(byNew?.username, "aziz")
+    }
+
+    /// Someone who joins with an OLDER code is still my friend at once.
+    func test_joiningWithAnOlderCodeStillMakesFriends() async throws {
+        let older = try await aziz.newInviteCode()
+        _ = try await aziz.newInviteCode()
+        try await sam.claimUsername("sam", displayName: "Sam")
+        try await sam.redeem(code: older, myName: "Sam")
+        let samFriends = try await sam.friends()
+        let azizFriends = try await aziz.friends()
+        XCTAssertTrue(samFriends.contains(azizID))
+        XCTAssertTrue(azizFriends.contains(samID))
     }
 
     func test_aCodeIsLookedUpBeforeTheJoinerHasAProfile() async throws {
-        let code = try await aziz.myInviteCode()
+        let code = try await aziz.newInviteCode()
         let found = try await sam.inviter(forCode: InviteCode.display(code).lowercased())
         XCTAssertEqual(found?.id, azizID)
         let nobody = try await sam.inviter(forCode: "NOPE-AAAAA")
@@ -67,7 +86,7 @@ final class InviteCodeTests: XCTestCase {
     }
 
     func test_joiningWithACodeMakesFriendsAtOnceOnBothSides() async throws {
-        let code = try await aziz.myInviteCode()
+        let code = try await aziz.newInviteCode()
         try await sam.claimUsername("sam_p", displayName: "Sam")
         try await sam.redeem(code: code, myName: "Sam")
 
@@ -95,7 +114,7 @@ final class InviteCodeTests: XCTestCase {
     /// removal: it sticks on both phones, and the next refresh never writes
     /// Aziz's half back (found in review, 2026-10-18).
     func test_removingAFriendWhoJoinedWithMyCodeSticks() async throws {
-        let code = try await aziz.myInviteCode()
+        let code = try await aziz.newInviteCode()
         try await sam.claimUsername("sam_p", displayName: "Sam")
         try await sam.redeem(code: code, myName: "Sam")
         _ = try await aziz.answerCodeJoins()
@@ -110,7 +129,7 @@ final class InviteCodeTests: XCTestCase {
 
     /// Sam joined Aziz's code: Aziz brought Sam, never the reverse.
     func test_theJoinerNeverEarnsBroughtAFriend() async throws {
-        let code = try await aziz.myInviteCode()
+        let code = try await aziz.newInviteCode()
         try await sam.claimUsername("sam_p", displayName: "Sam")
         try await sam.redeem(code: code, myName: "Sam")
         _ = try await aziz.answerCodeJoins()
@@ -119,7 +138,7 @@ final class InviteCodeTests: XCTestCase {
     }
 
     func test_yourOwnCodeAndAnUnknownCodeAreRefused() async throws {
-        let code = try await aziz.myInviteCode()
+        let code = try await aziz.newInviteCode()
         do { try await aziz.redeem(code: code, myName: "Aziz"); XCTFail("own code") }
         catch let e as CommunityError { XCTAssertEqual(e, .inviteCodeIsYours) }
         try await sam.claimUsername("sam_p", displayName: "Sam")
@@ -130,7 +149,7 @@ final class InviteCodeTests: XCTestCase {
     /// A code on an edge proves a friendship only with the code's owner:
     /// Sam putting Aziz's code on a request to Mel makes nobody friends.
     func test_aCodeOnTheWrongPersonsEdgeProvesNothing() async throws {
-        let code = try await aziz.myInviteCode()
+        let code = try await aziz.newInviteCode()
         try await sam.claimUsername("sam_p", displayName: "Sam")
         try await mel.claimUsername("mel", displayName: "Mel")
         let record = CKRecordFactory.edge(from: samID, to: melID, viaCode: code)
@@ -142,7 +161,7 @@ final class InviteCodeTests: XCTestCase {
     }
 
     func test_someoneIBlockedCannotBeFoundByTheirCode() async throws {
-        let code = try await aziz.myInviteCode()
+        let code = try await aziz.newInviteCode()
         try await sam.claimUsername("sam_p", displayName: "Sam")
         try await sam.block(azizID)
         let found = try await sam.inviter(forCode: code)
@@ -150,7 +169,7 @@ final class InviteCodeTests: XCTestCase {
     }
 
     func test_deletingAnAccountReleasesItsCode() async throws {
-        let code = try await aziz.myInviteCode()
+        let code = try await aziz.newInviteCode()
         try await aziz.deleteEverythingOfMine()
         XCTAssertNil(db.records[CommunityNames.inviteCode(code)])
     }
@@ -158,7 +177,7 @@ final class InviteCodeTests: XCTestCase {
     /// Someone who joined with my code was brought by me, for the award,
     /// though my edge to them is the newer one.
     func test_aCodeJoinCountsAsBroughtAFriend() async throws {
-        let code = try await aziz.myInviteCode()
+        let code = try await aziz.newInviteCode()
         try await sam.claimUsername("sam_p", displayName: "Sam")
         try await sam.redeem(code: code, myName: "Sam")
         _ = try await aziz.answerCodeJoins()

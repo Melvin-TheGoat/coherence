@@ -17,7 +17,7 @@ mkdir -p "$STAGE"
 python3 tools/legal_pages.py
 
 cd website
-PAGES=(index.html privacy.html terms.html survey.html)
+PAGES=(index.html privacy.html terms.html survey.html invite.html)
 cp "${PAGES[@]}" _headers _redirects "$STAGE/"
 
 # Every img/ and fonts/ path any page references, and nothing else.

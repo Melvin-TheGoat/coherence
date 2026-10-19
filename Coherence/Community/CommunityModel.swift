@@ -145,6 +145,15 @@ final class CommunityModel: ObservableObject {
         let byDefault = true
         #else
         let byDefault = false
+        // A phone whose build can reach iCloud always uses it. Test mode
+        // switched on under an older beta with no iCloud survives an install
+        // over it, and then Friends quietly ran on the fake database while
+        // the other phone used the real one (2026-10-18: Melvin's invite code
+        // existed only on his phone, and Aziz's goal invite never reached it).
+        if CloudEntitlement.mayHoldContainer {
+            UserDefaults.standard.removeObject(forKey: testModeKey)
+            return false
+        }
         #endif
         return UserDefaults.standard.object(forKey: testModeKey) as? Bool ?? byDefault
     }

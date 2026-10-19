@@ -37,7 +37,7 @@ enum CommunityType {
     static let nudge = "Nudge"
     /// An invite code (2026-10-18): record name `invitecode-<CODE>`, one
     /// field `profile` pointing at its owner, like a username reservation.
-    /// See `InviteCode` and `CommunityStore.myInviteCode`.
+    /// See `InviteCode` and `CommunityStore.newInviteCode`.
     static let inviteCode = "InviteCode"
 }
 
@@ -238,10 +238,16 @@ struct Profile: Identifiable, Equatable {
     /// only through `setAvatar`, so claiming or renaming a handle never
     /// resets it.
     var practice: PracticeStats = .empty
-    /// This person's invite code, canonical (`InviteCode`), once they have
-    /// one. Set only through `CommunityStore.myInviteCode`, never by `apply`,
-    /// so a rename keeps it.
+    /// This person's newest invite code, canonical (`InviteCode`), once they
+    /// have one. Set only through `CommunityStore.newInviteCode`, never by
+    /// `apply`, so a rename keeps it.
     var inviteCode: String?
+    /// Every code they have sent, newest last (Aziz, 2026-10-18: each invite
+    /// gets its own code). Any of them still finds them. Older profiles have
+    /// only `inviteCode`.
+    var inviteCodes: [String] = []
+    /// All the codes that find this person.
+    var allInviteCodes: Set<String> { Set(inviteCodes + [inviteCode].compactMap { $0 }) }
     /// People who joined with my code and whom my app has since answered
     /// with its own edge (`CommunityStore.answerCodeJoins`). From then on the
     /// friendship is an ordinary one, so removing or blocking them sticks:
@@ -250,7 +256,7 @@ struct Profile: Identifiable, Equatable {
 
     init(id: String, username: String, displayName: String, firstSessionAt: Date? = nil,
          createdAt: Date = Date(), avatarURL: URL? = nil, practice: PracticeStats = .empty,
-         inviteCode: String? = nil, answeredJoins: [String] = []) {
+         inviteCode: String? = nil, inviteCodes: [String] = [], answeredJoins: [String] = []) {
         self.id = id
         self.username = username
         self.displayName = displayName
@@ -259,6 +265,7 @@ struct Profile: Identifiable, Equatable {
         self.avatarURL = avatarURL
         self.practice = practice
         self.inviteCode = inviteCode
+        self.inviteCodes = inviteCodes
         self.answeredJoins = answeredJoins
     }
 
@@ -273,6 +280,7 @@ struct Profile: Identifiable, Equatable {
                   avatarURL: (record["avatar"] as? CKAsset)?.fileURL,
                   practice: PracticeStats(record: record),
                   inviteCode: record["inviteCode"] as? String,
+                  inviteCodes: record["inviteCodes"] as? [String] ?? [],
                   answeredJoins: record["answeredJoins"] as? [String] ?? [])
     }
 

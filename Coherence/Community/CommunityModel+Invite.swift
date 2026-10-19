@@ -6,15 +6,15 @@ import Foundation
 /// `CommunityStore`.
 extension CommunityModel {
 
-    /// My code, made on first ask. Nil when it cannot be made yet: no
-    /// profile, no network.
+    /// A fresh code for this invite: every invite gets its own (Aziz,
+    /// 2026-10-18), and every code sent before keeps working. Nil when one
+    /// cannot be made yet: no profile, no network.
     @discardableResult
-    func loadInviteCode() async -> String? {
-        if let inviteCode { return inviteCode }
+    func makeInviteCode() async -> String? {
         guard let store, hasProfile else { return nil }
         // A failure is the sheet's to show (it has its own "Try again"):
         // `errorText` would raise an alert behind it.
-        guard let code = try? await store.myInviteCode() else { return nil }
+        guard let code = try? await store.newInviteCode() else { return nil }
         inviteCode = code
         Task { await store.subscribeToCodeJoins() }
         return code

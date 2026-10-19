@@ -366,9 +366,9 @@ actor CommunityStore {
                                     .map { ($0.from, $0.createdAt) }, uniquingKeysWith: { a, _ in a })
         // Someone who joined with MY code was brought by me, whichever edge
         // landed first (mine is written after theirs, by `answerCodeJoins`).
-        let myCode = try await myProfile()?.inviteCode
+        let myCodes = try await myProfile()?.allInviteCodes ?? []
         let joinedWithMyCode = Set(inn.filter { authored($0, by: "from") }.compactMap(FriendEdge.init(record:))
-                                     .filter { myCode != nil && $0.viaCode == myCode }.map(\.from))
+                                     .filter { myCodes.contains($0.viaCode ?? "") }.map(\.from))
         // And the reverse: someone whose code I joined with was not brought
         // by me, though my edge to them is the older one.
         var joinedTheirCode = Set<String>()
@@ -515,15 +515,18 @@ actor CommunityStore {
     }
     private var codeOwners: [String: String] = [:]
 
-    /// My invite code, made the first time it is asked for. Reserved by
-    /// record NAME like a username (a fetch needs no index), CREATED so two
-    /// people can never hold one code, then written on my profile so every
-    /// device shows the same one.
-    func myInviteCode() async throws -> String {
+    /// How many of my codes keep working. The oldest beyond this are let go.
+    static let keptInviteCodes = 100
+
+    /// A NEW invite code, every time (Aziz, 2026-10-18: "each time we send an
+    /// invite code it's a different one"). Reserved by record NAME like a
+    /// username (a fetch needs no index), CREATED so two people can never
+    /// hold one code, then added to my profile's list, so every code I have
+    /// ever sent still finds me.
+    func newInviteCode() async throws -> String {
         let mine = try await me()
         guard let record = try await db.fetch(mine), let profile = Profile(record: record),
               !profile.username.isEmpty else { throw CommunityError.noProfile }
-        if let code = profile.inviteCode, try await codeOwner(code) == mine { return code }
         var rng = SystemRandomNumberGenerator()
         for _ in 0..<12 {
             let code = InviteCode.make(username: profile.username, using: &rng)
@@ -535,7 +538,13 @@ actor CommunityStore {
             } catch CommunityError.alreadyExists {
                 continue
             }
+            var codes = profile.inviteCodes
+            if codes.isEmpty, let old = profile.inviteCode { codes.append(old) }
+            codes.append(code)
+            let dropped = codes.count > Self.keptInviteCodes ? Array(codes.prefix(codes.count - Self.keptInviteCodes)) : []
+            codes = Array(codes.suffix(Self.keptInviteCodes))
             record["inviteCode"] = code
+            record["inviteCodes"] = codes
             do {
                 _ = try await db.save(record)
             } catch {
@@ -543,6 +552,10 @@ actor CommunityStore {
                 throw error
             }
             codeOwners[code] = mine
+            for old in dropped {
+                try? await db.delete(CommunityNames.inviteCode(old))
+                codeOwners[old] = nil
+            }
             return code
         }
         throw CommunityError.alreadyExists
@@ -554,7 +567,7 @@ actor CommunityStore {
     func inviter(forCode raw: String) async throws -> Profile? {
         guard let code = InviteCode.normalize(raw), let owner = try await codeOwner(code),
               let profile = try await db.fetch(owner).flatMap(Profile.init(record:)),
-              profile.inviteCode == code, !profile.username.isEmpty else { return nil }
+              profile.allInviteCodes.contains(code), !profile.username.isEmpty else { return nil }
         if try await iBlocked(owner) { return nil }
         return profile
     }
@@ -594,9 +607,10 @@ actor CommunityStore {
         let mine = try await me()
         var friends = Set<String>()
         let joiners = inn.filter { $0.viaCode != nil }
-        if !joiners.isEmpty, let profile = try await myProfile(), let myCode = profile.inviteCode {
+        if !joiners.isEmpty, let profile = try await myProfile() {
             let answered = Set(profile.answeredJoins)
-            for e in joiners where e.viaCode == myCode && !answered.contains(e.from) { friends.insert(e.from) }
+            let myCodes = profile.allInviteCodes
+            for e in joiners where myCodes.contains(e.viaCode ?? "") && !answered.contains(e.from) { friends.insert(e.from) }
         }
         for e in out {
             guard let code = e.viaCode, try await codeOwner(code) == e.to else { continue }
@@ -612,10 +626,11 @@ actor CommunityStore {
     /// the friends list can tag them.
     func answerCodeJoins() async throws -> Set<String> {
         let mine = try await me()
-        guard let record = try await db.fetch(mine), let profile = Profile(record: record),
-              let myCode = profile.inviteCode else { return [] }
+        guard let record = try await db.fetch(mine), let profile = Profile(record: record) else { return [] }
+        let myCodes = profile.allInviteCodes
+        guard !myCodes.isEmpty else { return [] }
         let answered = Set(profile.answeredJoins)
-        let joiners = Set(try await edgeListToMe().filter { $0.viaCode == myCode }.map(\.from))
+        let joiners = Set(try await edgeListToMe().filter { myCodes.contains($0.viaCode ?? "") }.map(\.from))
         let blocked = try await myBlockedSet()
         // Each joiner is answered ONCE: someone removed or blocked after that
         // is never written back.
@@ -639,8 +654,9 @@ actor CommunityStore {
 
     /// The push for someone joining with my code, once I have one.
     func subscribeToCodeJoins() async {
-        guard let mine = try? await me(), let code = try? await myProfile()?.inviteCode else { return }
-        await db.ensureCodeJoinSubscription(me: mine, code: code)
+        guard let mine = try? await me(), let codes = try? await myProfile()?.allInviteCodes,
+              !codes.isEmpty else { return }
+        await db.ensureCodeJoinSubscription(me: mine, codes: codes.sorted())
     }
 
     // MARK: - Meditating together
@@ -1109,7 +1125,7 @@ actor CommunityStore {
         } catch { firstError = firstError ?? error }
         do {
             // The invite code's reservation (2026-10-18), found the same way.
-            if let code = try await db.fetch(mine).flatMap(Profile.init(record:))?.inviteCode {
+            for code in try await db.fetch(mine).flatMap(Profile.init(record:))?.allInviteCodes ?? [] {
                 try await db.delete(CommunityNames.inviteCode(code))
                 codeOwners[code] = nil
             }

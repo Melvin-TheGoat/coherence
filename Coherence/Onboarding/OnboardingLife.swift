@@ -192,6 +192,9 @@ struct LifeNumberScreen: View {
             }
             .ignoresSafeArea()
         }
+        .overlay(alignment: .topTrailing) {
+            if !landed { HoldToSkip(action: onContinue).padding(.top, 6).padding(.trailing, 16) }
+        }
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 10) {
                 Text(years == nil ? "Based on your answer and 16 waking hours a day."
@@ -653,6 +656,9 @@ struct LifeMomentsScreen: View {
             .padding(.horizontal, AppMetrics.screenPadding + 6)
             .padding(.top, 70)
             .opacity(shown ? 1 : 0)
+        }
+        .overlay(alignment: .topTrailing) {
+            if !ctaShown { HoldToSkip(action: onContinue).padding(.top, 6).padding(.trailing, 16) }
         }
         .safeAreaInset(edge: .bottom) {
             OnboardingCTA(title: "Let's do this!", action: onContinue)
@@ -1740,5 +1746,75 @@ private struct Ridge: Shape {
         p.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
         p.closeSubpath()
         return p
+    }
+}
+
+// MARK: - Hold to skip
+
+/// "Hold to skip" on the two clip screens, the clock and Otto's family
+/// (Aziz, 2026-10-18): press and hold for two seconds while a circle fills
+/// its outline, and the screen moves on. Letting go early empties it again,
+/// so a stray tap never skips the moment. VoiceOver skips on a double tap.
+struct HoldToSkip: View {
+    var seconds: Double = 2
+    let action: () -> Void
+
+    @State private var progress: CGFloat = 0
+    @State private var holding = false
+    @State private var timer: Task<Void, Never>?
+
+    var body: some View {
+        HStack(spacing: 7) {
+            ZStack {
+                Circle().stroke(AppColor.textPrimary.opacity(0.22), lineWidth: 2.5)
+                Circle()
+                    .trim(from: 0, to: progress)
+                    .stroke(OnboardingGreen.fill, style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+            }
+            .frame(width: 17, height: 17)
+            Text("Hold to skip")
+                .font(.system(size: 13, weight: .heavy, design: .rounded))
+                .foregroundStyle(AppColor.textPrimary.opacity(0.85))
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(Capsule().fill(.ultraThinMaterial)
+            .overlay(Capsule().fill(Color.white.opacity(0.35))))
+        .scaleEffect(holding ? 0.96 : 1)
+        .animation(.spring(response: 0.25, dampingFraction: 0.7), value: holding)
+        .contentShape(Capsule())
+        .gesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in if !holding { start() } }
+                .onEnded { _ in stop() }
+        )
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Skip")
+        .accessibilityHint("Moves on to the next screen.")
+        .accessibilityAddTraits(.isButton)
+        .accessibilityAction { action() }
+        .onDisappear { timer?.cancel() }
+    }
+
+    private func start() {
+        holding = true
+        WelcomeHaptics.tick()
+        withAnimation(.linear(duration: seconds)) { progress = 1 }
+        timer?.cancel()
+        timer = Task {
+            try? await Task.sleep(for: .seconds(seconds))
+            guard !Task.isCancelled, holding else { return }
+            holding = false
+            WelcomeHaptics.land()
+            action()
+        }
+    }
+
+    private func stop() {
+        guard holding else { return }
+        holding = false
+        timer?.cancel()
+        withAnimation(.easeOut(duration: 0.25)) { progress = 0 }
     }
 }

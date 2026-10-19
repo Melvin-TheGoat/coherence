@@ -70,12 +70,12 @@ protocol CommunityDatabase {
     /// in-memory one) does nothing.
     func ensureGoalSubscriptions(me: String) async
     /// A push when someone joins with my invite code (2026-10-18).
-    func ensureCodeJoinSubscription(me: String, code: String) async
+    func ensureCodeJoinSubscription(me: String, codes: [String]) async
 }
 
 extension CommunityDatabase {
     func ensureGoalSubscriptions(me: String) async {}
-    func ensureCodeJoinSubscription(me: String, code: String) async {}
+    func ensureCodeJoinSubscription(me: String, codes: [String]) async {}
 }
 
 enum CommunityError: Error, Equatable {
@@ -272,10 +272,11 @@ final class CloudKitCommunityDatabase: CommunityDatabase {
     /// carrying my code. Needs `FriendEdge.viaCode` QUERYABLE in Production
     /// (`CLOUDKIT_SETUP.md`, "Invite codes"). Saved again on every launch,
     /// which replaces it in place.
-    func ensureCodeJoinSubscription(me: String, code: String) async {
+    func ensureCodeJoinSubscription(me: String, codes: [String]) async {
         let ref = CKRecord.Reference(recordID: CKRecord.ID(recordName: me), action: .none)
+        // Every code I have sent, since each invite gets its own (2026-10-18).
         let sub = CKQuerySubscription(recordType: CommunityType.edge,
-                                      predicate: NSPredicate(format: "to == %@ AND viaCode == %@", ref, code),
+                                      predicate: NSPredicate(format: "to == %@ AND viaCode IN %@", ref, codes),
                                       subscriptionID: "code-join-" + me, options: [.firesOnRecordCreation])
         let info = CKSubscription.NotificationInfo()
         info.alertLocalizationKey = "CODE_JOIN_ALERT"

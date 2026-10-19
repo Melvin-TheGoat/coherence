@@ -61,6 +61,10 @@ struct StoreArt {
                     line: "Meditate every day with Otto"),
             Variant(name: "habit", hour: 0.0, stage: 7, ottoBox: 660, cushionBottom: 1600,
                     line: "Make meditation a habit"),
+            // The picture a friend sees when an invite lands in Messages
+            // (website/img/invite.jpg, cut to 1200 x 630 from the middle).
+            Variant(name: "invite", hour: 0.0, stage: 7, ottoBox: 660, cushionBottom: 1600,
+                    line: "Meditate with me on 808"),
         ]
         let only = ProcessInfo.processInfo.environment["ONLY"]
         for v in variants where only == nil || v.name == only {
