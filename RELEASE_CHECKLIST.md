@@ -944,6 +944,24 @@ Archive from `mvp` at or after the commit that added `FeatureFlags`. It ships:
 The 1.0.2 build uploaded earlier (202609141719) predates all of this, so
 this release needs a NEW archive.
 
+## OPEN for 1.4 (2026-10-18): Meditating together, invite codes, profile pictures
+
+1.4 = weekly goals with friends and nudges, invite codes, a required profile
+picture with 21 presets, the onboarding science screens, the one-a-day
+reminder change and the smoother Watch length tape. Read with "OPEN for the
+build that ships invite codes" and "... Meditating together" below.
+
+- [x] (2026-10-18) **Archived and uploaded:** 1.4 build 202610190334, every
+      archive check ok (push and CloudKit pointed at production).
+- [ ] **Two-phone test** on the iCloud 808 Beta, neither phone in Friends test
+      mode (the items below).
+- [ ] **CloudKit Production deploy** of GoalMember, Nudge, InviteCode and the
+      new Profile and FriendEdge fields with their indexes. App Review talks
+      to Production.
+- [ ] **App Store Connect:** version 1.4, What's New, build 202610190334,
+      release setting, screenshots (the ten in `marketing/appstore-new` would
+      replace the old Watch pair), then Submit.
+
 ## OPEN for 1.3.1 (2026-10-15): the rating ask
 
 1.3.1 = 1.3 plus the App Store rating ask moved to Home (after the first
