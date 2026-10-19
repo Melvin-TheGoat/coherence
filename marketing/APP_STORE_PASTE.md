@@ -215,6 +215,18 @@ https://meditate808.com/privacy
 © 2026 Lock Out Inc.
 ```
 
+**What's New in This Version, 1.4** (4000 max; this one is 354, 354 counting line breaks twice; 2026-10-19, approved by Melvin.)
+
+```
+Meditate together: set a weekly goal with a friend, see each other's week, and send a nudge when it helps.
+
+Invite friends with your own code. When they join with it, you're friends right away.
+
+Pick a profile picture, or one of 21 of ours, including Otto and his friends.
+
+On Apple Watch, the session length turns smoothly, and you can type the minutes.
+```
+
 **What's New in This Version, 1.3.1** (4000 max; this one is 86, 88 counting line breaks twice; 2026-10-15, for Melvin to approve.)
 
 ```

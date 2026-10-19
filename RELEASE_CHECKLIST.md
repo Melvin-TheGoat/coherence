@@ -953,11 +953,13 @@ build that ships invite codes" and "... Meditating together" below.
 
 - [x] (2026-10-18) **Archived and uploaded:** 1.4 build 202610190334, every
       archive check ok (push and CloudKit pointed at production).
-- [ ] **Two-phone test** on the iCloud 808 Beta, neither phone in Friends test
-      mode (the items below).
+- [x] (2026-10-19, Melvin and Aziz) **Two-phone test** on the iCloud 808 Beta,
+      neither phone in Friends test mode: passed.
 - [ ] **CloudKit Production deploy** of GoalMember, Nudge, InviteCode and the
       new Profile and FriendEdge fields with their indexes. App Review talks
       to Production.
+- [x] (2026-10-19, approved by Melvin) **What's New** for 1.4, in
+      `marketing/APP_STORE_PASTE.md`.
 - [ ] **App Store Connect:** version 1.4, What's New, build 202610190334,
       release setting, screenshots (the ten in `marketing/appstore-new` would
       replace the old Watch pair), then Submit.
