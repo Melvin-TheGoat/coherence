@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**Last updated: October 13, 2026**
+**Last updated: October 18, 2026**
 
 This Privacy Policy explains how **Lock Out Inc. ("we," "us")** handles
 information in the **808 Meditate** app ("808") for iPhone, with optional
@@ -22,7 +22,9 @@ support for Apple Watch.
 - **Friends is optional.** If you create a profile, your username, name,
   optional photo, a summary of how often you meditate, and who you have added
   and who has added you go to a shared area of iCloud where anyone using 808
-  can look them up. Your health results never go there.
+  can look them up. If you set a weekly goal with a friend, the days you
+  meditated and your minutes on those days, from the day the goal began, go
+  there too, for your friend to see. Your health results never go there.
 - **Nothing about Block reaches us.** The apps you choose to hold, and
   everything about how and when you open them, stay on your phone in Apple's
   own Screen Time system. See "Block" below.
@@ -146,8 +148,8 @@ us by PostHog, Inc. on servers in the United States, and they include:
   (never the readings themselves), sessions recorded by hand or deleted, Otto's
   glow moving to a new stage, awards earned, which of 808's own notifications
   you opened (for a reminder, also what it was about), which hat Otto wears, and counts of
-  Friends actions such as creating a profile, sending a request, or blocking
-  someone.
+  Friends actions such as creating a profile, sending a request, joining with
+  an invite code, or blocking someone (never a name or a code).
 - **Subscriptions:** when a plan screen or offer is shown, the plan you pick,
   purchases, free trials, restores, and a subscription ending, and whether you
   currently subscribe and to which plan.
@@ -251,6 +253,15 @@ profile, 808 writes nothing about you to the shared area.
   your session log and updates them when you open it. It is published only
   if you have a profile.
 - **Who you have added**, and who has added you.
+- Your **invite code**, which is public like your username, and who joined
+  808 with it.
+- **Weekly goals** you start or accept with a friend: the number of days a
+  week you agreed on, the day the goal began, whether you accepted, declined
+  or ended it, your display name, and, from the day it began, each day you
+  meditated for 5 minutes or more in a session you ran in 808 (never one you
+  added by hand), with your total minutes that day.
+- **Nudges and high fives** you send a friend: your display name, who it was
+  for, and the day. 808 sends at most one nudge a day to each friend.
 - A **report** you file about someone, including the reason you type, and
   anyone you **block**.
 
@@ -268,15 +279,28 @@ your profile, your streak, your sessions and minutes this week, your total
 number of sessions, the date of your last session, and your friends. This is
 not limited to people you have added.
 
+Your **goal partner** sees, for each goal you share, the days you met it and
+your minutes on those days. Anyone who has your **invite code** can look up
+your name and username with it, and joining with it makes the two of you
+friends straight away, without a request.
+
 Everything else 808 writes to the shared area is stored where other
 people's copies of 808 can read it too, even though the app does not show it
-to them. That includes the exact dates and times you created your profile,
+to them. That includes your weekly goals and the nudges and high fives you
+send, the exact dates and times you created your profile,
 first meditated with 808, and last meditated, and the friend requests you
 have sent and received that nobody has accepted yet. Reports and blocks are the
 exceptions: a report is kept where only we and the person who filed it can
 read it, and a block where only we and the person who made it can read it.
 We can read everything in the shared area, reports and blocks included,
 because moderating it requires that.
+
+**Notifications from friends.** If you use Friends, 808 asks Apple's push
+notification service, through iCloud, to tell you when a friend invites you
+to a weekly goal or answers yours, nudges you or sends a high five, or joins
+808 with your invite code. Apple sends these from the records in the shared
+area; we do not run a server to send them, and they never carry anything
+measured off your body.
 
 **Reports.** When you report someone, the report (who filed it, who it is
 about, and the reason you give) is stored in the shared area. A copy with the
@@ -295,8 +319,9 @@ content that breaks our terms and we can remove accounts that repeatedly break
 them.
 
 **Deleting it.** **Deleting your account deletes your profile, your username,
-your practice summary, the friend requests and connections you created, and
-the blocks you made from the shared area, right away.** If the shared area
+your practice summary, your invite code, the friend requests and connections
+you created, your half of every weekly goal, the nudges and high fives you
+sent, and the blocks you made from the shared area, right away.** If the shared area
 can't be reached at that moment, the deletion finishes automatically on a
 later launch of the app, once it can be reached. Signing back in does not bring your profile back; you
 would create a new one. Reports you filed are kept as a record of what was

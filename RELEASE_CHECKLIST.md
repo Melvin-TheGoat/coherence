@@ -1016,7 +1016,7 @@ friends at once. Behind `FeatureFlags.friends`. Never run on real iCloud yet.
 - [ ] **CloudKit:** the new `InviteCode` type and four new fields
       (`CLOUDKIT_SETUP.md`, "Invite codes"), the two-phone check there, then
       deploy to Production. Without it, making a code fails on a real phone.
-- [ ] **Privacy policy (both copies), the founders' wording:** a person's
+- [x] (2026-10-18, approved by Melvin) **Privacy policy (both copies), the founders' wording:** a person's
       invite code is public like their username, and anyone who has it can
       see their name and @username. Who joined with whose code is public like
       the rest of a friendship (it sits on the friend edge and on the owner's
@@ -1038,7 +1038,8 @@ iCloud yet.
 - [ ] **Two-phone test:** invite, accept, both meditate 5+ minutes, check the
       week grid and "Counted for" on both phones; "Not now"; end a goal; nudge
       with 808 closed on the other phone (the push), and the red badge on Home.
-- [ ] **Privacy policy (both copies) and App Privacy labels:** a friend you
+- [x] (2026-10-18, wording approved by Melvin; website redeploy still owed at
+      release) **Privacy policy (both copies) and App Privacy labels:** a friend you
       start a goal with sees which days you meditated and your minutes on those
       days, from the goal's start, and the records sit in the PUBLIC iCloud
       database like the rest of Friends (readable to anyone who knows where to
@@ -1049,8 +1050,8 @@ iCloud yet.
       `registerForRemoteNotifications` and CloudKit sends alerts for goal
       invites, answers and nudges. `aps-environment` must be `production` in
       the archived build (it is set by signing; check the ipa as for 1.0).
-- [ ] **Review notes:** add how to see the feature (Friends → "Meditate with a
-      friend") and that nudges are limited to once a day per friend.
+- [x] (2026-10-18) **Review notes:** invite codes, weekly goals and once-a-day
+      nudges are in `marketing/APP_STORE_PASTE.md` (3,983 counted).
 
 ## OPEN for 1.2: the home screen widget (added 2026-10-05)
 
