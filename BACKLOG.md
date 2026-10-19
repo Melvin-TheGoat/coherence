@@ -19,6 +19,31 @@ on-device chat (`FeatureFlags.ottoInRelease` is off), Block
 (`blockInRelease` is off) and Friends (1.1). Otto's seven aura states
 animated in Rive shipped to `block` on 2026-09-23 (`OttoAura.riv`).
 
+### Show the mind profile in Settings (Melvin, 2026-10-19): for 1.5
+
+Onboarding's "Your mind profile is" (`MindProfile.of`, The Racing Mind, The
+Full Plate, The Always-On Mind, The Comeback, The Fresh Start) is worked out
+from four answers, shown once and never saved, so Settings has nothing to
+show. Two parts:
+
+1. **Save it from now on** when onboarding works it out. On the account
+   (a `Preferences` field, so it follows the person to a new phone) needs a
+   private-database schema field promoted to Production in the same release;
+   phone-only (UserDefaults) needs none. Decide which when building.
+2. **"Find your mind profile" in Settings** for everyone onboarded before
+   that: ask the four questions again (what matters most, what gets in the
+   way, how often you meditate, tried before) and show the result screen.
+   Works for every user and guesses nothing.
+
+What is on the phone today, so nobody re-derives it: since 1.3 the goals and
+what-gets-in-the-way answers live in `reminders.profile.v1`
+(`ReminderScheduler.profile`), which recovers the type exactly only for
+anyone who picked the phone, a mind that won't settle, overthinking, no time
+or "not sure I'm doing it right"; the rest need the two answers that were
+never kept. Before 1.3, nothing. PostHog holds `onboarding_mind_profile` for
+1.3+ users, but reading analytics back into the app is not what the privacy
+policy says analytics is for: not a route.
+
 ### What a free 1.0 user sees on updating (Aziz, 2026-10-07): option 2 chosen, MOCKUP AWAITING APPROVAL
 
 **Decided 2026-10-13 (Melvin): option 2, a few what's-new screens.** Mockup:
