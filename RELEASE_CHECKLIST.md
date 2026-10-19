@@ -1019,7 +1019,7 @@ friends at once. Behind `FeatureFlags.friends`. Never run on real iCloud yet.
       Before trusting the two-phone check, make sure NEITHER phone shows the
       Friends "Test mode" banner (2026-10-18: Melvin's did, and nothing he
       did reached iCloud).
-- [ ] **Deploy the website first** (`deploy-website`): every invite links to
+- [x] (2026-10-18, deployed and checked live) **Deploy the website first** (`deploy-website`): every invite links to
       `meditate808.com/invite`, which does not exist until `website/invite.html`
       and `img/invite.jpg` are live. Check that a link pasted into Messages
       previews as Otto, not the old Apple Watch screenshot.

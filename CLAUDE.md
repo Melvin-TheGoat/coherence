@@ -8151,8 +8151,10 @@ Designed in the "808 Invite Codes" canvas (9 screens), then built. Replaces
   preview is Otto with "Meditate with me on 808" (`website/img/invite.jpg`,
   the `invite` variant of `tools/store_art.swift`), and which forwards to
   the App Store with `ct=invite`. The App Store link previewed as the
-  listing's old Apple Watch screenshot. **It only works once the site is
-  deployed.**
+  listing's old Apple Watch screenshot. **Deployed 2026-10-18** (checked
+  live: the page, its og:image and the forward to the App Store). A tap
+  opens the page for a moment and lands on the App Store; it cannot open
+  the app itself without an attribution SDK, which 808 does not add.
 - **Friends test mode is off on any phone whose build can reach iCloud**
   (`testModeWanted`). Melvin's beta kept test mode from an older no-iCloud
   install, so his code and his goal answers never left his phone, and both
