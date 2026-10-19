@@ -1,6 +1,5 @@
 import SwiftUI
 import SwiftData
-import PhotosUI
 
 /// **Create your profile**: a photo and a real @username, separate from the
 /// nickname (Aziz, 2026-09-14: "your nickname and your username are two
@@ -58,18 +57,10 @@ struct CreateProfileView: View {
     @State private var checking = false
     @State private var claiming = false
     @State private var photo: UIImage?
-    @State private var pick: PhotosPickerItem?
-    @State private var showCamera = false
-    /// **A `PhotosPicker` placed AS a `Menu` item does not reliably present**
-    /// (verified on-device and in the simulator, 2026-09-23: "choose from
-    /// library doesn't work"). The Menu dismisses itself the instant an item
-    /// is tapped, and that teardown races the picker's own presentation, so
-    /// the system sheet silently never appears. "Take a photo" beside it
-    /// never had this problem because it only sets a flag and lets a
-    /// `.fullScreenCover` outside the Menu do the presenting. Same fix here:
-    /// the Menu row only flips this, and `.photosPicker(isPresented:)` below
-    /// (also outside the Menu) does the showing.
-    @State private var showLibraryPicker = false
+    /// The picture chooser (`PictureChooser`): selfie, library or a preset.
+    /// It presents the camera and the library itself, from inside its own
+    /// sheet, so this screen carries one presentation for pictures.
+    @State private var showChooser = false
     @State private var suggestions: [String] = []
     @FocusState private var focused: Bool
     /// The nickname field has the keyboard. On a short screen the pinned
@@ -104,7 +95,14 @@ struct CreateProfileView: View {
     /// The photo friends currently see, unless it is on its way out.
     private var publishedPhoto: URL? { removePublishedPhoto ? nil : model.profile?.avatarURL }
 
-    private var canSave: Bool { availability == .available && agreed && !claiming }
+    /// A new profile needs a picture (Melvin, 2026-10-19: friends spend their
+    /// time looking at faces, and a list of grey silhouettes tells nobody who
+    /// is who). Allowed by App Review 5.1.1 only because a preset is always
+    /// one tap away: requiring a PHOTO of someone would be requiring personal
+    /// information. Editing never demands one, so an older profile can still
+    /// change its name without being made to pick.
+    private var hasPicture: Bool { photo != nil || publishedPhoto != nil }
+    private var canSave: Bool { availability == .available && agreed && !claiming && (editing || hasPicture) }
 
     /// In the valley (Melvin, 2026-09-27: "looks plain, make it on theme"):
     /// the words on a band of sky, the portrait sitting on the seam the way
@@ -209,6 +207,12 @@ struct CreateProfileView: View {
         }
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 10) {
+                if !editing && !hasPicture && model.phase != .unavailable {
+                    Text("Pick a picture so friends know it's you.")
+                        .font(AppFont.callout.weight(.heavy))
+                        .onValley()
+                        .multilineTextAlignment(.center)
+                }
                 Button { claim() } label: {
                     Text(claiming ? "Saving…" : (editing ? "Save" : "Create profile"))
                 }
@@ -242,19 +246,6 @@ struct CreateProfileView: View {
                                startPoint: .top, endPoint: .bottom)
                     .ignoresSafeArea(edges: .bottom))
         }
-        .fullScreenCover(isPresented: $showCamera) {
-            CameraPicker(device: .front) { photo = $0 }.ignoresSafeArea()
-        }
-        .photosPicker(isPresented: $showLibraryPicker, selection: $pick, matching: .images)
-        .onChange(of: pick) { _, item in
-            guard let item else { return }
-            Task {
-                if let data = try? await item.loadTransferable(type: Data.self), let ui = UIImage(data: data) {
-                    photo = ui
-                }
-                pick = nil
-            }
-        }
         .task {
             seedAgreement()
             await model.load()
@@ -284,52 +275,63 @@ struct CreateProfileView: View {
             .padding(.bottom, 7)
     }
 
-    /// Profile photos come from the camera OR the library. The BeReal rule is
-    /// for posts only: a profile picture is chosen, not proof of a session.
+    /// The portrait on the seam. Empty, it is a dashed ring that says "Add a
+    /// picture" (`mockups/pfp-prompt`, screen 1); with a picture, the picture
+    /// and a pencil (screen 3). Either way one tap opens the chooser.
     private var photoPicker: some View {
-        Menu {
-            if UIImagePickerController.isSourceTypeAvailable(.camera) {
-                Button { showCamera = true } label: { Label("Take a photo", systemImage: "camera") }
-            }
-            // A plain Button, not a `PhotosPicker` menu item — see
-            // `showLibraryPicker`'s doc comment for why the latter doesn't
-            // reliably present.
-            Button { showLibraryPicker = true } label: {
-                Label("Choose from library", systemImage: "photo.on.rectangle")
-            }
-            if photo != nil || publishedPhoto != nil {
-                Button("Remove photo", role: .destructive) {
-                    photo = nil
-                    if model.profile?.avatarURL != nil { removePublishedPhoto = true }
-                }
-            }
-        } label: {
-            VStack(spacing: 8) {
-                ZStack {
-                    if let photo {
-                        Image(uiImage: photo).resizable().scaledToFill()
-                            .frame(width: 104, height: 104).clipShape(Circle())
-                    } else if let current = publishedPhoto {
-                        PersonAvatar(name: name, size: 104, photoURL: current)
-                    } else {
-                        // The empty person until they pick one, the default
-                        // everywhere in the app, with a camera badge saying
-                        // it can change.
-                        ProfilePortrait(photoURL: nil, size: 104)
+        Button { showChooser = true } label: {
+            ZStack {
+                if let photo {
+                    Image(uiImage: photo).resizable().scaledToFill()
+                        .frame(width: 104, height: 104).clipShape(Circle())
+                } else if let current = publishedPhoto {
+                    PersonAvatar(name: name, size: 104, photoURL: current)
+                } else {
+                    VStack(spacing: 4) {
+                        Image(systemName: "camera.badge.plus")
+                            .font(.system(size: 30, weight: .semibold))
+                        Text("Add a picture")
+                            .font(AppFont.caption.weight(.heavy))
                     }
+                    .foregroundStyle(AppColor.skyDeep)
+                    .frame(width: 112, height: 112)
+                    .background(Color.white.opacity(0.55), in: Circle())
+                    .overlay(Circle().strokeBorder(style: StrokeStyle(lineWidth: 3, dash: [7, 5]))
+                        .foregroundStyle(.white))
                 }
-                .overlay(Circle().stroke(AppColor.backgroundSecondary, lineWidth: 4))
-                .shadow(color: .black.opacity(0.16), radius: 7, y: 3)
-                .overlay(alignment: .bottomTrailing) {
-                    Image(systemName: "camera.fill")
+            }
+            .overlay {
+                if hasPicture { Circle().stroke(AppColor.backgroundSecondary, lineWidth: 4) }
+            }
+            .shadow(color: .black.opacity(hasPicture ? 0.16 : 0), radius: 7, y: 3)
+            .overlay(alignment: .bottomTrailing) {
+                if hasPicture {
+                    Image(systemName: "pencil")
                         .font(.system(size: 13, weight: .bold))
-                        .foregroundStyle(AppColor.textOnAccent)
+                        .foregroundStyle(.white)
                         .frame(width: 32, height: 32)
-                        .background(AppColor.accentGold, in: Circle())
+                        .background(AppColor.skyDeep, in: Circle())
                         .overlay(Circle().stroke(AppColor.backgroundSecondary, lineWidth: 3))
                         .offset(x: 2, y: 2)
                 }
             }
+        }
+        .buttonStyle(.tactile)
+        .accessibilityLabel(hasPicture ? "Change picture" : "Add a picture")
+        .sheet(isPresented: $showChooser) {
+            PictureChooser(mode: .create,
+                           canRemove: hasPicture && editing,
+                           onPicked: { image in
+                               photo = image
+                               removePublishedPhoto = false
+                               showChooser = false
+                           },
+                           onRemove: {
+                               photo = nil
+                               if model.profile?.avatarURL != nil { removePublishedPhoto = true }
+                               showChooser = false
+                           })
+                .presentationDragIndicator(.visible)
         }
     }
 

@@ -772,6 +772,7 @@ final class CommunityModel: ObservableObject {
         defaults.removeObject(forKey: CreateProfileView.rulesAcceptedKey)
         defaults.removeObject(forKey: FriendsIntroView.shownKey)
         defaults.removeObject(forKey: Self.seenKey)
+        PicturePrompt.forget(defaults: defaults)
         PendingInvite.saved = nil
     }
 

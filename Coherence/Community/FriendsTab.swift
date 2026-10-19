@@ -404,6 +404,57 @@ private struct InviteRewardNote: View {
 /// The main screen: your handle, search, and the friends you already have —
 /// no feed, no posts (Melvin, 2026-09-27). Tapping a friend opens their page,
 /// which is where "how often do they meditate" is read in full.
+/// Asks someone whose profile has no picture to pick one
+/// (`mockups/pfp-prompt`, screen 4): a selfie, a photo or a preset, with
+/// "Remind me tomorrow" and "Not now" (never again). Waits a moment after
+/// Friends opens so it arrives as the next thing rather than with the page,
+/// and never while the tour passes or another sheet is up.
+private struct PicturePromptHook: ViewModifier {
+    @ObservedObject var model: CommunityModel
+    let blocked: Bool
+    @Environment(\.tourTab) private var tourTab
+    @State private var asking = false
+    /// One of the three answers was given; swiping the sheet away without one
+    /// counts as "Remind me tomorrow".
+    @State private var answered = false
+
+    func body(content: Content) -> some View {
+        content
+            .background {
+                Color.clear
+                    .sheet(isPresented: $asking, onDismiss: {
+                        if !answered { PicturePrompt.remindTomorrow() }
+                    }) {
+                        PictureChooser(mode: .prompt,
+                                       onPicked: { image in
+                                           answered = true
+                                           asking = false
+                                           Task { await model.setAvatar(image) }
+                                       },
+                                       onRemindTomorrow: {
+                                           answered = true
+                                           PicturePrompt.remindTomorrow()
+                                           asking = false
+                                       },
+                                       onNotNow: {
+                                           answered = true
+                                           PicturePrompt.neverAgain()
+                                           asking = false
+                                       })
+                            .presentationDragIndicator(.visible)
+                    }
+            }
+            .task(id: model.hasProfile && model.profile?.avatarURL == nil) {
+                guard model.hasProfile, model.profile?.avatarURL == nil else { return }
+                try? await Task.sleep(for: .milliseconds(800))
+                guard !Task.isCancelled, tourTab == nil, !blocked, !asking,
+                      PicturePrompt.due(hasPicture: model.profile?.avatarURL != nil) else { return }
+                answered = false
+                asking = true
+            }
+    }
+}
+
 struct FriendsHomeView: View {
     @ObservedObject var model: CommunityModel
     let myDisplayName: String
@@ -478,6 +529,10 @@ struct FriendsHomeView: View {
             }
         }
         .sheet(isPresented: $startingGoal) { GoalStartFlow(model: model) }
+        // A profile with no picture is asked, once or again tomorrow, to pick
+        // one (2026-10-19). Its sheet hangs off its own view, not this one,
+        // which already presents the goal flow.
+        .modifier(PicturePromptHook(model: model, blocked: startingGoal))
         // Opening Friends reads the news: the badge on Home's circle clears.
         .onAppear { model.markNewsSeen() }
         .onChange(of: model.unseenCount) { _, n in if n > 0 { model.markNewsSeen() } }
