@@ -2207,6 +2207,25 @@ so nobody reads the numbers the old way again.
   sheet keeps last hour's formats and looks broken when it is only stale.
 - **"Said no to every offer"**, not "both": the ladder is the paywall plus
   two rungs, three offers in all.
+- **The Reels tab is the one the founders type into** (Melvin, 2026-10-15):
+  a row per Instagram reel (posted, name, views, bio link taps, link), ranked
+  live by one `LET`/`MAP` formula in G3, with taps per 1,000 views beside it.
+  `ensureReelsTab` makes it only when it is missing and never touches it
+  again, so a refresh cannot wipe typed rows. **Instagram's app shows "Bio
+  link taps" on every reel (Insights, under Engagement); its API does not**:
+  `profile_activity` / `BIO_LINK_CLICKED` is documented for posts and stories
+  only. I told Melvin no platform reported it per reel, which was wrong
+  about the app; check the app before saying a number does not exist.
+  TikTok and YouTube report bio clicks per account only.
+- **The Instagram tab tries the API anyway** (Melvin: "all of our reels act
+  as posts"). With `IG_TOKEN` in Script Properties (Instagram Login token,
+  `instagram_business_basic` + `instagram_business_manage_insights`, made
+  in a Meta app per the script's SETUP step 6), `writeInstagram` asks for
+  bio link taps and views on the last 50 items and shows, per item, either
+  the number or Instagram's own refusal, and the Kind column shows how
+  Instagram files each one (Reel or Post). That answers whether reels are
+  covered. The token is renewed weekly by the script. Not yet run against
+  the real account (no Meta app existed on 2026-10-15).
 
 ## ONBOARDING ANSWERS REACH POSTHOG, A CLOSED LIST OF EIGHT (2026-10-13, Melvin, ships in 1.3)
 
