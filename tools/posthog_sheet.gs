@@ -307,7 +307,14 @@ function refreshAll() {
   var failed = [];
   try { ensureReelsTab(); } catch (e) { failed.push(REELS_TAB + ': ' + e.message); }
   tabs.forEach(function (t) {
+    // Apps Script kills a run at six minutes, and a killed run loses the tab
+    // it was writing: on 2026-10-23 the Friends tab was created and left
+    // empty that way. So no tab starts after five minutes (it waits for the
+    // next hourly run and the stamp names it), and each tab is saved the
+    // moment it is written instead of at the end of the run.
+    if (Date.now() - RUN_STARTED > 300000) { failed.push(t[0] + ': out of time, next run'); return; }
     try { t[1](); } catch (e) { failed.push(t[0] + ': ' + e.message); }
+    SpreadsheetApp.flush();
   });
   removeTabs(OBSOLETE_TABS);
   stamp(failed);
