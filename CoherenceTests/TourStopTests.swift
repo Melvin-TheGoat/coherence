@@ -50,6 +50,29 @@ final class TourStopTests: XCTestCase {
         }
     }
 
+    /// Friends back in the bar and the Shop as Home's corner circle (Melvin,
+    /// 2026-10-23): the tour visits the Friends tab, lights the Shop's
+    /// circle, and never visits a Store tab that is no longer there.
+    func test_tour_withFriendsInTheBar_visitsFriendsAndLightsTheShopCircle() {
+        for block in [true, false] {
+            let stops = TourStop.all(block: block, friends: true, shop: true, friendsTab: true)
+            let tabs = stops.map(\.tab)
+            let lit = stops.flatMap(\.targets)
+            XCTAssertTrue(tabs.contains(.friends))
+            XCTAssertFalse(tabs.contains(.store))
+            XCTAssertTrue(lit.contains(.shopCircle))
+            XCTAssertFalse(lit.contains(.friendsCircle))
+            XCTAssertTrue((4...6).contains(stops.count), "\(stops.count) stops")
+            for line in stops.map(\.line) {
+                XCTAssertLessThanOrEqual(line.count, 74, line)
+                XCTAssertEqual(line.filter { ".!?".contains($0) }.count, 1, "one sentence: \(line)")
+            }
+        }
+        // Friends switched off: the Shop keeps its tab whatever the swap says.
+        let noFriends = TourStop.all(block: true, friends: false, shop: true, friendsTab: true).map(\.tab)
+        XCTAssertTrue(noFriends.contains(.store))
+    }
+
     func test_tour_everyStopLightsSomething() {
         for build in builds {
             for stop in TourStop.all(block: build.block, friends: build.friends, shop: build.shop) {

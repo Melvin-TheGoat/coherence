@@ -71,6 +71,18 @@ enum FeatureFlags {
         #endif
     }
 
+    /// **Friends has the tab again and the Shop is a circle on Home** (Melvin,
+    /// 2026-10-23, branch `social-feed`: "switch friends and store"). False
+    /// puts them back the 2026-09-27 way: the Shop's tab, Friends' circle.
+    static let friendsTab = true
+
+    /// The Shop has its own tab only while Friends has not taken it.
+    static var shopHasTab: Bool { shop && !(friends && friendsTab) }
+    /// The Shop opens from its circle in Home's top-right corner.
+    static var shopCircle: Bool { shop && !shopHasTab }
+    /// Friends opens from that circle instead, because the Shop has the tab.
+    static var friendsCircle: Bool { friends && shopHasTab }
+
     /// Award ids that belong to a switched-off feature.
     static var hiddenAwardIDs: Set<String> {
         friends ? [] : ["friendBrought"]

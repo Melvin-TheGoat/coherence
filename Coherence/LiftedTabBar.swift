@@ -42,6 +42,7 @@ enum TestTabBar: String, CaseIterable, Identifiable {
 /// the sheet's sizes kept, instead of all fitted to one height.
 struct LiftedTabBar: View {
     @Binding var selection: MainTab
+    @Environment(\.friendsUnread) private var friendsUnread
     let onPlus: () -> Void
     /// Which art: `lifted-*` or `sloth-*`.
     var prefix = "lifted"
@@ -53,7 +54,7 @@ struct LiftedTabBar: View {
             item(.home, art: "\(prefix)-home", label: "Home", tint: .blue, tour: nil)
             item(.block, art: "\(prefix)-block", label: "Block", tint: .blue, tour: .block)
             plus
-            if FeatureFlags.shop {
+            if FeatureFlags.shopHasTab {
                 item(.store, art: "\(prefix)-store", label: "Shop", tint: .blue, tour: .store)
             } else {
                 item(.friends, art: "\(prefix)-friends", label: "Friends", tint: .blue, tour: .friends)
@@ -106,6 +107,7 @@ struct LiftedTabBar: View {
                 // that afternoon, 28 that evening ("even smaller").
                 art(name)
                     .frame(height: 28)
+                    .friendsUnread(friendsUnread, on: tab)
                 Text(label)
                     .font(.system(size: 11.5, weight: .heavy, design: .rounded))
                     .foregroundStyle(selected ? tint.stroke : ValleyGround.ink.opacity(0.62))

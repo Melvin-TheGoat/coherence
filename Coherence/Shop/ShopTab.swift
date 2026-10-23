@@ -32,6 +32,9 @@ struct ShopTab: View {
     @State private var previewing: String? = OttoAuraFigure.previewHat
     @StateObject private var rig = OttoRigHolder()
     @ObservedObject private var block = BlockController.shared
+    /// Closes the Shop when it is the cover its Home circle opens (Friends
+    /// has the tab, Melvin, 2026-10-23). nil when it is a tab.
+    var onClose: (() -> Void)? = nil
 
     private static var day: DayLight { DayLight.now }
     private static var meadow: Color { day.field[1] }
@@ -120,6 +123,21 @@ struct ShopTab: View {
             balancePill
                 .padding(.top, topInset + 12)
                 .frame(maxWidth: .infinity)
+            if let onClose {
+                Button(action: onClose) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundStyle(AppColor.textPrimary)
+                        .frame(width: 34, height: 34)
+                        .background(AppColor.backgroundPrimary.opacity(0.94), in: Circle())
+                        .shadow(color: .black.opacity(0.12), radius: 5, y: 2)
+                }
+                .buttonStyle(.tactile)
+                .accessibilityLabel("Close")
+                .padding(.top, topInset + 12)
+                .padding(.leading, AppMetrics.screenPadding)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
         }
         .frame(width: width, height: height)
         .clipped()
