@@ -78,6 +78,28 @@ Home. Before the 1.2 archive: the portal steps in RELEASE_CHECKLIST.md
 
 ### Friends and social
 
+- **The feed comes back: see what friends shared (Melvin, 2026-10-23),
+  branch `social-feed`. IN DESIGN.** "If you check someone's account you
+  can't even see what meditations they've done... I'm trying to see their
+  notes, a picture from where they meditated, what type of meditation they
+  did, how they liked it." This reverses Melvin's own 2026-09-27 cut ("no
+  more posting with photos/videos since its a big privacy policy change"),
+  so the costs that cut avoided come back with it.
+  - **Done on the branch:** Friends has its tab again, the Shop is the
+    circle in Home's top-right corner (`FeatureFlags.friendsTab`).
+  - **Designed, awaiting Melvin:** the feed, a friend's profile with their
+    sessions, a shared session opened, and "Who can see this?" on the
+    session page (canvas https://claude.ai/artifact/Gb7PNwhZMSxPzFf7UvGKcJ).
+    A post carries the title, time, practice, sound, how it felt (1 to 10),
+    a note for friends and photos or videos. Never the score, heart rate or
+    breath (5.1.3: health data may not go to iCloud).
+  - **Owed before it ships:** privacy policy and App Privacy labels (Photos
+    or Videos, Other User Content), the `Post` media fields and a new
+    `rating` field in CloudKit Production, report and block on a post (1.2),
+    photo screening (`PhotoScreen`), and DELETE
+    `CommunityModel.clearMyPostsIfNeeded`, which would otherwise erase a
+    person's new posts the first time it runs on a phone.
+
 - **Friends who keep each other meditating (Melvin and Aziz, 2026-10-12).**
   The retention push: "our users are not meditating... definitely increase
   the friends thing." Deliberately NOT built yet ("a bit ambitious"). Three
