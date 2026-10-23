@@ -396,6 +396,10 @@ struct Post: Identifiable, Equatable {
     var title: String
     /// The sound played ("Rain", "Silence"), where Strava shows a location.
     var sound: String?
+    /// How it felt, out of ten, when they rated it (Melvin, 2026-10-23: "how
+    /// they liked it"). Self-reported and shared by choice with the post,
+    /// never anything measured off the body.
+    var rating: Int?
 
     /// The only fields a post may carry. Locked by test; if you find yourself
     /// adding one, read the rule at the top of this file first. **`score` is
@@ -407,15 +411,17 @@ struct Post: Identifiable, Equatable {
     /// Asset List, two more Lists for the kind and the aspect ratio.
     static let fields = ["author", "minutes", "streak", "technique", "caption",
                          "media", "mediaPosters", "mediaKinds", "mediaAspects",
-                         "practicedAt", "createdAt", "title", "sound"]
+                         "practicedAt", "createdAt", "title", "sound", "rating"]
 
     init(id: String = UUID().uuidString, author: String, minutes: Int, streak: Int,
          technique: String? = nil, caption: String = "", media: [PostMedia] = [],
-         practicedAt: Date, createdAt: Date = Date(), title: String = "", sound: String? = nil) {
+         practicedAt: Date, createdAt: Date = Date(), title: String = "", sound: String? = nil,
+         rating: Int? = nil) {
         self.id = id; self.author = author; self.minutes = minutes
         self.streak = streak; self.technique = technique; self.caption = caption
         self.media = media; self.practicedAt = practicedAt; self.createdAt = createdAt
         self.title = title; self.sound = sound
+        self.rating = rating.map { min(10, max(0, $0)) }
     }
 
     init?(record: CKRecord) {
@@ -443,7 +449,8 @@ struct Post: Identifiable, Equatable {
                   practicedAt: record["practicedAt"] as? Date ?? Date(),
                   createdAt: record["createdAt"] as? Date ?? Date(),
                   title: record["title"] as? String ?? "",
-                  sound: record["sound"] as? String)
+                  sound: record["sound"] as? String,
+                  rating: record["rating"] as? Int)
     }
 
     /// Every field but the media ones, which `CommunityStore.post(_:)` writes
@@ -460,6 +467,7 @@ struct Post: Identifiable, Equatable {
         record["caption"] = caption
         record["practicedAt"] = practicedAt
         record["createdAt"] = createdAt
+        record["rating"] = rating
     }
 }
 

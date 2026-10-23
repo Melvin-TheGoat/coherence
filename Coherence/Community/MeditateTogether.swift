@@ -1057,6 +1057,14 @@ struct GoalPreviewRoot: View {
                 FriendPickerView(model: model) { _ in }
             case "person":
                 if let f = model.friends.first { PersonView(id: f, model: model) }
+            // The friends feed (2026-10-23): a shared session opened, and
+            // "See all" behind the faces row.
+            case "post":
+                if let p = model.feed.first(where: { !$0.media.isEmpty }) ?? model.feed.first {
+                    PostDetailView(postID: p.id, model: model)
+                }
+            case "allfriends":
+                AllFriendsView(model: model)
             // Invite codes (2026-10-18).
             case "invitecode":
                 InviteCodeSheet(model: model)

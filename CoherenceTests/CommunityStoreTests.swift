@@ -279,7 +279,8 @@ final class CommunityStoreTests: XCTestCase {
     func test_postCarriesOnlyTheFreeCardFields() async throws {
         let post = try await aziz.post(draft(caption: "Roof before work."))
         let record = try XCTUnwrap(db.records[post.id])
-        XCTAssertEqual(Set(record.allKeys()), Set(Post.fields).subtracting(["sound"]),
+        // `sound` and `rating` are nil on this draft, and nil writes no field.
+        XCTAssertEqual(Set(record.allKeys()), Set(Post.fields).subtracting(["sound", "rating"]),
                        "a post carries the free share card's data minus the score and nothing measured: no score, no heart, breath or stillness values, no curves (5.1.3(ii) and the free tier)")
         for banned in ["heart", "hr", "breath", "stillness", "curve", "bpm", "score"] {
             XCTAssertFalse(Post.fields.contains { $0.lowercased().contains(banned) }, banned)
@@ -292,6 +293,20 @@ final class CommunityStoreTests: XCTestCase {
     /// resurrect the field on the wire. Score is derived from heart rate,
     /// this is the PUBLIC database, and 5.1.3(ii) forbids storing personal
     /// health information in iCloud with no consent exception.
+    /// How it felt rides with the post when they rated it, clamped to the
+    /// slider's 0 to 10, and stays off it when they did not (2026-10-23).
+    func test_postCarriesTheRatingOnlyWhenGiven() async throws {
+        var rated = draft(); rated.sessionID = "R1"; rated.rating = 8
+        let a = try await aziz.post(rated)
+        XCTAssertEqual(try XCTUnwrap(db.records[a.id])["rating"] as? Int, 8)
+        var wild = draft(); wild.sessionID = "R2"; wild.rating = 14
+        let b = try await aziz.post(wild)
+        XCTAssertEqual(b.rating, 10)
+        var unrated = draft(); unrated.sessionID = "R3"
+        let c = try await aziz.post(unrated)
+        XCTAssertNil(try XCTUnwrap(db.records[c.id])["rating"])
+    }
+
     func test_postNeverCarriesAScore() async throws {
         let post = try await aziz.post(draft(caption: "no score, ever"))
         let record = try XCTUnwrap(db.records[post.id])
@@ -954,19 +969,17 @@ final class FriendsOptionalTests: XCTestCase {
         XCTAssertNil(db.records[meID], "nothing about how often I meditate was published")
     }
 
-    /// Opening Friends asks for friends, requests and blocks, never the
-    /// removed feed: in a container missing the Post type or its index that
-    /// query failed and the whole tab read as broken.
-    func test_openingFriendsNeverQueriesPostsOrReactions() async throws {
+    /// Opening Friends loads the feed again (2026-10-23): it asks for the
+    /// posts of friends and me. A container where that query fails still
+    /// opens Friends (`test_aBrokenFeedNeverBreaksFriends`).
+    func test_openingFriendsLoadsTheFeed() async throws {
         let recording = TypeRecordingDatabase(inner: MemoryCommunityDatabase(user: "_me"))
         let model = CommunityModel(store: CommunityStore(database: recording))
         await model.load()
         _ = await model.claim("aziz", displayName: "Aziz")
         await model.refresh()
         XCTAssertEqual(model.phase, .ready)
-        XCTAssertFalse(recording.types.isEmpty, "the lists were loaded")
-        XCTAssertFalse(recording.types.contains(CommunityType.post))
-        XCTAssertFalse(recording.types.contains(CommunityType.reaction))
+        XCTAssertTrue(recording.types.contains(CommunityType.post), "the feed was asked for")
     }
 
     /// Remove photo on Edit profile takes the published photo down, not just

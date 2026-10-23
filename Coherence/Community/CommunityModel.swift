@@ -331,12 +331,6 @@ final class CommunityModel: ObservableObject {
         friends = fr; incoming = inc; sent = sn; blocked = bl
         // Anything cached about them from before the block goes too.
         for id in bl { forgetBlockedPerson(id) }
-        // No feed and no reactions any more (Melvin, 2026-09-29). Posting was
-        // removed on 2026-09-27, but every open of Friends still queried the
-        // Post and Reaction types, and in a Production container where either
-        // type or its index is missing that query fails and the whole tab
-        // reads as broken. `clearMyPostsIfNeeded` still takes down anything
-        // already shared, on its own path.
         // Fetched again, not only when missing: a friend's practice summary
         // changes every time they meditate, and a refresh that kept the copy
         // from the app's launch showed old numbers until 808 was relaunched
@@ -346,6 +340,29 @@ final class CommunityModel: ObservableObject {
         // Never lets a goal problem break the friends list: a container where
         // the goal types or their indexes are missing still shows friends.
         await refreshGoals(store)
+        // The feed is back (Melvin, 2026-10-23), isolated the same way: when
+        // posting was first removed, a Production container missing the Post
+        // or Reaction index made every open of Friends fail outright
+        // (2026-09-29). A feed that cannot load leaves the rest standing.
+        await refreshFeed(store)
+    }
+
+    /// Friends' posts and mine, newest practiced first, with who gave each a
+    /// 🙏. Never throws: a failure keeps whatever was already on screen.
+    func refreshFeed(_ store: CommunityStore) async {
+        guard let posts = try? await store.feed() else { return }
+        feed = posts
+        await loadReactions(for: posts.map(\.id))
+        try? await cache(names: Set(posts.map(\.author)))
+    }
+
+    /// Who reacted to these posts, replacing what was known about them (a
+    /// post with nobody now reads empty, not as its old count).
+    func loadReactions(for postIDs: [String]) async {
+        guard let store, !postIDs.isEmpty,
+              let found = try? await store.reactions(for: postIDs) else { return }
+        for id in postIDs { reactions[id] = found[id] ?? [] }
+        try? await cache(names: Set(found.values.flatMap { $0 }))
     }
 
     /// Bring a friend, see the evidence (`InviteReward`). Runs after every
@@ -587,6 +604,13 @@ final class CommunityModel: ObservableObject {
         return out
     }
 
+    /// One post by id, mine or a friend's, for a post opened from a profile
+    /// that the feed does not hold.
+    func fetchPost(_ id: String) async -> Post? {
+        guard let store else { return nil }
+        return try? await store.post(id: id)
+    }
+
     /// The post for a session, if it was shared.
     func post(forSession sessionID: UUID) async -> Post? {
         guard let store else { return nil }
@@ -627,6 +651,7 @@ final class CommunityModel: ObservableObject {
         do {
             if was { try await store.unreact(to: postID) } else {
                 try await store.react(to: postID)
+                Analytics.track(.reactionGiven)
             }
         } catch {
             reactions[postID] = was ? list + [myID] : list.filter { $0 != myID }
@@ -657,6 +682,7 @@ final class CommunityModel: ObservableObject {
     private func forgetBlockedPerson(_ id: String) {
         if let p = people[id] { people[id] = CommunityStore.nameOnly(p) }
         friendCounts[id] = nil
+        feed.removeAll { $0.author == id }
     }
 
     func loadBlocked() async {
@@ -847,37 +873,6 @@ final class CommunityModel: ObservableObject {
             UserDefaults.standard.removeObject(forKey: pendingDeletionKey)
         } catch {
             // Still pending. The next launch tries again.
-        }
-    }
-
-    // MARK: - Posting removed
-
-    /// UserDefaults key for the one-time cleanup that removes every post
-    /// this person had already shared, from the day posting was removed
-    /// (Melvin, 2026-09-27: "get rid of the feed, no more posting with
-    /// photos/videos ... big privacy policy change"). Not `private`, like
-    /// `pendingDeletionKey` above: a test needs to see it too.
-    static let postsClearedKey = "community.postsCleared.v1"
-
-    /// Deletes every post I've already shared, once. Silent on purpose:
-    /// nobody needs telling that a feed which no longer exists in the app
-    /// also stopped existing on the server. Retried on a later launch (from
-    /// `CoherenceApp`'s launch task) if this one can't reach iCloud, the same
-    /// pattern as `retryPendingDeletion`.
-    ///
-    /// Runs against whatever store this model already holds (real CloudKit,
-    /// or the in-memory one in test mode), so it needs no store of its own.
-    /// A profile is not required — `me()` only needs an iCloud account — so
-    /// this can run even for someone who never claimed a username.
-    func clearMyPostsIfNeeded() async {
-        guard FeatureFlags.friends, !UserDefaults.standard.bool(forKey: Self.postsClearedKey) else { return }
-        guard let store else { return }
-        do {
-            try await store.deleteMyPosts()
-            UserDefaults.standard.set(true, forKey: Self.postsClearedKey)
-        } catch {
-            // No iCloud account, no network, or a query missing an index in
-            // this environment: retried on the next launch.
         }
     }
 

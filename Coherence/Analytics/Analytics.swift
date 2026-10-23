@@ -163,7 +163,9 @@ enum Analytics {
         case inviteShared
         case inviteCodeRedeemed              // joined Friends with someone's invite code (2026-10-18)
         case userBlocked
-        case contentReported(kind: String)   // "profile" (posts are gone)
+        case contentReported(kind: String)   // "profile" or "post"
+        case sessionShared(photos: Int)      // a session posted to friends (2026-10-23); how many photos, never what
+        case reactionGiven                   // a 🙏 on a friend's session
         case inviteRewarded                  // a brought friend sat; the grant landed
         case profileCreated(photo: Bool)
         case friendsIntroShown               // the one-time prompt for pre-Friends users
@@ -230,6 +232,8 @@ enum Analytics {
             case .inviteCodeRedeemed: "invite_code_redeemed"
             case .userBlocked: "user_blocked"
             case .contentReported: "content_reported"
+            case .sessionShared: "session_shared"
+            case .reactionGiven: "reaction_given"
             case .inviteRewarded: "invite_rewarded"
             case .profileCreated: "profile_created"
             case .friendsIntroShown: "friends_intro_shown"
@@ -280,6 +284,7 @@ enum Analytics {
             case .widgetOpened(let size), .widgetAdded(let size), .widgetRemoved(let size): ["size": size]
             case .awardUnlocked(let id): ["id": id]
             case .contentReported(let kind): ["kind": kind]
+            case .sessionShared(let photos): ["photos": min(photos, 10)]
             case .profileCreated(let photo): ["photo": photo ? "yes" : "no"]
             default: [:]
             }

@@ -165,16 +165,18 @@ final class CommunityResetTests: XCTestCase {
         } catch {}
     }
 
-    /// The one-time post cleanup finishes too, instead of retrying at every
-    /// launch against a type that cannot be queried.
-    func test_postCleanupFinishesWhenThePostTypeCannotBeQueried() async throws {
-        UserDefaults.standard.removeObject(forKey: CommunityModel.postsClearedKey)
-        defer { UserDefaults.standard.removeObject(forKey: CommunityModel.postsClearedKey) }
-        let model = CommunityModel(store: CommunityStore(database: RefusingQueryDatabase(
-            inner: MemoryCommunityDatabase(user: "_me"), refusing: [CommunityType.post],
-            error: CKError(.invalidArguments))))
-        await model.clearMyPostsIfNeeded()
-        XCTAssertTrue(UserDefaults.standard.bool(forKey: CommunityModel.postsClearedKey))
+    /// The feed loads on its own path (2026-10-23): a container where the
+    /// Post and Reaction types cannot be queried still opens Friends, with an
+    /// empty feed, the way a missing goal index already does.
+    func test_aBrokenFeedNeverBreaksFriends() async throws {
+        let store = CommunityStore(database: RefusingQueryDatabase(
+            inner: MemoryCommunityDatabase(user: "_me"), refusing: [CommunityType.post, CommunityType.reaction],
+            error: CKError(.invalidArguments)))
+        try await store.claimUsername("me", displayName: "Me")
+        let model = CommunityModel(store: store)
+        await model.load()
+        guard case .ready = model.phase else { return XCTFail("Friends must still open") }
+        XCTAssertTrue(model.feed.isEmpty)
     }
 }
 

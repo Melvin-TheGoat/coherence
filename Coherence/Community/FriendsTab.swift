@@ -1,12 +1,12 @@
 import SwiftUI
 import SwiftData
 
-/// Friends (COMMUNITY.md, mockup `mockups/friends.html`). Mutual friends,
-/// requests behind a count, search by handle, an invite, and how often
-/// someone meditates. No feed, no posts (Melvin, 2026-09-27: "get rid of the
-/// feed, no more posting with photos/videos since its a big privacy policy
-/// change"). The first open claims a real username; the tab is honest about
-/// iCloud being unavailable rather than pretending to load.
+/// Friends (COMMUNITY.md, the "808 Friends feed" canvas). Mutual friends,
+/// requests behind a count, search by handle, an invite, how often someone
+/// meditates, and what friends shared from their sessions (the feed is back,
+/// Melvin, 2026-10-23, reversing his 2026-09-27 cut). The first open claims a
+/// real username; the tab is honest about iCloud being unavailable rather
+/// than pretending to load.
 ///
 /// **A screen now, not a tab** — presented as a full sheet from Home (a plus
 /// or a button opens it; the tab bar itself is somebody else's to wire). The
@@ -488,13 +488,29 @@ struct FriendsHomeView: View {
                         #endif
                         searchField
                         if searched { searchResult }
-                        // Meditating together (2026-10-14): the goals, with a
-                        // blue Add that is always there once one exists.
-                        if !model.togetherGoals.isEmpty {
-                            TogetherSection(model: model) { startingGoal = true }
+                        // The friends feed (Melvin, 2026-10-23, the "808
+                        // Friends feed" canvas): faces first, then the shared
+                        // goals, then what friends shared. The full list with
+                        // how often each meditates is behind "See all".
+                        if model.friends.isEmpty {
+                            GrassHeading(title: "Friends")
+                            EmptyFriends(model: model, username: model.profile?.username ?? "")
+                        } else {
+                            FriendFacesRow(model: model)
+                            // Meditating together (2026-10-14): the goals, with
+                            // a blue Add that is always there once one exists;
+                            // before one exists, the row that starts one.
+                            if !model.togetherGoals.isEmpty {
+                                TogetherSection(model: model) { startingGoal = true }
+                            } else {
+                                MeditateWithFriendRow { startingGoal = true }
+                                    .padding(.horizontal, 14)
+                                    .whiteCard()
+                            }
                         }
-                        GrassHeading(title: "Friends")
-                        friendsSection
+                        if !model.friends.isEmpty || !model.feed.isEmpty {
+                            FriendsFeedSection(model: model).padding(.top, 6)
+                        }
                         // The bar is a safe-area inset so the scroll clears it
                         // on its own; this only clears the half of the plus
                         // that rises above it.
@@ -520,6 +536,7 @@ struct FriendsHomeView: View {
         .navigationDestination(for: FriendsRoute.self) { route in
             switch route {
             case .requests: RequestsView(model: model)
+            case .allFriends: AllFriendsView(model: model)
             }
         }
         .navigationDestination(for: GoalRoute.self) { route in
@@ -536,40 +553,6 @@ struct FriendsHomeView: View {
         // Opening Friends reads the news: the badge on Home's circle clears.
         .onAppear { model.markNewsSeen() }
         .onChange(of: model.unseenCount) { _, n in if n > 0 { model.markNewsSeen() } }
-    }
-
-    /// Every mutual friend, with how often they meditate — the thing that
-    /// replaced the feed. Tapping one opens their page.
-    @ViewBuilder
-    private var friendsSection: some View {
-        if model.friends.isEmpty {
-            EmptyFriends(model: model, username: model.profile?.username ?? "")
-        } else {
-            VStack(spacing: 0) {
-                // "Meditate with a friend" as the first row, the same height
-                // as a friend, until a goal exists (then it is the blue Add).
-                if model.togetherGoals.isEmpty {
-                    MeditateWithFriendRow { startingGoal = true }
-                    Rectangle().fill(ValleyGround.quiet).frame(height: 1)
-                }
-                ForEach(Array(model.friends.enumerated()), id: \.element) { i, id in
-                    if let p = model.person(id) {
-                        if i > 0 { Rectangle().fill(ValleyGround.quiet).frame(height: 1) }
-                        NavigationLink(value: id) {
-                            PersonRow(profile: p, subtitle: "@" + p.username, practice: practiceLine(p.practice),
-                                      tag: model.joinedWithCode.contains(id) ? "Joined with your code" : nil) {
-                                Image(systemName: "chevron.right")
-                                    .font(.system(size: 12, weight: .bold))
-                                    .foregroundStyle(AppColor.skyDeep)
-                            }
-                        }
-                        .buttonStyle(CardButtonStyle())
-                    }
-                }
-            }
-            .padding(.horizontal, 14)
-            .whiteCard()
-        }
     }
 
     /// The title, your handle, Invite and Requests in the sky.
@@ -1037,6 +1020,9 @@ func practiceLine(_ published: PracticeStats) -> String {
 /// destination closure, so they share the stack's path with the profile ids.
 enum FriendsRoute: Hashable {
     case requests
+    /// Every friend with how often they meditate, from "See all" on the
+    /// faces row (2026-10-23).
+    case allFriends
 }
 
 struct RequestsView: View {
@@ -1272,14 +1258,16 @@ struct FriendsListView: View {
 }
 
 /// A person: header, how often they meditate, the relationship button, and
-/// the menu guideline 1.2 checks for (Remove, Report, Block). No posts, no
-/// feed (Melvin, 2026-09-27) — everything here is read off their public
-/// `Profile` record, which is why it shows for a stranger from search just as
-/// it does for a friend.
+/// the menu guideline 1.2 checks for (Remove, Report, Block). The header and
+/// numbers are read off their public `Profile` record, which is why they show
+/// for a stranger from search too; their shared sessions show only to a
+/// friend (`PersonSessions`, 2026-10-23).
 struct PersonView: View {
     let id: String
     @ObservedObject var model: CommunityModel
     @Environment(\.dismiss) private var dismiss
+    /// Pushed inside the Friends tab, so its sessions list clears the bar.
+    @Environment(\.tabBarClearance) private var tabBarClearance
 
     @State private var relationship: CommunityStore.Relationship = .none
     @State private var reportTarget: ReportSheet.Target?
@@ -1325,10 +1313,17 @@ struct PersonView: View {
                     VStack(spacing: 12) {
                         identity
                         if !blocked { stats }
+                        // What they shared (Melvin, 2026-10-23), for a friend
+                        // and on my own page; a stranger from search sees the
+                        // numbers above and nothing they posted.
+                        if !blocked, isMe || relationship == .friends {
+                            PersonSessions(personID: id, model: model)
+                                .padding(.top, 6)
+                        }
                     }
                     .padding(.horizontal, AppMetrics.screenPadding)
                     .padding(.top, -6)
-                    .padding(.bottom, 24)
+                    .padding(.bottom, 24 + tabBarClearance)
                 }
             }
             .scrollIndicators(.hidden)
@@ -1496,9 +1491,16 @@ struct ReportSheet: View {
     @State private var sent: Bool?
     @State private var sending = false
 
-    /// About a profile, since there are no posts to report any more (Melvin,
-    /// 2026-09-29: "Not a meditation" was a reason for a post).
-    private let reasons = ["Pretending to be someone else", "Harassment or hate", "Nudity or violence", "Spam", "Something else"]
+    /// A profile's reasons, and a shared session's (posts are back,
+    /// 2026-10-23), which can also simply not be a meditation.
+    private var reasons: [String] {
+        switch target {
+        case .profile:
+            return ["Pretending to be someone else", "Harassment or hate", "Nudity or violence", "Spam", "Something else"]
+        case .post:
+            return ["Nudity or violence", "Harassment or hate", "Spam", "Not a meditation", "Something else"]
+        }
+    }
 
     var body: some View {
         NavigationStack {

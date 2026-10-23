@@ -944,6 +944,34 @@ Archive from `mvp` at or after the commit that added `FeatureFlags`. It ships:
 The 1.0.2 build uploaded earlier (202609141719) predates all of this, so
 this release needs a NEW archive.
 
+## OPEN for the build that ships the friends feed (added 2026-10-23, branch `social-feed`)
+
+Friends has its tab again (the Shop is Home's top-right circle), a friend's
+page shows their shared sessions, and a session's page asks "Who can see
+this?" with Friends as the default. Reverses the 2026-09-27 cut. Never run on
+real iCloud yet.
+
+- [ ] **Privacy policy wording approved by the founders** (drafted in
+      `PRIVACY_POLICY.md` and regenerated into `website/privacy.html`,
+      2026-10-23): what a shared session carries, that friends see it, the
+      🙏, photo screening, and that deletion and Only you take it down.
+      Then **deploy the website before the release** (`deploy-website`).
+- [ ] **CloudKit:** `CLOUDKIT_SETUP.md`, "Shared sessions": the `rating`
+      field and the four `media*` fields on `Post`, the four Post and
+      Reaction indexes in Production, the two-phone check, then deploy.
+- [ ] **Two-phone test:** share with a photo, a rating and a note; the
+      friend sees it in the feed, opens it, gives a 🙏; it shows on the
+      sharer's page; Only you takes it down; Report on a post sends.
+- [ ] **App Privacy labels:** Photos or Videos and Other User Content are
+      already declared (profile pictures); confirm App Store Connect lists
+      both, used for App Functionality and linked, now that sessions carry
+      them too.
+- [ ] **Review notes and What's New:** say sessions can be shared with
+      friends (photos, notes, how it felt), reactions only, and where Report
+      sits (the ⋯ on a shared session). Age rating already says user content.
+- [ ] **Store screenshots:** the Friends screenshot shows the old list;
+      retake it with the feed.
+
 ## OPEN for 1.4 (2026-10-18): Meditating together, invite codes, profile pictures
 
 1.4 = weekly goals with friends and nudges, invite codes, a required profile

@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**Last updated: October 18, 2026**
+**Last updated: October 23, 2026**
 
 This Privacy Policy explains how **Lock Out Inc. ("we," "us")** handles
 information in the **808 Meditate** app ("808") for iPhone, with optional
@@ -24,7 +24,10 @@ support for Apple Watch.
   and who has added you go to a shared area of iCloud where anyone using 808
   can look them up. If you set a weekly goal with a friend, the days you
   meditated and your minutes on those days, from the day the goal began, go
-  there too, for your friend to see. Your health results never go there.
+  there too, for your friend to see. A session you choose to share with
+  friends goes there with what you put on it: its title, length, practice,
+  sound, how it felt, a note for friends, and its photos or videos. Your
+  health results never go there.
 - **Nothing about Block reaches us.** The apps you choose to hold, and
   everything about how and when you open them, stay on your phone in Apple's
   own Screen Time system. See "Block" below.
@@ -85,7 +88,8 @@ your body. Important details:
   Friends, and you can add photos or videos to a session's own page, taken with
   the camera or chosen from your library through Apple's private picker (which
   hands 808 only the items you pick, never access to your library). Photos and
-  videos you add to a session stay private to you. When Block invites you to
+  videos you add to a session stay private to you unless you share that
+  session with friends. When Block invites you to
   meditate, Otto's video-call-style screen can also show you a live preview
   of your own front camera, the way an incoming call would; that preview is
   never recorded, saved, or sent anywhere.
@@ -262,22 +266,29 @@ profile, 808 writes nothing about you to the shared area.
   added by hand), with your total minutes that day.
 - **Nudges and high fives** you send a friend: your display name, who it was
   for, and the day. 808 sends at most one nudge a day to each friend.
+- **Sessions you share.** A session's page asks "Who can see this?", and for a
+  session you have not saved before it starts on Friends. Nothing is shared
+  until you press "Share with friends". A shared session carries its title,
+  its length, the practice and sound you chose, how it felt if you rated it,
+  the note you write for friends, its photos and videos, your streak that day,
+  and when you meditated. Your private notes stay on your phone.
+- **A 🙏** you give a friend's shared session: who gave it, and to which
+  session.
 - A **report** you file about someone, including the reason you type, and
   anyone you **block**.
 
 **What never goes there:** your score, your heart rate, your breathing, your
-stillness, any of the curves or readings behind them, your notes, and the
-photos or videos you add to your sessions.
-
-**Posts.** Test versions of 808 let testers post a session to friends. The
-App Store version never has, and posts made in those test versions are
-deleted.
+stillness, any of the curves or readings behind them, your private notes, and
+anything from a session you keep to Only you.
 
 **Who can see it:** anyone using 808 who looks up your username can see your
 profile: your name, username, photo if you added one, the month you created
 your profile, your streak, your sessions and minutes this week, your total
 number of sessions, the date of your last session, and your friends. This is
 not limited to people you have added.
+
+Your **friends** see the sessions you share with them, and who gave each one a
+🙏. 808 shows a shared session only to your friends, and to you.
 
 Your **goal partner** sees, for each goal you share, the days you met it and
 your minutes on those days. Anyone who has your **invite code** can look up
@@ -286,8 +297,9 @@ friends straight away, without a request.
 
 Everything else 808 writes to the shared area is stored where other
 people's copies of 808 can read it too, even though the app does not show it
-to them. That includes your weekly goals and the nudges and high fives you
-send, the exact dates and times you created your profile,
+to them. That includes the sessions you share, the 🙏 you give, your weekly
+goals and the nudges and high fives you send, the exact dates and times you
+created your profile,
 first meditated with 808, and last meditated, and the friend requests you
 have sent and received that nobody has accepted yet. Reports and blocks are the
 exceptions: a report is kept where only we and the person who filed it can
@@ -309,8 +321,11 @@ sent through a Google Apps Script web app we control, which adds it to a
 Google Sheet and emails us so we can act on it quickly. The person you report
 is not told who reported them.
 
-**Moderation.** Usernames and names are filtered for objectionable language
-before they are accepted. You can report a person, and you can block someone.
+**Moderation.** Usernames, names and the words on a shared session are
+filtered for objectionable language before they are accepted, and every photo
+on a session you share is checked on your iPhone, with Apple's Sensitive
+Content Analysis, before it is uploaded; nothing about that check leaves your
+phone. You can report a person or a shared session, and you can block someone.
 A block is private and one-sided: the person you block is not told, their
 friend requests never reach you and cannot be accepted, and you stop seeing
 them anywhere in Friends. Because profiles are public, they can still look up
@@ -319,9 +334,12 @@ content that breaks our terms and we can remove accounts that repeatedly break
 them.
 
 **Deleting it.** **Deleting your account deletes your profile, your username,
-your practice summary, your invite code, the friend requests and connections
-you created, your half of every weekly goal, the nudges and high fives you
-sent, and the blocks you made from the shared area, right away.** If the shared area
+your practice summary, your invite code, every session you shared and its
+photos and videos, the 🙏 you gave, the friend requests and connections you
+created, your half of every weekly goal, the nudges and high fives you sent,
+and the blocks you made from the shared area, right away.** Switching a shared
+session back to Only you, or deleting the session, takes it down from the
+shared area too. If the shared area
 can't be reached at that moment, the deletion finishes automatically on a
 later launch of the app, once it can be reached. Signing back in does not bring your profile back; you
 would create a new one. Reports you filed are kept as a record of what was

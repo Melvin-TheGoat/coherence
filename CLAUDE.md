@@ -8176,3 +8176,49 @@ Designed in the "808 Invite Codes" canvas (9 screens), then built. Replaces
   two-phone check (`CLOUDKIT_SETUP.md`, "Invite codes";
   RELEASE_CHECKLIST.md). `PREVIEW_GOAL_SCREEN=invitecode|entercode|
   invitedfriends` (DEBUG) opens each screen.
+
+## THE FRIENDS FEED IS BACK; FRIENDS HAS THE TAB, THE SHOP IS A CIRCLE (2026-10-23, Melvin, branch `social-feed`)
+
+"If you check someone's account you can't even see what meditations they've
+done... I'm trying to see their notes, a picture from where they meditated,
+what type of meditation they did, how they liked it." Designed in the "808
+Friends feed" canvas (https://claude.ai/artifact/Gb7PNwhZMSxPzFf7UvGKcJ),
+approved the same day: **Friends by default, reactions only.** Reverses his
+own 2026-09-27 cut, so the privacy-policy work that cut avoided is back
+(RELEASE_CHECKLIST.md, "OPEN for the build that ships the friends feed").
+
+- **The swap is one switch, `FeatureFlags.friendsTab`** (derived:
+  `shopHasTab`, `shopCircle`, `friendsCircle`). Friends draws in every tab
+  bar with its unread count (`friendsUnread` environment); the Shop opens
+  from Home's top-right circle (`HomeSheet.store`, `ShopTab(onClose:)`); the
+  tour lights `.shopCircle`. False puts the 2026-09-27 layout back.
+- **The Friends tab:** header, search, a row of friends' faces (a gold ring
+  means they meditated today, from `PracticeStats.lastSessionAt`; "See all"
+  opens `AllFriendsView`, the old list), Meditating together, then "Latest
+  from friends" (`FriendsFeed.swift`). Melvin removed a faces row from the
+  band on 2026-09-25; this one sits below the search and he approved it in
+  the canvas.
+- **A post carries** title, minutes, practice (the label, or the words for
+  "Something else"), sound, **how it felt (`Post.rating`, new, 0 to 10)**,
+  the note for friends, photos and videos, streak and when. **Never a score
+  or anything measured** (5.1.3); the Draft has no field for one.
+- **"Who can see this?" leads the session page** and starts on Friends for a
+  session never saved before (`SharingDefault`, tested), Only you when the
+  phone has no profile. Nothing is shared until "Share with friends" is
+  pressed: closing the page shares nothing. Only you on a shared session
+  takes the post down; so does deleting the session or the account.
+- **Moderation as before posting was cut:** words through `ContentFilter`,
+  every photo through `PhotoScreen` (Sensitive Content Analysis) before
+  upload, Report on any post (with "Not a meditation" as a reason), block
+  removes their posts from the feed.
+- **The feed loads on its own path** (`CommunityModel.refreshFeed`): a
+  container missing the Post or Reaction index must never break the friends
+  list again (the 2026-09-29 failure).
+- **`clearMyPostsIfNeeded` is DELETED.** It wiped a person's posts the first
+  time it ran on a phone; left in, it would have erased new posts on every
+  fresh install.
+- `PREVIEW_GOAL_SCREEN=post|allfriends` (DEBUG) open the new screens; test
+  mode seeds posts with ratings. **The simulator's audio can hang the main
+  thread 15 s per sound** on a new simulator (AQME timeouts): set
+  `settings.music.v1` and `settings.soundEffects.v1` to NO there before
+  judging anything as slow.

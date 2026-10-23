@@ -19,12 +19,14 @@ import os
 /// private notes, and photos or video. Nothing is required. Gold lands twice:
 /// the slider's fill and Save.
 ///
-/// **Posting removed entirely** (Melvin, 2026-09-27: "get rid of the feed, no
-/// more posting with photos/videos since its a big privacy policy change").
-/// This page used to ask who could see it and, for Friends, a description and
-/// a reserved username; none of that exists here any more. Everything on it
-/// is private — this is your own record of the sit, kept on this phone (and,
-/// for the ones that sync, in your own iCloud).
+/// **Sharing is back** (Melvin, 2026-10-23, the "808 Friends feed" canvas,
+/// screen 4), after the 2026-09-27 cut. "Who can see this?" leads the page,
+/// **Friends by default** for a session never saved before, Only you one tap
+/// away. Friends see the title, the length, what you did, the sound, how it
+/// felt, a note written for them and the photos; the private notes and
+/// anything measured off the body never leave this phone's own records.
+/// Nothing is shared until the button is pressed: closing the page shares
+/// nothing.
 struct SaveSessionView: View {
     enum Mode { case new, edit }
 
@@ -33,6 +35,7 @@ struct SaveSessionView: View {
     let onDone: () -> Void
 
     @Environment(\.modelContext) private var context
+    @EnvironmentObject private var community: CommunityModel
 
     @State private var session: Session?
     @State private var score: Int?
@@ -43,7 +46,18 @@ struct SaveSessionView: View {
     @State private var sound = "Silence"
 
     @State private var title = ""
+    @State private var publicNote = ""
     @State private var privateNote = ""
+    /// "Who can see this?": true is Friends. A session never saved before
+    /// starts on Friends (Melvin, 2026-10-23), unless this phone has no
+    /// profile to share from.
+    @State private var shareWithFriends = false
+    /// What the session was saved as when this page opened, so Only you only
+    /// reaches iCloud when there is a post to take down.
+    @State private var wasShared = false
+    /// Set by a tap on either pill, so the default never overrides a choice.
+    @State private var picked = false
+    @State private var showClaim = false
     @State private var technique: String?
     /// The words behind "Something else", kept and saved like the results
     /// card keeps them.
@@ -74,7 +88,7 @@ struct SaveSessionView: View {
 
     /// Which field holds the keyboard, so Done can put it away.
     @FocusState private var focused: Field?
-    private enum Field: Hashable { case title, privateNote, techniqueNote }
+    private enum Field: Hashable { case title, publicNote, privateNote, techniqueNote }
 
     var body: some View {
         GeometryReader { proxy in
@@ -89,10 +103,12 @@ struct SaveSessionView: View {
                 // 2026-09-22, `mockups/after-valley.html`), where they were
                 // rows on cream split by hairlines.
                 VStack(alignment: .leading, spacing: 10) {
+                    if FeatureFlags.friends { whoSection.whiteCard(radius: 18) }
                     feelSection.whiteCard(radius: 18)
                     whatSection.whiteCard(radius: 18)
-                    notesSection.whiteCard(radius: 18)
                     mediaSection.whiteCard(radius: 18)
+                    if shareWithFriends { friendsNoteSection.whiteCard(radius: 18) }
+                    notesSection.whiteCard(radius: 18)
                     if let readings = bodyReadings {
                         BodyCard(readings: readings, score: measuredScore, seeGraphs: { showResults = true }, inset: Self.inset)
                             .whiteCard(radius: 18)
@@ -122,6 +138,12 @@ struct SaveSessionView: View {
         }
         .fullScreenCover(isPresented: $showResults) {
             SessionResultsView(sessionID: sessionID)
+        }
+        .sheet(isPresented: $showClaim) {
+            CreateProfileView(model: community, suggested: "", nickname: "") { handle in
+                showClaim = false
+                if handle != nil { shareWithFriends = true }
+            }
         }
         .alert("Couldn't save that", isPresented: Binding(get: { problem != nil }, set: { if !$0 { problem = nil } })) {
             Button("OK") { problem = nil }
@@ -304,9 +326,101 @@ struct SaveSessionView: View {
         }
     }
 
+    /// Friends or Only you, Friends first (Melvin, 2026-10-23).
+    private var whoSection: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            sectionHeader("Who can see this?")
+            HStack(spacing: 0) {
+                whoPill(true, icon: "person.2.fill", text: "Friends")
+                whoPill(false, icon: "lock.fill", text: "Only you")
+            }
+            .padding(3)
+            .background(ValleyGround.quiet, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .padding(.horizontal, Self.inset)
+            .padding(.vertical, 12)
+            whoNote
+        }
+    }
+
+    private func whoPill(_ value: Bool, icon: String, text: String) -> some View {
+        Button {
+            picked = true
+            withAnimation(.easeOut(duration: 0.18)) { shareWithFriends = value }
+        } label: {
+            Label(text, systemImage: icon)
+                .font(AppFont.callout.weight(.bold))
+                .foregroundStyle(shareWithFriends == value ? .white : AppColor.meadowInk)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 10)
+                .background {
+                    if shareWithFriends == value {
+                        RoundedRectangle(cornerRadius: 11, style: .continuous).fill(AppColor.skyDeep)
+                    }
+                }
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.tactile)
+        .accessibilityAddTraits(shareWithFriends == value ? .isSelected : [])
+    }
+
+    /// What Friends means, or what stands between this session and sharing.
+    @ViewBuilder
+    private var whoNote: some View {
+        if shareWithFriends {
+            switch community.phase {
+            case .ready where community.hasProfile:
+                whoCaption("Your friends see the title, the time, what you did, how it felt, your note and your photos.")
+            case .needsUsername, .ready:
+                Button { showClaim = true } label: {
+                    Text("Create your profile to share with friends")
+                        .font(AppFont.caption.weight(.bold))
+                        .foregroundStyle(AppColor.skyDeep)
+                }
+                .buttonStyle(.tactile)
+                .padding(.horizontal, Self.inset)
+                .padding(.bottom, 14)
+            case .unavailable:
+                whoCaption("Sharing needs iCloud on this iPhone. Save it as Only you for now.")
+            case .loading:
+                whoCaption("Connecting to iCloud…")
+            }
+        } else {
+            whoCaption("Only you see this session.")
+        }
+    }
+
+    private func whoCaption(_ text: String) -> some View {
+        Text(text)
+            .font(AppFont.caption)
+            .foregroundStyle(AppColor.textSecondary)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.horizontal, Self.inset)
+            .padding(.bottom, 14)
+    }
+
+    /// The words friends read under the title. The private notes below stay
+    /// private.
+    private var friendsNoteSection: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            sectionHeader("Note for friends")
+            TextField("How did it go? Where were you?", text: $publicNote, axis: .vertical)
+                .lineLimit(2...6)
+                .font(AppFont.callout)
+                .foregroundStyle(AppColor.textPrimary)
+                .focused($focused, equals: .publicNote)
+                .onChange(of: publicNote) { _, new in
+                    if new.count > CommunityStore.captionLimit {
+                        publicNote = String(new.prefix(CommunityStore.captionLimit))
+                    }
+                }
+                .padding(.horizontal, Self.inset)
+                .padding(.vertical, 12)
+        }
+    }
+
     private var notesSection: some View {
         VStack(alignment: .leading, spacing: 0) {
-            sectionHeader("Notes")
+            sectionHeader(shareWithFriends ? "Private notes" : "Notes")
             TextField("Anything you want to remember. Only you can see this.",
                       text: $privateNote, axis: .vertical)
                 .lineLimit(3...8)
@@ -421,7 +535,7 @@ struct SaveSessionView: View {
 
     private var dock: some View {
         Button { save() } label: {
-            Text(saving ? "Saving…" : "Save")
+            Text(saving ? "Saving…" : (shareWithFriends && !wasShared ? "Share with friends" : "Save"))
         }
         .buttonStyle(PrimaryButtonStyle())
         .disabled(!canAct || saving)
@@ -447,7 +561,12 @@ struct SaveSessionView: View {
         )
     }
 
-    private var canAct: Bool { loaded }
+    /// Only you can always be saved; Friends needs a profile on a reachable
+    /// iCloud, which the note under "Who can see this?" explains.
+    private var canAct: Bool {
+        guard loaded else { return false }
+        return !shareWithFriends || (community.phase == .ready && community.hasProfile)
+    }
 
     // MARK: - Media
 
@@ -565,6 +684,11 @@ struct SaveSessionView: View {
         title = (reflection?.title).flatMap { $0.isEmpty ? nil : $0 }
             ?? SessionStore.defaultTitle(for: session?.startedAt ?? Date())
         privateNote = reflection?.note ?? ""
+        publicNote = reflection?.publicNote ?? ""
+        wasShared = reflection?.visibility == "friends"
+        let savedBefore = reflection != nil
+        shareWithFriends = SharingDefault.startsOnFriends(friendsOn: FeatureFlags.friends, savedBefore: savedBefore,
+                                                          wasShared: wasShared, hasProfile: nil)
         techniqueNote = reflection?.techniqueNote ?? ""
         rating = reflection?.rating
         technique = reflection?.technique
@@ -574,7 +698,17 @@ struct SaveSessionView: View {
             ?? (session?.mode == SessionMode.guided.rawValue ? MeditationMethod.guidedID : nil)
             ?? (session?.mode == SessionMode.silence.rawValue ? MeditationMethod.silenceID : nil)
         mediaItems = SessionStore.photos(for: sessionID, in: context)
+        // Usable before iCloud answers: Only you never needs the network.
         loaded = true
+
+        guard FeatureFlags.friends else { return }
+        if community.phase != .ready { await community.load() }
+        // No profile to share from: the default falls back to Only you, and
+        // tapping Friends offers to make one.
+        if !picked {
+            shareWithFriends = SharingDefault.startsOnFriends(friendsOn: true, savedBefore: savedBefore,
+                                                              wasShared: wasShared, hasProfile: community.hasProfile)
+        }
     }
 
     private func save() {
@@ -583,22 +717,99 @@ struct SaveSessionView: View {
         Task { @MainActor in
             let finalTitle = title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                 ? SessionStore.defaultTitle(for: session.startedAt) : title
-            // `publicNote` and `visibility` are left at their stored defaults
-            // ("" and "private"): posting is gone, so nothing here ever writes
-            // anything but a private record any more.
+            let visibility = shareWithFriends ? "friends" : "private"
             let row = SessionStore.saveSession(sessionID: sessionID, title: finalTitle,
-                                               publicNote: "", privateNote: privateNote,
-                                               visibility: "private",
+                                               publicNote: publicNote, privateNote: privateNote,
+                                               visibility: visibility,
                                                technique: technique, techniqueNote: techniqueNote,
                                                in: context)
             // `saveSession` keeps whatever rating was there; this screen owns
             // it now, so it writes it after.
             row.rating = rating
             try? context.save()
+            if shareWithFriends {
+                guard await share(session: session, title: finalTitle) else {
+                    saving = false
+                    return
+                }
+            } else if wasShared {
+                await community.unpost(session: sessionID)
+            }
             saving = false
             SessionDetails.clear(sessionID)
             onDone()
         }
+    }
+
+    /// Screens the words and every photo, then hands the post to the model,
+    /// which uploads it after this page has closed (a video can be 40 MB,
+    /// and waiting on it here was "loaded like forever", 2026-09-27). False
+    /// when something was refused, with the reason on screen.
+    private func share(session: Session, title finalTitle: String) async -> Bool {
+        guard ContentFilter.check([finalTitle, publicNote]) == .ok else {
+            problem = CommunityError.contentBlocked.localizedDescription
+            return false
+        }
+        // Every kept item, screened before anything goes up, all at once. A
+        // video screens its poster frame, the still `jpeg` always holds.
+        let stills = mediaItems.compactMap(\.jpeg)
+        let blocked = await withTaskGroup(of: Bool.self) { group in
+            for data in stills {
+                group.addTask {
+                    guard let img = UIImage(data: data) else { return false }
+                    return await PhotoScreen.check(img) == .sensitive
+                }
+            }
+            for await sensitive in group where sensitive {
+                group.cancelAll()
+                return true
+            }
+            return false
+        }
+        if blocked {
+            problem = CommunityError.photoBlocked.localizedDescription
+            return false
+        }
+        // "Something else" shares the words they wrote for it.
+        let practice = technique == MeditationMethod.ownID && !techniqueNote.isEmpty
+            ? techniqueNote : MeditationMethod.label(for: technique)
+        // No score, ever (5.1.3): the draft has no field for one.
+        let draft = CommunityStore.Draft(
+            minutes: minutes,
+            streak: streak,
+            technique: practice,
+            caption: publicNote,
+            media: [],
+            practicedAt: session.startedAt,
+            sessionID: sessionID.uuidString,
+            title: finalTitle,
+            sound: sound,
+            rating: rating)
+        // The CURRENT full list, in order, so a post always matches this page.
+        let media = mediaItems.compactMap(PostMediaPrep.Source.init)
+        let sid = sessionID, note = publicNote, privateNote = privateNote
+        let technique = technique, techniqueNote = techniqueNote, context = context
+        community.postInBackground(draft, media: media) {
+            // The upload failed: the session goes back to Only you, so it
+            // never claims to be shared when it is not.
+            SessionStore.saveSession(sessionID: sid, title: finalTitle, publicNote: note,
+                                     privateNote: privateNote, visibility: "private",
+                                     technique: technique, techniqueNote: techniqueNote, in: context)
+        }
+        Analytics.track(.sessionShared(photos: media.count))
+        return true
+    }
+}
+
+/// Where "Who can see this?" starts (Melvin, 2026-10-23: "default
+/// friends"). A session never saved before starts on Friends, unless this
+/// phone has no profile to share from; a saved one starts where it was left.
+/// `hasProfile` nil means iCloud has not answered yet.
+enum SharingDefault {
+    static func startsOnFriends(friendsOn: Bool, savedBefore: Bool, wasShared: Bool, hasProfile: Bool?) -> Bool {
+        guard friendsOn else { return false }
+        if wasShared { return true }
+        return !savedBefore && hasProfile != false
     }
 }
 

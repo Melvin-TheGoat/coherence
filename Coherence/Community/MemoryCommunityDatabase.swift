@@ -278,17 +278,18 @@ enum DemoCommunity {
                                                        caption: "Cold enough to see my breath.",
                                                        media: media([("demo-feed-roof", UIColor(red: 0.24, green: 0.35, blue: 0.42, alpha: 1), UIColor(red: 0.54, green: 0.42, blue: 0.29, alpha: 1), 0.75, false)]),
                                                        practicedAt: Date().addingTimeInterval(-3_600),
-                                                       title: "Roof before work", sound: "Rain"))
+                                                       title: "Roof before work", sound: "Rain", rating: 8))
         // Three photos, different aspect ratios, so the strip's "shrink to
         // one height, never crop" rule is exercised across shapes.
         _ = try? await melvin.post(.init(minutes: 25, streak: 8, technique: "Guided",
-                                          caption: "", media: media([
+                                          caption: "Long day. Fell asleep around minute 20 and honestly that counts.",
+                                          media: media([
                                             ("demo-feed-window", UIColor(red: 0.17, green: 0.14, blue: 0.10, alpha: 1), UIColor(red: 0.42, green: 0.31, blue: 0.13, alpha: 1), 0.75, false),
                                             ("demo-feed-field", UIColor(red: 0.20, green: 0.24, blue: 0.28, alpha: 1), UIColor(red: 0.10, green: 0.12, blue: 0.16, alpha: 1), 1.33, false),
                                             ("demo-feed-tea", UIColor(red: 0.30, green: 0.28, blue: 0.20, alpha: 1), UIColor(red: 0.55, green: 0.48, blue: 0.32, alpha: 1), 1.0, false),
                                           ]),
                                           practicedAt: Date().addingTimeInterval(-86_400 - 1_800),
-                                          title: "Evening meditation", sound: "Guided"))
+                                          title: "Evening meditation", sound: "Guided", rating: 6))
 
         db.user = "_demo_jordan"
         let jordan = CommunityStore(database: db)
@@ -321,7 +322,7 @@ enum DemoCommunity {
         // shows no strip".
         _ = try? await sam.post(.init(minutes: 8, streak: 1, technique: "Silence",
                                       caption: "", practicedAt: Date().addingTimeInterval(-7_200),
-                                      title: "Quick sit", sound: "Silence"))
+                                      title: "Lunch break reset", sound: "Silence", rating: 7))
 
         db.user = "_demo_me"
         try? await me.accept(CommunityNames.profile(user: "_demo_melvin"))
@@ -336,7 +337,7 @@ enum DemoCommunity {
                                         ("demo-feed-lily", UIColor(red: 0.34, green: 0.28, blue: 0.40, alpha: 1), UIColor(red: 0.14, green: 0.11, blue: 0.20, alpha: 1), 0.75, false),
                                       ]),
                                       practicedAt: Date().addingTimeInterval(-86_400 * 2),
-                                      title: "Morning session", sound: "Silence"))
+                                      title: "Morning session", sound: "Silence", rating: 9))
         // Meditating together (2026-10-14): a running goal with Melvin, in
         // its second day, and an invite from Sam waiting for an answer.
         // `PREVIEW_GOALS=none` leaves them out. In store screenshots since 1.4

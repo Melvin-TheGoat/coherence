@@ -849,6 +849,8 @@ actor CommunityStore {
         var sessionID: String? = nil
         var title: String = ""
         var sound: String? = nil
+        /// How it felt, out of ten, or nil when they did not rate it.
+        var rating: Int? = nil
     }
 
     static func postID(forSession sessionID: String) -> String { "post-" + sessionID }
@@ -888,7 +890,7 @@ actor CommunityStore {
                         practicedAt: draft.practicedAt,
                         createdAt: existing?["createdAt"] as? Date ?? Date(),
                         title: String(draft.title.trimmingCharacters(in: .whitespacesAndNewlines).prefix(Self.titleLimit)),
-                        sound: draft.sound)
+                        sound: draft.sound, rating: draft.rating)
         let record = existing ?? CKRecord(recordType: CommunityType.post, recordID: CKRecord.ID(recordName: id))
         post.apply(to: record)
         // An update with no media (an edit that only changes the caption,
@@ -914,17 +916,6 @@ actor CommunityStore {
 
     func deletePost(_ id: String) async throws {
         try await db.delete(id)
-    }
-
-    /// Deletes every post I've authored, and nothing else Friends knows about
-    /// me (my profile, my friends, my reactions all stay). Used once, the day
-    /// posting was removed from the app (Melvin, 2026-09-27: "get rid of the
-    /// feed, no more posting with photos/videos") to take down what people
-    /// had already shared — `CommunityModel.clearMyPostsIfNeeded` calls it.
-    /// Reuses the same query-then-delete `deleteEverythingOfMine` already
-    /// does for posts, rather than a second implementation of it.
-    func deleteMyPosts() async throws {
-        try await deleteMine(CommunityType.post, field: "author", retired: true)
     }
 
     /// Friends' posts and mine, most recently practiced first.

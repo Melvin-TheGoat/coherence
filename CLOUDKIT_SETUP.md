@@ -568,3 +568,45 @@ profile, and lands on "You and A are friends". Both phones show each other
 under Friends with no request on either side, A gets the "joined with your
 code" notification, and A's list tags B "Joined with your code". Then deploy
 Development to Production.
+
+## Shared sessions (added 2026-10-23): the feed is back
+
+Melvin brought posting back (branch `social-feed`): a session shared with
+friends is a `Post` again, and a 🙏 on it is a `Reaction`. Both types and
+their four indexes in the table above should already be in Production from
+1.1; **check, do not assume**. What is new or was never promoted:
+
+**New fields on `Post`:**
+
+| Field | Type | Index |
+|---|---|---|
+| `rating` | Int(64) | none (how it felt, 0 to 10, only when rated) |
+| `media` | Asset (List) | none |
+| `mediaPosters` | Asset (List) | none |
+| `mediaKinds` | String (List) | none |
+| `mediaAspects` | Double (List) | none |
+
+The four `media*` fields replaced the single `photo` Asset on 2026-09-23 and
+the note at the top of this page says they were never written to
+Development. Development creates a field the first time the app saves it, so
+the two-phone check below creates them; Production only gets them from a
+deploy.
+
+**Indexes that must be in Production** (from the table above): `Post.author`
+QUERYABLE, `Post.practicedAt` SORTABLE, `Reaction.post` QUERYABLE,
+`Reaction.author` QUERYABLE. Without them the feed and a friend's sessions
+come back empty. The rest of Friends keeps working: the feed loads on its own
+path (`CommunityModel.refreshFeed`) and a failure there leaves the friends
+list standing.
+
+**Security roles:** the defaults (`_world` Read, `_icloud` Create, `_creator`
+Read/Write). The app shows a shared session only to friends, but anyone signed
+in to iCloud could read the records; the privacy policy says so.
+
+**Two-phone check before deploying:** phone A, signed in to iCloud and with a
+profile, meditates (or records a session), opens its page, leaves "Who can
+see this?" on Friends, adds a photo, a rating and a note, and taps "Share
+with friends". Phone B, a friend of A, sees it under "Latest from friends",
+opens it, sees every photo, gives it a 🙏, and opens A's page to find it
+under A's sessions. A sees B's 🙏. A switches the session to Only you and it
+disappears from B's feed. Then deploy Development to Production.
