@@ -963,9 +963,11 @@ build that ships invite codes" and "... Meditating together" below.
 - [ ] **App Store Connect:** version 1.4, What's New, build 202610190334,
       release setting, screenshots (the ten in `marketing/appstore-new` would
       replace the old Watch pair), then Submit.
-- [x] (2026-10-23, Melvin) **Analytics for the 1.4 screens join 1.4:**
-      merged and a new 1.4 build archived. Build 202610190334 lacks them and is
-      superseded; submit the new one. No privacy change.
+- [x] (2026-10-23) **1.4 is LIVE on the App Store** (released 2026-10-21
+      02:14 UTC, checked with Apple's lookup API), so the two items above were
+      done and never ticked. The analytics for the 1.4 screens (merged to
+      block 2026-10-23) are NOT in it; they ship in the next version, which
+      must be 1.4.1 or later. No privacy change.
 
 ## OPEN for 1.3.1 (2026-10-15): the rating ask
 
