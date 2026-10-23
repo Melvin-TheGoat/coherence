@@ -361,6 +361,10 @@ Home. Before the 1.2 archive: the portal steps in RELEASE_CHECKLIST.md
   Optimization (icon and screenshots per variant) answers "which one do
   people pick" in days; a PostHog experiment on onboarding cannot reach
   significance on retention at about 20 installs a week. 2026-09-21.
+  **Icon research 2026-10-20** (CLAUDE.md, "THE APP ICON"): proposed
+  candidates are today's icon, a head-and-shoulders close-up on a stronger
+  solid background, and a flatter close-up; all three must ship as alternate
+  icons in a build before PPO can test them. Waiting on Melvin's art.
 - **Meta app-install campaigns.** They need the Meta SDK or an MMP in the
   app (a build, a review, new App Privacy labels), 8 to 10 creatives at a
   time and about 50 installs per ad set per week. Gated: only after a

@@ -7859,12 +7859,23 @@ allowed, Home asks existing members once, top apps in the next build.
   never move a SwiftUI Toggle). Read it with `simctl launch --console-pty`.
 - **A low glow is never printed as a number** ("Otto's glow is at 6%" is a
   sentence about what they lack); the percentage appears from 40% up.
+- **About fifty lines, casual to funny to urgent** (`ReminderCopy`, Melvin,
+  2026-10-13, after the first real reminder on his phone: "kind of bland ...
+  I want variety ... get inspiration from duo lingo"). Examples: "⏰ Your
+  N-day streak needs you", "Otto has been very patient / He's a sloth, so
+  that's easy", "Your phone will survive / A few minutes without it. Otto
+  promises." `ReminderPlannerTests` pins no em dash, never naming a length
+  ("five minute"), titles of 40 characters at most and bodies of 110.
+- **A reminder is planned if it fires more than 10 s from now.** It was 60 s,
+  which silently dropped Melvin's test reminder set one minute ahead.
 
 ### The required Block pick (built 2026-10-13)
 
 Every new member blocks at least one app in onboarding (`BlockAppsScreen`):
-no "Not now"; closing Apple's picker with nothing keeps them there ("Pick at
-least one, even a small one"); the one way through without a pick is
+no "Not now"; closing Apple's picker with nothing keeps them there, with a
+warning buzz and Otto alternating "Hold on, you have to pick at least one.
+Even a small one works." and "Still nothing picked. Just one app is enough to
+start." (so a second empty close still visibly answers); the one way through without a pick is
 declining Apple's Screen Time prompt, which skips the schedule screen too.
 App Review 5.1.1(iv) and 5.1.2(i) forbid requiring a system permission, and
 a 2023 rejection was exactly an onboarding permission screen with no way
@@ -7888,6 +7899,19 @@ picker carries the tip as its `footerText`. The review notes say so.
   top-apps view is the next build (BACKLOG.md).
 - The reminder screen reads "Nudges at your time." and names the new
   cadence; Settings' row is "Reminders" with "Up to 3 a day / Once a day".
+- **Block's test mode waves an empty close through ON THE SIMULATOR ONLY**
+  (`#if DEBUG && targetEnvironment(simulator)`), where the picker has no real
+  apps. It used to apply to any DEBUG build, and Melvin's 808 Beta had test
+  mode left on (`block.testMode.v1`), so onboarding let him continue with
+  nothing picked (2026-10-13). App Store builds never had test mode. **When a
+  Block check passes on the beta that should not, read `block.testMode.v1`
+  off the phone first** (`devicectl device copy from --domain-type
+  appDataContainer ... --source Library/Preferences`).
+- **Settings > Block (debug) > "Onboarding's app pick"** (`BlockAppsRehearsal`)
+  opens the onboarding version of the screen over the valley, with a close
+  button the real one lacks, so the required pick can be tested without
+  redoing onboarding (Melvin: "i dont want to have to go through onboarding
+  again"). A pick saves to Mindful day exactly as onboarding does.
 
 ## AFTER A SESSION, ITS PAGE OPENS BY ITSELF (2026-10-13, Melvin)
 
@@ -7931,6 +7955,11 @@ pentatonic the effects are already built on, so `SoundSynth.root` stays
 261.63 (chroma leans G major because G is its heaviest note; transposing the
 effects to G would have ADDED B, a note the track never plays). **Licence confirmed
 (Melvin, 2026-10-13): from a paid ElevenLabs plan.**
+
+**Shipped:** build 202610130616, uploaded headlessly 2026-10-13, automatic
+release, store screenshots replaced by Aziz's ten. Live by 2026-10-15, when
+1.3.1 (the rating ask on Home) followed it; 1.4 (Meditating together, invite
+codes, profile pictures) is live after that. RELEASE_CHECKLIST.md has each.
 
 ## EVERY SINGLE-ROW PREFERENCES READER TAKES THE OLDEST ROW (2026-10-13, found testing 1.3)
 
@@ -8227,3 +8256,44 @@ Designed in the "808 Invite Codes" canvas (9 screens), then built. Replaces
   two-phone check (`CLOUDKIT_SETUP.md`, "Invite codes";
   RELEASE_CHECKLIST.md). `PREVIEW_GOAL_SCREEN=invitecode|entercode|
   invitedfriends` (DEBUG) opens each screen.
+
+## THE APP ICON: WHAT THE RESEARCH SAYS (2026-10-20, Melvin, nothing decided)
+
+Melvin asked whether the advice "three colours, big bold lines, no shadows,
+close up" has psychology behind it. Two of the four do, one is Apple's rule,
+one has no evidence:
+
+- **Close up: the strongest.** In today's icon (full-body Otto meditating on
+  a pale sky) his face is about a third of the width. At the home screen's
+  180 px it reads fine; at Settings (87 px) and notification (60 px) size the
+  face is a few pixels, and a head-and-shoulders crop keeps it readable.
+  Baby-schema features (big head, round face, big eyes) raise perceived
+  cuteness and the wish to care for it (Glocker et al. 2009, Ethology), which is 808's whole pitch.
+  Vendor blogs claim 20 to 30% lifts from face-only icons; unverified.
+- **Bold shapes: yes, for size.** Apple: avoid "extremely thin line weights"
+  that lose detail small. Simplicity and figure-ground contrast raise liking
+  through processing fluency (Reber, Schwarz & Winkielman 2004). But the
+  most recognised logos are natural and MODERATELY elaborate, not minimal
+  (Henderson & Cote 1998), which a character already is.
+- **No shadows: Apple's rule, not psychology.** The HIG says not to bake in
+  drop shadows, specular highlights, glows or bevels because iOS 26 adds
+  dynamic lighting. Flat icons were found SLOWER to find in a grid than
+  realistic ones (Burmistrov et al. 2015), so do not claim flat is easier.
+- **Three colours: no study isolates colour count.** It is a print-era
+  design habit. What matters is that the icon survives tinted and clear
+  modes, which remove colour: today's pale sky goes near white in grey and
+  the icon's top edge vanishes on a light screen.
+- **Against going too close:** descriptive logos (showing what the product
+  is) score better, most for unfamiliar brands (Luffarelli, Mukesh &
+  Mahmood 2019, JMR). The cross-legged pose is what says "meditation".
+- **Today's icon is one flat PNG** (`Shared/Assets.xcassets/AppIcon`, with
+  a baked glow), so iOS cannot separate Otto from the sky for dark, clear and
+  tinted modes. Icon Composer with Otto and the background as layers fixes
+  that.
+- **Recommendation, not decided:** test rather than argue. Product Page
+  Optimization tests up to three alternate icons against the default, but
+  every test icon must already ship in the LIVE build's binary (asset
+  catalog alternate icons, "Include all app icon assets"). Candidates: today's
+  icon; a head-and-shoulders close-up on one stronger solid background; the
+  same close-up flatter (brown, cream, one background colour, no glow). At
+  808's traffic a result takes weeks. BACKLOG.md > Website and marketing.

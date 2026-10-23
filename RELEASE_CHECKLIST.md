@@ -1024,7 +1024,7 @@ effects, the Watch redesign, and onboarding answers reported to analytics
       the music loop's wrap, the Watch.
 - [x] (2026-10-13) **Archived and uploaded:** 1.3 build 202610130616, every
       archive check ok. Release: automatic (Melvin).
-- [ ] **Before Submit:** select build 202610130616 on version 1.3, upload
+- [x] (2026-10-13, Melvin) **Before Submit:** select build 202610130616 on version 1.3, upload
       Aziz's ten screenshots (full size, one at a time in listing order),
       set "Automatically release this version".
 - [ ] **Website redeploy** (Aziz): the privacy policy changed twice for 1.3
