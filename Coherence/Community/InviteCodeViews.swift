@@ -12,10 +12,15 @@ struct InviteCodeButton: View {
     @ObservedObject var model: CommunityModel
     enum Style { case pill, wide }
     var style: Style = .pill
+    /// For `invite_opened`: "header", "no_friends", "requests".
+    var source = "header"
     @State private var open = false
 
     var body: some View {
-        Button { open = true } label: { label }
+        Button {
+            Analytics.track(.inviteOpened(source: source))
+            open = true
+        } label: { label }
             .modifier(Look(style: style))
             .accessibilityLabel("Invite a friend")
             .sheet(isPresented: $open) {
@@ -147,6 +152,7 @@ struct InviteCodeSheet: View {
                     Button("Now send the code") {
                         SystemShare.present([InviteCode.display(code)]) { done in
                             guard done else { return }
+                            Analytics.track(.inviteCodeSent)
                             withAnimation(.snappy) { step = .sent }
                         }
                     }
@@ -197,6 +203,8 @@ struct InviteCodeSheet: View {
 /// reader chooses Continue; what happens then is the caller's.
 struct InviteCodeEntrySheet: View {
     @ObservedObject var model: CommunityModel
+    /// For `invite_code_looked_up`: "onboarding" or "search".
+    var source = "onboarding"
     let onAccepted: (_ code: String, _ inviter: Profile) -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var text = ""
@@ -316,6 +324,8 @@ struct InviteCodeEntrySheet: View {
         Task {
             let answer = await model.lookUpInvite(asked)
             looking = false
+            Analytics.track(.inviteCodeLookedUp(outcome: CommunityModel.lookupOutcome(answer),
+                                                source: source))
             // Edited while it was looking: this answer is for another code.
             guard InviteCode.normalize(text) == asked else { return }
             switch answer {

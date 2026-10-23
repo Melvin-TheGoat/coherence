@@ -112,6 +112,14 @@ struct PictureChooser: View {
     @State private var expanded = false
 
     private var hasCamera: Bool { UIImagePickerController.isSourceTypeAvailable(.camera) }
+
+    /// Hands the picture over and says where it came from
+    /// (`picture_chosen`): which source, and which preset, never the image.
+    private func picked(_ image: UIImage, source: String, preset: String? = nil) {
+        Analytics.track(.pictureChosen(source: source, placement: mode == .prompt ? "prompt" : "profile",
+                                       preset: preset))
+        onPicked(image)
+    }
     private var presets: [AvatarPreset] {
         mode == .prompt && !expanded ? Array(AvatarPreset.all.prefix(4)) : AvatarPreset.all
     }
@@ -140,14 +148,14 @@ struct PictureChooser: View {
         }
         .background(AppColor.backgroundPrimary.ignoresSafeArea())
         .fullScreenCover(isPresented: $showCamera) {
-            CameraPicker(device: .front) { onPicked($0) }.ignoresSafeArea()
+            CameraPicker(device: .front) { picked($0, source: "camera") }.ignoresSafeArea()
         }
         .photosPicker(isPresented: $showLibrary, selection: $pick, matching: .images)
         .onChange(of: pick) { _, item in
             guard let item else { return }
             Task {
                 if let data = try? await item.loadTransferable(type: Data.self), let ui = UIImage(data: data) {
-                    onPicked(ui)
+                    picked(ui, source: "library")
                 }
                 pick = nil
             }
@@ -263,7 +271,7 @@ struct PictureChooser: View {
     private var footer: some View {
         VStack(spacing: 8) {
             Button {
-                if let image = chosen?.image { onPicked(image) }
+                if let chosen, let image = chosen.image { picked(image, source: "preset", preset: chosen.id) }
             } label: {
                 Text("Use this picture")
             }

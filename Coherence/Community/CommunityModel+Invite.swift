@@ -38,6 +38,18 @@ extension CommunityModel {
         }
     }
 
+    /// How a lookup went, for `invite_code_looked_up`. Never the code.
+    nonisolated static func lookupOutcome(_ answer: Result<Profile, CommunityError>) -> String {
+        switch answer {
+        case .success: return "found"
+        case .failure(.inviteCodeUnknown): return "unknown"
+        case .failure(.inviteCodeIsYours): return "yours"
+        case .failure(.blocked): return "blocked"
+        case .failure(.unavailable): return "offline"
+        case .failure: return "other"
+        }
+    }
+
     /// Keeps a found invite until there is a profile to join with, then
     /// joins at once when there already is one. Returns true when the two
     /// are friends now.

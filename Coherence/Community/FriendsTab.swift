@@ -24,6 +24,11 @@ struct FriendsTab: View {
     /// "Not now" on Create your profile when this is a tab rather than a
     /// sheet: the host moves to Home. As a sheet, `onClose` does the job.
     var onDecline: (() -> Void)? = nil
+    /// Where Friends was opened from, and whether Home's circle carried an
+    /// unread badge then, for `friends_opened`. Read at the tap: opening
+    /// Friends clears the badge before this screen's task runs.
+    var openedFrom = "tab"
+    var hadNews = false
 
     private var user: User? { users.first }
     @Environment(\.tabBarClearance) private var tabBarClearance
@@ -105,7 +110,7 @@ struct FriendsTab: View {
         .task {
             // The tour passing through is not somebody opening Friends, and
             // counting it would put every new install in the number.
-            if tourTab == nil { Analytics.track(.friendsOpened) }
+            if tourTab == nil { Analytics.track(.friendsOpened(source: openedFrom, news: hadNews)) }
             await model.load()
             // Somebody opening Friends with a profile has taken it up, so
             // publishing may resume after a sign-out paused it (Melvin,
@@ -423,20 +428,26 @@ private struct PicturePromptHook: ViewModifier {
             .background {
                 Color.clear
                     .sheet(isPresented: $asking, onDismiss: {
-                        if !answered { PicturePrompt.remindTomorrow() }
+                        if !answered {
+                            Analytics.track(.picturePromptAnswered(answer: "dismissed"))
+                            PicturePrompt.remindTomorrow()
+                        }
                     }) {
                         PictureChooser(mode: .prompt,
                                        onPicked: { image in
+                                           Analytics.track(.picturePromptAnswered(answer: "picked"))
                                            answered = true
                                            asking = false
                                            Task { await model.setAvatar(image) }
                                        },
                                        onRemindTomorrow: {
+                                           Analytics.track(.picturePromptAnswered(answer: "tomorrow"))
                                            answered = true
                                            PicturePrompt.remindTomorrow()
                                            asking = false
                                        },
                                        onNotNow: {
+                                           Analytics.track(.picturePromptAnswered(answer: "never"))
                                            answered = true
                                            PicturePrompt.neverAgain()
                                            asking = false
@@ -450,6 +461,7 @@ private struct PicturePromptHook: ViewModifier {
                 guard !Task.isCancelled, tourTab == nil, !blocked, !asking,
                       PicturePrompt.due(hasPicture: model.profile?.avatarURL != nil) else { return }
                 answered = false
+                Analytics.track(.picturePromptShown)
                 asking = true
             }
     }
@@ -476,6 +488,11 @@ struct FriendsHomeView: View {
     /// Meditating together: the friend picker, then the days (2026-10-14).
     @State private var startingGoal = false
 
+    private func startGoal(_ source: String) {
+        Analytics.track(.goalStartOpened(source: source))
+        startingGoal = true
+    }
+
     var body: some View {
         GeometryReader { proxy in
             let top = proxy.safeAreaInsets.top
@@ -491,7 +508,7 @@ struct FriendsHomeView: View {
                         // Meditating together (2026-10-14): the goals, with a
                         // blue Add that is always there once one exists.
                         if !model.togetherGoals.isEmpty {
-                            TogetherSection(model: model) { startingGoal = true }
+                            TogetherSection(model: model) { startGoal("together_add") }
                         }
                         GrassHeading(title: "Friends")
                         friendsSection
@@ -549,7 +566,7 @@ struct FriendsHomeView: View {
                 // "Meditate with a friend" as the first row, the same height
                 // as a friend, until a goal exists (then it is the blue Add).
                 if model.togetherGoals.isEmpty {
-                    MeditateWithFriendRow { startingGoal = true }
+                    MeditateWithFriendRow { startGoal("friends_row") }
                     Rectangle().fill(ValleyGround.quiet).frame(height: 1)
                 }
                 ForEach(Array(model.friends.enumerated()), id: \.element) { i, id in
@@ -610,7 +627,7 @@ struct FriendsHomeView: View {
                     // new (Aziz, 2026-10-18).
                     VStack(alignment: .trailing, spacing: 8) {
                         requestsButton
-                        InviteCodeButton(model: model)
+                        InviteCodeButton(model: model, source: "header")
                     }
                     .padding(.top, 6)
                 }
@@ -764,7 +781,16 @@ struct FriendsHomeView: View {
             // Not a username: maybe an invite code (2026-10-18). Shown with a
             // Join button; joining is the reader's choice, never the search's.
             if result == nil, maybeCode {
-                switch await model.lookUpInvite(q) {
+                let answer = await model.lookUpInvite(q)
+                // Search tries every unknown name as a code, so only what was
+                // written like one counts: a found code, or a code-shaped miss.
+                if case .success = answer {
+                    Analytics.track(.inviteCodeLookedUp(outcome: "found", source: "search"))
+                } else if q.contains("-") || q.contains(where: \.isWhitespace) {
+                    Analytics.track(.inviteCodeLookedUp(outcome: CommunityModel.lookupOutcome(answer),
+                                                        source: "search"))
+                }
+                switch answer {
                 case .success(let inviter):
                     guard query == q else { return }
                     if model.friends.contains(inviter.id) { result = inviter } else { codeOwner = inviter }
@@ -816,7 +842,7 @@ private struct EmptyFriends: View {
                 .foregroundStyle(AppColor.textSecondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 18)
-            InviteCodeButton(model: model, style: .wide)
+            InviteCodeButton(model: model, style: .wide, source: "no_friends")
                 .padding(.top, 8)
             if !model.sent.isEmpty {
                 Text("\(model.sent.count) request\(model.sent.count == 1 ? "" : "s") waiting for an answer")
@@ -1099,7 +1125,7 @@ struct RequestsView: View {
                             .padding(.horizontal, 14)
                             .whiteCard()
                         }
-                        InviteCodeButton(model: model, style: .wide)
+                        InviteCodeButton(model: model, style: .wide, source: "requests")
                             .padding(.top, 10)
                     }
                     .padding(.horizontal, AppMetrics.screenPadding)
@@ -1464,7 +1490,10 @@ struct PersonView: View {
         case .friends:
             // "Friends ✓" and "Meditate together", the same size (Aziz,
             // 2026-10-14). With a goal going, the green one is "Your goal".
-            FriendPairButtons(model: model, friend: id) { startingGoal = true }
+            FriendPairButtons(model: model, friend: id) {
+                Analytics.track(.goalStartOpened(source: "friend_page"))
+                startingGoal = true
+            }
         }
     }
 

@@ -113,6 +113,57 @@ final class AnalyticsScreenNamesTests: XCTestCase {
         XCTAssertEqual(Analytics.Event.watchSwitch(on: true, source: "ready").properties["on"] as? Bool, true)
     }
 
+    // MARK: The 1.4 friends screens
+
+    /// Meditating together, pictures and invite codes send what was tapped
+    /// and nothing about who: no handle, no name, no code, no day.
+    func test_friendsScreensSendChoicesNeverPeople() {
+        typealias E = Analytics.Event
+        let cases: [(E, String, [String])] = [
+            (.friendsOpened(source: "home", news: true), "friends_opened", ["source", "news"]),
+            (.goalStartOpened(source: "friend_page"), "goal_start_opened", ["source"]),
+            (.goalInvited(target: 4), "goal_invited", ["target"]),
+            (.goalInviteAnswered(accepted: false), "goal_invite_answered", ["answer"]),
+            (.goalEnded(wasRunning: true), "goal_ended", ["kind"]),
+            (.goalOpened(state: "invite_to_me"), "goal_opened", ["state"]),
+            (.nudgeSent(kind: "high_five"), "nudge_sent", ["kind"]),
+            (.goalMeditateTapped, "goal_meditate_tapped", []),
+            (.pictureChosen(source: "preset", placement: "prompt", preset: "otto"), "picture_chosen",
+             ["source", "placement", "preset"]),
+            (.pictureChosen(source: "camera", placement: "profile", preset: nil), "picture_chosen",
+             ["source", "placement"]),
+            (.picturePromptShown, "picture_prompt_shown", []),
+            (.picturePromptAnswered(answer: "tomorrow"), "picture_prompt_answered", ["answer"]),
+            (.inviteOpened(source: "requests"), "invite_opened", ["source"]),
+            (.inviteCodeSent, "invite_code_sent", []),
+            (.inviteCodeLookedUp(outcome: "found", source: "onboarding"), "invite_code_looked_up",
+             ["outcome", "source"]),
+        ]
+        for (event, name, keys) in cases {
+            XCTAssertEqual(event.name, name)
+            XCTAssertEqual(Set(event.properties.keys), Set(keys), name)
+        }
+        XCTAssertEqual(E.friendsOpened(source: "push", news: true).properties["news"] as? Bool, true)
+        XCTAssertEqual(E.goalInvited(target: 4).properties["target"] as? Int, 4)
+        XCTAssertEqual(E.goalEnded(wasRunning: false).properties["kind"] as? String, "invite_cancelled")
+        XCTAssertEqual(E.goalInviteAnswered(accepted: true).properties["answer"] as? String, "yes")
+    }
+
+    /// How many goals a session counted for goes as a band, never who.
+    func test_rewardCarriesHowManyGoalsAsABand() {
+        XCTAssertEqual(Analytics.Event.rewardViewed(stageUp: false).properties["goals"] as? String, "0")
+        XCTAssertEqual(Analytics.Event.rewardViewed(stageUp: false, goals: 2).properties["goals"] as? String, "2")
+        XCTAssertEqual(Analytics.Event.rewardViewed(stageUp: false, goals: 9).properties["goals"] as? String, "3plus")
+    }
+
+    /// An invite code lookup reports how it went, never the code.
+    func test_inviteLookupOutcomes() {
+        XCTAssertEqual(CommunityModel.lookupOutcome(.failure(.inviteCodeUnknown)), "unknown")
+        XCTAssertEqual(CommunityModel.lookupOutcome(.failure(.inviteCodeIsYours)), "yours")
+        XCTAssertEqual(CommunityModel.lookupOutcome(.failure(.blocked)), "blocked")
+        XCTAssertEqual(CommunityModel.lookupOutcome(.failure(.unavailable)), "offline")
+    }
+
     // MARK: The plan person property
 
     func test_planNameRanksTheBiggestPlan() {

@@ -130,6 +130,7 @@ extension CommunityModel {
         }
         do {
             try await store.inviteGoal(to: friend, target: target, myName: myAlertName)
+            Analytics.track(.goalInvited(target: target))
             await refreshGoals(store)
             return true
         } catch { errorText = Self.plain(error); return false }
@@ -141,6 +142,7 @@ extension CommunityModel {
         guard let store else { return false }
         do {
             try await store.acceptGoal(goal, today: todayKey, myName: myAlertName)
+            Analytics.track(.goalInviteAnswered(accepted: true))
             markSeen("invite-" + goal.id)
             await refreshGoals(store)
             return true
@@ -152,6 +154,7 @@ extension CommunityModel {
         guard let store else { return false }
         do {
             try await store.declineGoal(goal, myName: myAlertName)
+            Analytics.track(.goalInviteAnswered(accepted: false))
             markSeen("invite-" + goal.id)
             await refreshGoals(store)
             return true
@@ -162,6 +165,7 @@ extension CommunityModel {
         guard let store else { return }
         do {
             try await store.endGoal(goal, myName: myAlertName)
+            Analytics.track(.goalEnded(wasRunning: goal.state == .active))
             await refreshGoals(store)
         } catch { errorText = Self.plain(error) }
     }
@@ -172,7 +176,9 @@ extension CommunityModel {
     func nudge(_ goal: GoalPair, kind: Nudge.Kind) async -> Bool {
         guard let store else { return false }
         do {
-            _ = try await store.nudge(goal.partner, kind: kind, today: todayKey, myName: myAlertName)
+            let sent = try await store.nudge(goal.partner, kind: kind, today: todayKey, myName: myAlertName)
+            // Today's had already gone from another device: not a new one.
+            if sent { Analytics.track(.nudgeSent(kind: kind == .cheer ? "high_five" : "nudge")) }
             nudgedToday.insert(goal.partner)
             return true
         } catch { errorText = Self.plain(error); return false }

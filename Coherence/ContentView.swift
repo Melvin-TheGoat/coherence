@@ -67,6 +67,9 @@ struct ContentView: View {
     /// them (verified on-device: only Begin opened) — so every modal routes
     /// through this enum instead.
     @State private var sheet: HomeSheet?
+    /// Where Friends was last opened from, for `friends_opened`: Home's
+    /// circle or a goal notification, and whether the circle had a badge.
+    @State private var friendsOpening = (source: "home", news: false)
     /// Presented once the current sheet is down. Setting `sheet` while one is
     /// already up drops the new one on the floor.
     @State private var pendingSheet: HomeSheet?
@@ -439,7 +442,8 @@ struct ContentView: View {
             case .blockPaywall:
                 PaywallScreen(placement: "block", plan: $paywallPlan) { _ in sheet = nil }
             case .friends:
-                FriendsTab(onClose: { sheet = nil })
+                FriendsTab(onClose: { sheet = nil },
+                           openedFrom: friendsOpening.source, hadNews: friendsOpening.news)
             case .pickApps:
                 BlockAppsAskView { sheet = nil }
             case .reward(let reward):
@@ -452,7 +456,8 @@ struct ContentView: View {
                     // which counts Block's "Not now" windows (see
                     // `sessionOnlyStages`).
                     let stages = sessionOnlyStages(landing: reward.id)
-                    Analytics.track(.rewardViewed(stageUp: stages.map { $0.after > $0.before } ?? false))
+                    Analytics.track(.rewardViewed(stageUp: stages.map { $0.after > $0.before } ?? false,
+                                                  goals: reward.countedFor.count))
                 }
             }
         }
@@ -1005,7 +1010,10 @@ struct ContentView: View {
 
     /// Friends, in a circle, top right: the two sloths from the tab bar.
     private var friendsBadge: some View {
-        Button { sheet = .friends } label: {
+        Button {
+            friendsOpening = ("home", community.unseenCount > 0)
+            sheet = .friends
+        } label: {
             // No label under it, like the guide's circle.
             SitArt(name: "sloth-friends", size: 44)
             .frame(width: 54, height: 54)
@@ -1201,6 +1209,7 @@ struct ContentView: View {
         guard FeatureFlags.friends else { return }
         if case .friends? = sheet { return }
         if case .friends? = pendingSheet { return }
+        friendsOpening = ("push", true)
         if sheet == nil { sheet = .friends } else if pendingSheet == nil { pendingSheet = .friends }
     }
 

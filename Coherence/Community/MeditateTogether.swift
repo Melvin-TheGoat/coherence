@@ -529,6 +529,9 @@ struct GoalDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)
         .refreshesWhileShown { await model.refresh(quiet: true) }
+        .onAppear {
+            if let goal { Analytics.track(.goalOpened(state: goal.state == .waitingForThem ? "waiting_for_them" : "active")) }
+        }
         .confirmationDialog(goal?.state == .waitingForThem ? "Cancel the invite?" : "End this goal?",
                             isPresented: $confirmEnd, titleVisibility: .visible) {
             Button(goal?.state == .waitingForThem ? "Cancel invite" : "End goal", role: .destructive) {
@@ -692,7 +695,10 @@ struct GoalDetailView: View {
                     .disabled(sending)
                 caption("\(name) hasn't meditated today")
             case .meditateFirst:
-                Button { NotificationCenter.default.post(name: .openMeditate, object: nil) } label: {
+                Button {
+                    Analytics.track(.goalMeditateTapped)
+                    NotificationCenter.default.post(name: .openMeditate, object: nil)
+                } label: {
                     Text("🧘 Meditate now")
                 }
                 .buttonStyle(TogetherStyle.green)
@@ -942,6 +948,9 @@ struct GoalInviteDetailView: View {
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)
+        .onAppear {
+            if model.goal(goalID)?.state == .waitingForMe { Analytics.track(.goalOpened(state: "invite_to_me")) }
+        }
     }
 
     private func content(_ goal: GoalPair) -> some View {

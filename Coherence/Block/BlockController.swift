@@ -546,6 +546,7 @@ final class BlockNotifications: NSObject, UNUserNotificationCenterDelegate {
             Task { @MainActor in BlockController.shared.requestIntervention() }
         } else if request.content.userInfo["ck"] != nil {
             // A goal invite, an answer or a nudge: open Friends.
+            Analytics.track(.notificationOpened(kind: "friends"))
             Task { @MainActor in
                 // Remembered too, for a cold launch: Home may not exist yet.
                 FriendsPush.pending = true

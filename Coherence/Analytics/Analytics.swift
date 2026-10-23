@@ -75,7 +75,9 @@ enum Analytics {
         case sessionStartFailed(reason: String)
         /// The after-session reward screen. `stageUp` is whether Otto moved
         /// to a brighter stage, which is practice-derived, never measured.
-        case rewardViewed(stageUp: Bool)
+        /// `goals` is how many shared weekly goals the session counted for
+        /// ("Counted for Ana and Daniel"), as a band, never who.
+        case rewardViewed(stageUp: Bool, goals: Int = 0)
         /// Otto's glow stage changed with a landed session
         /// (`OttoAura.Stage` names). Derived from session dates only.
         case glowStageChanged(from: String, to: String)
@@ -156,7 +158,9 @@ enum Analytics {
 
         // Friends (COMMUNITY.md). Counts only; never a handle, a caption or a
         // score.
-        case friendsOpened
+        /// `source`: "home" (the circle on Home), "push" (a goal or nudge
+        /// notification), "tab". `news`: the circle carried an unread badge.
+        case friendsOpened(source: String, news: Bool)
         case usernameClaimed
         case friendRequestSent
         case friendAccepted
@@ -167,6 +171,48 @@ enum Analytics {
         case inviteRewarded                  // a brought friend sat; the grant landed
         case profileCreated(photo: Bool)
         case friendsIntroShown               // the one-time prompt for pre-Friends users
+
+        // Meditating together (1.4, 2026-10-14): shared weekly goals with a
+        // friend. Never who, never a day, never minutes: the goal's target
+        // is a choice of 1 to 7, the rest are what was tapped.
+        /// The goal flow opened. `source`: "friends_row" (the first-goal row
+        /// on Friends), "together_add" (the Add beside "Meditating
+        /// together"), "friend_page" (a friend's page).
+        case goalStartOpened(source: String)
+        /// The invite went out. `target` is days a week each, 1 to 7.
+        case goalInvited(target: Int)
+        /// An invite to me was answered.
+        case goalInviteAnswered(accepted: Bool)
+        /// Ended by me: a running goal, or my own invite taken back.
+        case goalEnded(wasRunning: Bool)
+        /// A goal's page. `state`: "active", "waiting_for_them",
+        /// "invite_to_me".
+        case goalOpened(state: String)
+        /// `kind`: "nudge" or "high_five".
+        case nudgeSent(kind: String)
+        /// "Meditate now" on a goal's page (meditate first, then nudge).
+        case goalMeditateTapped
+
+        // Profile pictures (1.4, 2026-10-19)
+        /// `source`: "camera", "library", "preset". `preset` is which of the
+        /// 21 (`AvatarPreset.id`), only for a preset. `placement`:
+        /// "profile" (create or edit) or "prompt" (the ask from Friends).
+        case pictureChosen(source: String, placement: String, preset: String?)
+        /// The one-time "Pick a picture" ask from Friends was shown.
+        case picturePromptShown
+        /// `answer`: "picked", "tomorrow", "never", "dismissed".
+        case picturePromptAnswered(answer: String)
+
+        // Invite codes (1.4, 2026-10-18). Never the code itself.
+        /// The invite sheet opened. `source`: "header", "no_friends",
+        /// "requests".
+        case inviteOpened(source: String)
+        /// The second share, the code as its own text, went out.
+        case inviteCodeSent
+        /// A code was typed or pasted and looked up. `outcome`: "found",
+        /// "unknown", "yours", "blocked", "offline". `source`: "onboarding",
+        /// "search".
+        case inviteCodeLookedUp(outcome: String, source: String)
 
         var name: String {
             switch self {
@@ -233,6 +279,19 @@ enum Analytics {
             case .inviteRewarded: "invite_rewarded"
             case .profileCreated: "profile_created"
             case .friendsIntroShown: "friends_intro_shown"
+            case .goalStartOpened: "goal_start_opened"
+            case .goalInvited: "goal_invited"
+            case .goalInviteAnswered: "goal_invite_answered"
+            case .goalEnded: "goal_ended"
+            case .goalOpened: "goal_opened"
+            case .nudgeSent: "nudge_sent"
+            case .goalMeditateTapped: "goal_meditate_tapped"
+            case .pictureChosen: "picture_chosen"
+            case .picturePromptShown: "picture_prompt_shown"
+            case .picturePromptAnswered: "picture_prompt_answered"
+            case .inviteOpened: "invite_opened"
+            case .inviteCodeSent: "invite_code_sent"
+            case .inviteCodeLookedUp: "invite_code_looked_up"
             }
         }
 
@@ -258,7 +317,7 @@ enum Analytics {
             case .watchFallback(let reason): ["reason": reason]
             case .sessionDiscarded(let reason, let d): ["reason": reason, "duration": d]
             case .sessionStartFailed(let reason): ["reason": reason]
-            case .rewardViewed(let stageUp): ["stage_up": stageUp]
+            case .rewardViewed(let stageUp, let goals): ["stage_up": stageUp, "goals": Analytics.countBand(goals)]
             case .glowStageChanged(let from, let to): ["from": from, "to": to]
             case .ratingPrompted(let placement): ["placement": placement]
             case .paywallViewed(let placement), .paywallDismissed(let placement): ["placement": placement]
@@ -281,6 +340,19 @@ enum Analytics {
             case .awardUnlocked(let id): ["id": id]
             case .contentReported(let kind): ["kind": kind]
             case .profileCreated(let photo): ["photo": photo ? "yes" : "no"]
+            case .friendsOpened(let source, let news): ["source": source, "news": news]
+            case .goalStartOpened(let source): ["source": source]
+            case .goalInvited(let target): ["target": target]
+            case .goalInviteAnswered(let accepted): ["answer": accepted ? "yes" : "no"]
+            case .goalEnded(let wasRunning): ["kind": wasRunning ? "ended" : "invite_cancelled"]
+            case .goalOpened(let state): ["state": state]
+            case .nudgeSent(let kind): ["kind": kind]
+            case .pictureChosen(let source, let placement, let preset):
+                preset.map { ["source": source, "placement": placement, "preset": $0] }
+                    ?? ["source": source, "placement": placement]
+            case .picturePromptAnswered(let answer): ["answer": answer]
+            case .inviteOpened(let source): ["source": source]
+            case .inviteCodeLookedUp(let outcome, let source): ["outcome": outcome, "source": source]
             default: [:]
             }
         }
@@ -660,6 +732,11 @@ enum Analytics {
         case ..<1500: "12to25m"
         default: "over25m"
         }
+    }
+
+    /// A small count as "0", "1", "2", "3plus".
+    static func countBand(_ n: Int) -> String {
+        n >= 3 ? "3plus" : String(max(n, 0))
     }
 
     static func streakBand(days: Int) -> String {
