@@ -23,12 +23,15 @@ import WatchConnectivity
 enum TourTarget: Hashable {
     case streak, guide, glow
     case begin, block, friends, profile
-    /// With the shop on: the Store tab, and Friends' circle on Home.
-    case store, friendsCircle
+    /// With the shop on: the Store tab and Friends' circle on Home, or, since
+    /// Friends has the tab again (2026-10-23), the Shop's circle.
+    case store, friendsCircle, shopCircle
 
     /// Round things get a round window: the plus, and the streak and guide
     /// circles stacked in the corner.
-    var isRound: Bool { self == .begin || self == .streak || self == .guide || self == .friendsCircle }
+    var isRound: Bool {
+        self == .begin || self == .streak || self == .guide || self == .friendsCircle || self == .shopCircle
+    }
 }
 
 struct TourTargetKey: PreferenceKey {
@@ -81,25 +84,37 @@ struct TourStop: Equatable {
     /// The stops, in order, for a build's switches. **It ends on Home**, with
     /// the plus lit, so finishing lifts the dim off the very screen the reader
     /// lands on instead of cutting from another tab to Home.
-    static func all(block: Bool, friends: Bool, shop: Bool = false) -> [TourStop] {
+    /// `friendsTab`: Friends has the tab and the Shop is the Home circle
+    /// (Melvin, 2026-10-23). Without it, the Shop has the tab and Friends is
+    /// the circle (2026-09-27).
+    static func all(block: Bool, friends: Bool, shop: Bool = false, friendsTab: Bool = false) -> [TourStop] {
+        let shopHasTab = shop && !(friends && friendsTab)
+        let corner: TourStop
+        if friends && shopHasTab {
+            corner = TourStop(tab: .home, targets: [.friendsCircle, .streak, .guide],
+                              line: "Your friends are up here, with your streak and my guide.",
+                              stand: .bottom)
+        } else if shop {
+            corner = TourStop(tab: .home, targets: [.shopCircle, .streak, .guide],
+                              line: "Your streak, my guide and my hat shop all live up here.",
+                              stand: .bottom)
+        } else {
+            corner = TourStop(tab: .home, targets: [.streak, .guide],
+                              line: "Your streak lives up here, and under it is my guide to meditating.",
+                              stand: .bottom)
+        }
         var stops = [
             TourStop(tab: .home, targets: [.glow],
                      line: "This is home, where I glow brighter every day you meditate.",
                      stand: .top),
-            shop && friends
-                ? TourStop(tab: .home, targets: [.friendsCircle, .streak, .guide],
-                           line: "Your friends are up here, with your streak and my guide.",
-                           stand: .bottom)
-                : TourStop(tab: .home, targets: [.streak, .guide],
-                           line: "Your streak lives up here, and under it is my guide to meditating.",
-                           stand: .bottom),
+            corner,
         ]
         if block {
             stops.append(TourStop(tab: .block, targets: [.block],
                                   line: "This is Block, where I hold the apps you pick until you've meditated.",
                                   stand: .bottom))
         }
-        if shop {
+        if shopHasTab {
             // Friends is a circle on Home then, not a tab, and the Store has
             // the tab (Melvin, 2026-09-27).
             stops.append(TourStop(tab: .store, targets: [.store],
@@ -187,7 +202,8 @@ struct TourHomeScreen: View {
     @State private var shownTab: MainTab = .home
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    private let stops = TourStop.all(block: FeatureFlags.block, friends: FeatureFlags.friends, shop: FeatureFlags.shop)
+    private let stops = TourStop.all(block: FeatureFlags.block, friends: FeatureFlags.friends,
+                                     shop: FeatureFlags.shop, friendsTab: FeatureFlags.friendsTab)
     private var current: TourStop { stops[stop] }
 
     /// Every change of stop takes this long: the window slides, the tab
@@ -257,7 +273,7 @@ struct TourHomeScreen: View {
         // and his bubble and Next collapsed to nothing, a tall dark smear
         // down the left of the screen that every tap advanced past (Aziz,
         // 2026-10-01).
-        let corners = [TourTarget.streak, .guide, .friendsCircle].compactMap { anchors[$0].map { proxy[$0].maxY } }
+        let corners = [TourTarget.streak, .guide, .friendsCircle, .shopCircle].compactMap { anchors[$0].map { proxy[$0].maxY } }
         let underCorners = stand == .top ? corners.max().map { $0 + 10 } : nil
 
         ZStack {

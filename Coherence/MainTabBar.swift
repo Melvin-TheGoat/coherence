@@ -13,10 +13,32 @@ private struct TabBarClearanceKey: EnvironmentKey {
     static let defaultValue: CGFloat = 0
 }
 
+/// Anything new in Friends (a request, a goal invite or answer, a nudge),
+/// drawn on the Friends tab as a red count, the badge its Home circle used
+/// to carry (Aziz, 2026-10-14). Cleared when Friends opens.
+private struct FriendsUnreadKey: EnvironmentKey {
+    static let defaultValue = 0
+}
+
 extension EnvironmentValues {
     var tabBarClearance: CGFloat {
         get { self[TabBarClearanceKey.self] }
         set { self[TabBarClearanceKey.self] = newValue }
+    }
+    var friendsUnread: Int {
+        get { self[FriendsUnreadKey.self] }
+        set { self[FriendsUnreadKey.self] = newValue }
+    }
+}
+
+extension View {
+    /// The unread count on a tab's icon, for the Friends tab only.
+    func friendsUnread(_ count: Int, on tab: MainTab) -> some View {
+        overlay(alignment: .topTrailing) {
+            if tab == .friends, count > 0 {
+                UnreadBadge(count: count).offset(x: 12, y: -6)
+            }
+        }
     }
 }
 
@@ -37,6 +59,7 @@ enum MainTab: Hashable {
 struct MainTabBar: View {
     @Binding var selection: MainTab
     let onPlus: () -> Void
+    @Environment(\.friendsUnread) private var friendsUnread
 
     /// The bars under test (`TestTabBar`, 2026-09-25) are chosen in
     /// Settings > Block (debug) > "Tab bar (test)", the classic bar with
@@ -77,7 +100,7 @@ struct MainTabBar: View {
                 item(.guide, icon: "book.closed", label: "Guide")
             }
             plus
-            if FeatureFlags.shop {
+            if FeatureFlags.shopHasTab {
                 item(.store, icon: "bag", label: "Shop", tour: .store)
             } else if FeatureFlags.friends {
                 item(.friends, icon: "person.2", label: "Friends", tour: .friends)
@@ -123,6 +146,7 @@ struct MainTabBar: View {
                 Image(systemName: selected ? icon + ".fill" : icon)
                     .font(.system(size: 22, weight: .regular))
                     .frame(height: 26)
+                    .friendsUnread(friendsUnread, on: tab)
                 Text(label)
                     .font(.system(size: 10, weight: .medium))
             }

@@ -28,7 +28,7 @@ struct InkTabBar: View {
             item(.home, art: "ink-home", label: "Home", wash: (0, false), tour: nil)
             item(.block, art: "ink-block", label: "Block", wash: (180, true), tour: .block)
             plus
-            if FeatureFlags.shop {
+            if FeatureFlags.shopHasTab {
                 item(.store, art: "ink-store", label: "Shop", wash: (180, false), tour: .store)
             } else {
                 item(.friends, art: "ink-friends", label: "Friends", wash: (180, false), tour: .friends)
