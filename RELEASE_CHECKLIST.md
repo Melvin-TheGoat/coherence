@@ -963,6 +963,10 @@ build that ships invite codes" and "... Meditating together" below.
 - [ ] **App Store Connect:** version 1.4, What's New, build 202610190334,
       release setting, screenshots (the ten in `marketing/appstore-new` would
       replace the old Watch pair), then Submit.
+- [ ] **Decide (Melvin):** analytics for the 1.4 screens (branch
+      `posthog-1.4-screens`, 2026-10-23) are NOT in build 202610190334. Either
+      merge and archive a new 1.4 build before Submit, or let them ride the
+      next version. No privacy change either way.
 
 ## OPEN for 1.3.1 (2026-10-15): the rating ask
 

@@ -2227,6 +2227,38 @@ so nobody reads the numbers the old way again.
   covered. The token is renewed weekly by the script. Not yet run against
   the real account (no Meta app existed on 2026-10-15).
 
+## 1.4'S FRIENDS SCREENS REACH POSTHOG (2026-10-23, Melvin, branch `posthog-1.4-screens`)
+
+"Integrate the new screen pages with posthog." Meditating together, profile
+pictures and invite codes shipped in 1.4 with no events. Now, all named cases
+in `Analytics.Event`, pinned by `test_friendsScreensSendChoicesNeverPeople`:
+`goal_start_opened` (source), `goal_invited` (target 1 to 7),
+`goal_invite_answered`, `goal_opened` (state), `nudge_sent` (nudge or
+high_five), `goal_meditate_tapped`, `goal_ended`; `picture_chosen` (camera,
+library or preset id; profile or prompt), `picture_prompt_shown` /
+`_answered`; `invite_opened` (where), `invite_code_sent`,
+`invite_code_looked_up` (outcome, onboarding or search). `friends_opened`
+gained `source` (home, push, tab) and `news` (the badge), `reward_viewed`
+gained `goals` (a band), and a tapped goal or nudge push sends
+`notification_opened` kind `friends`.
+- **Never who.** No name, handle, code, day or minutes. A preset id is one of
+  21 fixed choices, so it is a choice, not data about a person. The policy's
+  "which features are used" already covers all of it: no policy, manifest or
+  label change.
+- **Goal events fire in `CommunityModel+Goals` on success**, not on the tap,
+  so a failed send counts nothing. A nudge counts only when the store says it
+  was new (`nudge` returns false when today's already went from another
+  device).
+- **Search tries every unknown name as an invite code**, so a search lookup
+  counts only when found or written like a code (a dash or a space).
+- **Friends tab in the sheet** (`writeFriends`): one scan, each event given a
+  `*` key plus one key per property via `arrayJoin`, so every row counts its
+  own people. HogQL silently ignores `WITH ROLLUP` and refuses
+  `emptyArrayString()`; both were tried against the live project.
+- Not tracked, worth knowing: a goal week completing. It is derived from both
+  people's days and would fire on two phones; the reward's `goals` band is
+  the nearest signal.
+
 ## ONBOARDING ANSWERS REACH POSTHOG, A CLOSED LIST OF EIGHT (2026-10-13, Melvin, ships in 1.3)
 
 "I want to get a sense for our customer profile." Until 1.3 no answer left

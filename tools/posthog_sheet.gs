@@ -15,6 +15,8 @@
  *   Installs      one row per new install: when, where, phone, how far they got
  *   Updaters      one row per person who updated from 1.0: did they subscribe
  *   Who they are  every onboarding answer: how many gave it, how many subscribed
+ *   Friends       Friends, Meditating together, profile pictures and invite
+ *                 codes: what people opened and tapped, last 30 days and all time
  *   Instagram     every post and reel on the account, ranked by bio link taps,
  *                 pulled from Instagram (only once IG_TOKEN is set, step 6)
  *   Reels         the one tab you type into: a row per Instagram reel, ranked
@@ -300,7 +302,7 @@ function refreshAll() {
     ['Problems', writeProblems], ['Purchases', writePurchases],
     ['Apple Watch', writeAppleWatch], ['Installs', writeInstalls],
     ['Updaters', writeUpdaters], ['Who they are', writeWhoTheyAre],
-    ['Instagram', writeInstagram],
+    ['Friends', writeFriends], ['Instagram', writeInstagram],
   ];
   var failed = [];
   try { ensureReelsTab(); } catch (e) { failed.push(REELS_TAB + ': ' + e.message); }
@@ -879,6 +881,155 @@ function writeAppleWatch() {
   rows.push(['']);
   rows.push(['Note', 'Columns 2 to 5 count people, the rest count sessions. 1.0 asked "Do you have an Apple Watch?"; 1.1 detects a paired Watch instead, so the old Watch gate tab is gone.']);
   write('Apple Watch', rows, [130, 110, 170, 150, 160, 160, 170, 160]);
+}
+
+/**
+ * The events behind the Friends tab, each with the properties it is broken
+ * down by. Every one is a name or a choice (a source, an answer, a preset,
+ * 1 to 7 days); none carries who, a name, a code or a day.
+ */
+var FRIEND_EVENTS = {
+  friends_opened: ['source', 'news'],
+  username_claimed: [], profile_created: [], friend_request_sent: [], friend_accepted: [],
+  goal_start_opened: ['source'], goal_invited: ['target'], goal_invite_answered: ['answer'],
+  goal_opened: ['state'], nudge_sent: ['kind'], goal_meditate_tapped: [], goal_ended: ['kind'],
+  reward_viewed: ['goals'],
+  picture_chosen: ['source', 'placement', 'preset'], picture_prompt_shown: [],
+  picture_prompt_answered: ['answer'],
+  invite_opened: ['source'], invite_shared: [], invite_code_sent: [],
+  invite_code_looked_up: ['outcome', 'source'], invite_code_redeemed: []
+};
+
+/** The 21 picture presets (`AvatarPreset.all`), id → what it shows. */
+var PRESET_NAMES = {
+  'otto': 'Otto', 'mountains': 'Mountains at sunrise', 'moon-lake': 'Moon over a lake',
+  'starry-tree': 'A tree under the stars', 'wave': 'A wave', 'dunes': 'Dunes at sunset',
+  'misty-pines': 'Pines in the mist', 'waterfall': 'A waterfall', 'lotus': 'A lotus',
+  'bonsai': 'A bonsai', 'dandelion': 'A dandelion', 'raked-sand': 'Raked sand',
+  'cairn': 'Stacked stones', 'singing-bowl': 'A singing bowl', 'candle': 'A candle',
+  'matcha': 'A cup of matcha', 'frog': 'A frog', 'red-panda': 'A red panda',
+  'turtle': 'A turtle', 'owl': 'An owl', 'cat': 'A cat'
+};
+
+/**
+ * Rows of the Friends tab: [label, event, key, note]. Key '*' is every
+ * event of that name; 'source:home' is the ones whose source was home. People
+ * cannot be added up across rows (one person can open Friends both ways), so
+ * every row is counted on its own, from one scan that gives each event a
+ * '*' key plus one key per property.
+ */
+var FRIEND_ROWS = [
+  ['MEDITATING TOGETHER (1.4)'],
+  ['Opened the goal flow', 'goal_start_opened', '*', 'Picked a friend and a weekly goal, or started to'],
+  ['   from "Meditate with a friend"', 'goal_start_opened', 'source:friends_row', 'The first row of the friends list, before any goal exists'],
+  ['   from Add, beside Meditating together', 'goal_start_opened', 'source:together_add', 'Already in a goal, starting another'],
+  ['   from a friend’s page', 'goal_start_opened', 'source:friend_page', ''],
+  ['Sent a goal invite', 'goal_invited', '*', 'The invite went out'],
+  ['   1 day a week each', 'goal_invited', 'target:1', ''],
+  ['   2 days', 'goal_invited', 'target:2', ''],
+  ['   3 days', 'goal_invited', 'target:3', ''],
+  ['   4 days (the default)', 'goal_invited', 'target:4', ''],
+  ['   5 days', 'goal_invited', 'target:5', ''],
+  ['   6 days', 'goal_invited', 'target:6', ''],
+  ['   7 days', 'goal_invited', 'target:7', ''],
+  ['Said yes to a goal invite', 'goal_invite_answered', 'answer:yes', 'The goal starts for both'],
+  ['Said not now to a goal invite', 'goal_invite_answered', 'answer:no', ''],
+  ['Opened a goal’s page', 'goal_opened', '*', ''],
+  ['   a running goal', 'goal_opened', 'state:active', ''],
+  ['   my invite, still waiting', 'goal_opened', 'state:waiting_for_them', ''],
+  ['   an invite to me', 'goal_opened', 'state:invite_to_me', ''],
+  ['Nudged a friend', 'nudge_sent', 'kind:nudge', 'Once a day per friend, only after meditating that day'],
+  ['Sent a high five', 'nudge_sent', 'kind:high_five', 'Once both have hit the week'],
+  ['Tapped "Meditate now" on a goal', 'goal_meditate_tapped', '*', 'Wanted to nudge, had not meditated yet'],
+  ['Sessions that counted for a goal', 'reward_viewed', 'counted:yes', 'Times = sessions. "Counted for Ana" on the reward screen'],
+  ['   for 2 or more friends at once', 'reward_viewed', 'counted:many', ''],
+  ['Ended a running goal', 'goal_ended', 'kind:ended', 'The streak ends for both'],
+  ['Took back a goal invite', 'goal_ended', 'kind:invite_cancelled', ''],
+  [''],
+  ['FRIENDS'],
+  ['Opened Friends', 'friends_opened', '*', 'Every way in'],
+  ['   from the circle on Home', 'friends_opened', 'source:home', '1.4 on'],
+  ['   from a goal or nudge notification', 'friends_opened', 'source:push', '1.4 on'],
+  ['   with the unread badge showing', 'friends_opened', 'news:true', 'A request, a goal invite or answer, a nudge'],
+  ['Claimed a username', 'username_claimed', '*', ''],
+  ['Created a profile', 'profile_created', '*', ''],
+  ['Sent a friend request', 'friend_request_sent', '*', ''],
+  ['Accepted a friend request', 'friend_accepted', '*', ''],
+  [''],
+  ['INVITES (1.4)'],
+  ['Opened the invite sheet', 'invite_opened', '*', ''],
+  ['   from the Invite button on Friends', 'invite_opened', 'source:header', ''],
+  ['   from "No friends yet"', 'invite_opened', 'source:no_friends', ''],
+  ['   from Requests', 'invite_opened', 'source:requests', ''],
+  ['Shared the invite (step 1)', 'invite_shared', '*', 'The link went out'],
+  ['Sent the code as its own text (step 2)', 'invite_code_sent', '*', ''],
+  ['Looked up a code', 'invite_code_looked_up', '*', 'Typed or pasted, in onboarding or Friends search'],
+  ['   in onboarding', 'invite_code_looked_up', 'source:onboarding', ''],
+  ['   in Friends search', 'invite_code_looked_up', 'source:search', ''],
+  ['   found the friend', 'invite_code_looked_up', 'outcome:found', ''],
+  ['   no one has that code', 'invite_code_looked_up', 'outcome:unknown', 'A typo, or a code that never existed'],
+  ['   their own code', 'invite_code_looked_up', 'outcome:yours', ''],
+  ['   offline or no iCloud', 'invite_code_looked_up', 'outcome:offline', ''],
+  ['Joined with a code', 'invite_code_redeemed', '*', 'Friends at once with whoever sent it'],
+  [''],
+  ['PROFILE PICTURES (1.4)'],
+  ['Chose a picture', 'picture_chosen', '*', ''],
+  ['   took a selfie', 'picture_chosen', 'source:camera', ''],
+  ['   from Photos', 'picture_chosen', 'source:library', ''],
+  ['   one of 808’s presets', 'picture_chosen', 'source:preset', 'Which ones: below'],
+  ['   in Create or Edit profile', 'picture_chosen', 'placement:profile', ''],
+  ['   from the ask on Friends', 'picture_chosen', 'placement:prompt', ''],
+  ['Shown "Pick a picture" on Friends', 'picture_prompt_shown', '*', 'Asked once of a profile with no picture'],
+  ['   picked one', 'picture_prompt_answered', 'answer:picked', ''],
+  ['   remind me tomorrow', 'picture_prompt_answered', 'answer:tomorrow', ''],
+  ['   not now (never asked again)', 'picture_prompt_answered', 'answer:never', ''],
+  ['   swiped it away (asked again tomorrow)', 'picture_prompt_answered', 'answer:dismissed', '']
+];
+
+function writeFriends() {
+  var names = Object.keys(FRIEND_EVENTS);
+  var branches = names.map(function (ev) {
+    var keys = FRIEND_EVENTS[ev].map(function (p) {
+      return "concat('" + p + ":', ifNull(toString(properties." + p + "), ''))";
+    });
+    // A session counts for a goal when its reward screen said so.
+    if (ev === 'reward_viewed') {
+      keys.push("if(ifNull(toString(properties.goals), '0') IN ('1', '2', '3plus'), 'counted:yes', 'counted:no')");
+      keys.push("if(ifNull(toString(properties.goals), '0') IN ('2', '3plus'), 'counted:many', 'counted:one')");
+    }
+    return "event = '" + ev + "', " + (keys.length ? '[' + keys.join(', ') + ']' : "['-']");
+  });
+  var sql =
+    "SELECT event, arrayJoin(arrayConcat(['*'], multiIf(" + branches.join(', ') +
+    ", ['-']))) AS detail, " +
+    "uniqExactIf(person_id, timestamp > now() - INTERVAL 30 DAY) AS people30, " +
+    "countIf(timestamp > now() - INTERVAL 30 DAY) AS times30, " +
+    "uniqExact(person_id) AS people_all, count() AS times_all " +
+    "FROM events WHERE event IN ('" + names.join("', '") + "') " +
+    "AND timestamp > now() - INTERVAL 3650 DAY AND " + notInternal() + " " +
+    "GROUP BY event, detail LIMIT 1000";
+  var res = query(sql);
+  var got = {};
+  res.results.forEach(function (r) { got[r[0] + '|' + r[1]] = r; });
+
+  var rows = [['What', 'People (30 days)', 'Times (30 days)', 'People (all time)',
+               'Times (all time)', 'What it means']];
+  FRIEND_ROWS.forEach(function (spec) {
+    if (spec.length === 1) { rows.push([spec[0]]); return; }
+    var r = got[spec[1] + '|' + spec[2]];
+    rows.push([spec[0], r ? r[2] : 0, r ? r[3] : 0, r ? r[4] : 0, r ? r[5] : 0, spec[3]]);
+  });
+  // The presets people picked, most picked first. Only presets anyone chose.
+  var presets = res.results.filter(function (r) {
+    return r[0] === 'picture_chosen' && r[1].indexOf('preset:') === 0 && r[1] !== 'preset:';
+  }).sort(function (a, b) { return b[5] - a[5]; });
+  presets.forEach(function (r) {
+    var id = r[1].slice('preset:'.length);
+    rows.push(['   preset: ' + (PRESET_NAMES[id] || id), r[2], r[3], r[4], r[5], '']);
+  });
+  rows.push(['']);
+  rows.push(['Note', 'People are counted on each row by itself, so the indented rows need not add up to the row above (one person can open Friends both ways). Everything marked 1.4 starts with 1.4 and reads zero before it. Opening Friends before 1.4 carried no source, so it counts on "Opened Friends" only.']);
+  write('Friends', rows, [300, 120, 120, 130, 130, 420]);
 }
 
 /** iPhone model codes → names, for the Installs tab. Unknown codes print as-is. */
