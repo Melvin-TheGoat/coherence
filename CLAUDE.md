@@ -6616,10 +6616,16 @@ him wearing it covers all thirteen looks, the float, the Ready wave and the sit.
   his fur, so `destinationOut` removes them too. `--glow-from L` hides only
   his own fur from look L up, with a 1 px margin instead of 10. Hiding only
   inside the hat was tried first and let his rim-lit fur show beside the
-  sombrero's crown. **The first eleven layered hats still have the faint
-  version** (a pale band hugging the sun hat's crown at look 10, the mandala
-  stopping short of the bucket hat at 13); re-cutting them with
-  `--glow-from 8` would fix it.
+  sombrero's crown. **The six older layered hats were recut with it the
+  same day** (sun hat, bucket, monk's, wanderer's, ensō, wizard: the pale
+  band round the sun hat's crown at look 10 and the mandala stopping short
+  of the bucket at 13 are gone). Their original recipe (`--layers`, ensō
+  `--otto-floor 0.7`, `--looks <bodies> --lifts <their faceLift row>`)
+  reproduces all 114 of their pictures pixel for pixel, so ONLY the masks
+  for looks 8 to 13 changed. With the smaller glow masks the sun hat,
+  bucket and monk's hat cut a box 9, 9 and 3 px shorter (the old masks were
+  the tallest thing in it); the new masks were padded back to the old box
+  instead, so no placement moved.
 - **Look 12 has his tallest tuft**, taller than the cap's crown, so no
   mask can hide it cleanly (it leaves fur or a hole). The cap is worn
   higher at look 12 instead (32 in `HatArt.faceLift`), about level with
