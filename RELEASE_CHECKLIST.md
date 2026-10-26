@@ -944,7 +944,7 @@ Archive from `mvp` at or after the commit that added `FeatureFlags`. It ships:
 The 1.0.2 build uploaded earlier (202609141719) predates all of this, so
 this release needs a NEW archive.
 
-## OPEN for the next version (2026-10-26): the paywall rebuild
+## OPEN for 1.4.1 (2026-10-26): the paywall rebuild
 
 Yearly preselected over Monthly, Lifetime off the paywall, the half-price
 banner in place of the two rung screens, 7-day trials. Prices are UNCHANGED.
