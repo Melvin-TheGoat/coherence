@@ -138,6 +138,8 @@ final class AnalyticsScreenNamesTests: XCTestCase {
             (.inviteCodeSent, "invite_code_sent", []),
             (.inviteCodeLookedUp(outcome: "found", source: "onboarding"), "invite_code_looked_up",
              ["outcome", "source"]),
+            (.foundersNoteShown, "founders_note_shown", []),
+            (.foundersNoteAnswered(answer: "review"), "founders_note_answered", ["answer"]),
         ]
         for (event, name, keys) in cases {
             XCTAssertEqual(event.name, name)

@@ -100,6 +100,9 @@ struct ContentView: View {
     /// closes. In memory only: if the app goes away first, the next session
     /// asks instead.
     @State private var ratingDue = false
+    /// The same landing may open the founders' note (`FoundersNote` decides),
+    /// after the rating ask and never on the same day as Apple's sheet.
+    @State private var foundersNoteDue = false
     @Environment(\.requestReview) private var requestReview
     #if DEBUG
     /// `PREVIEW_BREATHING=<seconds elapsed>` opens the sit at that moment, so
@@ -145,6 +148,9 @@ struct ContentView: View {
         /// Otto's one-time ask to pick an app for him to hold (2026-10-13),
         /// for members with nothing held (`BlockAppsPrompt`).
         case pickApps
+        /// Melvin and Aziz's thank-you, asking for anything to change and a
+        /// review (`FoundersNote`, 2026-10-26).
+        case foundersNote
 
         var id: String {
             switch self {
@@ -161,6 +167,7 @@ struct ContentView: View {
             case .friends: return "friends"
             case .reward(let r): return "reward-\(r.id)"
             case .pickApps: return "pickApps"
+            case .foundersNote: return "foundersNote"
             }
         }
     }
@@ -306,13 +313,14 @@ struct ContentView: View {
             if sheet == nil { sheet = .discarded(d) } else { pendingSheet = .discarded(d) }
         })
         .modifier(QuietHomeHooks(quiet: homeIsQuiet, notesDue: notesDueFor, ratingDue: ratingDue,
-                                 appsEligible: appsAskEligible,
+                                 noteDue: foundersNoteDue, appsEligible: appsAskEligible,
                                  openNotes: { id in
                                      notesDueFor = nil
                                      guard sessions.contains(where: { $0.id == id }) else { return }
                                      present(.save(id))
                                  },
                                  askForRating: askForRating,
+                                 askForNote: askForFoundersNote,
                                  askForApps: { present(.pickApps) }))
         .firstSessionHooks(offer: firstOffer, paid: store.entitlements.paid,
                            onOpenSetup: { present(.setup) },
@@ -446,6 +454,8 @@ struct ContentView: View {
                            openedFrom: friendsOpening.source, hadNews: friendsOpening.news)
             case .pickApps:
                 BlockAppsAskView { sheet = nil }
+            case .foundersNote:
+                FoundersNoteView { sheet = nil }
             case .reward(let reward):
                 SessionRewardView(reward: reward) {
                     holdAwards = false
@@ -496,6 +506,10 @@ struct ContentView: View {
             // does, so Apple's sheet appears once Home is quiet (`ReviewPrompt`
             // still decides; pair with PREVIEW_HISTORY=1 so there is a session).
             if ProcessInfo.processInfo.environment["PREVIEW_RATING"] == "1" { ratingDue = true }
+            // PREVIEW_FOUNDERS_NOTE=1 opens the founders' note over Home.
+            if ProcessInfo.processInfo.environment["PREVIEW_FOUNDERS_NOTE"] == "1", sheet == nil {
+                sheet = .foundersNote
+            }
             // PREVIEW_SETTINGS=1 opens Settings, to review its rows (the
             // Sound card, 2026-10-09) without the gear.
             if ProcessInfo.processInfo.environment["PREVIEW_SETTINGS"] == "1", sheet == nil {
@@ -1149,7 +1163,7 @@ struct ContentView: View {
         guard let landed = sessions.first(where: { $0.id == id }) else { holdAwards = false; return }
         // A session typed in by hand is not a meditation in the app; a
         // rating ask waits for one that was.
-        if !landed.isLogged { ratingDue = true }
+        if !landed.isLogged { ratingDue = true; foundersNoteDue = true }
         // The prompt to fill it in waits for the glow to finish; the toast
         // itself is hidden while `auraGain` is set.
         if FeatureFlags.friends {
@@ -1228,6 +1242,19 @@ struct ContentView: View {
         ReviewPrompt.record(ask)
         Analytics.track(.ratingPrompted(placement: ask.moment.rawValue))
         requestReview()
+        return true
+    }
+
+    /// The founders' note, if `FoundersNote` says it is owed. Returns whether
+    /// it opened.
+    private func askForFoundersNote() -> Bool {
+        foundersNoteDue = false
+        guard FoundersNote.due(sessionsRun: sessions.filter { !$0.isLogged }.count,
+                               onboardingComplete: prefsRows.contains { $0.onboardingComplete },
+                               shown: FoundersNote.shownAt(),
+                               done: FoundersNote.isDone(),
+                               lastRatingAskAt: ReviewPrompt.lastAskedAt()) else { return false }
+        present(.foundersNote)
         return true
     }
 
@@ -1635,28 +1662,36 @@ private struct SessionLandedHooks: ViewModifier {
 /// the page of the session that just landed ("How did that feel", photos,
 /// notes, who can see it), after the reward screen and any award unlocks;
 /// then Apple's rating sheet, when `ReviewPrompt` says one is owed; then
-/// Otto's one-time app ask (`BlockAppsPrompt`). Never on top of a session,
-/// an award or the tour, and never two in the same breath.
+/// the founders' note, when `FoundersNote` says it is (never the same day as
+/// Apple's sheet); then Otto's one-time app ask (`BlockAppsPrompt`). Never on
+/// top of a session, an award or the tour, and never two in the same breath.
 private struct QuietHomeHooks: ViewModifier {
     let quiet: Bool
     let notesDue: UUID?
     let ratingDue: Bool
+    let noteDue: Bool
     let appsEligible: Bool
     let openNotes: (UUID) -> Void
     /// Returns whether Apple's sheet was asked for.
     let askForRating: () -> Bool
+    /// Returns whether the founders' note opened.
+    let askForNote: () -> Bool
     let askForApps: () -> Void
 
     /// When the rating sheet was asked for. Apple draws it in its own window,
     /// which nothing here can see, so Otto's app ask keeps clear of it by time.
     @State private var ratingAskedAt: Date?
+    /// When the founders' note opened, so Otto's app ask does not follow it
+    /// straight away.
+    @State private var noteShownAt: Date?
 
     private struct Gate: Equatable {
-        let quiet: Bool; let notesDue: UUID?; let ratingDue: Bool; let appsEligible: Bool
+        let quiet: Bool; let notesDue: UUID?; let ratingDue: Bool; let noteDue: Bool; let appsEligible: Bool
     }
 
     func body(content: Content) -> some View {
-        content.task(id: Gate(quiet: quiet, notesDue: notesDue, ratingDue: ratingDue, appsEligible: appsEligible)) {
+        content.task(id: Gate(quiet: quiet, notesDue: notesDue, ratingDue: ratingDue, noteDue: noteDue,
+                              appsEligible: appsEligible)) {
             guard quiet else { return }
             if let id = notesDue {
                 // A beat after the last celebration closes, so the page
@@ -1674,8 +1709,15 @@ private struct QuietHomeHooks: ViewModifier {
                 if askForRating() { ratingAskedAt = Date() }
                 return
             }
+            if noteDue {
+                try? await Task.sleep(for: .seconds(1))
+                guard !Task.isCancelled else { return }
+                if askForNote() { noteShownAt = Date() }
+                return
+            }
             guard appsEligible else { return }
             if let asked = ratingAskedAt, Date().timeIntervalSince(asked) < 60 { return }
+            if let shown = noteShownAt, Date().timeIntervalSince(shown) < 600 { return }
             try? await Task.sleep(for: .seconds(1.5))
             guard !Task.isCancelled, !BlockAppsPrompt.wasAsked() else { return }
             BlockAppsPrompt.markAsked()

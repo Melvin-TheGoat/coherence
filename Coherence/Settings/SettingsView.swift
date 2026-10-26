@@ -584,9 +584,7 @@ private struct SettingsForm: View {
                     membershipRow(icon: "star", title: "Rate 808 on the App Store",
                                   subtitle: "It helps other people find 808") {
                         Analytics.track(.rateLinkOpened)
-                        if let url = URL(string: "https://apps.apple.com/app/id6806785308?action=write-review") {
-                            UIApplication.shared.open(url)
-                        }
+                        UIApplication.shared.open(ReviewPrompt.writeReviewURL)
                     }
                     divider
                     navRow(icon: "sparkles", title: "Why 808 exists", teal: true) { docPage("PURPOSE") }

@@ -944,6 +944,30 @@ Archive from `mvp` at or after the commit that added `FeatureFlags`. It ships:
 The 1.0.2 build uploaded earlier (202609141719) predates all of this, so
 this release needs a NEW archive.
 
+## OPEN for 1.4.1 (2026-10-26): the founders' note and the 1.4 screens' analytics
+
+From branch `posthog-1.4-screens`, merged with the paywall work and the hats
+by the release session. Two things from this branch:
+
+- The founders' note (`FoundersNote`, `FoundersNoteView`): Melvin and Aziz's
+  thanks, "Write a review" (the App Store review page) and "Tell us anything"
+  (an email to support@meditate808.com), once after a member's second session,
+  back once a week later on "Maybe later", never the same day as Apple's rating
+  sheet. No new data leaves the phone (two event names, `founders_note_shown`
+  and `founders_note_answered`, carrying only which button), so the privacy
+  manifest, policy and App Privacy label do not change.
+- Analytics for Meditating together, profile pictures and invite codes (the
+  events in CLAUDE.md, "1.4'S FRIENDS SCREENS REACH POSTHOG"). Same: no privacy
+  change.
+
+- [ ] **support@meditate808.com is read.** "Tell us anything" sends people
+      there and the note promises "we'll look into it".
+- [ ] **On a phone:** after a second session the note opens on Home once the
+      reward and the session's page close; "Write a review" lands on the App
+      Store's review page; "Tell us anything" opens Mail to support; "Maybe
+      later" brings it back a week later. Checked on the simulator only
+      (iPhone 17 and SE sizes), where the App Store link cannot open.
+
 ## OPEN for 1.4 (2026-10-18): Meditating together, invite codes, profile pictures
 
 1.4 = weekly goals with friends and nudges, invite codes, a required profile
