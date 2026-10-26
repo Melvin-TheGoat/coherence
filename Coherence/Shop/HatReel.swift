@@ -9,10 +9,12 @@ import SwiftUI
 /// Launch with `PREVIEW_HAT=<id> PREVIEW_HAT_REEL=1`: the thirteen aura looks
 /// in the valley as Home draws them, then the Ready screen's wave and the
 /// sit's cross-legged pose. The hat comes from `PREVIEW_HAT`, which both the
-/// aura figure and the session rig already read.
+/// aura figure and the session rig already read. `PREVIEW_HAT_STEP=<0...14>`
+/// holds one step instead of playing them, for a still of each pose.
 struct HatReel: View {
-    @State private var step = 0
+    @State private var step = HatReel.pinned ?? 0
     private let hat = OttoAuraFigure.previewHat ?? "none"
+    private static let pinned = Int(ProcessInfo.processInfo.environment["PREVIEW_HAT_STEP"] ?? "")
 
     /// Thirteen looks, then the two session poses.
     private static let steps = 15
@@ -32,6 +34,7 @@ struct HatReel: View {
                 .padding(.top, 70)
         }
         .task {
+            guard Self.pinned == nil else { return }
             while step < Self.steps - 1 {
                 try? await Task.sleep(for: .seconds(step < 13 ? Self.lookSeconds : Self.poseSeconds))
                 guard !Task.isCancelled else { return }

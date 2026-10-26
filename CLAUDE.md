@@ -6545,6 +6545,102 @@ Nirvana, so a hat anchored at the skull lands on them.
   The session Otto uses `.background` / `.overlay`, never a ZStack, so every
   layer is proposed exactly the drawing's frame and his size never changes.
 
+## FIVE MORE HATS: CAP, SOMBRERO, TOP HAT, TIARA, ASTRONAUT (2026-10-26, Melvin)
+
+Baseball Cap 40, Sombrero 160, Top Hat 420, Tiara 800, Astronaut Helmet 950
+points, each slotted between its neighbours so the list still only climbs.
+**No Rive work, ever, for a hat**: the app draws it over both rigs from
+`HatArt.placement` + `faceLift` and the rig's own numbers, so one picture of
+him wearing it covers all thirteen looks, the float, the Ready wave and the sit.
+
+- **Generated here, not in ChatGPT**: Higgsfield `gpt_image_2_5`, 1:1, 2k,
+  quality high (2.75 credits each), `mockups/otto-hats/otto-reference.png`
+  uploaded as `image_references`, the old one-hat-per-message edit prompt plus
+  "its brim sits above the dark brown patches around his eyes and never
+  covers them" and "no text, no logos". Otto registered at scale 1.000, off by
+  a pixel, on all five. Renders kept as JPEG in `mockups/otto-hats/renders/`.
+- **Pick colours away from his fur.** Charcoal, terracotta and straw read as
+  him; silver, grey, blue and sage do not. A pure WHITE hat would vanish: the
+  cutter treats anything within 36 of the cream as paper (the glass dome's
+  white collar is fine: it is not cut off Otto). A hat narrower than his head should be generated big enough to
+  cover his tuft (the first top hat sat on it like a doll's hat).
+- **Ten new `hat_extract` options**, all opt-in, the first eleven cut
+  exactly as before: `--cool`, `--join`, `--clear-patches`, `--floor`,
+  `--narrow`, `--raise`, `--smooth`, `--edge`, `--glow-from`, `--cool-only`
+  (header of the tool). Per hat:
+  top hat `--otto-floor 0.85 --bias 1.5 --join 140 --layers --narrow --raise 6
+  --edge 6 --glow-from 8`; cap `--layers --narrow --raise 16 --smooth 6
+  --glow-from 8` (its `--lifts` row carries 32 at look 12); tiara `--cool 20
+  --clear-patches --cool-only` (one picture); sombrero
+  `--layers --cool 20 --join 220 --bias 2.0 --floor 140 --glow-from 8`.
+  Every layered cut also takes `--looks <bodies> --lifts <its row>`.
+- **The tiara's arches are open** (`--cool-only`, Melvin: "the inside of it
+  isnt transparent it just has the dark tufts"): the closing and hole fill
+  handed the fur inside its arches to the tiara, a brown patch drawn over
+  his head at every look. Now only what is cooler than his fur is kept over
+  him, so his own fur or forehead shows through.
+- **THE ASTRONAUT HELMET IS A GLASS DOME, AND IT IS NOT CUT OFF OTTO**
+  (Melvin: "one of those actual glass domes around his head"). Glass over
+  his face cannot come out of a picture of him wearing it: his face, as the
+  generator redrew it, would be baked into the hat. So the dome was
+  generated EMPTY on pure black (`mockups/otto-hats/renders/astronaut-
+  dome.jpg`, then edited to a slimmer collar: "keep the bowl, make the
+  collar thinner and slightly narrower") and lifted off by
+  **`tools/glass_extract.swift`**: glass un-composited from black (alpha is
+  the brightest channel, so it adds its highlights and his face shows
+  through), the collar opaque (per column from the bottom up to the dome's
+  black inside, its top a parabola fitted to the middle so the dome's lit
+  rim beside it is not taken as collar, its outer two pixels un-mixed from
+  black), no glass under the collar, and the dome's circle fitted and placed
+  at centre (330.5, 185), radius 205. One picture, scaled by 0.4.
+  **The dome follows his CHIN, look by look** (Melvin: "only 5 and 7 look
+  good", the rest sat on his shoulders or chest). Its collar's top sits 30
+  units above the bottom of his face, as on Steady, read off each look's
+  body with a ruler: his face ends lower on the slumped looks and higher on
+  the bright ones, so `faceLift` runs -26 at look 1 to +39 at Nirvana, and
+  his tuft fits at every look at the dome's own size. **Read the chin by
+  eye**: the nose was a bad proxy (it put look 1's face 100 units low; the
+  chin is 26), and an automatic chin finder kept catching the mouth line.
+  The first collar was "too thick, too big, too wide": squeezing it
+  in the cutter left the glass's sides ending in mid air, so the fix was a
+  regeneration, not an edit.
+- **Melvin's grid check caught faults the first pass missed** (2026-10-26).
+  The Top Hat's brim had a notch at its middle (the brim's bottom lay over
+  his tuft and read as fur), drawn as a pale stepped strip on his forehead
+  at every look: `--edge T` fits a curve to the whole lower edge and fills
+  any column in the brim's MIDDLE HALF more than T px above it (filling out
+  to the ends painted a pale wedge under the brim's tip and streaked its
+  underside). And at the glowing looks (8 up) the
+  hidden-head mask cut holes in his glow (a square of sky above the cap at
+  look 12): the aura rig draws glow, mandala and rings in the same picture as
+  his fur, so `destinationOut` removes them too. `--glow-from L` hides only
+  his own fur from look L up, with a 1 px margin instead of 10. Hiding only
+  inside the hat was tried first and let his rim-lit fur show beside the
+  sombrero's crown. **The first eleven layered hats still have the faint
+  version** (a pale band hugging the sun hat's crown at look 10, the mandala
+  stopping short of the bucket hat at 13); re-cutting them with
+  `--glow-from 8` would fix it.
+- **Look 12 has his tallest tuft**, taller than the cap's crown, so no
+  mask can hide it cleanly (it leaves fur or a hole). The cap is worn
+  higher at look 12 instead (32 in `HatArt.faceLift`), about level with
+  look 13.
+- **The grid is the check: `PREVIEW_HAT=<id> PREVIEW_HAT_REEL=1
+  PREVIEW_HAT_STEP=<0...14>`** holds one pose (13 looks, then the Ready wave
+  and the sit), one launch per screenshot. Judge each hat at full size; the
+  gallery's 72pt cells hid both faults above.
+- **The Steady gap is the bar.** `hat_lift` prints each hat's gap above his
+  patches at Steady; the first eleven brims sit 4 to 12 units clear. A render
+  whose brim lands on the patches is worn higher with `--raise` until it does
+  too (top hat 5.7, cap 5.1), which also recuts every hidden-head mask for
+  where his head then is. Do not use `--clear-patches` to fix a brim that
+  sits low: it shaves the brim along the patches' outline and leaves it ragged.
+- Cuts are made from 2048 px renders and scaled by 0.6123 to the first
+  eleven's resolution before going into `Coherence/Shop/Hats/`.
+- Checked on a simulator: `PREVIEW_HAT_GALLERY=<id>`, Home at
+  `OTTO_AURA=5/50/100` with `PREVIEW_HAT`, and the Ready screen with
+  `PREVIEW_SETUP=1`. At Nirvana the bubble's tail lands on the hat's top, as
+  it does for the wizard hat.
+
 ## CUSTOM BLOCK HOURS CAN END ON A SESSION (2026-09-28, Aziz)
 
 Custom (in `BlockWhenPicker`, so the onboarding's "When should I hold them?"

@@ -20,19 +20,27 @@ enum HatCatalog {
 
     static let all: [Item] = [
         Item(id: "beanie", name: "Beanie", price: 20),
+        // The cap, sombrero, top hat, tiara and astronaut helmet are
+        // Melvin's (2026-10-26), each slotted between its neighbours so
+        // the list still only climbs.
+        Item(id: "baseballcap", name: "Baseball Cap", price: 40),
         Item(id: "sunhat", name: "Straw Sun Hat", price: 60),
         Item(id: "bucket", name: "Bucket Hat", price: 120),
+        Item(id: "sombrero", name: "Sombrero", price: 160),
         // The halo and the wanderer's hat came with Melvin's art
         // (2026-09-27): the sheet drew ten, and a dark straw hat on its own.
         // The Little Horns were cut on 2026-09-28 (Melvin).
         Item(id: "leafcrown", name: "Leaf Crown", price: 220),
         Item(id: "flowercrown", name: "Flower Crown", price: 350),
+        Item(id: "tophat", name: "Top Hat", price: 420),
         Item(id: "monkhat", name: "Monk's Woven Hat", price: 500),
         Item(id: "wanderer", name: "Wanderer's Hat", price: 650),
         Item(id: "enso", name: "Ensō Hat", price: 700),
         Item(id: "wizardhat", name: "Wizard Hat", price: 750),
+        Item(id: "tiara", name: "Tiara", price: 800),
         // A halo is the nearest thing to enlightenment a sloth can wear.
         Item(id: "halo", name: "Halo", price: 900),
+        Item(id: "astronaut", name: "Astronaut Helmet", price: 950),
         Item(id: "goldcrown", name: "Golden Crown", price: 1000)
     ]
 

@@ -21,6 +21,16 @@
 //      cream so the edge carries no paper.
 //   4. Place. It prints the hat's box in Otto's canvas units (the 664 x 744
 //      canvas every aura drawing shares), which is where HatArt draws it.
+//
+// For the hard ones (2026-10-26, the five after the first eleven), each
+// explained where it is read: --cool T (silver, grey, blue: cooler than his
+// fur), --join R (a band in his colours between crown and brim), --clear-
+// patches (nothing that IS a patch or an eye), --floor Y (nothing over his
+// face below Y units), --narrow (a hat narrower than his head hides only his
+// tuft), --raise U (worn U units higher than drawn), --smooth R (straighten
+// a side that lies over his outline), --edge T (close a notch in the lower
+// edge), --glow-from L (where he glows, hide only his fur), --cool-only
+// (nothing warm over him: openings he shows through).
 import AppKit
 import CoreGraphics
 import CoreImage
@@ -42,6 +52,16 @@ let ring = a.contains("--ring")
 /// How close a colour must be to count as redrawn fur when trimming edges.
 /// Hats far from his colours (black, blue, green) can take a looser trim.
 var trimTol = 30.0
+/// --raise U: wear the hat U of his 744 canvas units higher than the render
+/// drew it. A generator that sat a brim down on his eye patches (the Top Hat,
+/// the Baseball Cap) is lifted to the gap the other brims keep at Steady,
+/// and every hidden-head mask is cut for his head where it will then be:
+/// U lower in the hat's own frame. The printed box is already raised.
+var raiseU = 0.0
+if let i = a.firstIndex(of: "--raise"), i + 1 < a.count { raiseU = Double(a[i + 1]) ?? 0 }
+/// --glow-from L: from look L up, where the aura rig draws his glow, hide
+/// only his own fur, with no margin round it (see the per-look covers).
+let glowFrom = a.firstIndex(of: "--glow-from").flatMap { $0 + 1 < a.count ? Int(a[$0 + 1]) : nil }
 if let i = a.firstIndex(of: "--trim-tol"), i + 1 < a.count { trimTol = Double(a[i + 1]) ?? 30 }
 
 struct Bitmap {
@@ -385,6 +405,24 @@ func looksLikeHat(_ xx: Int, _ yy: Int) -> Bool {
     return dH < dO * bias
 }
 
+/// --cool T: over his head, a pixel cooler than his fur is hat however near
+/// his palette it sits. His fur is warm throughout (red well above blue);
+/// silver, grey and blue are not (the Tiara, which sits wholly inside his
+/// outline so no palette of its own can be learnt, and the Astronaut
+/// Helmet's grey shell, which reads as his fur in shade). T is how far blue
+/// may sit below red and still count as cool.
+var coolT: Int? = nil
+if let i = a.firstIndex(of: "--cool"), i + 1 < a.count { coolT = Int(a[i + 1]) }
+func looksCool(_ xx: Int, _ yy: Int) -> Bool {
+    guard let t = coolT else { return false }
+    var r = 0, b = 0
+    for oy in -1...1 { for ox in -1...1 {
+        let (rr, _, bb, _) = render.at(min(max(xx + ox, 0), W - 1), min(max(yy + oy, 0), H - 1))
+        r += rr; b += bb
+    } }
+    return b / 9 >= r / 9 - t
+}
+
 var keep = [Bool](repeating: false, count: W * H)
 if ring {
     // A halo: the ring and nothing inside it. Seen from the front a ring is
@@ -481,8 +519,41 @@ if ring {
     for yy in 0..<H { for xx in 0..<W where mask[yy * W + xx] {
         let i = yy * W + xx
         if !grown[i] { keep[i] = true; continue }
-        if looksLikeHat(xx, yy) { keep[i] = true }
+        if looksLikeHat(xx, yy) || looksCool(xx, yy) { keep[i] = true }
     } }
+}
+
+// --clear-patches: nothing on his face below the top of the brown patches
+// round his eyes is hat (Melvin's rule: a hat never covers them). For a hat
+// that sits high, where a generator that redrew an eye or a patch would
+// otherwise hand it to the hat (the Top Hat, 2026-10-26). Steady's patch top
+// is 150 of his 744 canvas units down (`tools/hat_lift.swift`'s 0.188 of his
+// head's width below the skull at 86), less a small margin.
+if a.contains("--clear-patches") {
+    let unit = baseH * best.s / 744
+    let ottoTop = baseBottom + best.dy - baseH * best.s
+    let patchTop = Int(ottoTop + 140 * unit)
+    // Across the patches only (his head's centre, 330.5, plus or minus 150
+    // units): a helmet's side pieces hang down beside his face, past them.
+    let ottoLeft = baseX + (baseW - baseW * best.s) / 2 + best.dx
+    let zx0 = Int(ottoLeft + (330.5 - 150) * unit), zx1 = Int(ottoLeft + (330.5 + 150) * unit)
+    // And there, only what IS a patch or an eye in the reference: patch
+    // brown and pupils (dark), eye whites (bright and neutral). Plain fur
+    // beside them may carry hat (the helmet's shell wraps round his face).
+    for yy in max(0, patchTop)..<H { for xx in max(0, zx0)..<min(W, zx1) where inside[yy * W + xx] && keep[yy * W + xx] {
+        let (r, g, b, _) = refAt(xx, yy, s: best.s, dx: best.dx, dy: best.dy)
+        let lum = 0.3 * Double(r) + 0.59 * Double(g) + 0.11 * Double(b)
+        if lum < 100 || (lum > 200 && abs(r - b) < 14) { keep[yy * W + xx] = false }
+    } }
+}
+
+// --floor Y: nothing over his head lower than Y of his 744 canvas units is
+// hat, whatever its colour. For a brim that never comes down over his face
+// (the Sombrero), where the render redrew his forehead in straw-like tones
+// and the classifier let fingers of it hang under the brim.
+if let fi = a.firstIndex(of: "--floor"), fi + 1 < a.count, let fu = Double(a[fi + 1]) {
+    let floorY = Int(baseBottom + best.dy - baseH * best.s + fu * baseH * best.s / 744)
+    for yy in max(0, floorY)..<H { for xx in 0..<W where inside[yy * W + xx] { keep[yy * W + xx] = false } }
 }
 
 // Opening inside his silhouette takes off thin teeth of face the classifier
@@ -524,6 +595,22 @@ do {
     let ok = Set(sz.indices.filter { $0 > 0 && sz[$0] >= minPiece })
     for i in 0..<(W * H) where keep[i] && !ok.contains(lab[i]) { keep[i] = false }
 }
+// --join R: in each column, a gap of up to R pixels between two pieces of
+// kept hat is hat too, as long as the render drew something there that the
+// first mask had. A band in his own colours between a crown and a brim (the
+// Top Hat's terracotta) is classed as fur and splits the hat in two.
+if let ji = a.firstIndex(of: "--join"), ji + 1 < a.count, let jr = Int(a[ji + 1]) {
+    for x in 0..<W {
+        var last = -1
+        for y in 0..<H where keep[y * W + x] {
+            if last >= 0, y - last > 1, y - last <= jr,
+               ((last + 1)..<y).allSatisfy({ mask[$0 * W + x] }) {
+                for yy in (last + 1)..<y { keep[yy * W + x] = true }
+            }
+            last = y
+        }
+    }
+}
 if !ring {
     let closedKeep = shrink(grow(keep, 5), 5)
     for i in 0..<(W * H) where closedKeep[i] && mask[i] { keep[i] = true }
@@ -543,6 +630,47 @@ if !ring {
     for i in 0..<(W * H) where !keep[i] && !out[i] && mask[i] { keep[i] = true }
 }
 
+// --smooth R: over his fur, a pixel is hat when most of the square R around
+// it is. Where a hat's side lies over his outline the classifier's verdict
+// flips pixel by pixel and the edge comes out as a staircase (the Baseball
+// Cap's left side). Never outside him, so brim tips keep their points.
+if let si = a.firstIndex(of: "--smooth"), si + 1 < a.count, let sr = Int(a[si + 1]), sr > 0 {
+    var sat = [Int](repeating: 0, count: (W + 1) * (H + 1))
+    for y in 0..<H {
+        var row = 0
+        for x in 0..<W {
+            row += keep[y * W + x] ? 1 : 0
+            sat[(y + 1) * (W + 1) + x + 1] = sat[y * (W + 1) + x + 1] + row
+        }
+    }
+    var smoothed = keep
+    for y in 0..<H { for x in 0..<W where grown[y * W + x] {
+        let x0 = max(0, x - sr), x1 = min(W, x + sr + 1), y0 = max(0, y - sr), y1 = min(H, y + sr + 1)
+        let n = sat[y1 * (W + 1) + x1] - sat[y0 * (W + 1) + x1] - sat[y1 * (W + 1) + x0] + sat[y0 * (W + 1) + x0]
+        smoothed[y * W + x] = n * 2 > (x1 - x0) * (y1 - y0) && (keep[y * W + x] || mask[y * W + x])
+    } }
+    keep = smoothed
+}
+
+// With --edge, a hairline gap one or two pixels wide inside the hat (kept on
+// both sides) is hat too: the Top Hat's brim had one that showed fur.
+if a.contains("--edge") {
+    for y in 0..<H { for x in 1..<(W - 2) {
+        let i = y * W + x
+        guard !keep[i], grown[i], keep[i - 1] else { continue }
+        if keep[i + 1] || (keep[i + 2] && grown[i + 1]) { keep[i] = true }
+    } }
+}
+
+// --cool-only: over his fur, only what is cooler than his fur is hat. For a
+// hat with nothing warm in it and openings he shows through (the Tiara's
+// arches, 2026-10-26): the closing and the hole fill above hand the fur in
+// those openings to the hat, and it then sat over his head at every look as
+// a brown patch, which showed wherever his head was lighter than that.
+if a.contains("--cool-only") {
+    for i in 0..<(W * H) where keep[i] && grown[i] && !looksCool(i % W, i / W) { keep[i] = false }
+}
+
 // One clean lower edge over his head: in each column, the lowest pixel with
 // solid hat above it, then a running median across columns, and nothing
 // below that line survives.
@@ -560,6 +688,64 @@ if !ring {
     for x in 0..<W where edge[x] >= 0 {
         let vals = (max(0, x - 9)...min(W - 1, x + 9)).compactMap { edge[$0] >= 0 ? edge[$0] : nil }.sorted()
         smooth[x] = vals[vals.count / 2]
+    }
+    // --edge T (2026-10-26): close a notch in the lower edge. The Top Hat's
+    // brim bottom lay over his tuft at the middle, read as fur, and left a
+    // notch 100 render pixels wide that the median above cannot see. A
+    // quartic fitted to the edge (refitted without the columns far off it)
+    // says where the brim runs; a column more than T pixels ABOVE it is a
+    // notch, taken down to the curve and filled. Columns below the curve
+    // are left alone, so brim tips keep their droop.
+    if let ei = a.firstIndex(of: "--edge"), ei + 1 < a.count, let tol = Double(a[ei + 1]) {
+        let xs = (0..<W).filter { smooth[$0] >= 0 }
+        // Fills happen in the middle half of the brim only: the notch is
+        // where his tuft is, and at the brim's ends the curve cannot follow
+        // the droop, so a fill there painted a pale wedge under the Top
+        // Hat's tip. The curve is still fitted to the whole brim.
+        let quarter = xs.isEmpty ? 0 : (xs.last! - xs.first!) / 4
+        let middle = { (x: Int) in x >= xs.first! + quarter && x <= xs.last! - quarter }
+        if xs.count > 20 {
+            let lo = Double(xs.first!), hi = Double(xs.last!)
+            func u(_ x: Int) -> Double { 2 * (Double(x) - lo) / max(1, hi - lo) - 1 }
+            var use = xs
+            var coef = [Double](repeating: 0, count: 5)
+            for _ in 0..<4 {
+                var m = [[Double]](repeating: [Double](repeating: 0, count: 6), count: 5)
+                for x in use {
+                    let t = u(x); let pw = (0..<5).map { pow(t, Double($0)) }
+                    for r in 0..<5 { for c in 0..<5 { m[r][c] += pw[r] * pw[c] }; m[r][5] += pw[r] * Double(smooth[x]) }
+                }
+                for c in 0..<5 {   // Gauss-Jordan with partial pivoting
+                    let piv = (c..<5).max { abs(m[$0][c]) < abs(m[$1][c]) }!
+                    m.swapAt(c, piv)
+                    guard abs(m[c][c]) > 1e-12 else { continue }
+                    for r in 0..<5 where r != c {
+                        let f = m[r][c] / m[c][c]
+                        for k in c...5 { m[r][k] -= f * m[c][k] }
+                    }
+                }
+                coef = (0..<5).map { abs(m[$0][$0]) > 1e-12 ? m[$0][5] / m[$0][$0] : 0 }
+                let c = coef
+                use = xs.filter { x in abs(Double(smooth[x]) - (0..<5).reduce(0.0) { $0 + c[$1] * pow(u(x), Double($1)) }) <= tol }
+            }
+            func fit(_ x: Int) -> Double { (0..<5).reduce(0.0) { $0 + coef[$1] * pow(u(x), Double($1)) } }
+            var notch = 0
+            for x in xs where middle(x) && Double(smooth[x]) < fit(x) - tol {
+                let to = min(H - 1, Int(fit(x).rounded()))
+                for yy in (smooth[x] + 1)...max(smooth[x] + 1, to) where grown[yy * W + x] { keep[yy * W + x] = true }
+                smooth[x] = to; notch += 1
+            }
+            // A column inside the brim with no edge of its own (no run of
+            // solid hat above it) would carry no shadow: give it the curve.
+            for x in xs.first!...xs.last! where middle(x) && smooth[x] < 0 {
+                let to = min(H - 1, Int(fit(x).rounded()))
+                if let y0 = (0...to).last(where: { keep[$0 * W + x] }), y0 < to {
+                    for yy in (y0 + 1)...to where grown[yy * W + x] { keep[yy * W + x] = true }
+                }
+                smooth[x] = to; notch += 1
+            }
+            fputs("edge: \(notch) notch columns closed\n", stderr)
+        }
     }
     edge = smooth
     for yy in 0..<H { for xx in 0..<W where keep[yy * W + xx] && grown[yy * W + xx] {
@@ -747,6 +933,25 @@ if layered && !ring {
         visibleBottom[x] = min(frontEdge[x], Double(bottom))
         coverLimit[x] = visibleBottom[x] - 6
     }
+    // --narrow: a hat narrower than his head (the Top Hat) hides only what
+    // is under it. Without this the fitted edge, held flat past the hat to
+    // his head's sides, hid the top of his head beside the hat as well, and
+    // the app drew it sliced off square on both sides.
+    if a.contains("--narrow") {
+        let hatCols = (0..<W).map { x in (0..<H).contains { keep[$0 * W + x] } }
+        // And under it, only his tuft: fur above the top of his skull (86 of
+        // his 744 units, HatArt.steadyHead) is what pokes past a small hat;
+        // the curve of his head beside the brim's tips stays, or it showed a
+        // step where the hidden part ended.
+        let skullY = baseBottom + best.dy - baseH * best.s + (86 + raiseU) * baseH * best.s / 744
+        for x in 0..<W {
+            if (max(0, x - 4)...min(W - 1, x + 4)).contains(where: { hatCols[$0] }) {
+                coverLimit[x] = min(coverLimit[x], skullY + 4)
+            } else {
+                coverLimit[x] = -1_000_000
+            }
+        }
+    }
     // Where his head is hidden: his silhouette grown by `margin`, above the
     // hat's visible bottom. A function of the silhouette so each of the aura
     // rig's thirteen looks can have its own (`--looks`): their heads and
@@ -787,7 +992,14 @@ if layered && !ring {
         }
         return out
     }
-    cover = coverFor(inside, margin: 24)
+    // His silhouette where it will be under a raised hat: lower in its frame.
+    let raisePx = Int((raiseU * baseH * best.s / 744).rounded())
+    var lowered = inside
+    if raisePx > 0 {
+        lowered = [Bool](repeating: false, count: W * H)
+        for y in raisePx..<H { for x in 0..<W { lowered[y * W + x] = inside[(y - raisePx) * W + x] } }
+    }
+    cover = coverFor(lowered, margin: 24)
 
     // --looks <dir>: one hidden-head mask per aura look, from that look's own
     // body (the images the rig draws, pulled out of OttoAura.riv), placed on
@@ -811,6 +1023,7 @@ if layered && !ring {
         let faceLift: [Double] = a.firstIndex(of: "--lifts").map {
             a[$0 + 1].split(separator: ",").map { Double($0)! }
         } ?? [Double](repeating: 0, count: 13)
+        let lifts = faceLift.map { $0 + raiseU }
         let ow = baseW * best.s, oh = baseH * best.s
         let oleft = baseX + (baseW - ow) / 2 + best.dx
         let otop = baseBottom - oh + best.dy
@@ -823,11 +1036,16 @@ if layered && !ring {
                 let cx = (Double(x) - oleft) / ow * Double(otto.w)
                 let cy = (Double(y) - otop) / oh * Double(otto.h)
                 let px = Int((hcx + (cx - steady.cx) * kk).rounded())
-                let py = Int((hs + (cy - steady.skull - faceLift[n]) * kk).rounded())
+                let py = Int((hs + (cy - steady.skull - lifts[n]) * kk).rounded())
                 guard px >= 0, py >= 0, px < body.w, py < body.h else { continue }
                 if body.at(px, py).3 > 128 { sil[y * W + x] = true }
             } }
-            lookCovers.append(coverFor(sil, margin: 10))
+            // From --glow-from up he is hidden only where his fur actually
+            // is (a pixel of margin for its soft edge), never the ten-pixel
+            // ring round it: there the rig draws his glow, and the ring cut
+            // it away to the sky (a square of sky above the cap at look 12).
+            let glows = glowFrom.map { n + 1 >= $0 } ?? false
+            lookCovers.append(coverFor(sil, margin: glows ? 1 : 10))
         }
     }
 
@@ -974,4 +1192,4 @@ let otop = baseBottom - oh + best.dy
 func cu(_ x: Int) -> Double { (Double(x) - oleft) / ow * Double(otto.w) }
 func cv(_ y: Int) -> Double { (Double(y) - otop) / oh * Double(otto.h) }
 print(String(format: "registered s=%.3f dx=%.0f dy=%.0f | canvas box x=%.1f y=%.1f w=%.1f h=%.1f",
-             best.s, best.dx, best.dy, cu(minX), cv(minY), cu(maxX + 1) - cu(minX), cv(maxY + 1) - cv(minY)))
+             best.s, best.dx, best.dy, cu(minX), cv(minY) - raiseU, cu(maxX + 1) - cu(minX), cv(maxY + 1) - cv(minY)))

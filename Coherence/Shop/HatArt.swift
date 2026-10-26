@@ -62,6 +62,21 @@ struct HatArt: View {
         "wizardhat":   CGRect(x: 93.2, y: -49.0, width: 479.7, height: 320.0),
         "goldcrown":   CGRect(x: 175.9, y: -38.4, width: 310.8, height: 177.3),
         "halo":        CGRect(x: 211.9, y: -13.0, width: 238.1, height: 66.4),
+        // Melvin's five (2026-10-26), generated on the same reference with
+        // GPT Image 2.5 and cut by the same tool. The top hat and the cap
+        // were drawn with their brims down on his eye patches and are worn
+        // higher (`hat_extract --raise`) so they clear them by what the
+        // other brims do at Steady, about six units.
+        "baseballcap": CGRect(x: 173.3, y: 20.8, width: 315.8, height: 199.0),
+        "sombrero":    CGRect(x: 75.9, y: 5.6, width: 513.9, height: 219.3),
+        "tophat":      CGRect(x: 146.9, y: -3.8, width: 365.1, height: 235.7),
+        "tiara":       CGRect(x: 252.8, y: 56.2, width: 148.8, height: 72.2),
+        // A glass dome round his whole head (Melvin: "one of those actual
+        // glass domes"), generated empty on black and lifted off it by
+        // `tools/glass_extract.swift`, so it is see-through: no picture of
+        // him wearing it could be cut, since his face would come with it.
+        // Placed by its circle: centre (330.5, 185), radius 205.
+        "astronaut":   CGRect(x: 122.4, y: -21.9, width: 416.1, height: 416.4),
     ]
 
     /// Steady's head in the same units, where every box above was measured
@@ -82,8 +97,9 @@ struct HatArt: View {
     /// patches; each look is raised until its closest gap matches Steady's
     /// (capped at 12, so a crown or the halo, far above his eyes, only has to
     /// stay off the patches), plus 3 from look 8 up, where the bigger patches
-    /// run close to the brim along more of it. Never lowered, so the early
-    /// looks keep the fit they were cut to. **`hat_extract --looks --lifts`
+    /// run close to the brim along more of it. A brim is never lowered, so
+    /// the early looks keep the fit they were cut to; the glass dome alone
+    /// is (negative values, see its row), since it follows his chin. **`hat_extract --looks --lifts`
     /// must be given the same row, or each look's hidden-head mask sits in
     /// the wrong place.** A hat not listed is worn at its skull.
     static let faceLift: [String: [CGFloat]] = [
@@ -98,6 +114,17 @@ struct HatArt: View {
         "wizardhat": [0, 0, 0, 0, 1.5, 0, 0, 10, 14, 11, 18.5, 21, 30.5],
         "goldcrown": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2.5],
         "halo": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "baseballcap": [0, 0, 0, 0, 0.5, 0, 0, 10.5, 15, 10.5, 17, 32, 29],
+        "sombrero": [0, 0, 0, 0, 2, 0, 0, 10, 14, 11.5, 20.5, 26.5, 33],
+        "tophat": [0, 0, 0, 0, 2, 0, 0, 10.5, 14.5, 26.5, 20, 23.5, 31.5],
+        "tiara": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10.5],
+        // The glass dome follows his CHIN: its collar's top sits 30 units
+        // above the bottom of his face on every look, as it does on Steady
+        // (read off each look's body with a ruler; Melvin: "only 5 and 7 look
+        // good", the rest sat on his shoulders or chest). His face ends lower
+        // on the slumped looks and higher on the bright ones, so the dome
+        // drops there (negative) and rises here; his tuft fits at every look.
+        "astronaut": [-26, -20, -9, -2, 3, 5, 0, 27, 11, 33, 29, 38, 39],
     ]
 
     static func faceLift(_ id: String, look: Int) -> CGFloat {
