@@ -102,8 +102,11 @@ enum Analytics {
         case purchaseFailed(plan: String, placement: String, reason: String)
         case trialStarted(plan: String)
         /// The "No, I don't want to pay" ladder. `rung` is
-        /// `DownsellRung.analyticsName`: "trial" | "half_month".
-        case offerViewed(rung: String)
+        /// `DownsellRung.analyticsName`: "half_month" (the banner); "trial" was
+        /// the first rung until 2026-10-26.
+        /// `trigger`: "no_link" (tapped "No, I don't want to pay") or
+        /// "cancelled_sheet" (backed out of Apple's purchase sheet), 2026-10-26.
+        case offerViewed(rung: String, trigger: String)
         case offerAccepted(rung: String)
         case offerDeclined(rung: String)
         /// source: "paywall" | "settings"; outcome: "restored" | "nothing" | "failed".
@@ -327,7 +330,8 @@ enum Analytics {
             case .purchaseFailed(let plan, let placement, let reason):
                 ["plan": plan, "placement": placement, "reason": reason]
             case .trialStarted(let plan): ["plan": plan]
-            case .offerViewed(let rung), .offerAccepted(let rung), .offerDeclined(let rung): ["rung": rung]
+            case .offerViewed(let rung, let trigger): ["rung": rung, "trigger": trigger]
+            case .offerAccepted(let rung), .offerDeclined(let rung): ["rung": rung]
             case .restore(let source, let outcome): ["source": source, "outcome": outcome]
             case .lockedTapped(let signal): ["signal": signal]
             case .skinLockedTapped(let skin): ["skin": skin]

@@ -944,6 +944,33 @@ Archive from `mvp` at or after the commit that added `FeatureFlags`. It ships:
 The 1.0.2 build uploaded earlier (202609141719) predates all of this, so
 this release needs a NEW archive.
 
+## OPEN for the next version (2026-10-26): the paywall rebuild
+
+Yearly preselected over Monthly, Lifetime off the paywall, the half-price
+banner in place of the two rung screens, 7-day trials. Prices are UNCHANGED.
+
+- [ ] **App Store Connect, Half Price (`monthly50`):** change its free-trial
+      introductory offer from 3 days to **1 week**, in every country. The app
+      reads the length from there; until it changes, the banner says 3 days.
+- [ ] **Monthly Trial and Yearly Trial** (`monthlytrial`, `yearlytrial`):
+      the same change. Both are dormant (no screen sells them now) but keep
+      them consistent in case the trial rung returns.
+- [ ] **Monthly and Yearly still carry NO introductory offer.** Check.
+- [ ] **Review screenshot for Half Price:** the banner
+      (`SIMCTL_CHILD_HARD_PAYWALL=1 SIMCTL_CHILD_SKIP_ONBOARDING=1
+      SIMCTL_CHILD_PREVIEW_PAYWALL_BANNER=1`). The Yearly and Monthly ones
+      are the paywall with each card selected (`PREVIEW_PAYWALL_PLAN`).
+- [ ] **Description and review notes** from `marketing/APP_STORE_PASTE.md`
+      (subscription information and the SUBSCRIPTION note were rewritten;
+      the review notes are 3,977 of 4,000 counting line breaks twice).
+- [ ] **On a phone, sandbox:** Yearly preselected; cancel Apple's sheet and
+      the banner rises; "Claim half price" opens the sheet for $3.99;
+      "No thanks" closes it and removes the "No" link.
+- [ ] **PostHog:** `offer_viewed` now carries `trigger` (`no_link` or
+      `cancelled_sheet`); the trial rung no longer fires. Rebuild any tile
+      that funnels through `rung = trial`.
+- [ ] New archive (this is on `block`, after 1.4).
+
 ## OPEN for 1.4 (2026-10-18): Meditating together, invite codes, profile pictures
 
 1.4 = weekly goals with friends and nudges, invite codes, a required profile

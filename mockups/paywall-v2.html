@@ -1,0 +1,207 @@
+<title>808 Paywall Plan</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800;900&display=swap">
+<style>
+/* Layout: a single reading column for the decision, then two phones side by side for the screens. */
+:root{
+  --bg:#F6F1E7; --card:#FFFFFF; --ink:#413024; --ink2:#6F5D4F; --line:#E4DACB;
+  --green:#5AB950; --greenShade:#418E3A; --sky:#3F80AD; --gold:#F0C47B; --goldInk:#8A5A12;
+  --warn:#B4542F; --sand:#F0E9DC;
+  --display:"Nunito", ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
+  --body:"Nunito", ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#1D1915; --card:#29231D; --ink:#F1E8DA; --ink2:#BFB1A0; --line:#3B332B; --goldInk:#F0C47B; --warn:#E58A63; --sand:#332B23; color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#1D1915; --card:#29231D; --ink:#F1E8DA; --ink2:#BFB1A0; --line:#3B332B; --goldInk:#F0C47B; --warn:#E58A63; --sand:#332B23; color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.55}
+.wrap{max-width:980px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:40px 64px}
+.col{max-width:680px}
+h1{font-family:var(--display);font-weight:900;font-size:clamp(30px,5vw,42px);line-height:1.1;margin:0 0 10px;text-wrap:balance;letter-spacing:-.01em}
+h2{font-family:var(--display);font-weight:800;font-size:23px;margin:44px 0 10px;text-wrap:balance}
+h3{font-family:var(--display);font-weight:800;font-size:17px;margin:0 0 4px}
+p{margin:0 0 12px}
+.lede{font-size:18px;color:var(--ink2);margin-bottom:24px}
+.eyebrow{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--ink2)}
+.verdicts{display:grid;gap:12px;margin:20px 0 8px}
+.v{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px 18px}
+.v .tag{grid-row:span 2;align-self:start;font-size:12px;font-weight:900;letter-spacing:.06em;text-transform:uppercase;padding:4px 9px;border-radius:999px;white-space:nowrap}
+.tag.keep{background:#E3F3E0;color:#2F6E29}.tag.no{background:#F7E1D6;color:#9A3F1C}.tag.change{background:#FBEFD6;color:#80520C}
+.v p{margin:0;color:var(--ink2);min-width:0}
+.v h3{min-width:0}
+table{border-collapse:collapse;width:100%;font-size:15px;font-variant-numeric:tabular-nums}
+.tbl{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:16px;margin:14px 0}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ink2)}
+tr:last-child td{border-bottom:0}
+td.n{text-align:right;white-space:nowrap;font-weight:700}
+.note{font-size:14px;color:var(--ink2)}
+.big{font-family:var(--display);font-weight:900;font-size:20px}
+.callout{background:var(--sand);border-radius:16px;padding:16px 18px;margin:16px 0}
+.callout strong{color:var(--ink)}
+
+/* phones */
+.phones{display:flex;flex-wrap:wrap;gap:28px;justify-content:center;margin:24px 0 8px}
+.phonebox{display:flex;flex-direction:column;align-items:center;gap:10px;max-width:100%}
+.phonebox .cap{max-width:300px;text-align:center;font-size:14px;color:var(--ink2)}
+.phone{width:300px;max-width:100%;aspect-ratio:300/640;border-radius:42px;background:#111;padding:9px;box-shadow:0 18px 40px rgba(40,25,10,.18)}
+.screen{position:relative;width:100%;height:100%;border-radius:34px;overflow:hidden;background:linear-gradient(#8FC3E8 0%,#B9DDF2 34%,#DCEFF5 52%);font-family:var(--display);color:#413024}
+.ridge{position:absolute;left:-10%;right:-10%;height:120px;border-radius:50% 50% 0 0}
+.r1{top:34%;background:#9DB8A4;opacity:.75}.r2{top:39%;background:#7FAE6F}
+.otto{position:absolute;top:9%;left:50%;width:118px;transform:translateX(-50%);filter:drop-shadow(0 0 18px rgba(255,236,170,.85))}
+.ph-title{position:absolute;top:5.2%;width:100%;text-align:center;font-weight:900;font-size:21px}
+.panel{position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:26px 26px 0 0;padding:16px 16px 18px;display:flex;flex-direction:column;gap:9px;box-shadow:0 -4px 16px rgba(0,0,0,.08)}
+.plan{position:relative;border:2px solid #E7DFD3;border-radius:14px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center}
+.plan.on{border-color:var(--green);background:#EEF8EC}
+.plan .pt{font-weight:800;font-size:15px}
+.plan .ps{font-size:11.5px;color:#6F5D4F;font-weight:600}
+.plan .pp{text-align:right;font-weight:900;font-size:15px}
+.plan .pp small{display:block;font-size:11px;color:#6F5D4F;font-weight:700}
+.best{position:absolute;top:-9px;left:12px;background:var(--green);color:#fff;font-size:9.5px;font-weight:900;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px}
+.cta{background:var(--green);color:#fff;font-weight:900;text-align:center;border-radius:14px;padding:12px;box-shadow:0 4px 0 var(--greenShade);font-size:16px;margin-top:2px}
+.fine{font-size:9.5px;line-height:1.35;color:#6F5D4F;text-align:center;font-family:var(--body);font-weight:600}
+.links{display:flex;justify-content:center;gap:12px;font-size:10px;color:#6F5D4F;font-weight:700}
+.no{font-size:11px;text-align:center;color:#8B7B6E;font-weight:800}
+.dim{position:absolute;inset:0;background:rgba(30,20,10,.38)}
+.banner{position:absolute;left:10px;right:10px;bottom:12px;background:#fff;border-radius:22px;padding:16px 15px 13px;box-shadow:0 10px 30px rgba(0,0,0,.25);display:flex;flex-direction:column;gap:8px}
+.ribbon{align-self:flex-start;background:#FBEFD6;color:#80520C;font-size:10px;font-weight:900;letter-spacing:.07em;text-transform:uppercase;padding:3px 9px;border-radius:999px}
+.banner .bt{font-weight:900;font-size:19px;line-height:1.15}
+.priceline{display:flex;align-items:baseline;gap:8px}
+.priceline .now{font-weight:900;font-size:26px}
+.priceline .per{font-weight:800;font-size:13px;color:#6F5D4F}
+.priceline s{font-weight:800;font-size:14px;color:#A2917F}
+.banner .sub{font-size:12px;font-weight:700;color:#6F5D4F;font-family:var(--body);line-height:1.35}
+.banner .x{position:absolute;top:10px;right:12px;width:24px;height:24px;border-radius:50%;background:#F2ECE3;display:grid;place-items:center;font-size:13px;color:#6F5D4F;font-weight:900}
+.nothanks{font-size:12px;text-align:center;color:#8B7B6E;font-weight:800}
+.ottoSmall{position:absolute;right:12px;top:-46px;width:62px}
+@media (prefers-reduced-motion:no-preference){
+  .banner.anim{animation:up .55s cubic-bezier(.2,.9,.25,1.15) both .3s}
+  @keyframes up{from{transform:translateY(120%)}to{transform:none}}
+}
+ol.steps{padding-left:22px;margin:8px 0 0}
+ol.steps li{margin-bottom:8px}
+.src{font-size:13px;color:var(--ink2)}
+.src a{color:var(--sky)}
+a{color:var(--sky)}
+</style>
+
+<div class="wrap">
+<div class="col">
+  <div class="eyebrow">Pricing and the paywall · Oct 26, 2026</div>
+  <h1>Keep monthly, lead with yearly, and turn the half-off into a banner</h1>
+  <p class="lede">Read against RevenueCat's State of Subscription Apps 2026 and our own 26 days on the premium paywall. The short version: going yearly-only would cut the plan most of our buyers pick, and $7.99 is already under the Health &amp; Fitness median, so the place to give ground on price is the banner, aimed at the people who hesitate.</p>
+
+  <div class="verdicts">
+    <div class="v"><span class="tag no">No</span><h3>Yearly only</h3><p>Single-plan paywalls are the rarest kind in Health &amp; Fitness (about 20%); two plans is the norm (60%). Five of our seven full-price buyers chose Monthly.</p></div>
+    <div class="v"><span class="tag change">Change</span><h3>Preselect Yearly and show it as $2.50 a month</h3><p>This gets Aziz the yearly push without removing monthly. Yearly-led apps earn about 60% more per install by day 60 ($0.46 against $0.29). Today Monthly is the preselected card, which is part of why it wins.</p></div>
+    <div class="v"><span class="tag keep">Keep</span><h3>Monthly at $7.99 for now</h3><p>The category median is $9.99, so we are already cheap. At $4.99 we would need 60% more monthly buyers just to stay even, and Yearly's saving would shrink from 69% to 50%. The banner gives $3.99 to the people who balk, without cutting everyone else's price.</p></div>
+    <div class="v"><span class="tag change">Change</span><h3>Half-off becomes one banner, one tap to buy</h3><p>It slides up on the paywall when someone taps "No, I don't want to pay" or backs out of Apple's purchase sheet. That second trigger matters: 13 people opened Apple's sheet for Monthly and cancelled.</p></div>
+    <div class="v"><span class="tag change">Change</span><h3>Make the free trial 7 days, not 3</h3><p>3-day trials see 55% cancel on day zero against 40% for 7-day ones, and convert 25.5% against 37.4%. It is a setting in App Store Connect; the app already reads the length from there.</p></div>
+    <div class="v"><span class="tag change">Suggest</span><h3>Take Lifetime off the paywall</h3><p>22 people tapped the card, one opened Apple's sheet, nobody bought. Lifetime earns the least per install of any plan in the report. The product stays for restores and anyone who already owns it. This one is your call; you brought it back on Sep 29.</p></div>
+  </div>
+
+  <h2>The two screens</h2>
+  <p>Same valley, same panel. The paywall loses a card and leads with Yearly. The banner replaces the two full-screen rungs you have to tap through now.</p>
+</div>
+
+<div class="phones">
+  <div class="phonebox">
+    <div class="phone"><div class="screen">
+      <div class="ph-title">Keep Otto glowing.</div>
+      <div class="ridge r1"></div><div class="ridge r2"></div>
+      <img class="otto" src="paywall-v2/otto.png" alt="Otto at Nirvana, glowing">
+      <div class="panel">
+        <div class="plan on"><span class="best">Best value</span><div><div class="pt">Yearly</div><div class="ps">$2.50 a month</div></div><div class="pp">$29.99<small>per year</small></div></div>
+        <div class="plan"><div><div class="pt">Monthly</div><div class="ps">Cancel any time</div></div><div class="pp">$7.99<small>per month</small></div></div>
+        <div class="cta">Continue</div>
+        <div class="fine">$29.99 per year. Renews automatically until you cancel, at least 24 hours before it renews, in the Settings app.</div>
+        <div class="links"><span>Restore</span><span>Privacy Policy</span><span>Terms of Use</span></div>
+        <div class="no">No, I don't want to pay</div>
+      </div>
+    </div></div>
+    <div class="cap"><strong>1. The paywall.</strong> Yearly is preselected and priced per month underneath. Lifetime is gone.</div>
+  </div>
+
+  <div class="phonebox">
+    <div class="phone"><div class="screen">
+      <div class="ph-title">Keep Otto glowing.</div>
+      <div class="ridge r1"></div><div class="ridge r2"></div>
+      <img class="otto" src="paywall-v2/otto.png" alt="">
+      <div class="panel" aria-hidden="true">
+        <div class="plan on"><span class="best">Best value</span><div><div class="pt">Yearly</div><div class="ps">$2.50 a month</div></div><div class="pp">$29.99<small>per year</small></div></div>
+        <div class="plan"><div><div class="pt">Monthly</div><div class="ps">Cancel any time</div></div><div class="pp">$7.99<small>per month</small></div></div>
+        <div class="cta">Continue</div>
+        <div class="fine">&nbsp;</div><div class="links"><span>&nbsp;</span></div><div class="no">&nbsp;</div>
+      </div>
+      <div class="dim"></div>
+      <div class="banner anim">
+        <img class="ottoSmall" src="paywall-v2/otto.png" alt="">
+        <span class="x" aria-label="Close">✕</span>
+        <span class="ribbon">Before you go</span>
+        <div class="bt">Have 808 at half price</div>
+        <div class="priceline"><span class="now">$3.99</span><span class="per">a month</span><s>$7.99</s></div>
+        <div class="sub">3 days free, then $3.99 a month. Renews automatically. Cancel any time in the Settings app.</div>
+        <div class="cta">Claim half price</div>
+        <div class="links"><span>Privacy Policy</span><span>Terms of Use</span></div>
+        <div class="nothanks">No thanks</div>
+      </div>
+    </div></div>
+    <div class="cap"><strong>2. The banner.</strong> Slides up after "No, I don't want to pay" or a cancelled Apple sheet. "Claim half price" opens Apple's sheet straight away.</div>
+  </div>
+</div>
+
+<div class="col">
+  <h2>How the banner behaves</h2>
+  <ol class="steps">
+    <li><strong>Two triggers.</strong> Tapping "No, I don't want to pay", or cancelling Apple's purchase sheet for any plan. Once per paywall visit.</li>
+    <li><strong>One tap to buy.</strong> "Claim half price" opens Apple's sheet for the half-price plan directly. Today a rung only selects the plan and sends you back to the paywall to press Continue again.</li>
+    <li><strong>It replaces both rungs.</strong> The half-price plan already starts with the free trial, so one banner covers what the trial rung and the half-off rung did. The trial rung got 12 accepts and 3 full-price trials in 26 days, so little is lost.</li>
+    <li><strong>No thanks or the ✕</strong> lowers it and leaves the paywall as it was, with "No, I don't want to pay" gone.</li>
+    <li><strong>What App Review needs on it:</strong> the billed price as the biggest number, the real "was" price ($7.99 is what Monthly charges), the renewal terms, and Terms and Privacy links, since it sells on its own. No countdown timer: fake urgency reads as misleading, and it would not fit how 808 talks.</li>
+  </ol>
+
+  <h2>What our own numbers say</h2>
+  <p class="note">Oct 1 to 26, from PostHog, leaving out Apple's test phones, TestFlight and cable builds. Your own App Store installs may still be in it. These are small numbers; read them as direction, not proof.</p>
+  <div class="tbl"><table>
+    <tr><th>Step</th><th style="text-align:right">People</th></tr>
+    <tr><td>Installed</td><td class="n">110</td></tr>
+    <tr><td>Saw a paywall (onboarding 83, update lock 13)</td><td class="n">96</td></tr>
+    <tr><td>Bought something</td><td class="n">13</td></tr>
+    <tr><td>&nbsp;&nbsp;Monthly at $7.99</td><td class="n">5</td></tr>
+    <tr><td>&nbsp;&nbsp;Yearly at $29.99</td><td class="n">2</td></tr>
+    <tr><td>&nbsp;&nbsp;Half price, $3.99 after a trial</td><td class="n">3</td></tr>
+    <tr><td>&nbsp;&nbsp;Free trial (Yearly 2, Monthly 1)</td><td class="n">3</td></tr>
+    <tr><td>&nbsp;&nbsp;Lifetime</td><td class="n">0</td></tr>
+    <tr><td>Opened Apple's sheet for Monthly, then cancelled</td><td class="n">13</td></tr>
+    <tr><td>Saw the trial rung / took it</td><td class="n">60 / 12</td></tr>
+    <tr><td>Saw the half-price rung / took it</td><td class="n">56 / 6</td></tr>
+  </table></div>
+  <div class="callout"><strong>About 12% of installs bought,</strong> right around the report's median for hard-paywall apps (10.7% by day 35). The paywall is not broken. The leak worth fixing is the 13 people who got as far as Apple's sheet for Monthly and backed out, which is exactly when the banner should appear.</div>
+
+  <h2>What the report says for Health &amp; Fitness</h2>
+  <div class="tbl"><table>
+    <tr><th>Measure</th><th>Health &amp; Fitness</th><th>Us</th></tr>
+    <tr><td>Median monthly price</td><td>$9.99</td><td>$7.99</td></tr>
+    <tr><td>Median yearly price</td><td>$39.94</td><td>$29.99</td></tr>
+    <tr><td>Paywalls showing two plans</td><td>60% (most of any category)</td><td>3 today</td></tr>
+    <tr><td>Paywalls showing one plan</td><td>about 20% (fewest of any category)</td><td></td></tr>
+    <tr><td>Trial to paid</td><td>37.7%</td><td>too early to tell</td></tr>
+    <tr><td>Most common trial length</td><td>5 to 9 days (54% of trials)</td><td>3 days</td></tr>
+  </table></div>
+  <p>Across all apps:</p>
+  <ul>
+    <li><strong>Plans:</strong> yearly-led apps earn $0.46 per install by day 60, monthly-led $0.29, lifetime-led $0.24.</li>
+    <li><strong>Price:</strong> higher-priced apps convert better (2.8% against 1.4%) and earn far more per install ($0.94 against $0.11 by day 60). This is a correlation, but it runs against cutting price to win buyers.</li>
+    <li><strong>Showing yearly as a monthly figure:</strong> one contributor (Mojo) saw trial starts rise 30% and yearly take rate rise 10% from it.</li>
+    <li><strong>Trials:</strong> 3-day trials lose 55.4% on day zero, 7-day 39.8%. Trial-to-paid is 25.5% for 4 days or less and 37.4% for 5 to 9.</li>
+    <li><strong>Timing:</strong> about half of all purchases happen on the day of install, which is why the moment someone hesitates on the paywall is worth a real offer.</li>
+    <li><strong>Discounts:</strong> every discounted dollar lowers lifetime value, so a discount should go to people who would not pay full price, not to everyone. That is the case for a banner over a lower list price.</li>
+  </ul>
+  <p class="note">Not on the public page: retention and renewal by plan length, and refunds. Those are in the 330-page PDF. If you send it, I'll add how yearly and monthly subscribers hold up over 12 months, which is the other half of the yearly-only question.</p>
+
+  <h2>If you still want $4.99</h2>
+  <p>Ship the banner and the Yearly preselect first, give it four weeks, and look at how many people take the banner. If most hesitators take $3.99, the list price is the problem and $4.99 or $5.99 is worth a test. If few take it, price was never the reason they left. Changing several things at once with 100 people a month would leave us unable to tell what worked.</p>
+
+  <p class="src">Sources: <a href="https://www.revenuecat.com/state-of-subscription-apps/">RevenueCat, State of Subscription Apps 2026</a>. Our numbers: PostHog, project 808, Oct 1 to 26, 2026.</p>
+</div>
+</div>

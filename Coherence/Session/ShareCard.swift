@@ -701,7 +701,7 @@ struct ShareSessionSheet: View {
     var entitlements: Entitlements = .unlocked
     @Environment(\.dismiss) private var dismiss
     @State private var showPlans = false
-    @State private var plansPlan: SubscriptionPlan = .monthly
+    @State private var plansPlan: SubscriptionPlan = SubscriptionPlan.preselected
 
     /// Cards this person may actually post.
     private var unlockedStyles: [ShareCardStyle] {

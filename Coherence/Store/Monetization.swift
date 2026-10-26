@@ -24,10 +24,10 @@ enum Monetization {
     /// Whether the paywall's OWN Monthly and Yearly sell with a free trial.
     /// **Off: the free trial is an upsell** (Melvin, 2026-09-29: "we want them
     /// to not know it exists unless they deny the initial offer"). The paywall
-    /// sells Monthly, Yearly and Lifetime with no trial; "No, I don't want to
-    /// pay" offers the 3-day free trial (`...monthlytrial`), and declining that
-    /// offers half price after a 3-day trial (`...monthly50`). Each rung's
-    /// trial is its own product's introductory offer.
+    /// sells Yearly and Monthly with no trial (Lifetime left the paywall on
+    /// 2026-10-26); "No, I don't want to pay", or backing out of Apple's sheet,
+    /// raises the half-price banner: $3.99 a month after a 7-day free trial
+    /// (`...monthly50`), the trial being that product's own introductory offer.
     ///
     /// For a few hours that day it was on, a misreading of "same as before, 3
     /// day offer": the trial sat on the paywall and the trial rung went

@@ -8399,3 +8399,52 @@ one has no evidence:
   icon; a head-and-shoulders close-up on one stronger solid background; the
   same close-up flatter (brown, cream, one background colour, no glow). At
   808's traffic a result takes weeks. BACKLOG.md > Website and marketing.
+
+## THE PAYWALL, REBUILT FROM REVENUECAT'S 2026 REPORT (2026-10-26, Melvin and Aziz)
+
+Aziz proposed yearly only; Melvin proposed Monthly at $4.99. Read against
+RevenueCat's State of Subscription Apps 2026 and 26 days of our own PostHog
+data, the founders agreed to all of these (write-up and mockup:
+`mockups/paywall-v2.html`, https://claude.ai/artifact/7NSi29qxyYZiYGcbtjnwRS).
+This supersedes the ladder parts of "1.1 DECISIONS AFTER THE AUDIT".
+
+- **Two cards, Yearly on top and preselected** (`SubscriptionPlan.cards`,
+  `.preselected`; every paywall `@State` starts there). NOT yearly only:
+  single-plan paywalls are the rarest in Health & Fitness (~20%, two plans
+  60%), and five of our first seven full-price buyers chose Monthly. Yearly
+  leads because yearly-led apps earn ~60% more per install ($0.46 vs $0.29 at
+  day 60). Monthly WAS the preselected card, which is part of why it won.
+- **Yearly shows its monthly figure in the live currency**
+  (`Store.perMonthPrice`, "$2.50 a month"), every time, not only beside the
+  fallback prices like the other notes.
+- **Prices unchanged; do not cut Monthly to $4.99 without data.** $7.99 is
+  under the category median ($9.99; yearly median $39.94 vs our $29.99).
+  $4.99 needs 60% more monthly buyers to break even and shrinks Yearly's
+  saving from 69% to 50%. Revisit after four weeks of banner data: if most
+  hesitators take $3.99, test $4.99/$5.99.
+- **Lifetime is off the paywall** (22 tapped it in 26 days, none bought).
+  Product, enum case and restores stay; a plan of `.lifetime` falls back to
+  Yearly on appear.
+- **The half-price offer is a banner, not two rung screens**
+  (`HalfPriceBanner` in PaywallLadder.swift, `ladder == [.halfMonth]`; the
+  trial rung is dormant, `DownsellSheet` is deleted). It rises over the
+  paywall when someone taps "No, I don't want to pay" **or cancels Apple's
+  purchase sheet for any other plan** (13 people opened the sheet for Monthly
+  and backed out in 26 days, the biggest leak), once per visit, and **buys in
+  one tap** (`claimHalfPrice` selects `.monthHalf` then calls `advance()`).
+  Because it sells, it carries the paywall's own terms sentence, the real
+  struck "was" price (Monthly's) and Terms/Privacy links. No countdown.
+  "No thanks" or ✕ closes it and removes the "No" link; the link only FADES
+  while the banner is up, because removing it shortens the panel and the
+  plans jump. `PREVIEW_PAYWALL_BANNER=1` (DEBUG) raises it;
+  `PREVIEW_PAYWALL_RUNG` is gone.
+- **Trials are 7 days** (`fallbackTrialDays = 7`, `808.storekit` P1W): 3-day
+  trials lose 55% on day zero vs 40% for 7-day, and convert 25.5% vs 37.4%.
+  **App Store Connect sets the real length** and still says 3 days until
+  someone changes it (RELEASE_CHECKLIST, "the paywall rebuild").
+- Analytics: `offer_viewed` gained `trigger` (`no_link` | `cancelled_sheet`).
+- Our baseline when this shipped (Oct 1 to 26): 110 installs, 96 saw a
+  paywall, 13 bought (~12% of installs; the report's hard-paywall median is
+  10.7% by day 35). Compare the next four weeks against it.
+- Not on the report's public page: retention and refunds by plan length.
+  They are in the 330-page PDF; ask for it before reopening yearly only.

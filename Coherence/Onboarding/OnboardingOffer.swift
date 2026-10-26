@@ -41,32 +41,34 @@ enum SubscriptionPlan: String, CaseIterable, Identifiable {
 
     /// The free trial's length until the App Store says otherwise
     /// (`Store.trialDays` reads the real one off the trial rung's product).
-    /// Three: the length the founders set (Melvin, 2026-09-29); only a build
-    /// with no products ever shows it.
-    static let fallbackTrialDays = 3
+    /// Seven since 2026-10-26 (Melvin, from RevenueCat's 2026 report: 3-day
+    /// trials lose 55% on day zero against 40% for 7-day ones, and convert
+    /// 25.5% against 37.4%); only a build with no products ever shows it.
+    static let fallbackTrialDays = 7
 
-    /// The cards the paywall shows. `yearHalf` is not among them until
-    /// somebody has been offered it, and then it takes the year's place
-    /// rather than sitting beside it, because two yearly cards at different
-    /// prices is a shell game.
+    /// The cards the paywall shows: Yearly, then Monthly. Yearly is on top
+    /// and preselected (Melvin and Aziz, 2026-10-26), because yearly-led apps
+    /// earn about 60% more per install (RevenueCat 2026), while Monthly stays
+    /// because five of the first seven full-price buyers chose it.
     ///
-    /// **Lifetime is back as the third card** (Melvin, 2026-09-29: "that
-    /// should def be a thing"), as it was before Aziz's monthly-and-yearly-only
-    /// paywall of 2026-09-26: one charge, no trial, nothing renews. The
-    /// paywall still hides it while the App Store is selling without it
-    /// (`PaywallScreen.cardsShown`), so a missing product never shows a
-    /// fallback price beside live ones.
+    /// **Lifetime is off the paywall** (same day): 22 people tapped its card
+    /// in 26 days and nobody bought it. The product and the enum case stay
+    /// for restores and for anyone who already owns it.
+    ///
+    /// A discounted or trial plan takes its full-price sibling's place
+    /// rather than sitting beside it, because two cards for one plan at two
+    /// prices is a shell game.
     static func cards(selecting plan: SubscriptionPlan) -> [SubscriptionPlan] {
-        // A rung's plan takes the monthly card's place, the way the half-off
-        // year takes the year's: two monthly cards at two prices is a shell
-        // game. Nothing ever takes Lifetime's.
         switch plan {
-        case .yearHalf: return [.monthly, .yearHalf, .lifetime]
-        case .monthTrial, .yearTrial: return [.monthTrial, .yearTrial, .lifetime]
-        case .monthHalf: return [.monthHalf, .yearly, .lifetime]
-        default: return [.monthly, .yearly, .lifetime]
+        case .yearHalf: return [.yearHalf, .monthly]
+        case .monthTrial, .yearTrial: return [.yearTrial, .monthTrial]
+        case .monthHalf: return [.yearly, .monthHalf]
+        default: return [.yearly, .monthly]
         }
     }
+
+    /// The plan every paywall opens on.
+    static let preselected: SubscriptionPlan = .yearly
 
     var title: String {
         switch self {
@@ -323,10 +325,11 @@ struct RatingScreen: View {
 
 // MARK: - 23 · Paywall
 
-/// The plans, with no free trial (it is an upsell, Melvin, 2026-09-29), and
-/// two answers to a "no" (`DownsellRung.ladder`): the free trial on Monthly
-/// or Yearly, then half price. Each comes back to this screen to be bought. No chevron back into the
-/// interview. The paywall owns every purchase and every disclosure.
+/// The plans, Yearly preselected over Monthly, with no free trial on either
+/// (it is an upsell, Melvin, 2026-09-29), and one answer to a "no": the
+/// half-price banner (`HalfPriceBanner`, 2026-10-26), which slides up over
+/// this screen and buys in one tap, carrying its own price, renewal terms and
+/// legal links. No chevron back into the interview.
 ///
 /// **It fails closed** (Melvin, 2026-09-29). When the App Store cannot give
 /// the plans, the screen says so and Continue becomes Try again. It never
@@ -418,15 +421,9 @@ struct PaywallScreen: View {
     }
 
     enum PaywallRoute: Identifiable {
-        case rung(DownsellRung)
         case freeTier
 
-        var id: String {
-            switch self {
-            case .rung(let r): return "rung-\(r.rawValue)"
-            case .freeTier:    return "free"
-            }
-        }
+        var id: String { "free" }
     }
     @EnvironmentObject private var store: Store
     @Binding var plan: SubscriptionPlan
@@ -585,6 +582,11 @@ struct PaywallScreen: View {
     }
     /// Declined every rung once: the link goes, so "no" is not a loop.
     @State private var declinedAll = false
+    /// The half-price banner is up over the plans.
+    @State private var bannerUp = false
+    /// The banner has been offered on this visit. It comes once, from
+    /// whichever trigger fires first.
+    @State private var bannerOffered = false
 
     @StateObject private var otto = OttoRigHolder()
 
@@ -688,12 +690,6 @@ struct PaywallScreen: View {
         store.state != .ready || store.product(for: .yearTrial) != nil
     }
 
-    /// The plan the paywall preselects when a rung is taken: the trial rung
-    /// lands on Yearly with the trial where it exists, the best value.
-    private func landing(_ rung: DownsellRung) -> SubscriptionPlan {
-        rung == .trial && yearTrialOnSale ? .yearTrial : rung.plan
-    }
-
     private var lifetimeOnSale: Bool {
         store.state != .ready || store.product(for: .lifetime) != nil
     }
@@ -757,45 +753,9 @@ struct PaywallScreen: View {
             }
         }
         .ignoresSafeArea(edges: .bottom)
+        .overlay { halfPriceOverlay }
         .fullScreenCover(item: $route) { destination in
             switch destination {
-            case .rung(let current):
-                DownsellSheet(rung: current, plan: plan, first: firstRung() == current,
-                              yearlyPrice: store.displayPrice(for: .yearly)
-                                  ?? SubscriptionPlan.yearly.price,
-                              monthlyPrice: store.displayPrice(for: .monthly)
-                                  ?? SubscriptionPlan.monthly.price,
-                              halfMonthPrice: store.displayPrice(for: .monthHalf)
-                                  ?? SubscriptionPlan.monthHalf.price,
-                              trialPlanPrice: store.displayPrice(for: .monthTrial)
-                                  ?? SubscriptionPlan.monthTrial.price,
-                              trialYearPrice: yearTrialOnSale
-                                  ? (store.displayPrice(for: .yearTrial) ?? SubscriptionPlan.yearTrial.price)
-                                  : nil,
-                              trialDays: store.freeTrialDays(for: current.plan)) {
-                    // Taking a rung PRESELECTS the plan and returns to the
-                    // paywall; the purchase happens there and only there.
-                    // The rungs used to buy in place, which put a
-                    // purchase-initiating CTA on a screen carrying no
-                    // price, no renewal statement and no legal links: the
-                    // textbook 3.1.2 rejection. One screen holds every
-                    // disclosure; every sale goes through it.
-                    Analytics.track(.offerAccepted(rung: current.analyticsName))
-                    plan = landing(current)
-                    route = nil
-                } onDecline: {
-                    Analytics.track(.offerDeclined(rung: current.analyticsName))
-                    // Straight to the next rung. After the last one: the
-                    // free tier, or, while 808 is premium only
-                    // (`Monetization`), back to the plans, since there is
-                    // no free 808 to settle into.
-                    if let next = firstRung(after: current) {
-                        showRung(next)
-                    } else {
-                        declinedAll = true
-                        route = Monetization.premiumOnly ? nil : .freeTier
-                    }
-                }
             case .freeTier:
                 FreeTierScreen(trialEligible: offerTrial, trialDays: store.trialDays) {
                     // Same rule, plus the bug it fixes: this closure used
@@ -826,7 +786,7 @@ struct PaywallScreen: View {
             // Lifetime is offered again (2026-09-29), but only while its
             // product is on sale; a plan that lands on a card not shown
             // falls back to monthly.
-            if plan == .lifetime && !lifetimeOnSale { plan = .monthly }
+            if plan == .lifetime { plan = SubscriptionPlan.preselected }
             if plan == .yearTrial && !yearTrialOnSale { plan = .monthTrial }
             // A transient fetch failure should not be a permanent state:
             // every arrival at the paywall retries the load.
@@ -837,12 +797,11 @@ struct PaywallScreen: View {
             // Review screenshots for each plan (2026-09-29):
             // PREVIEW_PAYWALL_PLAN=<plan raw value> preselects a plan, e.g.
             // yearTrial for the paywall after the trial rung is taken;
-            // PREVIEW_PAYWALL_RUNG=trial|halfMonth opens that rung.
+            // PREVIEW_PAYWALL_BANNER=1 raises the half-price banner.
             let env = ProcessInfo.processInfo.environment
             if let raw = env["PREVIEW_PAYWALL_PLAN"], let p = SubscriptionPlan(rawValue: raw) { plan = p }
-            if let raw = env["PREVIEW_PAYWALL_RUNG"],
-               let rung = DownsellRung.allCases.first(where: { "\($0)" == raw }) {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { showRung(rung) }
+            if env["PREVIEW_PAYWALL_BANNER"] == "1" {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { offerHalfPrice(trigger: "no_link") }
             }
             #endif
             guard !trackedView else { return }
@@ -852,7 +811,7 @@ struct PaywallScreen: View {
         // The plans arriving can take Lifetime away (App Store Connect
         // selling without it); the choice moves to a card that is there.
         .onChange(of: store.state) { _, _ in
-            if plan == .lifetime && !lifetimeOnSale { plan = .monthly }
+            if plan == .lifetime { plan = SubscriptionPlan.preselected }
             // A yearly trial the App Store is not selling is not a card, so
             // the choice moves to the monthly trial beside it.
             if plan == .yearTrial && !yearTrialOnSale { plan = .monthTrial }
@@ -977,15 +936,18 @@ struct PaywallScreen: View {
             links
 
             // No free version to decline into (Aziz, 2026-09-26), but a "no"
-            // is answered with the ladder (Melvin, 2026-09-29): the free trial
-            // on Monthly or Yearly, then half price every month. Once both
-            // are declined the link goes, and the plans are what is left.
-            if !declinedAll, let first = firstRung() {
-                Button("No, I don't want to pay") { showRung(first) }
+            // is answered with the half-price banner (2026-10-26). Once it is
+            // declined the link goes, and the plans are what is left.
+            if !declinedAll, firstRung() != nil {
+                Button("No, I don't want to pay") { offerHalfPrice(trigger: "no_link") }
                     .buttonStyle(.tactile)
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(AppColor.textSecondary.opacity(0.8))
                     .multilineTextAlignment(.center)
+                    // Faded, not removed, while the banner is up: removing it
+                    // shortens the panel and the plans jump under the banner.
+                    .opacity(bannerUp ? 0 : 1)
+                    .allowsHitTesting(!bannerUp)
             }
         }
         .padding(.horizontal, AppMetrics.screenPadding)
@@ -1022,7 +984,11 @@ struct PaywallScreen: View {
                     // $1.84 a week"). Beside Apple's localized price they
                     // would be a dollar claim about a euro charge, so they
                     // render only with our fallback prices.
-                    if store.displayPrice(for: p) == nil, let note = p.note {
+                    // The year as a monthly figure is the exception: it is
+                    // said in the live product's own currency
+                    // (`Store.perMonthPrice`), so it shows every time.
+                    if let note = store.perMonthPrice(for: p).map({ "\($0) a month" })
+                        ?? (store.displayPrice(for: p) == nil ? p.note : nil) {
                         Text(note)
                             .font(.system(size: 13, weight: .semibold, design: .rounded))
                             .foregroundStyle(OnboardingGreen.shade)
@@ -1132,6 +1098,14 @@ struct PaywallScreen: View {
                 onDone(true)
             case .cancelled:
                 Analytics.track(.purchaseFailed(plan: buyingPlan.rawValue, placement: placement, reason: "cancelled"))
+                // Backing out of Apple's sheet is the moment someone balked
+                // at the price: 13 people did it for Monthly in the first 26
+                // days of 1.1 (2026-10-26). The banner meets them there, once.
+                if buyingPlan != .monthHalf {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                        offerHalfPrice(trigger: "cancelled_sheet")
+                    }
+                }
             case .pending:
                 Analytics.track(.purchaseFailed(plan: buyingPlan.rawValue, placement: placement, reason: "pending"))
             case .unavailable:
@@ -1158,10 +1132,51 @@ struct PaywallScreen: View {
         plan = p
     }
 
-    /// Covers the prices with a rung of the "No, I don't want to pay" ladder.
-    private func showRung(_ rung: DownsellRung) {
-        Analytics.track(.offerViewed(rung: rung.analyticsName))
-        route = .rung(rung)
+    /// Raises the half-price banner, once per visit, when its product can be
+    /// sold. `trigger` is "no_link" or "cancelled_sheet", for analytics.
+    private func offerHalfPrice(trigger: String) {
+        guard !bannerOffered, !started, let rung = firstRung() else { return }
+        bannerOffered = true
+        Analytics.track(.offerViewed(rung: rung.analyticsName, trigger: trigger))
+        withAnimation(.spring(response: 0.5, dampingFraction: 0.82)) { bannerUp = true }
+    }
+
+    /// The banner and the dim behind it. Tapping the dim does nothing: the
+    /// banner is closed by its own ✕ or "No thanks", said in words.
+    @ViewBuilder private var halfPriceOverlay: some View {
+        if bannerUp {
+            ZStack(alignment: .bottom) {
+                Color.black.opacity(0.32)
+                    .ignoresSafeArea()
+                    .transition(.opacity)
+                HalfPriceBanner(
+                    price: store.displayPrice(for: .monthHalf) ?? SubscriptionPlan.monthHalf.price,
+                    anchor: store.anchorPrice(for: .monthHalf),
+                    trialDays: trialLength(for: .monthHalf),
+                    buying: buying,
+                    onClaim: claimHalfPrice,
+                    onClose: closeBanner,
+                    onLegal: { sheet = .legal($0) })
+                    .padding(.horizontal, 10)
+                    .padding(.bottom, 10)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+    }
+
+    /// The banner's button: the half-price plan becomes the chosen plan (so
+    /// it is still on the paywall if Apple's sheet is cancelled and the
+    /// banner closed), and the purchase starts at once.
+    private func claimHalfPrice() {
+        Analytics.track(.offerAccepted(rung: DownsellRung.halfMonth.analyticsName))
+        plan = .monthHalf
+        advance()
+    }
+
+    private func closeBanner() {
+        Analytics.track(.offerDeclined(rung: DownsellRung.halfMonth.analyticsName))
+        declinedAll = true
+        withAnimation(.spring(response: 0.45, dampingFraction: 0.9)) { bannerUp = false }
     }
 
     private func restore() {

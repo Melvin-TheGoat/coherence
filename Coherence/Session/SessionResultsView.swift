@@ -53,7 +53,7 @@ struct SessionResultsView: View {
     /// the same way Home does it.
     @State private var route: ResultRoute?
     @State private var pendingRoute: ResultRoute?
-    @State private var paywallPlan: SubscriptionPlan = .monthly
+    @State private var paywallPlan: SubscriptionPlan = SubscriptionPlan.preselected
     /// The id awaiting the delete confirmation (this screen's own session).
     @State private var pendingDelete: UUID?
     /// Set once the rows are gone, so `onDisappear`'s reflection flush cannot

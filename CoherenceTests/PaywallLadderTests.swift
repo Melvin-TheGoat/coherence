@@ -5,17 +5,15 @@ import XCTest
 /// so its shape is asserted rather than trusted to review.
 final class PaywallLadderTests: XCTestCase {
 
-    /// **The free trial is an upsell** (Melvin, 2026-09-29: "we want them to
-    /// not know it exists unless they deny the initial offer"). A "no" is
-    /// answered first with the 3-day trial, then with half price after a
-    /// 3-day trial.
+    /// **One answer to a "no" since 2026-10-26: the half-price banner**,
+    /// $3.99 a month after a free trial. The trial rung is dormant: the
+    /// half-price plan already starts with the trial.
     ///
     /// A follow-up may only exist if it concedes something (2026-09-22), and
     /// after the discount there is nothing left to concede, so the ladder
     /// can never grow past two.
-    func test_theLadderIsTheTrialThenHalfPrice() {
-        XCTAssertEqual(DownsellRung.ladder, [.trial, .halfMonth])
-        XCTAssertEqual(DownsellRung.trial.next, .halfMonth)
+    func test_theLadderIsTheHalfPriceBannerAlone() {
+        XCTAssertEqual(DownsellRung.ladder, [.halfMonth])
         XCTAssertNil(DownsellRung.halfMonth.next, "the ladder must end")
         XCTAssertLessThanOrEqual(DownsellRung.ladder.count, 2)
         XCTAssertEqual(DownsellRung.trial.plan, .monthTrial)
@@ -29,11 +27,11 @@ final class PaywallLadderTests: XCTestCase {
         XCTAssertTrue(Store.ProductID.all.contains(Store.ProductID.monthHalf))
     }
 
-    /// Taking the free trial offers it on BOTH Monthly and Yearly (Melvin,
-    /// 2026-09-29), each in its own card's place, never beside it: two yearly
-    /// cards at one price is a shell game. Lifetime is never swapped.
-    func test_theTrialRungPutsTheTrialOnBothPlans() {
-        let expected: [SubscriptionPlan] = [.monthTrial, .yearTrial, .lifetime]
+    /// A trial plan puts the trial on BOTH Monthly and Yearly, each in its
+    /// own card's place, never beside it: two yearly cards at one price is a
+    /// shell game. (Dormant since 2026-10-26 with the trial rung.)
+    func test_theTrialPlansTakeBothPlaces() {
+        let expected: [SubscriptionPlan] = [.yearTrial, .monthTrial]
         XCTAssertEqual(SubscriptionPlan.cards(selecting: .monthTrial), expected)
         XCTAssertEqual(SubscriptionPlan.cards(selecting: .yearTrial), expected)
         XCTAssertTrue(SubscriptionPlan.yearTrial.designedWithTrial)
@@ -173,31 +171,63 @@ final class PaywallLadderTests: XCTestCase {
 
     /// The discounted year replaces the year on the paywall rather than
     /// sitting beside it: two yearly cards at two prices is a shell game.
-    /// A rung's plan takes the monthly's place the same way; the trial rung
-    /// takes both places, with the trial on each.
+    /// Half price takes the monthly's place the same way.
     func test_theDiscountedYearTakesTheYearsPlace() {
-        XCTAssertEqual(SubscriptionPlan.cards(selecting: .yearly), [.monthly, .yearly, .lifetime])
-        XCTAssertEqual(SubscriptionPlan.cards(selecting: .yearHalf), [.monthly, .yearHalf, .lifetime])
-        XCTAssertEqual(SubscriptionPlan.cards(selecting: .monthTrial), [.monthTrial, .yearTrial, .lifetime])
-        XCTAssertEqual(SubscriptionPlan.cards(selecting: .monthHalf), [.monthHalf, .yearly, .lifetime])
+        XCTAssertEqual(SubscriptionPlan.cards(selecting: .yearly), [.yearly, .monthly])
+        XCTAssertEqual(SubscriptionPlan.cards(selecting: .yearHalf), [.yearHalf, .monthly])
+        XCTAssertEqual(SubscriptionPlan.cards(selecting: .monthTrial), [.yearTrial, .monthTrial])
+        XCTAssertEqual(SubscriptionPlan.cards(selecting: .monthHalf), [.yearly, .monthHalf])
     }
 
-    // MARK: Lifetime is back (Melvin, 2026-09-29: "that should def be a thing")
+    // MARK: The paywall of 2026-10-26 (RevenueCat 2026 + our own numbers)
 
-    /// Lifetime is the third card whatever is selected, and nothing ever
-    /// takes its place: a rung replaces the monthly (and the trial rung the
-    /// yearly too, with its own trial plan).
-    func test_lifetimeIsAlwaysTheThirdCard() {
+    /// Two cards, Yearly on top and preselected, and never Lifetime: 22
+    /// people tapped it in 26 days and nobody bought it.
+    func test_twoCardsYearlyFirstAndNoLifetime() {
+        XCTAssertEqual(SubscriptionPlan.preselected, .yearly)
         for plan in SubscriptionPlan.allCases {
             let cards = SubscriptionPlan.cards(selecting: plan)
-            XCTAssertEqual(cards.count, 3, "\(plan)")
-            XCTAssertEqual(cards.last, .lifetime, "\(plan)")
-            XCTAssertEqual(cards.filter { $0 == .lifetime }.count, 1, "\(plan)")
+            XCTAssertEqual(cards.count, 2, "\(plan)")
+            XCTAssertFalse(cards.contains(.lifetime), "\(plan)")
+            XCTAssertTrue([.yearly, .yearHalf, .yearTrial].contains(cards[0]), "a year leads: \(plan)")
         }
-        XCTAssertEqual(SubscriptionPlan.cards(selecting: DownsellRung.trial.plan),
-                       [.monthTrial, .yearTrial, .lifetime], "the trial is on both plans")
         XCTAssertEqual(SubscriptionPlan.cards(selecting: DownsellRung.halfMonth.plan),
-                       [.monthHalf, .yearly, .lifetime], "half price replaces the monthly card only")
+                       [.yearly, .monthHalf], "half price replaces the monthly card only")
+    }
+
+    /// Trials are a week, the length that converts best in the report.
+    func test_theTrialIsAWeek() {
+        XCTAssertEqual(SubscriptionPlan.fallbackTrialDays, 7)
+    }
+
+    /// The Yearly card's monthly figure is the live price over twelve, in
+    /// the live currency, and true arithmetic in dollars.
+    func test_yearlyPerMonthIsArithmetic() {
+        let usd = Decimal.FormatStyle.Currency(code: "USD", locale: Locale(identifier: "en_US"))
+        XCTAssertEqual(Store.perMonth(yearPrice: Decimal(string: "29.99")!, style: usd), "$2.50")
+        let eur = Decimal.FormatStyle.Currency(code: "EUR", locale: Locale(identifier: "de_DE"))
+        XCTAssertTrue(Store.perMonth(yearPrice: Decimal(string: "29.99")!, style: eur).contains("2,50"))
+        let jpy = Decimal.FormatStyle.Currency(code: "JPY", locale: Locale(identifier: "ja_JP"))
+        XCTAssertFalse(Store.perMonth(yearPrice: 4500, style: jpy).contains("."), "yen has no cents")
+    }
+
+    /// The banner sells in one tap, so it carries a purchase screen's
+    /// disclosures: the price, that it renews, where to cancel, and the trial
+    /// only when the product gives one. No urgency, no em dashes.
+    func test_theBannerSaysWhatItSells() {
+        let withTrial = HalfPriceBanner.terms(price: "$3.99", trialDays: 7)
+        XCTAssertTrue(withTrial.hasPrefix("7 days free, then $3.99 per month."), withTrial)
+        XCTAssertTrue(withTrial.contains("Renews automatically"))
+        XCTAssertTrue(withTrial.contains("Settings app"))
+        let noTrial = HalfPriceBanner.terms(price: "$3.99", trialDays: nil)
+        XCTAssertFalse(noTrial.lowercased().contains("free"), noTrial)
+        XCTAssertTrue(noTrial.contains("$3.99 per month"))
+        for text in [HalfPriceBanner.ribbon, HalfPriceBanner.title, HalfPriceBanner.cta, withTrial] {
+            XCTAssertFalse(text.contains("\u{2014}"), "no em dashes: \(text)")
+            for word in ["hurry", "only today", "expires", "last chance", "minutes left"] {
+                XCTAssertFalse(text.lowercased().contains(word), "manufactured urgency: \(text)")
+            }
+        }
     }
 
     /// One charge, today, nothing renews: the button and the terms say so,
@@ -315,7 +345,7 @@ final class PaywallLadderTests: XCTestCase {
         XCTAssertTrue(SubscriptionPlan.monthHalf.designedWithTrial)
         XCTAssertFalse(SubscriptionPlan.lifetime.designedWithTrial)
         XCTAssertFalse(SubscriptionPlan.yearHalf.designedWithTrial)
-        XCTAssertEqual(SubscriptionPlan.fallbackTrialDays, 3)
+        XCTAssertEqual(SubscriptionPlan.fallbackTrialDays, 7)
     }
 
     /// A card says "after the trial" only when this person's purchase of it

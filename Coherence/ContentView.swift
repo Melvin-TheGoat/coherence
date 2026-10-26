@@ -167,7 +167,7 @@ struct ContentView: View {
 
     /// The plan the post-session paywall preselects. Monthly, since the
     /// 7-day trial renews into it.
-    @State private var paywallPlan: SubscriptionPlan = .monthly
+    @State private var paywallPlan: SubscriptionPlan = SubscriptionPlan.preselected
     @ObservedObject private var firstOffer = FirstSessionOffer.shared
 
     /// One cover at a time; anything asked for while one is up waits its turn.

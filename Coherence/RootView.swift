@@ -18,7 +18,7 @@ struct RootView: View {
     @EnvironmentObject private var store: Store
     @EnvironmentObject private var community: CommunityModel
     /// The plan the launch paywall has selected.
-    @State private var lockPlan: SubscriptionPlan = .monthly
+    @State private var lockPlan: SubscriptionPlan = SubscriptionPlan.preselected
     @Environment(\.scenePhase) private var scenePhase
     /// Whether the valley's sky is dark right now, so the status bar turns
     /// white (`statusScheme`). Re-read every minute and on every return.

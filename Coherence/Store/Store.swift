@@ -260,6 +260,21 @@ final class Store: ObservableObject {
         product(for: plan)?.displayPrice
     }
 
+    /// A yearly plan's live price over twelve months, in its own currency
+    /// ("$2.50", "2,50 €"), or nil for any other plan or with no product.
+    /// The Yearly card says it beside the price (2026-10-26, RevenueCat 2026:
+    /// stating the year as a monthly figure raised yearly take rate).
+    func perMonthPrice(for plan: SubscriptionPlan) -> String? {
+        guard [.yearly, .yearTrial].contains(plan), let live = product(for: plan) else { return nil }
+        return Self.perMonth(yearPrice: live.price, style: live.priceFormatStyle)
+    }
+
+    /// `perMonthPrice(for:)`'s arithmetic, apart from StoreKit so it can be
+    /// tested. Rounded to the currency's own precision by its format style.
+    nonisolated static func perMonth(yearPrice: Decimal, style: Decimal.FormatStyle.Currency) -> String {
+        (yearPrice / 12).formatted(style)
+    }
+
     /// The struck-through "was" price, shown EVERY time (Melvin, 2026-09-29),
     /// not only when the App Store's prices failed to load.
     ///

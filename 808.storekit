@@ -115,7 +115,7 @@
           "type" : "RecurringSubscription",
           "introductoryOffer" : {
             "paymentMode" : "free",
-            "subscriptionPeriod" : "P3D",
+            "subscriptionPeriod" : "P1W",
             "internalID" : "808200004"
           }
         },
@@ -140,7 +140,7 @@
           "type" : "RecurringSubscription",
           "introductoryOffer" : {
             "paymentMode" : "free",
-            "subscriptionPeriod" : "P3D",
+            "subscriptionPeriod" : "P1W",
             "internalID" : "808200007"
           }
         },
@@ -167,7 +167,7 @@
             "displayPrice" : "0.00",
             "numberOfPeriods" : 1,
             "paymentMode" : "free",
-            "subscriptionPeriod" : "P3D",
+            "subscriptionPeriod" : "P1W",
             "internalID" : "808200005"
           }
         }

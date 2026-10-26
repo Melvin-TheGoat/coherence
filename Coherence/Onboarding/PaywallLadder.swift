@@ -2,6 +2,10 @@ import SwiftUI
 
 /// What happens when someone says no.
 ///
+/// **Since 2026-10-26: one offer, the half-price banner** (`HalfPriceBanner`,
+/// `ladder == [.halfMonth]`), and trials are 7 days. The history below is
+/// how it got here.
+///
 /// **Two rungs, cheapest concession first** (Melvin, 2026-09-29: "3 day
 /// offer, and then if they deny that then 3 day free trial plus half off
 /// forever"; "the free trial is only an upsell, we want them to not know it
@@ -44,7 +48,13 @@ enum DownsellRung: Int, CaseIterable, Identifiable {
 
     /// The rungs a "No, I don't want to pay" walks, in order. Only these are
     /// ever shown; `allCases` also holds the dormant ones.
-    static let ladder: [DownsellRung] = [.trial, .halfMonth]
+    ///
+    /// **One rung since 2026-10-26, shown as a banner on the paywall**
+    /// (`HalfPriceBanner`), not as a full screen. The half-price plan already
+    /// starts with the free trial, so one offer covers what the trial rung and
+    /// the half-price rung did; in 26 days the trial rung produced three
+    /// full-price trials. The trial rung stays a case, dormant, with its copy.
+    static let ladder: [DownsellRung] = [.halfMonth]
 
     var title: String { title(first: self == Self.ladder.first) }
 
@@ -133,75 +143,121 @@ enum DownsellRung: Int, CaseIterable, Identifiable {
     }
 }
 
-/// One rung. Presented as a sheet over the paywall rather than replacing it,
-/// so backing out returns to the prices instead of dead-ending.
-struct DownsellSheet: View {
-    let rung: DownsellRung
-    let plan: SubscriptionPlan
-    /// The first rung this person is shown, so its title never opens "Then".
-    var first: Bool = true
-    /// Apple's localized yearly price when available; our fallback otherwise.
-    let yearlyPrice: String
-    /// Apple's localized monthly, half-month and trial-plan prices when
-    /// available.
-    var monthlyPrice: String = SubscriptionPlan.monthly.price
-    var halfMonthPrice: String = SubscriptionPlan.monthHalf.price
-    var trialPlanPrice: String = SubscriptionPlan.monthTrial.price
-    /// The yearly-with-trial plan's price when it is on sale, nil otherwise.
-    var trialYearPrice: String? = nil
-    /// The free days this rung's own product gives this person
-    /// (`Store.freeTrialDays(for:)`), nil for none.
-    var trialDays: Int? = SubscriptionPlan.fallbackTrialDays
-    /// Accepted this rung. The caller preselects the rung's plan and returns
-    /// to the paywall, which owns every purchase and every 3.1.2 disclosure;
-    /// nothing is bought from this sheet.
-    let onTake: () -> Void
-    /// Declined. The caller decides whether another rung follows.
-    let onDecline: () -> Void
+/// The half-price offer, as a banner over the paywall (Melvin and Aziz,
+/// 2026-10-26, after Brainrot's). It replaced the full-screen rungs, which
+/// took two screens and a second Continue to buy anything.
+///
+/// It rises when someone taps "No, I don't want to pay" or backs out of
+/// Apple's purchase sheet, once per visit, and **it buys in one tap**. So it
+/// carries everything a purchase screen must (3.1.2): the billed price as the
+/// biggest number, the real "was" price (Monthly's, which it is half of), the
+/// renewal terms, and Terms and Privacy links. No countdown, same as the rest
+/// of the paywall: a timer is manufactured urgency.
+struct HalfPriceBanner: View {
+    /// The half-price plan's price, Apple's localized string when live.
+    let price: String
+    /// What it is half of, struck through; nil hides it.
+    let anchor: String?
+    /// The free days its purchase starts with for this person, nil for none.
+    let trialDays: Int?
+    /// A purchase is in flight.
+    var buying: Bool = false
+    let onClaim: () -> Void
+    let onClose: () -> Void
+    let onLegal: (LegalDoc) -> Void
 
-    /// In the valley like the paywall behind it (Aziz, 2026-09-26: the
-    /// offer consistent with the theme): the words in the sky, Otto on his
-    /// cushion, the onboarding's green button, "Not for me" on the meadow.
+    static let ribbon = "Before you go"
+    static let title = "Have 808 at half price"
+    static let cta = "Claim half price"
+
+    /// The renewal terms, the paywall's own sentence for this plan.
+    static func terms(price: String, trialDays: Int?) -> String {
+        PaywallScreen.terms(for: .monthHalf, priceLine: "\(price) per month", trialDays: trialDays)
+    }
+
     var body: some View {
-        ZStack(alignment: .top) {
-            ValleyScene(progress: 0, aura: .bright)
-                .ignoresSafeArea()
-                .allowsHitTesting(false)
+        VStack(alignment: .leading, spacing: 10) {
+            Text(Self.ribbon)
+                .font(.system(size: 11, weight: .heavy, design: .rounded))
+                .tracking(0.6)
+                .textCase(.uppercase)
+                .foregroundStyle(Color(red: 0.50, green: 0.32, blue: 0.05))
+                .padding(.horizontal, 10)
+                .padding(.vertical, 4)
+                .background(Capsule().fill(Color(red: 0.98, green: 0.94, blue: 0.84)))
 
-            VStack(spacing: 12) {
-                Text(rung.title(first: first))
-                    .font(.system(size: 30, weight: .heavy, design: .rounded))
+            Text(Self.title)
+                .font(.system(size: 22, weight: .heavy, design: .rounded))
+                .foregroundStyle(AppColor.textPrimary)
+                .accessibilityAddTraits(.isHeader)
+
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(price)
+                    .font(.system(size: 32, weight: .heavy, design: .rounded))
                     .foregroundStyle(AppColor.textPrimary)
-                Text(rung.subtitle(plan: plan, yearlyPrice: yearlyPrice, monthlyPrice: monthlyPrice,
-                                   halfMonthPrice: halfMonthPrice, trialPlanPrice: trialPlanPrice,
-                                   trialYearPrice: trialYearPrice, trialDays: trialDays))
-                    .font(.system(size: 17, weight: .semibold, design: .rounded))
-                    .foregroundStyle(AppColor.textPrimary.opacity(0.72))
-            }
-            .multilineTextAlignment(.center)
-            .fixedSize(horizontal: false, vertical: true)
-            .padding(.horizontal, AppMetrics.screenPadding + 4)
-            .padding(.top, 36)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .safeAreaInset(edge: .bottom) {
-            VStack(spacing: 10) {
-                OnboardingCTA(title: rung.cta(trialDays: trialDays), action: onTake)
-                // Always a way out, at every rung, in plain words. A decline
-                // that has to be hunted for is the dark pattern this ladder is
-                // otherwise carefully not being.
-                // The last rung leads to the free tier, except while 808 is
-                // premium only, when it leads back to the plans.
-                Button(action: onDecline) {
-                    Text(rung.next == nil && !Monetization.premiumOnly ? "Show me the free version" : "Not for me")
-                        .onMeadow()
+                Text("a month")
+                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                    .foregroundStyle(AppColor.textSecondary)
+                if let anchor {
+                    Text(anchor)
+                        .font(.system(size: 16, weight: .bold, design: .rounded))
+                        .foregroundStyle(AppColor.textSecondary.opacity(0.7))
+                        .strikethrough(true, color: AppColor.textSecondary.opacity(0.7))
+                        .accessibilityLabel("Was \(anchor)")
                 }
-                .buttonStyle(.tactile)
-                .font(.system(size: 16, weight: .semibold, design: .rounded))
-                .padding(.vertical, 6)
             }
-            .padding(.horizontal, AppMetrics.screenPadding)
-            .padding(.bottom, 16)
+
+            Text(Self.terms(price: price, trialDays: trialDays))
+                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                .foregroundStyle(AppColor.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            OnboardingCTA(title: buying ? "One moment" : Self.cta, enabled: !buying, action: onClaim)
+                .padding(.top, 2)
+
+            HStack(spacing: 18) {
+                Button("Privacy Policy") { onLegal(.privacy) }.buttonStyle(.tactile)
+                Button("Terms of Use") { onLegal(.terms) }.buttonStyle(.tactile)
+            }
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(AppColor.textSecondary)
+            .frame(maxWidth: .infinity)
+
+            Button("No thanks", action: onClose)
+                .buttonStyle(.tactile)
+                .font(.system(size: 15, weight: .bold, design: .rounded))
+                .foregroundStyle(AppColor.textSecondary.opacity(0.85))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 4)
+        }
+        .padding(.horizontal, 18)
+        .padding(.top, 18)
+        .padding(.bottom, 14)
+        .frame(maxWidth: 520)
+        .background(RoundedRectangle(cornerRadius: 26, style: .continuous)
+            .fill(.white)
+            .shadow(color: .black.opacity(0.22), radius: 22, y: 8))
+        .overlay(alignment: .topTrailing) {
+            Button(action: onClose) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 13, weight: .heavy))
+                    .foregroundStyle(AppColor.textSecondary)
+                    .frame(width: 30, height: 30)
+                    .background(Circle().fill(Color(white: 0.94)))
+            }
+            .buttonStyle(.tactile)
+            .accessibilityLabel("Close")
+            .padding(12)
+        }
+        // Otto peeks over the card's top edge, his brightest.
+        .overlay(alignment: .top) {
+            Image("OttoAura7")
+                .resizable()
+                .scaledToFit()
+                .frame(height: 70)
+                .offset(x: 70, y: -54)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
         }
     }
 }

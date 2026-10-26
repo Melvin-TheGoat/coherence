@@ -3,6 +3,13 @@
 Values only, in the order the forms ask for them. Reasoning lives in
 `APP_STORE.md`; this file exists to be copied from without reading.
 
+**Paywall changed 2026-10-26 (Melvin and Aziz), for the next version:** two
+cards, Yearly ($29.99, preselected) over Monthly ($7.99); Lifetime is off the
+paywall (still restores); one answer to a "no", a half-price banner selling
+`monthly50` ($3.99 a month) after a **7-day** free trial. The subscription
+information and review notes below are updated; the history under this
+paragraph describes 1.1.
+
 **Rewritten 2026-09-29 for 1.1** against the Release build on branch `block`,
 and **corrected later the same day for the founders' decisions (Melvin; code
 in commit 9ffa513)**: 808 is premium only and fails closed (no free tier; if
@@ -167,10 +174,9 @@ The Watch readings are grounded in peer reviewed research on wrist worn motion s
 808 is a membership, and every feature is included in it.
 
 SUBSCRIPTION INFORMATION
-808 Membership Monthly: $7.99 per month.
 808 Membership Yearly: $29.99 per year.
-808 Membership Lifetime: $99.99, a single payment that never renews.
-If you decline the plans above, the app may offer Monthly or Yearly with a 3 day free trial, then $7.99 per month or $29.99 per year, and after that Monthly, half price: a 3 day free trial, then $3.99 per month.
+808 Membership Monthly: $7.99 per month.
+If you decline the plans above, the app may offer Monthly, half price: a 7 day free trial, then $3.99 per month.
 A free trial is available once per Apple Account across 808's subscriptions. Payment is charged to your Apple Account when you confirm the purchase, or when a free trial ends. Subscriptions renew automatically unless cancelled at least 24 hours before the end of the current period or free trial, and your account is charged for the renewal within the 24 hours before the period ends. Manage or cancel any time in your App Store account settings. Any unused part of a free trial ends when you buy a subscription.
 Restore, on the paywall or in Settings, brings a purchase back on a new device.
 
@@ -335,8 +341,8 @@ Count again after any edit.
 SUBSCRIPTION
 Nothing past the paywall opens without buying or restoring. The in-app purchases are attached to this version; use a sandbox account with no active 808 subscription.
 To reach the paywall, go through onboarding. On "Ready to take control?", press and hold the round button for about three seconds until Otto rises and "Let's go!" appears, then tap Continue. The paywall is next.
-It sells Monthly ($7.99), Yearly ($29.99) and Lifetime ($99.99, one payment), with no free trial, plus Restore, Privacy Policy and Terms of Use. "No, I don't want to pay" then offers, one at a time: a 3 day free trial on Monthly or Yearly (then $7.99 a month or $29.99 a year), then Monthly, half price ($3.99 a month after a 3 day free trial). Choosing either returns to the paywall with those plans, where the purchase happens.
-An account that already had a free trial skips the trial offer.
+It sells Yearly ($29.99, preselected) and Monthly ($7.99), with no free trial, plus Restore, Privacy Policy and Terms of Use. Tapping "No, I don't want to pay", or cancelling the purchase sheet, raises a banner offering Monthly, half price ($3.99 a month after a 7 day free trial) with its renewal terms and Terms and Privacy links. "Claim half price" opens the purchase sheet; "No thanks" closes it.
+An account that already had a free trial is offered the half price from the first month.
 "Plans aren't loading" means the sandbox returned no products.
 People updating from 1.0 without a subscription meet the paywall at launch, with an Account link (Manage subscription, Redeem a code, Restore, Sign out, Delete account). Subscribers and Lifetime owners keep full access.
 

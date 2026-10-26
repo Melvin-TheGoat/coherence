@@ -31,7 +31,7 @@ struct OnboardingView: View {
     /// Monthly, and the plan under the CTA must be the plan the footnote
     /// describes. Yearly and Lifetime stay one tap away for anyone who wants
     /// them.
-    @State private var plan: SubscriptionPlan = .monthly
+    @State private var plan: SubscriptionPlan = SubscriptionPlan.preselected
     @State private var waitlistEmail = ""
     @State private var planRating: Int?
     /// Whether the user actually turned the daily reminder on: tapped "Turn on

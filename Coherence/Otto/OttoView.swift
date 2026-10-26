@@ -17,7 +17,7 @@ struct OttoView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var store: Store
-    @State private var paywallPlan: SubscriptionPlan = .monthly
+    @State private var paywallPlan: SubscriptionPlan = SubscriptionPlan.preselected
     @State private var showPlans = false
 
     var body: some View {
