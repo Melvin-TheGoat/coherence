@@ -34,7 +34,8 @@ struct FriendsLedger: Codable, Equatable {
     var goalsSeeded = false
 
     /// Points for one week finished together, on top of a point a minute.
-    static let pointsPerWeek = 50
+    /// Melvin, 2026-10-27: 50 "is too high, how about 10".
+    static let pointsPerWeek = 10
 
     var bonusPoints: Int { weeks.count * Self.pointsPerWeek }
 

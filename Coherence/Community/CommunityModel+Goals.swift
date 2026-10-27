@@ -327,7 +327,7 @@ extension CommunityModel {
     // MARK: The reward screen
 
     /// The friends a session just counted for: everyone I have a running
-    /// goal with, when the session qualifies (5 minutes or more, measured).
+    /// goal with, when the session qualifies (a minute or more, measured).
     /// Only goals that had started by the session's own day: a friend a
     /// time zone ahead can accept on a day that is still tomorrow here, and
     /// a late Watch payload can predate the goal (2026-10-18 review).

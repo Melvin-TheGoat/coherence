@@ -237,7 +237,7 @@ struct SessionRewardView: View {
                     .font(.system(size: 15, weight: .heavy, design: .rounded))
                     .onValley(soft: true)
                 // A week finished together (2026-10-27), first: it is the
-                // bigger news, and its 50 points are in the coins below.
+                // bigger news, and its 10 points are in the coins below.
                 if let line = WeekDone.line(reward.weekDoneWith) {
                     Text(line)
                         .font(.system(size: 14, weight: .heavy, design: .rounded))

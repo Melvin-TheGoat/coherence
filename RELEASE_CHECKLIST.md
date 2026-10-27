@@ -959,8 +959,8 @@ already covers. No CloudKit schema change: `Nudge.kind` is already
 QUERYABLE in Production (1.4), and each phone saves the new `goal-week`
 subscription itself on launch.
 
-- [ ] **What's New** approved (`marketing/APP_STORE_PASTE.md`, 1.4.1, 609 counting
-      line breaks twice). The description (Block's 1 minute, 50 points a week,
+- [x] **What's New** approved (Melvin's wording, `marketing/APP_STORE_PASTE.md`, 1.4.1,
+      604 counting line breaks twice). The description (Block's 1 minute, 10 points a week,
       weekly goals) and the review notes' Block sentence also changed; paste all three.
 - [ ] **On a phone, Block:** a blocker for this evening's hours; meditate a
       minute before they start; the card says "Open today, you meditated" and
@@ -968,9 +968,13 @@ subscription itself on launch.
       Ready line say "1 minute".
 - [ ] **On two phones, a week together** (iCloud 808 Beta, neither in test
       mode): finish a goal week with a session; that phone's reward says
-      "Week done with ... +50 points", the other phone gets the push "You
+      "Week done with ... +10 points", the other phone gets the push "You
       and ... finished this week's goal together", and both show the award,
-      the 50 points in the Shop, and the week checked on the goal page.
+      the 10 points in the Shop, and the week checked on the goal page.
+- [ ] **On a phone, past midnight:** start a session at 11:55 pm and end it
+      after midnight; the reward shows the streak going UP by one (not from
+      0), and Home keeps it the next day. A one-minute session also counts
+      for a weekly goal now.
 - [ ] The streak saver can only be judged at 11:30 pm. `PREVIEW_REMINDERS=1`
       prints the plan; on a night the streak ends it lists `streakSaver`.
 

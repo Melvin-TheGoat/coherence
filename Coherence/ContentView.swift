@@ -1186,7 +1186,9 @@ struct ContentView: View {
         // (Melvin, 2026-09-28: a day's gain is summed once, not per session).
         let sits = sessions.map { OttoAura.Sit(date: $0.startedAt, seconds: $0.durationSec) }
         let otherSits = sits.filter { $0.date != landed.startedAt }
-        let before = OttoAura.level(from: otherSits, notNow: windows, since: OttoAura.glowStart())
+        let satDown = Self.beforeMoment(of: landed)
+        let before = OttoAura.level(from: otherSits, notNow: windows, since: OttoAura.glowStart(),
+                                    today: satDown)
         let after = OttoAura.level(from: sits, notNow: windows, since: OttoAura.glowStart())
         // Derived from session dates and lengths ONLY, never from anything
         // measured and never from the Not-now windows the glow on screen
@@ -1224,7 +1226,7 @@ struct ContentView: View {
         let reward = SessionReward(
             id: id,
             seconds: landed.durationSec,
-            streakBefore: StreakCalculator.streak(from: others).current,
+            streakBefore: StreakCalculator.streak(from: others, today: satDown).current,
             streakAfter: StreakCalculator.streak(from: dates).current,
             points: points,
             bankBefore: bankBefore,
@@ -1287,11 +1289,22 @@ struct ContentView: View {
     /// from the on-screen level would leak whether somebody skipped a Block
     /// window, so analytics reads this instead, even while Block is off in
     /// Release. nil for a session that is not in the store (a DEBUG preview).
+    /// Where "before" is measured for the reward: when the session began,
+    /// which is what Home showed as they sat down. Measured at the end, a
+    /// session started at 11:55 pm and finished after midnight would read the
+    /// day it was saving as already missed, and the reward would show the
+    /// streak at 0 climbing back (Melvin, 2026-10-27: "they definitely should
+    /// not lose their streak"). The session counts for the day it started.
+    /// A session typed in by hand can be from any day, so it is measured now.
+    static func beforeMoment(of landed: Session, now: Date = Date()) -> Date {
+        landed.isLogged ? now : min(landed.startedAt, now)
+    }
+
     private func sessionOnlyStages(landing id: UUID) -> (before: OttoAura.Stage, after: OttoAura.Stage)? {
         guard let landed = sessions.first(where: { $0.id == id }) else { return nil }
         let sits = sessions.map { OttoAura.Sit(date: $0.startedAt, seconds: $0.durationSec) }
         let before = OttoAura.level(from: sits.filter { $0.date != landed.startedAt },
-                                    since: OttoAura.glowStart())
+                                    since: OttoAura.glowStart(), today: Self.beforeMoment(of: landed))
         let after = OttoAura.level(from: sits, since: OttoAura.glowStart())
         return (OttoAura.Stage(level: before), OttoAura.Stage(level: after))
     }

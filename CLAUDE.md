@@ -8206,8 +8206,9 @@ screen: "Counted for Ana and Daniel".
   the week starts on the weekday the goal was ACCEPTED, not Monday; a missed
   day never breaks the streak, only a missed week, and the running week never
   breaks it; one session counts for every goal and the personal streak; a day
-  counts for a goal only through a MEASURED session of 5+ minutes
-  (`SharedGoal.minimumSeconds`, Block's bar), never a hand-logged one; you can
+  counts for a goal only through a MEASURED session of a minute or more
+  (`SharedGoal.minimumSeconds`, Block's bar; five until 2026-10-27), never a
+  hand-logged one; you can
   nudge only once you have meditated today or done your share of the week;
   one nudge a day per friend; the first week says "First week", never "0".
 - **Colour:** blue (`AppColor.skyDeep`) for what reaches a friend (Add, Send,
@@ -8510,9 +8511,9 @@ read "Sessions count from one minute" on the too-short screen.
 - **`Blocker.sessionMinutes = 1`**, which is `SessionStore.minDurationSec`,
   so any session 808 keeps opens the apps. Timed sits still start at five
   (`SessionLength.shortest`, Aziz); the test now only asks that a timed sit
-  always counts. **Shared goals stay at five minutes**
-  (`SharedGoal.minimumSeconds`): they were "kept equal to Block's bar" and
-  now are not, pending the founders' call.
+  always counts. **Shared goals dropped to one minute with it**
+  (`SharedGoal.minimumSeconds = Blocker.sessionMinutes * 60`; Melvin, same
+  day: "Yes").
 - **Say it through `BlockCopy`** (`Shared/Block/BlockModel.swift`), never
   typed: the Block tab's line under its title ("Meditate for 1 minute and
   your apps open for the rest of the day."), the sit screen while apps are
@@ -8536,6 +8537,18 @@ before midnight or whenever it is you'll lose it."
   apart (`saverMinutes(anchor:)`), so a late own time or a 10:30 pm evening
   one, which already says the streak is on the line, means no saver.
 - Still `.active`, never Time Sensitive (the reminders rule).
+- **A session counts for the day it STARTED** (Melvin, same day: started
+  at 11:55 pm, 20 minutes, no rest day left, "they definitely should not
+  lose their streak"). Every session is saved with its start time and
+  every day-based rule (streak, glow, awards, goals) reads that, so this
+  always held. What was wrong was the reward screen: it measured "before"
+  at the finish, after midnight, where the day being saved already read as
+  missed, so it showed the streak at 0 climbing back and the glow dipping
+  first. It now measures "before" when the session began
+  (`ContentView.beforeMoment`; a hand-typed session, which can be from any
+  day, is still measured now). One session never counts for two days.
+  Block is the exception on purpose: a session opens the windows of its
+  start day AND its end day.
 
 ## FRIENDS AWARDS, AND A WEEK FINISHED TOGETHER IS AN EVENT (2026-10-27, Melvin)
 
@@ -8559,7 +8572,8 @@ should be award for sure, points as well, a notification, and a history."
 - **Awards, a new Friends group** (`Award.Group.friends`, shown last):
   First friend, 5, 10, 25 friends; In it together (a goal started); First,
   4 and 12 weeks together. Brought a friend moved into it. 66 awards now.
-- **Points: 50 per week finished** (`FriendsLedger.pointsPerWeek`), added to
+- **Points: 10 per week finished** (`FriendsLedger.pointsPerWeek`; it was
+  50 for an hour, Melvin: "too high, how about 10"), added to
   every balance through `OttoPoints.balance(bonus:)`; `CommunityModel
   .togetherBonus` is the published copy the Shop reads. A new phone
   rebuilds what running goals still show; a week from a goal ended before
@@ -8574,12 +8588,12 @@ should be award for sure, points as well, a notification, and a history."
   The record's `day` is `0000-01-01` (`Nudge.weekRecordDay`) so builds
   before 1.4.1, which read every Nudge as a nudge and show only recent
   days, never show it. The finisher sees it on the reward screen ("Week
-  done with Aziz 🎉 +50 points", `WeekDone`), or as a local notification
+  done with Aziz 🎉 +10 points", `WeekDone`), or as a local notification
   (`FriendsWeekNotice`) when 808 is in the background or the friend's days
   arrived after the reward was built. A session landing refreshes goals
   first (`syncPracticeStats(force:)`) so the friend's latest days count.
 - **History**: "Weeks together" on the goal's page, every week newest
-  first with both counts, a check and "+50 points" on finished ones
+  first with both counts, a check and "+10 points" on finished ones
   (`GoalPair.weekRecords`).
 - DEBUG: `PREVIEW_WEEKDONE=Aziz` with `PREVIEW_REWARD` shows the reward
   line; `PREVIEW_GOAL_WEEKS=<n>` starts the demo goal n weeks back.

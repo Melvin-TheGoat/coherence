@@ -503,4 +503,22 @@ final class OttoAuraTests: XCTestCase {
         XCTAssertEqual(OttoAura.level(from: morning, since: OttoAura.glowStart(defaults: defaults),
                                       today: day(10, 15), calendar: cal), 60)
     }
+
+    /// A session begun at 11:55 pm and finished after midnight counts for the
+    /// day it began: that day is meditated, not missed (Melvin, 2026-10-27).
+    func test_aSessionThatRunsPastMidnightCountsForTheDayItBegan() {
+        // Day 3 was the week's rest day, so missing day 5 would cost.
+        let earlier = asSits([day(1), day(2), day(4)], minutes: 2)
+        let lateStart = day(5, 23).addingTimeInterval(55 * 60)
+        let finished = lateStart.addingTimeInterval(20 * 60)
+        let withIt = earlier + [OttoAura.Sit(date: lateStart, seconds: 20 * 60)]
+
+        let sittingDown = OttoAura.level(from: earlier, today: lateStart, calendar: cal)
+        let after = OttoAura.level(from: withIt, today: finished, calendar: cal)
+        XCTAssertEqual(after, sittingDown + OttoAura.gain(minutes: 20))
+
+        // Read at the finish without it, day 5 would already be a miss, which
+        // is why the reward measures "before" when the session began.
+        XCTAssertLessThan(OttoAura.level(from: earlier, today: finished, calendar: cal), sittingDown)
+    }
 }

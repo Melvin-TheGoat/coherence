@@ -17,10 +17,9 @@ import Foundation
 ///   the streak, and the week still running never does.
 /// - One session counts everywhere: every shared goal, the personal streak,
 ///   Otto's glow. Two sessions on one day are one day.
-/// - A day counts for a shared goal only through a session of 5 minutes or
-///   more (`minimumSeconds`; it was Block's bar too until Block dropped to
-///   one minute on 2026-10-27, and goals stayed at five) that was
-///   measured, not logged by hand: a typed-in session could fake one half of
+/// - A day counts for a shared goal only through a session of a minute or
+///   more (`minimumSeconds`, Block's bar: both went from five minutes to one
+///   on 2026-10-27) that was measured, not logged by hand: a typed-in session could fake one half of
 ///   a promise made to somebody else. Logged sessions still count for the
 ///   personal streak, as they always have.
 /// - You can nudge only once you have meditated today, or once you have
@@ -29,10 +28,10 @@ import Foundation
 /// - Each person's days are THEIR local days, published as `yyyy-MM-dd` keys,
 ///   so a friend in another time zone is never judged by your clock.
 enum SharedGoal {
-    /// The shortest session that counts for a shared goal, in seconds. It
-    /// was kept equal to `Blocker.sessionMinutes`; Block went to one minute
-    /// on 2026-10-27 and this stayed at five, a promise made to a friend.
-    static let minimumSeconds = 5 * 60
+    /// The shortest session that counts for a shared goal, in seconds: the
+    /// same as the one that opens Block's apps (Melvin, 2026-10-27, asked
+    /// whether goals should drop to a minute with Block: "Yes").
+    static let minimumSeconds = Blocker.sessionMinutes * 60
     static let targets = 1...7
     static let defaultTarget = 4
 }
@@ -315,7 +314,7 @@ struct GoalPair: Identifiable, Equatable {
 }
 
 /// The reward screen's line for a week this session finished together
-/// (2026-10-27): "Week done with Aziz 🎉 +50 points".
+/// (2026-10-27): "Week done with Aziz 🎉 +10 points".
 enum WeekDone {
     static func line(_ names: [String]) -> String? {
         let names = names.filter { !$0.isEmpty }

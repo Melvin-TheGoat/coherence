@@ -6,4 +6,4 @@
 "GOAL_NUDGE_ALERT" = "%@ nudged you 👋 Meditate today?";
 "GOAL_CHEER_ALERT" = "%@ sent you a high five 🎉 You both hit this week's goal.";
 "CODE_JOIN_ALERT" = "%@ joined 808 with your code. You're friends now 🎉";
-"GOAL_WEEK_ALERT" = "You and %@ finished this week's goal together 🎉 +50 points for Otto's hats.";
+"GOAL_WEEK_ALERT" = "You and %@ finished this week's goal together 🎉 +10 points for Otto's hats.";

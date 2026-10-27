@@ -133,7 +133,7 @@ review)
 Meditate consistently with Otto. He glows brighter every day you do, blocks your apps when you don't, and now lives on your home screen as a widget.
 ```
 
-**Description** (4000 max; this one is 3,927, 3,972 counting line breaks twice; Block's 1 minute, points for a week with a friend and weekly goals added 2026-10-27)
+**Description** (4000 max; this one is 3,927, 3,972 counting line breaks twice; Block's 1 minute, 10 points for a week with a friend and weekly goals added 2026-10-27)
 
 ```
 Meditate consistently with Otto, a sloth who meditates with you. He glows brighter every day you do and blocks your apps when you don't. Every minute earns points for his hats.
@@ -148,7 +148,7 @@ HE BLOCKS YOUR APPS UNTIL YOU MEDITATE
 Pick the apps that pull you away and choose when Otto holds them: all day, during hours you set, or once you reach a daily limit. Open one and Otto asks you to meditate first. Tap Ask Otto and he may text you or call. Meditate for 1 minute and they open for the rest of the day, or tell Otto "Not now" for 5, 10 or 30 minutes. Block manages your own iPhone, and the apps you pick stay private to your phone.
 
 COLLECT POINTS, BUY HIM HATS
-Every minute you meditate earns a point, and a week finished with a friend earns 50. Spend your points in the Shop on hats for Otto, from a beanie to a golden crown.
+Every minute you meditate earns a point, and a week finished with a friend earns 10. Spend your points in the Shop on hats for Otto, from a beanie to a golden crown.
 
 MEDITATE YOUR WAY
 Set a timer or leave it open. Sit in silence, with rain, ocean, forest or campfire, with brainwave paced tones for delta, theta and alpha, or with traditional tunings at 432, 528, 852 and 963 Hz. Or follow a professionally narrated 25 minute guided journey.
@@ -221,18 +221,18 @@ https://meditate808.com/privacy
 © 2026 Lock Out Inc.
 ```
 
-**What's New in This Version, 1.4.1** (4000 max; this one is 597, 609 counting line breaks twice; 2026-10-27, for Melvin to approve. It names only what a member can see: the paywall rebuild and the founders' note are left out on purpose.)
+**What's New in This Version, 1.4.1** (4000 max; this one is 592, 604 counting line breaks twice; Melvin's wording, approved 2026-10-27. It names only what a member can see: the paywall rebuild and the founders' note are left out on purpose.)
 
 ```
-Finish a week with a friend and you both hear about it, with 50 points for Otto's hats. Every week you finish together shows on your goal's page.
+Five new hats for Otto in the Shop: a baseball cap, a sombrero, a top hat, a tiara, and an astronaut helmet!
 
 New Friends awards: your first friend, 5, 10 and 25 friends, a goal started, and weeks finished together.
+
+Finish a week with a friend and you both hear about it, with 10 points for Otto's hats. Every week you finish together shows on your goal's page.
 
 Block now opens your apps for the rest of the day after 1 minute of meditating, whenever you do it.
 
 A reminder at 11:30 pm on nights your streak would end at midnight.
-
-Five new hats for Otto in the Shop: a baseball cap, a sombrero, a top hat, a tiara, and a glass astronaut helmet.
 
 Hats sit more cleanly on Otto when he glows.
 
@@ -351,8 +351,8 @@ Apple emails this address about the review).
 against the code 2026-09-30 in a third review pass; the Block sentence
 reworded 2026-10-13 for the required app pick; Friends gained invite codes,
 weekly goals and nudges 2026-10-18; Block's one minute, the rest of the
-day, and "Not now" for 5, 10 or 30 corrected 2026-10-27, 3,970 counted with
-line breaks twice). Count again after any edit.
+day, and "Not now" for 5, 10 or 30 corrected 2026-10-27; goals from a
+minute 2026-10-27, 3,966 counted with line breaks twice). Count again after any edit.
 
 ```
 808 is a meditation app for iPhone with an optional Apple Watch app. No part of this review needs an Apple Watch.
@@ -381,7 +381,7 @@ Each whole minute meditated earns one point, spent in the Shop tab on hats for O
 
 FRIENDS
 Opens from the circle at the top right of Home; needs iCloud. No posts, comments or typed messages. A profile shows a name, @username, optional photo, practice summary and friends, visible to anyone who looks up the username. It is optional and requires agreeing to the community rules.
-Friends are added by @username or invite code. Two friends can share a weekly goal (days a week, from sessions of five minutes or more) and nudge each other once a day.
+Friends are added by @username or invite code. Two friends can share a weekly goal (days a week, from sessions of a minute or more) and nudge each other once a day.
 Other people's profiles carry Report and Block (... menu); reports reach our inbox at once, and a reported profile or photo is removed within 24 hours. Seeing another person takes a second device on another iCloud account.
 Delete account (Profile tab, gear icon, or the launch paywall's Account link) removes the Friends profile, username, invite code, goals and connections.
 

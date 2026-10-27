@@ -116,4 +116,28 @@ final class StreakCalculatorTests: XCTestCase {
         XCTAssertEqual(r.current, 0)   // nothing today or yesterday
         XCTAssertEqual(r.longest, 5)
     }
+
+    /// Melvin, 2026-10-27: a session begun at 11:55 pm that runs past
+    /// midnight, with no rest day left, must keep the streak. It counts for
+    /// the day it began.
+    func test_aSessionThatRunsPastMidnightKeepsTheStreak() {
+        // Jan 3 was the rest day, so none is left for a week.
+        let earlier = [day(2026, 1, 1), day(2026, 1, 2), day(2026, 1, 4), day(2026, 1, 5)]
+        let lateStart = cal.date(from: DateComponents(year: 2026, month: 1, day: 6, hour: 23, minute: 55))!
+        let finished = lateStart.addingTimeInterval(20 * 60)   // 00:15 on Jan 7
+
+        // Sitting down: alive, and ending at midnight.
+        XCTAssertTrue(StreakCalculator.endsTonight(from: earlier, today: lateStart, calendar: cal))
+        XCTAssertEqual(StreakCalculator.streak(from: earlier, today: lateStart, calendar: cal).current, 4)
+
+        // After midnight, with the session in: kept, and one longer.
+        let after = StreakCalculator.streak(from: earlier + [lateStart], today: finished, calendar: cal)
+        XCTAssertEqual(after.current, 5)
+        XCTAssertFalse(after.restDayUsed)
+
+        // Read at the finish WITHOUT the session, Jan 6 is already missed. So
+        // the reward measures "before" when the session began
+        // (`ContentView.beforeMoment`), or it would show 0 climbing to 5.
+        XCTAssertEqual(StreakCalculator.streak(from: earlier, today: finished, calendar: cal).current, 0)
+    }
 }

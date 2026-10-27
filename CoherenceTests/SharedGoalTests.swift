@@ -63,20 +63,21 @@ final class SharedGoalTests: XCTestCase {
 
     // MARK: Which sessions count
 
-    func test_onlyMeasuredSessionsOfFiveMinutesCount_andOneDayIsOneDay() {
+    func test_onlyMeasuredSessionsOfAMinuteCount_andOneDayIsOneDay() {
         var cal = Calendar(identifier: .gregorian)
         cal.timeZone = TimeZone(identifier: "America/Detroit")!
         let base = cal.date(from: DateComponents(year: 2026, month: 10, day: 15, hour: 8))!
         let sessions: [(startedAt: Date, durationSec: Int, logged: Bool)] = [
             (base, 600, false),                                  // counts
             (base.addingTimeInterval(3_600), 900, false),        // same day: one day, minutes add
-            (base.addingTimeInterval(86_400), 240, false),       // under 5 minutes: no
+            (base.addingTimeInterval(86_400), 45, false),        // under a minute: no
+            (base.addingTimeInterval(4 * 3_600), 60, false),     // a minute: counts
             (base.addingTimeInterval(2 * 86_400), 1_200, true),  // logged by hand: no
             (base.addingTimeInterval(-86_400), 1_200, false),    // before the goal began: no
         ]
         let out = GoalDay.qualifying(from: sessions, since: "2026-10-15",
                                      now: base.addingTimeInterval(3 * 86_400), calendar: cal)
-        XCTAssertEqual(out, [GoalDay(day: "2026-10-15", minutes: 25)])
+        XCTAssertEqual(out, [GoalDay(day: "2026-10-15", minutes: 26)])
     }
 
     // MARK: The week starts on the day the goal started
@@ -199,8 +200,8 @@ final class SharedGoalTests: XCTestCase {
 
     func test_weekDoneLine() {
         XCTAssertNil(WeekDone.line([]))
-        XCTAssertEqual(WeekDone.line(["Aziz"]), "Week done with Aziz 🎉 +50 points")
-        XCTAssertEqual(WeekDone.line(["Ana", "Sam"]), "Week done with Ana and Sam 🎉 +100 points")
+        XCTAssertEqual(WeekDone.line(["Aziz"]), "Week done with Aziz 🎉 +10 points")
+        XCTAssertEqual(WeekDone.line(["Ana", "Sam"]), "Week done with Ana and Sam 🎉 +20 points")
     }
 
     func test_countedForLine() {
