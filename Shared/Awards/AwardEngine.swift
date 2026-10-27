@@ -51,6 +51,23 @@ public enum AwardEngine {
         }
     }
 
+    /// What this phone has seen of Friends (`FriendsLedger.facts`), for the
+    /// Friends awards (2026-10-27). Not sessions, so kept apart from them.
+    public struct SocialFacts: Equatable {
+        /// Element k is when the friend count first reached k + 1.
+        public var friendCountReached: [Date]
+        /// When a shared goal was first seen running.
+        public var goalStartedAt: Date?
+        /// When each week finished together was seen, ascending.
+        public var weeksTogether: [Date]
+
+        public init(friendCountReached: [Date] = [], goalStartedAt: Date? = nil, weeksTogether: [Date] = []) {
+            self.friendCountReached = friendCountReached
+            self.goalStartedAt = goalStartedAt
+            self.weeksTogether = weeksTogether
+        }
+    }
+
     public struct Earned: Identifiable, Hashable {
         public let award: Award
         /// When the condition first became true, which is the date of the
@@ -70,9 +87,12 @@ public enum AwardEngine {
     /// - Parameter friendBroughtAt: when the first invited friend sat their
     ///   first session (`Preferences.evidenceGrantSince`). The second thing
     ///   not derived from a session, and still something done, not given.
+    /// - Parameter social: what this phone has seen of Friends, for the
+    ///   Friends group: friend counts, a goal started, weeks finished.
     public static func evaluate(sessions: [SessionFact],
                                 accountCreatedAt: Date?,
                                 friendBroughtAt: Date? = nil,
+                                social: SocialFacts = SocialFacts(),
                                 calendar: Calendar = .current) -> [Earned] {
         let ordered = sessions.sorted { $0.startedAt < $1.startedAt }
         let runs = streakRuns(ordered.map(\.startedAt), calendar: calendar)
@@ -91,6 +111,10 @@ public enum AwardEngine {
             case "friendBrought":
                 return Earned(award: award, earnedAt: friendBroughtAt,
                               progress: friendBroughtAt == nil ? 0 : 1, progressText: nil)
+
+            case "goalStarted":
+                return Earned(award: award, earnedAt: social.goalStartedAt,
+                              progress: social.goalStartedAt == nil ? 0 : 1, progressText: nil)
 
             default:
                 if let special = specialEarned(award, ordered: ordered, calendar: calendar) {
@@ -168,6 +192,22 @@ public enum AwardEngine {
                                   progressText: hit != nil ? nil
                                       : "\(ordered.count)/\(count)")
                 }
+                // The most friends ever reached, not today's count: removing
+                // someone never takes an award back.
+                if let n = friendCountThreshold(award.id) {
+                    let reached = social.friendCountReached
+                    let hit = reached.count >= n ? reached[n - 1] : nil
+                    return Earned(award: award, earnedAt: hit,
+                                  progress: hit != nil ? 1 : min(1, Double(reached.count) / Double(n)),
+                                  progressText: hit != nil ? nil : "\(reached.count)/\(n)")
+                }
+                if let n = togetherThreshold(award.id) {
+                    let weeks = social.weeksTogether.sorted()
+                    let hit = weeks.count >= n ? weeks[n - 1] : nil
+                    return Earned(award: award, earnedAt: hit,
+                                  progress: hit != nil ? 1 : min(1, Double(weeks.count) / Double(n)),
+                                  progressText: hit != nil ? nil : "\(weeks.count)/\(n)")
+                }
                 if let days = practicedDaysThreshold(award.id) {
                     let daySet = Set(ordered.map { calendar.startOfDay(for: $0.startedAt) }).sorted()
                     let hit = daySet.count >= days
@@ -239,6 +279,16 @@ public enum AwardEngine {
 
     private static func sessionCountThreshold(_ id: String) -> Int? {
         guard id.hasPrefix("sessions"), let n = Int(id.dropFirst("sessions".count)) else { return nil }
+        return n
+    }
+
+    private static func friendCountThreshold(_ id: String) -> Int? {
+        guard id.hasPrefix("friends"), let n = Int(id.dropFirst("friends".count)) else { return nil }
+        return n
+    }
+
+    private static func togetherThreshold(_ id: String) -> Int? {
+        guard id.hasPrefix("together"), let n = Int(id.dropFirst("together".count)) else { return nil }
         return n
     }
 

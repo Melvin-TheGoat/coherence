@@ -1253,7 +1253,9 @@ private struct OneMinuteScene: View {
     let doors: InterventionDoors
     var body: some View {
         let n = doors.shortest
-        let line = "Meditate first. I'll keep time."
+        // Says the length again since 2026-10-27 (Melvin: "it should
+        // specify somewhere"), now that it is one minute.
+        let line = BlockCopy.rule
         ValleyStage(pose: "OttoSit", line: line,
                     doors: InterventionDoors(canPass: doors.canPass, shortest: n,
                                              meditate: { doors.meditateFor(n) },

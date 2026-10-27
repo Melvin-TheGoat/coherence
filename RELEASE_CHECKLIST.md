@@ -944,11 +944,35 @@ Archive from `mvp` at or after the commit that added `FeatureFlags`. It ships:
 The 1.0.2 build uploaded earlier (202609141719) predates all of this, so
 this release needs a NEW archive.
 
-## OPEN for 1.4.1 (2026-10-26): the paywall rebuild, the founders' note, five new hats
+## OPEN for 1.4.1 (2026-10-26): the paywall rebuild, the founders' note, five new hats, friend awards
 
 One release, merged on `block` (Melvin: 1.4.1, "not big enough to call 1.5"). It also carries
 the five new hats (Baseball Cap, Sombrero, Top Hat, Tiara, the glass-dome Astronaut
 Helmet) and the six older hats' glow fix, which need nothing at submission beyond What's New.
+
+### Block once a day, the streak saver, Friends awards and weeks together (2026-10-27)
+
+Melvin's four fixes (CLAUDE.md, the three sections dated 2026-10-27). No
+privacy change: nothing new leaves the phone except a Nudge record of a new
+`kind` value to a goal partner, which the policy's goal and nudge wording
+already covers. No CloudKit schema change: `Nudge.kind` is already
+QUERYABLE in Production (1.4), and each phone saves the new `goal-week`
+subscription itself on launch.
+
+- [ ] **What's New** approved (`marketing/APP_STORE_PASTE.md`, 1.4.1, 609 counting
+      line breaks twice). The description (Block's 1 minute, 50 points a week,
+      weekly goals) and the review notes' Block sentence also changed; paste all three.
+- [ ] **On a phone, Block:** a blocker for this evening's hours; meditate a
+      minute before they start; the card says "Open today, you meditated" and
+      no shield appears when the window opens. The Block tab, the sit and the
+      Ready line say "1 minute".
+- [ ] **On two phones, a week together** (iCloud 808 Beta, neither in test
+      mode): finish a goal week with a session; that phone's reward says
+      "Week done with ... +50 points", the other phone gets the push "You
+      and ... finished this week's goal together", and both show the award,
+      the 50 points in the Shop, and the week checked on the goal page.
+- [ ] The streak saver can only be judged at 11:30 pm. `PREVIEW_REMINDERS=1`
+      prints the plan; on a night the streak ends it lists `streakSaver`.
 
 ### The paywall rebuild
 

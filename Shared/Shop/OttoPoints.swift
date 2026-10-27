@@ -43,8 +43,12 @@ enum OttoPoints {
 
     /// Earned minus spent, floored at zero. A repriced or delisted hat must
     /// never leave someone reading a negative balance.
+    ///
+    /// `bonus`: points that are not minutes, the 50 for each week finished
+    /// with a friend (`FriendsLedger.bonusPoints`, 2026-10-27). Every
+    /// balance the person sees passes the same number.
     static func balance(sessions: [Session], ownedHatIDs: [String],
-                        catalog: [HatCatalog.Item] = HatCatalog.all) -> Int {
-        max(0, earned(sessions: sessions) - spent(ownedHatIDs: ownedHatIDs, catalog: catalog))
+                        catalog: [HatCatalog.Item] = HatCatalog.all, bonus: Int = 0) -> Int {
+        max(0, earned(sessions: sessions) + bonus - spent(ownedHatIDs: ownedHatIDs, catalog: catalog))
     }
 }

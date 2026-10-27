@@ -570,6 +570,7 @@ struct GoalDetailView: View {
             } else if let week = goal.thisWeek(today: today) {
                 weekCard(goal, week, name, today)
                 streakCard(streak)
+                historyCard(goal, name, today)
                 minutesCard(week, name)
                 Button("End goal") { confirmEnd = true }
                     .font(AppFont.caption.weight(.bold))
@@ -799,6 +800,80 @@ struct GoalDetailView: View {
         }
         .padding(14)
         .whiteCard()
+    }
+
+    /// Every week of this goal, newest first, with how many each of you
+    /// did (Melvin, 2026-10-27: "a history somewhere where you can see how
+    /// many you completed together"). Read straight off both records, so
+    /// it matches the streak above it.
+    private func historyCard(_ goal: GoalPair, _ name: String, _ today: String) -> some View {
+        let weeks = Array(goal.weekRecords(today: today).reversed())
+        let finished = weeks.filter(\.bothDone).count
+        let shown = Array(weeks.prefix(12))
+        return VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("Weeks together").font(AppFont.headline).foregroundStyle(AppColor.textPrimary)
+                Spacer()
+                Text(finished == 1 ? "1 finished" : "\(finished) finished")
+                    .font(AppFont.caption.weight(.semibold)).foregroundStyle(AppColor.textSecondary)
+            }
+            ForEach(shown) { w in
+                HStack(spacing: 10) {
+                    Image(systemName: w.bothDone ? "checkmark.circle.fill" : "circle")
+                        .font(.system(size: 20, weight: .semibold))
+                        .foregroundStyle(w.bothDone ? AppColor.streakBlushText : AppColor.trace)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(w.isCurrent ? "This week" : "Week \(w.index + 1)")
+                            .font(AppFont.callout.weight(.bold)).foregroundStyle(AppColor.textPrimary)
+                        Text(Self.range(w.first, w.last))
+                            .font(AppFont.caption).foregroundStyle(AppColor.textSecondary)
+                    }
+                    Spacer(minLength: 8)
+                    VStack(alignment: .trailing, spacing: 1) {
+                        Text("You \(min(w.mine, w.target))/\(w.target) · \(name) \(min(w.theirs, w.target))/\(w.target)")
+                            .font(.system(size: 12, weight: .heavy, design: .rounded))
+                            .foregroundStyle(AppColor.measureInk)
+                            .monospacedDigit()
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                        if w.bothDone {
+                            Text("+\(FriendsLedger.pointsPerWeek) points")
+                                .font(AppFont.caption.weight(.bold)).foregroundStyle(AppColor.accentGoldText)
+                        } else if w.isCurrent {
+                            Text("Still going").font(AppFont.caption).foregroundStyle(AppColor.textSecondary)
+                        }
+                    }
+                }
+                .accessibilityElement(children: .combine)
+            }
+            if weeks.count > shown.count {
+                Text("\(weeks.count - shown.count) earlier weeks")
+                    .font(AppFont.caption).foregroundStyle(AppColor.textSecondary)
+            }
+        }
+        .padding(14)
+        .whiteCard()
+    }
+
+    /// "Oct 20 to 26", or "Oct 30 to Nov 5". Keys are calendar days with no
+    /// time zone, so they are read and printed in UTC.
+    static func range(_ first: String, _ last: String) -> String {
+        guard let a = DayKey.date(first), let b = DayKey.date(last) else { return "" }
+        let f = DateFormatter()
+        f.timeZone = TimeZone(identifier: "UTC")
+        f.locale = Locale.current
+        f.setLocalizedDateFormatFromTemplate("MMMd")
+        let sameMonth = first.prefix(7) == last.prefix(7)
+        let end: String
+        if sameMonth {
+            let d = DateFormatter()
+            d.timeZone = TimeZone(identifier: "UTC")
+            d.setLocalizedDateFormatFromTemplate("d")
+            end = d.string(from: b)
+        } else {
+            end = f.string(from: b)
+        }
+        return "\(f.string(from: a)) to \(end)"
     }
 
     private func minutesCard(_ week: GoalPair.Week, _ name: String) -> some View {

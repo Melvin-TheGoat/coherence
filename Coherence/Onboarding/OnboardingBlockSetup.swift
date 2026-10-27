@@ -84,7 +84,7 @@ struct BlockAppsScreen: View {
         case .declined:
             return "No problem. You can set this up later in the Block tab."
         case .done:
-            return "Done. I'll hold it each day until you've meditated."
+            return "Done. I'll hold it each day until you've meditated. \(BlockCopy.length) is enough."
         }
     }
 

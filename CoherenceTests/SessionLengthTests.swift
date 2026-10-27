@@ -41,9 +41,9 @@ final class SessionLengthTests: XCTestCase {
         XCTAssertEqual(SessionLength.values[SessionLength.nearestIndex(for: 3)], 5)
     }
 
-    /// Five is also what opens Block's apps, so a timed sit always counts.
+    /// Block's apps open after one minute, so a timed sit always counts.
     func test_theShortestTimedSessionOpensBlock() {
-        XCTAssertEqual(SessionLength.shortest, Blocker.sessionMinutes)
+        XCTAssertGreaterThanOrEqual(SessionLength.shortest, Blocker.sessionMinutes)
     }
 
     func test_theEndNotificationTitle() {

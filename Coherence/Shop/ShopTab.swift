@@ -32,6 +32,8 @@ struct ShopTab: View {
     @State private var previewing: String? = OttoAuraFigure.previewHat
     @StateObject private var rig = OttoRigHolder()
     @ObservedObject private var block = BlockController.shared
+    /// For the points from weeks finished with friends (2026-10-27).
+    @EnvironmentObject private var community: CommunityModel
 
     private static var day: DayLight { DayLight.now }
     private static var meadow: Color { day.field[1] }
@@ -44,7 +46,9 @@ struct ShopTab: View {
     private var prefs: Preferences? { prefsRows.first }
     private var ownedHatIDs: [String] { prefs?.ownedHatIDList ?? [] }
     private var wornHatID: String? { prefs?.wornHatIDValue }
-    private var balance: Int { OttoPoints.balance(sessions: sessions, ownedHatIDs: ownedHatIDs) }
+    private var balance: Int {
+        OttoPoints.balance(sessions: sessions, ownedHatIDs: ownedHatIDs, bonus: community.togetherBonus)
+    }
 
     /// What shows on Otto: the preview if there is one, else the truth.
     private var shownHatID: String? { previewing ?? wornHatID }
@@ -202,7 +206,7 @@ struct ShopTab: View {
 
     private func buy(_ id: String) {
         guard let prefs else { return }
-        if OttoShop.buy(id, prefs: prefs, sessions: sessions) {
+        if OttoShop.buy(id, prefs: prefs, sessions: sessions, bonus: community.togetherBonus) {
             try? context.save()
             Analytics.track(.hatBought(id: id))
             previewing = id

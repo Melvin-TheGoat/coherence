@@ -110,6 +110,63 @@ final class ReminderPlannerTests: XCTestCase {
         XCTAssertTrue(evening.body.contains("5-day streak"), evening.body)
     }
 
+    // MARK: The streak saver (Melvin, 2026-10-27)
+
+    private func saver(on day: Int, in plan: [PlannedReminder]) -> PlannedReminder? {
+        plan.first { $0.slot == .streakSaver && cal.isDate($0.fireDate, inSameDayAs: at(day, 12)) }
+    }
+
+    /// A rest day was taken four days ago, so none can carry tonight: the
+    /// streak ends at midnight, and 11:30 pm says so.
+    func test_theSaverComesHalfAnHourBeforeAStreakEnds() {
+        // The last seven days but one, four days ago, carried as a rest day.
+        let sessions = [1, 2, 3, 5, 6, 7].map { at(-$0, 9) }
+        XCTAssertTrue(StreakCalculator.endsTonight(from: sessions, today: at(0, 7), calendar: cal))
+        let p = plan(input(now: at(0, 7), sessions: sessions))
+        let s = saver(on: 0, in: p)
+        XCTAssertNotNil(s)
+        XCTAssertEqual(cal.component(.hour, from: s!.fireDate), 23)
+        XCTAssertEqual(cal.component(.minute, from: s!.fireDate), 30)
+        XCTAssertEqual(s?.topic, .streak)
+        XCTAssertTrue((s!.title + s!.body).contains("6-day streak"), s!.body)
+        // Still three at most: the saver takes the follow-up's place.
+        let today = p.filter { cal.isDate($0.fireDate, inSameDayAs: at(0, 12)) }
+        XCTAssertEqual(today.map(\.slot), [.first, .lastCall, .streakSaver])
+    }
+
+    /// Yesterday missed and carried as a rest day: tonight is the deadline.
+    func test_theSaverComesWhenTodayIsTheLastDayARestDayCovers() {
+        let sessions = [2, 3, 4].map { at(-$0, 9) }
+        XCTAssertTrue(StreakCalculator.endsTonight(from: sessions, today: at(0, 7), calendar: cal))
+        XCTAssertNotNil(saver(on: 0, in: plan(input(now: at(0, 7), sessions: sessions))))
+    }
+
+    /// A rest day is still free tonight, so missing today ends nothing yet:
+    /// no saver tonight, and the saver comes tomorrow night instead.
+    func test_noSaverWhileARestDayCanStillCarryTheStreak() {
+        let sessions = (1...5).map { at(-$0, 9) }
+        XCTAssertFalse(StreakCalculator.endsTonight(from: sessions, today: at(0, 7), calendar: cal))
+        let p = plan(input(now: at(0, 7), sessions: sessions))
+        XCTAssertNil(saver(on: 0, in: p))
+        XCTAssertNotNil(saver(on: 1, in: p), "tomorrow, with the rest day spent")
+    }
+
+    func test_noSaverOnceTodayIsDoneOrForOnceADayOrAOneDayStreak() {
+        let sessions = [1, 2, 3, 5, 6, 7].map { at(-$0, 9) }
+        XCTAssertFalse(StreakCalculator.endsTonight(from: sessions + [at(0, 6)], today: at(0, 7), calendar: cal))
+        XCTAssertNil(saver(on: 0, in: plan(input(now: at(0, 7), sessions: sessions, cadence: .once))))
+        // A one-day streak carried by a rest day ends tonight, but gets no
+        // saver, as it gets no streak talk.
+        XCTAssertTrue(StreakCalculator.endsTonight(from: [at(-2, 9)], today: at(0, 7), calendar: cal))
+        XCTAssertNil(saver(on: 0, in: plan(input(now: at(0, 7), sessions: [at(-2, 9)]))))
+    }
+
+    func test_theSaverKeepsItsDistanceFromALateOwnTime() {
+        XCTAssertEqual(ReminderPlanner.saverMinutes(anchor: 8 * 60), 23 * 60 + 30)
+        XCTAssertNil(ReminderPlanner.saverMinutes(anchor: 22 * 60 + 30), "own time at 10:30 pm")
+        XCTAssertNil(ReminderPlanner.saverMinutes(anchor: 21 * 60), "evening one pushed to 10:30 pm")
+    }
+
     func test_noStreakTalkOnceTheStreakIsGone() {
         // Five days ending three days ago: broken, no rest day can carry it.
         let p = plan(input(now: at(0, 7), sessions: (3...7).map { at(-$0, 9) }))
@@ -168,7 +225,7 @@ final class ReminderPlannerTests: XCTestCase {
         ]
         for state in states {
             for topic in ReminderTopic.allCases {
-                for slot in [ReminderSlot.first, .followUp, .lastCall] {
+                for slot in [ReminderSlot.first, .followUp, .lastCall, .streakSaver] {
                     for line in ReminderCopy.lines(topic, slot: slot, state: state) {
                         let text = line.title + " " + line.body
                         XCTAssertFalse(text.contains("\u{2014}"), "em dash: \(text)")

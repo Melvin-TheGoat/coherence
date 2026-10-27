@@ -114,6 +114,23 @@ final class GoalStoreTests: XCTestCase {
         XCTAssertEqual(inbox.first?.fromName, "Aziz")
     }
 
+    /// A week finished together reaches the friend as one `week` record
+    /// (their push), never as a nudge on screen, and telling it twice sends
+    /// nothing new (2026-10-27).
+    func test_aWeekFinishedIsToldOnceAndNeverShownAsANudge() async throws {
+        try await melvin.announceWeek(to: azizID, first: "2026-10-15", myName: "Melvin")
+        try await melvin.announceWeek(to: azizID, first: "2026-10-15", myName: "Melvin")
+        let records = try await db.query(CommunityQuery(type: CommunityType.nudge,
+                                                        filters: [.equals("to", .reference(azizID))],
+                                                        sortField: "createdAt", ascending: false, limit: 30))
+        XCTAssertEqual(records.count, 1)
+        XCTAssertEqual(records.first?["kind"] as? String, "week")
+        XCTAssertEqual(records.first?["day"] as? String, Nudge.weekRecordDay,
+                       "a day no older build shows as a nudge")
+        let shown = try await aziz.nudgesToMe()
+        XCTAssertTrue(shown.isEmpty)
+    }
+
     func test_aBlockedPersonsNudgesNeverArrive() async throws {
         try await aziz.nudge(melvinID, kind: .nudge, today: "2026-10-15", myName: "Aziz")
         try await melvin.block(azizID)

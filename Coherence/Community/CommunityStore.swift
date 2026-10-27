@@ -787,6 +787,21 @@ actor CommunityStore {
         return true
     }
 
+    /// Tells a friend we just finished a week together (2026-10-27): a
+    /// Nudge of kind `week`, which their phone's subscription turns into a
+    /// push, "You and Melvin finished this week's goal together". One per
+    /// week: a second call finds the first and sends nothing.
+    func announceWeek(to other: String, first: String, myName: String) async throws {
+        let mine = try await me()
+        if try await iBlocked(other) { return }
+        let name = CommunityNames.weekDone(from: mine, to: other, first: first)
+        if try await db.fetch(name) != nil { return }
+        let n = Nudge(from: mine, to: other, day: Nudge.weekRecordDay, kind: .week, fromName: myName)
+        let record = CKRecord(recordType: CommunityType.nudge, recordID: CKRecord.ID(recordName: name))
+        n.apply(to: record)
+        _ = try await db.save(record)
+    }
+
     /// Whether I already nudged them today.
     func nudged(_ other: String, today: String) async throws -> Bool {
         try await db.fetch(CommunityNames.nudge(from: try await me(), to: other, day: today)) != nil
@@ -800,7 +815,7 @@ actor CommunityStore {
                                                         sortField: "createdAt", ascending: false, limit: limit))
         let blocked = try await myBlockedSet()
         return records.filter { authored($0, by: "from") }.compactMap(Nudge.init(record:))
-            .filter { !blocked.contains($0.from) }
+            .filter { !blocked.contains($0.from) && $0.kind != .week }
             .sorted { $0.createdAt > $1.createdAt }
     }
 

@@ -69,11 +69,15 @@ struct Blocker: Codable, Identifiable, Equatable {
     /// The symbol to draw: the one picked, else the kind's.
     var displaySymbol: String { symbol ?? kind.defaultSymbol }
 
-    /// The shortest session that opens held apps, for every blocker (Aziz,
-    /// 2026-09-22). It was a per-blocker setting beside strictness and a
-    /// daily pass limit; all three left the editor, and blockers saved with
-    /// them simply ignore the old keys.
-    static let sessionMinutes = 5
+    /// The shortest session that opens held apps, for every blocker. One
+    /// minute (Melvin, 2026-10-27: a member meditated for a minute and the
+    /// apps stayed held; "it should be 1 minute and it should specify
+    /// somewhere"), which is also the shortest session 808 keeps
+    /// (`SessionStore.minDurationSec`), so any session that counts opens
+    /// them. It was five (Aziz, 2026-09-22), and before that a per-blocker
+    /// setting beside strictness and a daily pass limit; all three left the
+    /// editor, and blockers saved with them simply ignore the old keys.
+    static let sessionMinutes = 1
 
     static func preset(_ kind: BlockerKind) -> Blocker {
         switch kind {
@@ -188,6 +192,22 @@ struct Blocker: Codable, Identifiable, Equatable {
     }
 }
 
+/// Block's rule in words, in one place (Melvin, 2026-10-27: a member
+/// meditated for a minute, thought that was enough, and could not find where
+/// 808 said; "it should be 1 minute and it should specify somewhere"). The
+/// length is always `Blocker.sessionMinutes`, never typed into a string.
+enum BlockCopy {
+    /// "1 minute".
+    static var length: String {
+        Blocker.sessionMinutes == 1 ? "1 minute" : "\(Blocker.sessionMinutes) minutes"
+    }
+    /// "Meditate for 1 minute to open your apps".
+    static var opensApps: String { "Meditate for \(length) to open your apps" }
+    /// The rule, whole: "Meditate for 1 minute and your apps open for the
+    /// rest of the day."
+    static var rule: String { "Meditate for \(length) and your apps open for the rest of the day." }
+}
+
 /// A "Not now": the apps opened for a few minutes, inside one window.
 struct BlockPass: Codable, Equatable {
     var blockerID: UUID
@@ -198,7 +218,8 @@ struct BlockPass: Codable, Equatable {
     var window: DateInterval
 }
 
-/// A session that opened a blocker's apps for the rest of one window.
+/// A session that opened one of a blocker's windows: the one it was in, or
+/// one still to come that day (`BlockRules.recordSession`).
 struct BlockRelease: Codable, Equatable {
     var blockerID: UUID
     var windowStart: Date
@@ -377,11 +398,23 @@ enum BlockRules {
         Date(timeIntervalSinceReferenceDate: date.timeIntervalSinceReferenceDate.rounded(.up))
     }
 
-    /// A session ended at `end`, lasting `durationSec`. Every blocker whose
-    /// window holds the session is released, when the session lasted at least
-    /// `Blocker.sessionMinutes`, for the rest of that window (Melvin, 2026-09-22:
-    /// the window, not the day, so two windows mean two sessions). A window
-    /// holds a session that started or ended inside it. Idempotent.
+    /// A session ended at `end`, lasting `durationSec`. When it lasted at
+    /// least `Blocker.sessionMinutes`, it opens every blocker for the rest of
+    /// THE DAY (Melvin, 2026-10-27: "the app encourages you to meditate at
+    /// least once every day, and if you fail to do that then the blocking
+    /// starts happening based on when you wanted it to, but if they already
+    /// remembered to meditate earlier without the blocking, then all good").
+    /// So a session at 9 am opens a 6 pm to 11 pm blocker before it ever
+    /// starts. Released: the window holding the session (it started or ended
+    /// inside it), and every window opening on the day the session started
+    /// or ended that has not closed yet.
+    ///
+    /// **A window that already closed is left alone.** It was held, and if
+    /// "Not now" opened it, Otto's glow prices it (`notNowWindows`); a
+    /// session later that day must not rewrite that after the fact.
+    ///
+    /// This replaces "the window, not the day, so two windows mean two
+    /// sessions" (Melvin, 2026-09-22). Idempotent.
     @discardableResult
     static func recordSession(endingAt end: Date, durationSec: Int, in state: inout BlockState,
                               calendar: Calendar = .current) -> [UUID] {
@@ -389,13 +422,33 @@ enum BlockRules {
         var released: [UUID] = []
         guard durationSec >= Blocker.sessionMinutes * 60 else { return [] }
         for blocker in state.blockers {
-            let window = blocker.openWindow(at: end, calendar: calendar)
-                ?? blocker.openWindow(at: start, calendar: calendar)
-            guard let window, !BlockRules.released(blocker.id, window: window, in: state) else { continue }
-            state.releases.append(BlockRelease(blockerID: blocker.id, windowStart: window.start, at: end))
-            released.append(blocker.id)
+            var windows: [DateInterval] = []
+            if let holding = blocker.openWindow(at: end, calendar: calendar)
+                ?? blocker.openWindow(at: start, calendar: calendar) {
+                windows.append(holding)
+            }
+            for day in [start, end] {
+                guard let later = blocker.window(openingOnDayOf: day, calendar: calendar),
+                      later.end > end, !windows.contains(later) else { continue }
+                windows.append(later)
+            }
+            var opened = false
+            for window in windows where !BlockRules.released(blocker.id, window: window, in: state) {
+                state.releases.append(BlockRelease(blockerID: blocker.id, windowStart: window.start, at: end))
+                opened = true
+            }
+            if opened { released.append(blocker.id) }
         }
         return released
+    }
+
+    /// The window opening on `now`'s day that a session today already
+    /// opened before it started, for the Block tab's "Open today" line.
+    static func openedAheadToday(_ blocker: Blocker, in state: BlockState, at now: Date,
+                                 calendar: Calendar = .current) -> Bool {
+        guard let window = blocker.window(openingOnDayOf: now, calendar: calendar),
+              now < window.start else { return false }
+        return released(blocker.id, window: window, in: state)
     }
 
     /// Takes back every opening whose session is gone (Aziz, 2026-10-01). A
@@ -492,8 +545,8 @@ enum ShieldLines {
         Line(title: "Otto said no 🙅", subtitle: "He'll open {app} once you've meditated."),
         Line(title: "we're not doing this rn 🚫", subtitle: "Meditate with Otto, then {app}'s back."),
         Line(title: "zen first, scroll later 🌿", subtitle: "Otto's holding {app} for you 🔒"),
-        Line(title: "touch grass first 🌱", subtitle: "Meditate first, then scroll all you want."),
-        Line(title: "plot twist: you meditate first 🤯", subtitle: "Then {app} unlocks. Otto's rules."),
+        Line(title: "touch grass first 🌱", subtitle: "\(BlockCopy.length) of meditating, then scroll all you want."),
+        Line(title: "plot twist: you meditate first 🤯", subtitle: "\(BlockCopy.length) and {app} unlocks for the day. Otto's rules."),
         Line(title: "not the doom scroll 💀", subtitle: "Meditate first. Otto's waiting."),
     ]
 

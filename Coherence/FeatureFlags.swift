@@ -73,7 +73,7 @@ enum FeatureFlags {
 
     /// Award ids that belong to a switched-off feature.
     static var hiddenAwardIDs: Set<String> {
-        friends ? [] : ["friendBrought"]
+        friends ? [] : Set(Award.all.filter { $0.group == .friends }.map(\.id))
     }
 }
 

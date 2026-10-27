@@ -186,7 +186,7 @@ enum ReminderScheduler {
         }
         if FeatureFlags.shop {
             let owned = prefs.ownedHatIDList
-            let balance = OttoPoints.balance(sessions: sessions, ownedHatIDs: owned)
+            let balance = OttoPoints.balance(sessions: sessions, ownedHatIDs: owned, bonus: FriendsMemory.bonusPoints())
             if let next = HatCatalog.all
                 .filter({ !owned.contains($0.id) && $0.price > balance })
                 .min(by: { $0.price < $1.price }) {
@@ -206,7 +206,7 @@ enum ReminderScheduler {
         // get notifications switched off.
         content.interruptionLevel = .active
         content.threadIdentifier = "reminders"
-        content.relevanceScore = reminder.slot == .lastCall ? 0.8 : 0.5
+        content.relevanceScore = reminder.slot == .lastCall || reminder.slot == .streakSaver ? 0.8 : 0.5
         content.userInfo = [userInfoKey: reminder.topic.rawValue]
         let comps = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute],
                                                     from: reminder.fireDate)

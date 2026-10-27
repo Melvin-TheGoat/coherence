@@ -161,6 +161,48 @@ final class SharedGoalTests: XCTestCase {
 
     // MARK: The reward line
 
+    // MARK: Weeks finished (2026-10-27)
+
+    /// Each week says when each of us did our share; the later of the two
+    /// finished it, and that person's phone is the one that tells the other.
+    func test_weekRecordsSayWhenTheWeekWasFinishedAndByWhom() {
+        let p = pair(start: "2026-10-15", target: 2,
+                     mine: ["2026-10-15", "2026-10-17", "2026-10-23"],
+                     theirs: ["2026-10-16", "2026-10-18"])
+        let weeks = p.weekRecords(today: "2026-10-23")
+        XCTAssertEqual(weeks.map(\.index), [0, 1])
+        XCTAssertEqual(weeks[0].myDoneDay, "2026-10-17")
+        XCTAssertEqual(weeks[0].theirDoneDay, "2026-10-18")
+        XCTAssertEqual(weeks[0].finishedDay, "2026-10-18")
+        XCTAssertFalse(weeks[0].iFinishedLast(me: "me", partner: "ana"), "Ana did hers second")
+        XCTAssertFalse(weeks[0].isCurrent)
+        XCTAssertNil(weeks[1].finishedDay)
+        XCTAssertTrue(weeks[1].isCurrent)
+        XCTAssertEqual(weeks[1].mine, 1)
+    }
+
+    /// The same day: exactly one of the two phones tells the other.
+    func test_aWeekFinishedTheSameDayIsToldByExactlyOnePhone() {
+        let p = pair(start: "2026-10-15", target: 1, mine: ["2026-10-16"], theirs: ["2026-10-16"])
+        let w = p.weekRecords(today: "2026-10-16")[0]
+        XCTAssertNotEqual(w.iFinishedLast(me: "a", partner: "b"), w.iFinishedLast(me: "b", partner: "a"))
+    }
+
+    /// The sessions on this phone can be fresher than my published days.
+    func test_weekRecordsTakeMyFresherDays() {
+        let p = pair(start: "2026-10-15", target: 1, mine: [], theirs: ["2026-10-15"])
+        XCTAssertNil(p.weekRecords(today: "2026-10-16")[0].finishedDay)
+        let fresh = p.weekRecords(today: "2026-10-16", myDays: days(["2026-10-16"]))
+        XCTAssertEqual(fresh[0].finishedDay, "2026-10-16")
+        XCTAssertTrue(fresh[0].iFinishedLast(me: "me", partner: "ana"))
+    }
+
+    func test_weekDoneLine() {
+        XCTAssertNil(WeekDone.line([]))
+        XCTAssertEqual(WeekDone.line(["Aziz"]), "Week done with Aziz 🎉 +50 points")
+        XCTAssertEqual(WeekDone.line(["Ana", "Sam"]), "Week done with Ana and Sam 🎉 +100 points")
+    }
+
     func test_countedForLine() {
         XCTAssertNil(CountedFor.line([]))
         XCTAssertEqual(CountedFor.line(["Ana"]), "Counted for Ana")

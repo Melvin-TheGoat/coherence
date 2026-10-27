@@ -322,7 +322,8 @@ struct ProfileTab: View {
             sessions: AwardFacts.build(sessions: sessions, stats: allStats,
                                        reflections: reflections, photos: photos),
             accountCreatedAt: users.first?.createdAt,
-            friendBroughtAt: prefsRows.compactMap(\.evidenceGrantSince).min())
+            friendBroughtAt: prefsRows.compactMap(\.evidenceGrantSince).min(),
+            social: community.friendFacts)
             .filter { !FeatureFlags.hiddenAwardIDs.contains($0.award.id) }
             // **An UNEARNED score award is hidden while the phone cannot
             // score** (Aziz, 2026-09-21: "we dont wanna worry about any of

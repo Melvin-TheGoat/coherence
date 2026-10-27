@@ -91,13 +91,13 @@ struct SessionActiveView: View {
     /// Block is holding apps as this session runs (Aziz, 2026-09-29: "add
     /// somewhere that a meditation has to be 5 minutes long to count"). A
     /// session started from Otto's notification skips the Ready screen, so
-    /// the sit itself has to say it: five minutes is what opens them
-    /// (`Blocker.sessionMinutes`). Read once, when the sit appears.
+    /// the sit itself has to say it: one minute is what opens them since
+    /// 2026-10-27 (`Blocker.sessionMinutes`). Read once, when the sit appears.
     @State private var holdsApps = false
     private static let opensAppsSec = Blocker.sessionMinutes * 60
-    /// The few seconds after five minutes, when the line comes back to say
+    /// The few seconds after that minute, when the line comes back to say
     /// the apps will open.
-    private var fiveMinutesDone: Bool {
+    private var opensAppsReached: Bool {
         holdsApps && elapsed >= Self.opensAppsSec && Double(elapsed - Self.opensAppsSec) < Self.arrivalSec
     }
     /// The clock has run out. Whatever is measuring is wrapping up.
@@ -202,9 +202,9 @@ struct SessionActiveView: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, AppMetrics.screenPadding)
                 .position(x: geo.size.width / 2, y: SitLayout.headlineY(in: geo.size, hat: hat))
-                .opacity(arriving || finishing || fiveMinutesDone ? 1 : 0)
+                .opacity(arriving || finishing || opensAppsReached ? 1 : 0)
                 .animation(.easeInOut(duration: 0.7), value: arriving)
-                .animation(.easeInOut(duration: 0.7), value: fiveMinutesDone)
+                .animation(.easeInOut(duration: 0.7), value: opensAppsReached)
                 .animation(.easeInOut(duration: 0.7), value: finishing)
 
                 VStack {
@@ -235,14 +235,14 @@ struct SessionActiveView: View {
 
     private var headline: String {
         if finishing { return closingLine }
-        if fiveMinutesDone { return "Nice, keep going" }
+        if opensAppsReached { return "Nice, keep going" }
         return "Let's start meditating"
     }
 
     private var subhead: String {
         if finishing { return "Same time tomorrow?" }
-        if fiveMinutesDone { return "Your apps open when you end" }
-        if holdsApps { return "Meditate first to open your apps. Keep 808 open." }
+        if opensAppsReached { return "Your apps open when you end" }
+        if holdsApps { return "\(BlockCopy.opensApps). Keep 808 open." }
         return "Keep 808 open to ensure you are meditating"
     }
 

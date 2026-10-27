@@ -20,6 +20,9 @@ struct SessionReward: Identifiable, Equatable {
     /// first names, for "Counted for Ana and Daniel". Empty when it counted
     /// for no shared goal.
     var countedFor: [String] = []
+    /// The friends whose week this session finished (2026-10-27): "Week
+    /// done with Aziz". `points` already carries their 50 each.
+    var weekDoneWith: [String] = []
 
     /// A 40 second session still says 1. Floored, like the points (one per whole minute) and every other minute count.
     var minutes: Int { max(1, seconds / 60) }
@@ -233,9 +236,24 @@ struct SessionRewardView: View {
                 Text(reward.minutes == 1 ? "1 minute, well spent" : "\(reward.minutes) minutes, well spent")
                     .font(.system(size: 15, weight: .heavy, design: .rounded))
                     .onValley(soft: true)
+                // A week finished together (2026-10-27), first: it is the
+                // bigger news, and its 50 points are in the coins below.
+                if let line = WeekDone.line(reward.weekDoneWith) {
+                    Text(line)
+                        .font(.system(size: 14, weight: .heavy, design: .rounded))
+                        .foregroundStyle(AppColor.textPrimary)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.center)
+                        .minimumScaleFactor(0.8)
+                        .padding(.horizontal, 14).padding(.vertical, 8)
+                        .background(TileFill(shape: Capsule(), opacity: 0.95))
+                        .shadow(color: .black.opacity(0.10), radius: 5, y: 2)
+                        .padding(.horizontal, 24)
+                }
                 // "Counted for Ana and Daniel": one session counts for every
-                // shared goal (Aziz, 2026-10-14). Only when it did count.
-                if let line = CountedFor.line(reward.countedFor) {
+                // shared goal (Aziz, 2026-10-14). Only when it did count, and
+                // not again for a friend whose week it just finished.
+                if let line = CountedFor.line(reward.countedFor.filter { !reward.weekDoneWith.contains($0) }) {
                     Text(line + " 🤝")
                         .font(.system(size: 14, weight: .heavy, design: .rounded))
                         .foregroundStyle(AppColor.textPrimary)

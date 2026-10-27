@@ -198,8 +198,8 @@ enum SessionStore {
     /// cleared so a fresh start on this phone starts fresh: announced awards
     /// (or the next person's first award would never announce), Otto's glow
     /// start (restarted today), the session still owed a save screen and
-    /// the Home toast, the onboarding resume record, and onboarding's
-    /// hand-off to the setup sheet.
+    /// the Home toast, the onboarding resume record, onboarding's hand-off to
+    /// the setup sheet, and what this phone saw of Friends (`FriendsLedger`).
     ///
     /// **Not touched, on purpose:** StoreKit and every entitlement or paywall
     /// flag (a subscription belongs to the Apple ID, not to the account),
@@ -215,6 +215,8 @@ enum SessionStore {
         SessionDetails.clear(in: defaults)
         OnboardingResume.clear(from: defaults)
         defaults.removeObject(forKey: OnboardingHandoff.key)
+        // Friends awards and the weeks finished together (2026-10-27).
+        FriendsMemory.forget(defaults)
     }
 
     /// How builds before 2026-09-29 deleted an account: stamp `deletedAt` on

@@ -60,23 +60,61 @@ final class BlockRulesTests: XCTestCase {
         XCTAssertFalse(again, "nothing left to take back")
     }
 
-    /// Aziz, 2026-09-22: five minutes opens the apps, for every blocker.
-    func test_fiveMinutesOpensTheAppsAndLessDoesNot() {
+    /// Melvin, 2026-10-27: one minute opens the apps, for every blocker
+    /// (it was five). Under a minute is not a session 808 keeps anyway.
+    func test_oneMinuteOpensTheAppsAndLessDoesNot() {
         let day = on(.mindfulDay)
         var s = state(day)
-        BlockRules.recordSession(endingAt: at(10, 10), durationSec: 299, in: &s, calendar: cal)
+        BlockRules.recordSession(endingAt: at(10, 10), durationSec: 59, in: &s, calendar: cal)
         XCTAssertTrue(BlockRules.holds(day, in: s, at: at(10, 11), calendar: cal))
-        BlockRules.recordSession(endingAt: at(10, 12), durationSec: 300, in: &s, calendar: cal)
+        BlockRules.recordSession(endingAt: at(10, 12), durationSec: 60, in: &s, calendar: cal)
         XCTAssertFalse(BlockRules.holds(day, in: s, at: at(10, 13), calendar: cal))
     }
 
-    /// Melvin: the rest of the window, not the day, "in case they want to
-    /// meditate twice a day".
-    func test_aSessionReleasesItsWindowNotTheDay() {
+    /// Melvin, 2026-10-27, the case that was reported: apps held 6 pm to
+    /// 11 pm, a session earlier in the day, and the apps were held anyway.
+    /// Meditating once a day is the promise; the hours are only when Otto
+    /// starts asking if it has not happened yet.
+    func test_aSessionEarlierInTheDayOpensTonightsWindow() {
+        var evening = on(.custom)
+        evening.window = .hours(start: 18 * 60, end: 23 * 60)
+        var s = state(evening)
+        BlockRules.recordSession(endingAt: at(10, 9), durationSec: 60, in: &s, calendar: cal)
+        XCTAssertFalse(BlockRules.holds(evening, in: s, at: at(10, 19), calendar: cal))
+        XCTAssertTrue(BlockRules.openedAheadToday(evening, in: s, at: at(10, 12), calendar: cal))
+        XCTAssertTrue(BlockRules.holds(evening, in: s, at: at(11, 19), calendar: cal), "tomorrow asks again")
+    }
+
+    /// The same for every blocker: a morning session opens the evening's too.
+    /// This replaces "the window, not the day" (Melvin, 2026-09-22).
+    func test_aSessionOpensEveryBlockerForTheDay() {
         let morning = on(.mindfulMorning), night = on(.windDown)
         var s = state(morning, night)
-        BlockRules.recordSession(endingAt: at(10, 7), durationSec: 300, in: &s, calendar: cal)
+        let opened = BlockRules.recordSession(endingAt: at(10, 7), durationSec: 300, in: &s, calendar: cal)
+        XCTAssertEqual(Set(opened), [morning.id, night.id])
         XCTAssertFalse(BlockRules.holds(morning, in: s, at: at(10, 8), calendar: cal))
+        XCTAssertFalse(BlockRules.holds(night, in: s, at: at(10, 22), calendar: cal))
+        XCTAssertTrue(BlockRules.holds(morning, in: s, at: at(11, 8), calendar: cal))
+        XCTAssertTrue(BlockRules.holds(night, in: s, at: at(11, 22), calendar: cal))
+    }
+
+    /// A window that closed before the session is left alone: a "Not now"
+    /// taken in it still reaches Otto's glow, as it always did.
+    func test_aSessionAfterAWindowClosedLeavesThatWindowAlone() {
+        let morning = on(.mindfulMorning)
+        var s = state(morning)
+        BlockRules.takePass(minutes: 10, in: &s, at: at(10, 7), calendar: cal)
+        BlockRules.recordSession(endingAt: at(10, 15), durationSec: 300, in: &s, calendar: cal)
+        XCTAssertEqual(BlockRules.notNowWindows(s), [DateInterval(start: at(10, 6), end: at(10, 10))])
+    }
+
+    /// Deleting the session takes back the windows it opened ahead too.
+    func test_aDeletedSessionTakesBackTheWindowsItOpenedAhead() {
+        let night = on(.windDown)
+        var s = state(night)
+        BlockRules.recordSession(endingAt: at(10, 9), durationSec: 300, in: &s, calendar: cal)
+        XCTAssertFalse(BlockRules.holds(night, in: s, at: at(10, 22), calendar: cal))
+        BlockRules.forgetReleases(withoutSessionsEnding: [], since: at(9, 0), in: &s)
         XCTAssertTrue(BlockRules.holds(night, in: s, at: at(10, 22), calendar: cal))
     }
 
@@ -295,7 +333,7 @@ final class BlockRulesTests: XCTestCase {
 
     func test_theDefaults() {
         let day = Blocker.preset(.mindfulDay)
-        XCTAssertEqual(Blocker.sessionMinutes, 5)
+        XCTAssertEqual(Blocker.sessionMinutes, 1)
         XCTAssertEqual(day.window, .allDay)
         XCTAssertFalse(day.isOn, "on only once apps are picked")
     }

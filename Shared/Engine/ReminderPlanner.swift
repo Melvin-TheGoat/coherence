@@ -40,6 +40,10 @@ enum ReminderSlot: String, Codable {
     case followUp
     /// The evening one: the streak saver when there is a streak.
     case lastCall
+    /// Half an hour before midnight, only on a night the streak ends unless
+    /// they meditate (Melvin, 2026-10-27: "a streak reminder, like if you're
+    /// about to lose your streak, maybe 30 mins before midnight").
+    case streakSaver
 }
 
 /// How many the person asked for (Settings).
@@ -117,9 +121,14 @@ enum ReminderPlanner {
     /// than every other day after the first week).
     static let farewellDay = 14
 
-    /// Nothing earlier or later than these, except the person's own time.
+    /// Nothing earlier or later than these, except the person's own time
+    /// and the streak saver.
     static let earliest = 7 * 60
     static let latest = 22 * 60 + 30
+    /// The streak saver: 11:30 pm, half an hour before the streak would end.
+    static let saverTime = 23 * 60 + 30
+    /// A streak this long or longer gets the saver, as it gets streak talk.
+    static let saverStreak = 2
 
     // MARK: Cadence
 
@@ -132,7 +141,12 @@ enum ReminderPlanner {
     /// The slots a day gets, by how long the person has been away.
     /// `sinceSession` caps it: opening 808 every day without meditating
     /// keeps reminders coming, but never three a day for a week on end.
-    static func slots(daysAway d: Int, sinceSession: Int?, cadence: ReminderCadence) -> [ReminderSlot] {
+    ///
+    /// `streakEndsTonight`: the saver joins at 11:30 pm (smart cadence only;
+    /// "Once a day" is a promise). It takes the follow-up's place, so a day
+    /// still gets three at most, the number Settings states.
+    static func slots(daysAway d: Int, sinceSession: Int?, cadence: ReminderCadence,
+                      streakEndsTonight: Bool = false) -> [ReminderSlot] {
         if d > farewellDay { return [] }
         if d == farewellDay { return [.first] }               // the farewell
         // One a day at their time from day 4 until the farewell: the same
@@ -140,6 +154,10 @@ enum ReminderPlanner {
         if d >= 4 || cadence == .once { return [.first] }
         var slots: [ReminderSlot] = d <= 1 ? [.first, .followUp, .lastCall] : [.first, .lastCall]
         if let s = sinceSession, s >= 7, slots.count > 2 { slots = [.first, .lastCall] }
+        if streakEndsTonight {
+            slots.removeAll { $0 == .followUp }
+            slots.append(.streakSaver)
+        }
         return slots
     }
 
@@ -164,6 +182,15 @@ enum ReminderPlanner {
         return out
     }
 
+    /// The streak saver's time for someone whose own time is `anchor`:
+    /// 11:30 pm, unless another reminder that day lands within the 90
+    /// minutes every reminder keeps apart (a late own time, or an evening one
+    /// pushed to 10:30). That evening one already says the streak is on the
+    /// line, so nothing is lost.
+    static func saverMinutes(anchor: Int) -> Int? {
+        times(anchor: anchor).values.allSatisfy { saverTime - $0 >= 90 } ? saverTime : nil
+    }
+
     // MARK: The plan
 
     static func plan<R: RandomNumberGenerator>(_ input: ReminderInput, using rng: inout R) -> [PlannedReminder] {
@@ -186,8 +213,13 @@ enum ReminderPlanner {
             let d = daysAway(on: day, lastActive: lastActive, calendar: cal)
             let sinceSession = lastSession.map { daysAway(on: day, lastActive: $0, calendar: cal) }
             let times = times(anchor: anchor)
-            for slot in slots(daysAway: d, sinceSession: sinceSession, cadence: input.cadence) {
-                guard let minutes = times[slot],
+            // Whether the streak ends at midnight if this day passes without
+            // a session, as the day would stand with no new one before it.
+            let endsTonight = StreakCalculator.endsTonight(from: input.sessionStarts, today: day, calendar: cal)
+                && StreakCalculator.streak(from: input.sessionStarts, today: day, calendar: cal).current >= saverStreak
+            for slot in slots(daysAway: d, sinceSession: sinceSession, cadence: input.cadence,
+                              streakEndsTonight: endsTonight) {
+                guard let minutes = slot == .streakSaver ? saverMinutes(anchor: anchor) : times[slot],
                       let fire = cal.date(byAdding: .minute, value: minutes, to: day),
                       // Ten seconds, not a minute: someone who sets the time one
                       // minute ahead expects it (found testing 1.3, 2026-10-13).
@@ -268,7 +300,7 @@ enum ReminderPlanner {
                                                 rng: inout R) -> ReminderTopic {
         // The evening one is the streak saver whenever there is a streak to
         // save: the one message with a deadline that is true tonight.
-        if slot == .lastCall, state.streak >= 2 { return .streak }
+        if slot == .lastCall || slot == .streakSaver, state.streak >= 2 { return .streak }
         let topics = eligible(slot: slot, state: state)
         var best = topics[0], bestScore = -Double.infinity
         for topic in topics {
@@ -311,9 +343,10 @@ enum ReminderPlanner {
 // MARK: - What the reminders say
 
 /// The phrase bank. Rules it keeps (CLAUDE.md copy rules): no em dashes; never
-/// tell the reader what they lack; never shame; no health claims; never name
-/// the length that opens Block's apps ("meditate first" is the rule's only
-/// wording). Every line must be true on the day it fires, which is why the
+/// tell the reader what they lack; never shame; no health claims; never type
+/// the length that opens Block's apps here (it went from five minutes to one
+/// on 2026-10-27; the Block tab and the sit say it, through `BlockCopy`).
+/// Every line must be true on the day it fires, which is why the
 /// planner works out each day's streak and glow before choosing.
 enum ReminderCopy {
     typealias Line = (title: String, body: String)
@@ -331,6 +364,18 @@ enum ReminderCopy {
         let n = s.streak
         switch topic {
         case .streak:
+            if slot == .streakSaver {
+                // Only on a night the streak ends at midnight (`endsTonight`),
+                // so the deadline in every line is real.
+                if s.restDayUsed {
+                    return [("Tonight keeps your streak", "Your rest day covered yesterday. Meditate before midnight and your \(n)-day streak carries on."),
+                            ("⏰ 30 minutes left", "Yesterday was your rest day. A session before midnight keeps your \(n)-day streak.")]
+                }
+                return [("⏰ 30 minutes left", "Your \(n)-day streak ends at midnight. A quick session keeps it going."),
+                        ("Your \(n)-day streak ends at midnight", "There's still time. Sit with Otto for a minute or two."),
+                        ("Otto's watching the clock", "Half an hour to midnight. Meditate now and your \(n)-day streak lives on."),
+                        ("Last call, for real", "Meditate before midnight to keep your \(n)-day streak.")]
+            }
             if slot == .lastCall {
                 // The urgent ones: the deadline is real tonight.
                 return [("Still time today", "Meditate before midnight and your \(n)-day streak keeps going."),

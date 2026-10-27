@@ -520,8 +520,9 @@ final class BlockNotifications: NSObject, UNUserNotificationCenterDelegate {
         if info["block"] != nil {
             BlockTrace.step("\"Otto wants a word\" arrived with 808 open")
             completionHandler([.banner, .sound])
-        } else if info["ck"] != nil {
-            // CloudKit's push for a goal invite, an answer or a nudge
+        } else if info["ck"] != nil || info[FriendsWeekNotice.userInfoKey] != nil {
+            // CloudKit's push for a goal invite, an answer or a nudge, or a
+            // week finished together (2026-10-27)
             // (Meditating together, 2026-10-14): show it, and fetch the news.
             // Never a banner mid-session: a friend can nudge somebody who is
             // meditating right now, since the session is not saved yet.
@@ -544,8 +545,9 @@ final class BlockNotifications: NSObject, UNUserNotificationCenterDelegate {
         if request.content.userInfo["block"] != nil {
             BlockTrace.step("\"Otto wants a word\" tapped")
             Task { @MainActor in BlockController.shared.requestIntervention() }
-        } else if request.content.userInfo["ck"] != nil {
-            // A goal invite, an answer or a nudge: open Friends.
+        } else if request.content.userInfo["ck"] != nil
+                    || request.content.userInfo[FriendsWeekNotice.userInfoKey] != nil {
+            // A goal invite, an answer, a nudge or a week finished: open Friends.
             Analytics.track(.notificationOpened(kind: "friends"))
             Task { @MainActor in
                 // Remembered too, for a cold launch: Home may not exist yet.

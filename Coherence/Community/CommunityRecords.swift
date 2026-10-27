@@ -69,6 +69,11 @@ enum CommunityNames {
     static func goalMember(goal: String, member: String) -> String { "goal-" + goal + "-" + member }
     /// At most one nudge from me to them per day, by construction.
     static func nudge(from: String, to: String, day: String) -> String { "nudge-" + from + "-" + to + "-" + day }
+    /// A week finished together, told to the friend: one per week, so
+    /// telling it twice is a no-op. `first` is the week's first day key.
+    static func weekDone(from: String, to: String, first: String) -> String {
+        "nudge-week-" + from + "-" + to + "-" + first
+    }
     /// An invite code, by its canonical form (`InviteCode.normalize`).
     static func inviteCode(_ code: String) -> String { "invitecode-" + code }
 }
@@ -184,7 +189,15 @@ struct GoalHalf: Identifiable, Equatable {
 /// friend to another, at most one a day (`CommunityNames.nudge`). The push
 /// alert quotes `fromName`. **New CloudKit record type** (see `GoalHalf`).
 struct Nudge: Identifiable, Equatable {
-    enum Kind: String { case nudge, cheer }
+    /// `week`: sent by the phone of whoever finished a shared week second,
+    /// so the other gets a push (2026-10-27). Never shown as a nudge.
+    enum Kind: String { case nudge, cheer, week }
+
+    /// The `day` a `week` record carries. Builds before 1.4.1 read every
+    /// Nudge as a nudge or a high five and show only those from the last
+    /// two days, so a day that is never recent keeps them from showing a
+    /// week record as one. The week itself is in the record's name.
+    static let weekRecordDay = "0000-01-01"
 
     let from: String
     let to: String

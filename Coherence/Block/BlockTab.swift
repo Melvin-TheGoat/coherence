@@ -133,15 +133,25 @@ struct BlockTab: View {
     /// 2026-09-27: "I dont like how otto looks in the lock screen. Just get
     /// rid of him"), and the blockers moved up into the room he took; the
     /// cards already say what is being held.
+    ///
+    /// The rule sits under the title (Melvin, 2026-10-27: a member
+    /// meditated for a minute and could not find how long it had to be; "it
+    /// should specify somewhere").
     private func band(top: CGFloat) -> some View {
-        FriendsSky(height: top + 92, sceneHeight: (top + 92) / 0.62) {
-            Text("Block")
-                .font(DisplayFont.display(30, .heavy))
-                .onValley()
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, AppMetrics.screenPadding)
-                .padding(.top, top + 10)
-                .frame(maxHeight: .infinity, alignment: .top)
+        FriendsSky(height: top + 112, sceneHeight: (top + 112) / 0.62) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Block")
+                    .font(DisplayFont.display(30, .heavy))
+                    .onValley()
+                Text(BlockCopy.rule)
+                    .font(AppFont.callout.weight(.semibold))
+                    .onValley(soft: true)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, AppMetrics.screenPadding)
+            .padding(.top, top + 10)
+            .frame(maxHeight: .infinity, alignment: .top)
         }
     }
 
@@ -438,6 +448,8 @@ private struct BlockerCard: View {
             }
             if blocker.dailyLimitMinutes != nil { return "Counting today's minutes" }
         }
+        // A session earlier today opened tonight's window before it started.
+        if BlockRules.openedAheadToday(blocker, in: block.state, at: now) { return "Open today, you meditated" }
         return "Waiting for its window"
     }
 

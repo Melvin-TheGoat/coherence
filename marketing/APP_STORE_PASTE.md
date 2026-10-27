@@ -133,7 +133,7 @@ review)
 Meditate consistently with Otto. He glows brighter every day you do, blocks your apps when you don't, and now lives on your home screen as a widget.
 ```
 
-**Description** (4000 max; this one is 3993)
+**Description** (4000 max; this one is 3,927, 3,972 counting line breaks twice; Block's 1 minute, points for a week with a friend and weekly goals added 2026-10-27)
 
 ```
 Meditate consistently with Otto, a sloth who meditates with you. He glows brighter every day you do and blocks your apps when you don't. Every minute earns points for his hats.
@@ -145,10 +145,10 @@ OTTO ON YOUR HOME SCREEN
 Add the 808 widget, small or medium, to see Otto, your streak and what he has to say, lit for the time of day.
 
 HE BLOCKS YOUR APPS UNTIL YOU MEDITATE
-Pick the apps that pull you away and choose when Otto holds them: all day, during hours you set, or once you reach a daily limit. Open one and Otto asks you to meditate first. Tap Ask Otto and he may text you or call. Meditate and they open for the rest of that window, or tell Otto "Not now" for 5, 10 or 30 minutes. Block manages your own iPhone, and the apps you pick stay private to your phone.
+Pick the apps that pull you away and choose when Otto holds them: all day, during hours you set, or once you reach a daily limit. Open one and Otto asks you to meditate first. Tap Ask Otto and he may text you or call. Meditate for 1 minute and they open for the rest of the day, or tell Otto "Not now" for 5, 10 or 30 minutes. Block manages your own iPhone, and the apps you pick stay private to your phone.
 
 COLLECT POINTS, BUY HIM HATS
-Every minute you meditate earns a point. Spend your points in the Shop on hats for Otto, from a beanie to a golden crown.
+Every minute you meditate earns a point, and a week finished with a friend earns 50. Spend your points in the Shop on hats for Otto, from a beanie to a golden crown.
 
 MEDITATE YOUR WAY
 Set a timer or leave it open. Sit in silence, with rain, ocean, forest or campfire, with brainwave paced tones for delta, theta and alpha, or with traditional tunings at 432, 528, 852 and 963 Hz. Or follow a professionally narrated 25 minute guided journey.
@@ -159,10 +159,10 @@ WITH AN APPLE WATCH, SEE WHAT YOUR BODY DID
 An Apple Watch is optional. Wear one and 808 also reads your heart rate, how still you became and your breathing, then shows you a score out of 100 and the curves behind it after the session. Each Apple Watch session is saved to Apple Health as a workout and as mindful minutes.
 
 MEDITATE WITH FRIENDS
-Add friends by @username and see how often each of them meditates: sessions and minutes this week, their streak and their total. A profile is optional, and anyone who looks up your username can see it.
+Add friends by @username and see how often each of them meditates: sessions and minutes this week, their streak and their total. Set a weekly goal together and nudge each other. A profile is optional, and anyone who looks up your username can see it.
 
 EVERY DAY ADDS UP
-Your streak, your week at a glance, your full history, more than fifty awards, and a written guide to different ways to meditate, easiest first.
+Your streak, your week at a glance, your full history, more than sixty awards, and a written guide to different ways to meditate, easiest first.
 
 PRIVATE BY DESIGN
 Heart rate and every reading from your Watch stay on your iPhone and are never uploaded to us. Your sessions sync through your own private iCloud, which we cannot read. Our analytics are pseudonymous and never include a body measurement or anything from Screen Time. No ads. No data sales. Sign in with Apple is optional.
@@ -221,9 +221,17 @@ https://meditate808.com/privacy
 © 2026 Lock Out Inc.
 ```
 
-**What's New in This Version, 1.4.1** (4000 max; this one is 173, 177 counting line breaks twice; 2026-10-26, for Melvin to approve. It names only what a member can see: the paywall rebuild and the founders' note are left out on purpose.)
+**What's New in This Version, 1.4.1** (4000 max; this one is 597, 609 counting line breaks twice; 2026-10-27, for Melvin to approve. It names only what a member can see: the paywall rebuild and the founders' note are left out on purpose.)
 
 ```
+Finish a week with a friend and you both hear about it, with 50 points for Otto's hats. Every week you finish together shows on your goal's page.
+
+New Friends awards: your first friend, 5, 10 and 25 friends, a goal started, and weeks finished together.
+
+Block now opens your apps for the rest of the day after 1 minute of meditating, whenever you do it.
+
+A reminder at 11:30 pm on nights your streak would end at midnight.
+
 Five new hats for Otto in the Shop: a baseball cap, a sombrero, a top hat, a tiara, and a glass astronaut helmet.
 
 Hats sit more cleanly on Otto when he glows.
@@ -342,8 +350,9 @@ Apple emails this address about the review).
 **Notes** (4000 max, with line breaks possibly counted twice; checked
 against the code 2026-09-30 in a third review pass; the Block sentence
 reworded 2026-10-13 for the required app pick; Friends gained invite codes,
-weekly goals and nudges 2026-10-18, 3,983 counted with line breaks twice).
-Count again after any edit.
+weekly goals and nudges 2026-10-18; Block's one minute, the rest of the
+day, and "Not now" for 5, 10 or 30 corrected 2026-10-27, 3,970 counted with
+line breaks twice). Count again after any edit.
 
 ```
 808 is a meditation app for iPhone with an optional Apple Watch app. No part of this review needs an Apple Watch.
@@ -357,7 +366,7 @@ An account that already had a free trial is offered the half price from the firs
 People updating from 1.0 without a subscription meet the paywall at launch, with an Account link (Manage subscription, Redeem a code, Restore, Sign out, Delete account). Subscribers and Lifetime owners keep full access.
 
 BLOCK (part of 808 Membership)
-Family Controls with individual authorization: a person manages their own iPhone, not a parental control. After the paywall, onboarding asks for Screen Time permission. Declining continues; once allowed, at least one app is picked in Apple's picker. A held app shows Apple's shield. "Ask Otto" sends a notification that opens a short screen from Otto, ending in a meditation (five minutes or more opens the apps for the rest of that window) or "Not now" for 10, 20 or 30 minutes. If notifications are off, the shield says to open 808, and Otto appears there. Nothing from Screen Time leaves the device.
+Family Controls with individual authorization: a person manages their own iPhone, not a parental control. After the paywall, onboarding asks for Screen Time permission. Declining continues; once allowed, at least one app is picked in Apple's picker. A held app shows Apple's shield. "Ask Otto" sends a notification that opens a short screen from Otto, ending in a meditation (one minute or more opens the apps for the rest of the day) or "Not now" for 5, 10 or 30 minutes. If notifications are off, the shield says to open 808, and Otto appears there. Nothing from Screen Time leaves the device.
 
 SESSIONS
 Tap the plus, then the first button ("Meditate") to choose:

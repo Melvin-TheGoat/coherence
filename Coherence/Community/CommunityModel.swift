@@ -79,6 +79,20 @@ final class CommunityModel: ObservableObject {
     /// The reward landing, shown once as a sheet by ContentView.
     @Published var rewardNews: RewardNews?
 
+    // MARK: Friends awards and weeks together (see CommunityModel+Goals.swift)
+
+    /// What this phone has seen of Friends, for the Friends awards. Starts
+    /// from what was saved, so the shelf is right before Friends loads.
+    @Published var friendFacts: AwardEngine.SocialFacts = FriendsMemory.load().facts
+    /// Points from weeks finished together, added to every balance.
+    @Published var togetherBonus: Int = FriendsMemory.bonusPoints()
+    /// Set once goals have loaded at least once this launch, so a week is
+    /// never judged against goals that are not there yet.
+    var goalsLoaded = false
+    /// Weeks a reward screen has already said, this launch, so a week is
+    /// never both a reward line and a banner, or said by two rewards.
+    var rewardAnnounced: Set<String> = []
+
     struct RewardNews: Identifiable, Equatable {
         let friendName: String
         let remaining: Int
@@ -249,8 +263,11 @@ final class CommunityModel: ObservableObject {
         if !force, let last = lastPracticeStatsAttemptAt, Date().timeIntervalSince(last) < 180 { return }
         lastPracticeStatsAttemptAt = Date()
         let stats = PracticeStats.compute(from: allSessions())
-        // The days each shared goal counts, on my halves of them.
-        await publishGoalDays()
+        // The days each shared goal counts, on my halves of them. When a
+        // session just landed, the goals are fetched again first, so a week
+        // the session finished is seen against the friend's latest days
+        // (`refreshGoals` publishes mine at its end).
+        if force { await refreshGoals(store) } else { await publishGoalDays() }
         guard stats != lastSyncedPracticeStats else { return }
         guard let updated = try? await store.updatePracticeStats(stats) else { return }
         lastSyncedPracticeStats = stats
@@ -286,7 +303,14 @@ final class CommunityModel: ObservableObject {
                 }
             }
             profile = try await store.myProfile()
-            guard let profile, !profile.username.isEmpty else { phase = .needsUsername; return }
+            guard let profile, !profile.username.isEmpty else {
+                // Nobody to be friends with yet: the first friend, when they
+                // come, is news (`noteFriendCount`).
+                noteFriendCount(0)
+                notePastGoalsQuietly()
+                phase = .needsUsername
+                return
+            }
             try await refreshLists(store)
             phase = .ready
             // Push alerts for goal invites, answers and nudges (2026-10-14),
@@ -329,6 +353,7 @@ final class CommunityModel: ObservableObject {
         async let b = store.blockedByMe()
         let (fr, inc, sn, bl) = try await (f, i, s, b)
         friends = fr; incoming = inc; sent = sn; blocked = bl
+        noteFriendCount(fr.count)
         // Anything cached about them from before the block goes too.
         for id in bl { forgetBlockedPerson(id) }
         // No feed and no reactions any more (Melvin, 2026-09-29). Posting was
@@ -759,6 +784,7 @@ final class CommunityModel: ObservableObject {
         // Meditating together (2026-10-18 review): the next person to use the
         // phone never sees the last one's goals, badge or "Counted for".
         goals = []
+        goalsLoaded = false
         nudgesToMe = []
         nudgedToday = []
         freshlyAccepted = []
@@ -814,6 +840,9 @@ final class CommunityModel: ObservableObject {
     /// later launch until one run finishes clean.
     func deleteAccountData() async {
         forgetThisPerson()
+        FriendsMemory.forget()
+        friendFacts = AwardEngine.SocialFacts()
+        togetherBonus = 0
         guard FeatureFlags.friends else { return }
         UserDefaults.standard.set(true, forKey: Self.pendingDeletionKey)
         // No store yet this launch (iCloud unavailable, or not loaded): the

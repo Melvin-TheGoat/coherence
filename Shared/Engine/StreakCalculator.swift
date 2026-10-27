@@ -68,6 +68,24 @@ enum StreakCalculator {
         return runs
     }
 
+    /// Whether the streak alive on `today` ends at midnight unless `today`
+    /// is practised: nothing yet today, a streak to lose, and no rest day to
+    /// carry it, because yesterday already is one or one was taken in the
+    /// last `restDaySpacing` days. On a night a rest day can still bridge,
+    /// missing today costs nothing until tomorrow night, so this is false.
+    /// The streak saver reminder fires on exactly these nights (Melvin,
+    /// 2026-10-27).
+    static func endsTonight(from sessionDates: [Date], today: Date = Date(),
+                            calendar: Calendar = .current) -> Bool {
+        let todayStart = calendar.startOfDay(for: today)
+        guard !sessionDates.contains(where: { calendar.startOfDay(for: $0) == todayStart }) else { return false }
+        let s = streak(from: sessionDates, today: today, calendar: calendar)
+        guard s.current > 0 else { return false }
+        if s.restDayUsed { return true }
+        guard let last = runs(from: sessionDates, calendar: calendar).last else { return false }
+        return !restAvailable(on: todayStart, after: last.restDays, calendar: calendar)
+    }
+
     /// Returns the current and longest streaks.
     ///
     /// - `current`: practised days in the run that is still alive. Alive

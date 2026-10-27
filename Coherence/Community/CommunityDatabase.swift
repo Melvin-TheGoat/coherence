@@ -259,6 +259,11 @@ final class CloudKitCommunityDatabase: CommunityDatabase {
             sub("goal-cheer", type: CommunityType.nudge,
                 predicate: NSPredicate(format: "to == %@ AND kind == %@", ref, "cheer"),
                 key: "GOAL_CHEER_ALERT"),
+            // A week finished together, told by the friend who finished it
+            // second (2026-10-27). The same type and indexes as a nudge.
+            sub("goal-week", type: CommunityType.nudge,
+                predicate: NSPredicate(format: "to == %@ AND kind == %@", ref, "week"),
+                key: "GOAL_WEEK_ALERT"),
         ]
         do {
             _ = try await db.modifySubscriptions(saving: subs, deleting: [])

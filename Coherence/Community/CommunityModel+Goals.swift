@@ -57,6 +57,7 @@ extension CommunityModel {
                 nudged.insert(goal.partner)
             }
             nudgedToday = nudged
+            goalsLoaded = true
             try? await cache(names: Set(goals.map(\.partner) + ns.map(\.from)))
         } catch {
             // Leaves the last good goals on screen.
@@ -95,6 +96,9 @@ extension CommunityModel {
         guard !defaults.bool(forKey: Self.publishingPausedKey),
               !defaults.bool(forKey: Self.pendingDeletionKey) else { return }
         let sessions = goalSessions()
+        // A week finished is noticed here, after every load and every
+        // session landing, whether or not anything new needed publishing.
+        defer { noteFinishedWeeks() }
         for goal in goals where goal.state == .active || goal.state == .waitingForThem {
             let since = goal.startDay ?? DayKey.key(goal.createdAt)
             let days = GoalDay.qualifying(from: sessions, since: since)
@@ -182,6 +186,142 @@ extension CommunityModel {
             nudgedToday.insert(goal.partner)
             return true
         } catch { errorText = Self.plain(error); return false }
+    }
+
+    // MARK: Friends awards and weeks finished together (2026-10-27)
+    //
+    // Melvin: "nothing happened when aziz and i just finished a full week
+    // together. no notification no points no awards no nothing." What this
+    // phone sees of Friends goes into `FriendsLedger` (UserDefaults, this
+    // phone only) the first time it is seen, so the awards, the points and
+    // the history last even when a friend or a goal is gone.
+    //
+    // Who hears about a finished week, and how:
+    // - Whoever did their share second (`iFinishedLast`) finished it, so
+    //   their phone tells the other one: a `week` record, which the other's
+    //   subscription turns into a push. The same day breaks the tie by
+    //   record name, so exactly one phone sends it.
+    // - The one who finished it is in the app at that moment, or a Watch
+    //   session landed with 808 in the background: the reward screen says it
+    //   ("Week done with Aziz"), or, in the background, a local notification.
+    // - The other gets the push; when they next open 808 the week is filed
+    //   with no second notification, and any award it earned announces.
+    // - The first look after updating files old weeks quietly (no unlock
+    //   screens for things done months ago), but a week finished today or
+    //   yesterday is still celebrated.
+
+    /// The friends list as just loaded: the friend-count awards.
+    func noteFriendCount(_ count: Int) {
+        guard let me = myID else { return }
+        var ledger = FriendsMemory.load()
+        ledger.claim(for: me)
+        // Friends made before this build are history, not news.
+        if ledger.observe(friendCount: count) { silence(ledger) { $0.hasPrefix("friends") } }
+        save(ledger)
+    }
+
+    /// No profile yet, so no goals: any goal from here on is news.
+    func notePastGoalsQuietly() {
+        guard let me = myID else { return }
+        var ledger = FriendsMemory.load()
+        ledger.claim(for: me)
+        guard !ledger.goalsSeeded else { return }
+        _ = ledger.observe(goalRunning: false, finished: [], celebrateFrom: todayKey)
+        save(ledger)
+    }
+
+    /// Files every week finished together that this phone has not seen,
+    /// tells the friend when I finished it, and returns the new ones. My
+    /// days come from the sessions on this phone, which are fresher than
+    /// the copy on my goal record until it is published.
+    @discardableResult
+    func noteFinishedWeeks() -> [TogetherWeek] {
+        guard goalsLoaded, let me = myID else { return [] }
+        var ledger = FriendsMemory.load()
+        ledger.claim(for: me)
+        let today = todayKey
+        let sessions = goalSessions?() ?? []
+        var finished: [TogetherWeek] = []
+        var finishedByMe = Set<String>()
+        for goal in activeGoals {
+            let mine = GoalDay.qualifying(from: sessions, since: goal.startDay ?? DayKey.key(goal.createdAt))
+            for w in goal.weekRecords(today: today, myDays: mine) {
+                guard let day = w.finishedDay else { continue }
+                let week = TogetherWeek(goalID: goal.id, partner: goal.partner,
+                                        partnerName: shortName(goal.partner), index: w.index,
+                                        first: w.first, last: w.last, target: goal.target,
+                                        completedDay: day, seenAt: Date())
+                finished.append(week)
+                if w.iFinishedLast(me: me, partner: goal.partner) { finishedByMe.insert(week.id) }
+            }
+        }
+        let firstLook = !ledger.goalsSeeded
+        let yesterday = DayKey.adding(-1, to: today)
+        let (fresh, _) = ledger.observe(goalRunning: !activeGoals.isEmpty, finished: finished,
+                                        celebrateFrom: yesterday)
+        if firstLook {
+            // Silence what the quietly filed weeks earned, and a goal that
+            // was already running; a week from today or yesterday still
+            // announces.
+            var quietOnly = ledger
+            quietOnly.weeks.removeAll { w in fresh.contains { $0.id == w.id } }
+            silence(quietOnly) { $0 == "goalStarted" || $0.hasPrefix("together") }
+        }
+        save(ledger)
+        let paused = UserDefaults.standard.bool(forKey: Self.publishingPausedKey)
+        for week in fresh where finishedByMe.contains(week.id) && week.completedDay >= yesterday && !paused {
+            tell(week)
+        }
+        return fresh
+    }
+
+    /// The friends whose week this session finished, for the reward
+    /// screen: weeks finished on the session's own day, seen since a little
+    /// before it ended.
+    func weeksFinished(bySessionStartedAt start: Date, endedAt end: Date) -> [TogetherWeek] {
+        let day = DayKey.key(start)
+        return FriendsMemory.load().weeks.filter {
+            $0.completedDay == day && $0.seenAt >= end.addingTimeInterval(-600) && !rewardAnnounced.contains($0.id)
+        }
+    }
+
+    /// My phone finished the week: their push, and mine. With 808 on
+    /// screen the reward screen usually says it; a banner follows a few
+    /// seconds later only if no reward did (the friend's days arrived after
+    /// the reward was built, or the week was seen on opening the app).
+    private func tell(_ week: TogetherWeek) {
+        if let store {
+            let name = myAlertName
+            Task { try? await store.announceWeek(to: week.partner, first: week.first, myName: name) }
+        }
+        guard UIApplication.shared.applicationState == .active else { FriendsWeekNotice.post(week); return }
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(6))
+            // A cancelled sleep throws and `try?` swallows it (CLAUDE.md).
+            guard !Task.isCancelled, !rewardAnnounced.contains(week.id) else { return }
+            FriendsWeekNotice.post(week)
+        }
+    }
+
+    /// Marks the Friends awards `ledger` already earns as announced, so a
+    /// first look backfills without a run of unlock screens.
+    private func silence(_ ledger: FriendsLedger, _ wanted: (String) -> Bool) {
+        for earned in AwardEngine.evaluate(sessions: [], accountCreatedAt: nil, social: ledger.facts)
+        where earned.isEarned && wanted(earned.award.id) {
+            AwardsInbox.markAnnounced(earned.award.id)
+        }
+    }
+
+    private func save(_ ledger: FriendsLedger) {
+        FriendsMemory.save(ledger)
+        let facts = ledger.facts
+        if friendFacts != facts { friendFacts = facts }
+        if togetherBonus != ledger.bonusPoints { togetherBonus = ledger.bonusPoints }
+    }
+
+    /// The weeks finished with one friend, newest first, for their goal's page.
+    func weeksTogether(with friend: String) -> [TogetherWeek] {
+        FriendsMemory.load().weeks.filter { $0.partner == friend }.sorted { $0.first > $1.first }
     }
 
     // MARK: The reward screen

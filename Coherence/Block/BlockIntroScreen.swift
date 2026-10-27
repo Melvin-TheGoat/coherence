@@ -24,7 +24,7 @@ struct BlockIntroScreen: View {
         Row(icon: "apps.iphone", title: "You pick the apps.",
             detail: "Whatever pulls you in. The list stays on your phone."),
         Row(icon: "sun.max", title: "All day, until you meditate.",
-            detail: "A short session opens them for the rest of the day."),
+            detail: "\(BlockCopy.length) of meditating opens them for the rest of the day."),
         Row(icon: "hand.raised", title: "Switch it off any time.",
             detail: "It lives on the Block tab, beside Home."),
     ]

@@ -351,6 +351,8 @@ struct ContentView: View {
         }
         .onAppear { readLandedSession(); readDetailsPrompt() }
         .onChange(of: prefsRows.compactMap(\.evidenceGrantSince).min()) { _, _ in refreshAwards() }
+        // A friend added, a goal started, a week finished (2026-10-27).
+        .onChange(of: community.friendFacts) { _, _ in refreshAwards() }
         #if DEBUG
         .fullScreenCover(item: Binding(get: { sitPreviewElapsed.map { SitPreview(elapsed: $0) } },
                                        set: { _ in sitPreviewElapsed = nil })) { preview in
@@ -526,13 +528,18 @@ struct ContentView: View {
                 }
                 // And the rating ask after it, as after a real one.
                 ratingDue = true
+                // PREVIEW_WEEKDONE=Aziz: the "Week done with" line, and its points.
+                let weekDone = (ProcessInfo.processInfo.environment["PREVIEW_WEEKDONE"] ?? "")
+                    .split(separator: ",").map(String.init)
                 sheet = .reward(SessionReward(id: UUID(), seconds: 18 * 60, streakBefore: 4, streakAfter: 5,
-                                              points: 18, bankBefore: 124,
+                                              points: 18 + weekDone.count * FriendsLedger.pointsPerWeek,
+                                              bankBefore: 124,
                                               glowBefore: parts.first ?? OttoAura.startLevel,
                                               glowAfter: parts.count > 1 ? parts[1] : 50,
                                               // PREVIEW_COUNTED=Ana,Daniel: the "Counted for" line.
                                               countedFor: (ProcessInfo.processInfo.environment["PREVIEW_COUNTED"] ?? "")
-                                                  .split(separator: ",").map(String.init)))
+                                                  .split(separator: ",").map(String.init),
+                                              weekDoneWith: weekDone))
             }
             // PREVIEW_AURA=<from>:<to> replays a landed session's glow on
             // Home, without waiting a day for a real one to earn it.
@@ -1197,9 +1204,22 @@ struct ContentView: View {
         // balance is floored at zero, so after a deleted session paid for a
         // hat the bank can gain less than the session earned; the points
         // shown are then what actually reached it.
-        let bankBefore = OttoPoints.balance(sessions: sessions.filter { $0.id != id }, ownedHatIDs: owned)
-        let bankAfter = OttoPoints.balance(sessions: sessions, ownedHatIDs: owned)
-        let earned = landed.isLogged ? 0 : landed.durationSec / 60
+        //
+        // A week this session finished with a friend is filed now, from the
+        // sessions on this phone, so the reward says it and pays its points
+        // (Melvin, 2026-10-27: "nothing happened when aziz and i just
+        // finished a full week together").
+        community.noteFinishedWeeks()
+        let landedEnd = landed.startedAt.addingTimeInterval(TimeInterval(landed.durationSec))
+        let weeksDone = landed.isLogged ? []
+            : community.weeksFinished(bySessionStartedAt: landed.startedAt, endedAt: landedEnd)
+        community.rewardAnnounced.formUnion(weeksDone.map(\.id))
+        let weekPoints = weeksDone.count * FriendsLedger.pointsPerWeek
+        let bonus = community.togetherBonus
+        let bankBefore = OttoPoints.balance(sessions: sessions.filter { $0.id != id }, ownedHatIDs: owned,
+                                            bonus: bonus - weekPoints)
+        let bankAfter = OttoPoints.balance(sessions: sessions, ownedHatIDs: owned, bonus: bonus)
+        let earned = (landed.isLogged ? 0 : landed.durationSec / 60) + weekPoints
         let points = bankBefore + earned == bankAfter ? earned : bankAfter - bankBefore
         let reward = SessionReward(
             id: id,
@@ -1212,7 +1232,8 @@ struct ContentView: View {
             // "Counted for Ana and Daniel": one session counts for every
             // shared goal (Aziz, 2026-10-14).
             countedFor: community.countedFor(seconds: landed.durationSec, logged: landed.isLogged,
-                                              startedAt: landed.startedAt))
+                                              startedAt: landed.startedAt),
+            weekDoneWith: weeksDone.map(\.partnerName))
         if sheet == nil { sheet = .reward(reward) } else { pendingSheet = .reward(reward) }
     }
 
@@ -1309,7 +1330,8 @@ struct ContentView: View {
             sessions: AwardFacts.build(sessions: sessions, stats: allStats,
                                        reflections: reflections, photos: photos),
             accountCreatedAt: users.first?.createdAt,
-            friendBroughtAt: prefsRows.compactMap(\.evidenceGrantSince).min())
+            friendBroughtAt: prefsRows.compactMap(\.evidenceGrantSince).min(),
+            social: community.friendFacts)
             .filter { !FeatureFlags.hiddenAwardIDs.contains($0.award.id) }
 
         // First run swallows everything already earned. Melvin and Aziz have

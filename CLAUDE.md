@@ -3275,7 +3275,8 @@ stays, as a feature, not the headline.
   replaces it in Swift.
 - **`mockups/block-v1.html` is APPROVED (2026-09-22)**, with five decisions
   recorded in `CONSISTENCY.md` > Decided: a finished session releases the
-  apps for the rest of THAT WINDOW, not the day; "Not now" costs glow only
+  apps for the rest of THAT WINDOW, not the day (REVERSED 2026-10-27: the
+  rest of the day, see "BLOCK IS ONCE A DAY"); "Not now" costs glow only
   when the window then passes with no session, in proportion to its length
   (see the aura section); Strict ships in v1; Block is paid; **the default
   blocker is Mindful day**, the picked apps held all day until you meditate,
@@ -4527,6 +4528,9 @@ a sent request, the same `model.remove` a person's page already used).
   deleted.
 
 ## BLOCK HAS NO STRICTNESS AND NO PASS LIMIT; FIVE MINUTES OPENS THE APPS (2026-09-22, Aziz)
+
+**The five minutes is superseded: ONE minute since 2026-10-27, see "BLOCK
+IS ONCE A DAY, AND ONE MINUTE OPENS IT".** The rest of this section stands.
 
 "get rid of the passes and the intensity and the when otto lets you in
 thing. also the minimum length for a session that open your apps is 5
@@ -7352,6 +7356,11 @@ session earns coins 💰", "so I can buy Otto new hats 🎩", and the end card
 
 ## NO COPY MENTIONS FIVE MINUTES; IT SAYS "MEDITATE FIRST" (2026-10-06, Aziz)
 
+**REVERSED 2026-10-27 (Melvin): the length is said again, now that it is
+one minute, always through `BlockCopy`** ("it should specify somewhere").
+See "BLOCK IS ONCE A DAY, AND ONE MINUTE OPENS IT". "Meditate first" lines
+that never named a length are fine as they are.
+
 "stop saying the 5 minutes thing ... just say meditate first." The rule
 (`Blocker.sessionMinutes = 5` opens the apps) is unchanged; only the words
 stopped naming it. Swept: the blocker lines, Otto's screens (standing, still
@@ -8480,3 +8489,97 @@ This supersedes the ladder parts of "1.1 DECISIONS AFTER THE AUDIT".
   10.7% by day 35). Compare the next four weeks against it.
 - Not on the report's public page: retention and refunds by plan length.
   They are in the 330-page PDF; ask for it before reopening yearly only.
+
+## BLOCK IS ONCE A DAY, AND ONE MINUTE OPENS IT (2026-10-27, Melvin, ships in 1.4.1)
+
+Two reports from members. Apps held 6 pm to 11 pm stayed held after a
+session that morning, and a member meditated for a minute and the apps
+stayed held ("I think it needs to be 5 minutes ... which btw i think it
+should be 1 minute ... and it should specify somewhere"). The member had
+read "Sessions count from one minute" on the too-short screen.
+
+- **One session a day opens every blocker for the rest of that day**
+  (`BlockRules.recordSession`): the window holding the session, and every
+  window opening on the day the session started or ended that has not
+  closed yet. So a 9 am session means a 6 pm window never holds. **A window
+  that already closed is left alone**, so a "Not now" in it still prices
+  Otto's glow; a later session must not rewrite that. The Block tab card
+  says "Open today, you meditated" for a window opened ahead
+  (`BlockRules.openedAheadToday`). Deleting the session takes all of its
+  openings back (`forgetReleases` matches them by the session's end).
+- **`Blocker.sessionMinutes = 1`**, which is `SessionStore.minDurationSec`,
+  so any session 808 keeps opens the apps. Timed sits still start at five
+  (`SessionLength.shortest`, Aziz); the test now only asks that a timed sit
+  always counts. **Shared goals stay at five minutes**
+  (`SharedGoal.minimumSeconds`): they were "kept equal to Block's bar" and
+  now are not, pending the founders' call.
+- **Say it through `BlockCopy`** (`Shared/Block/BlockModel.swift`), never
+  typed: the Block tab's line under its title ("Meditate for 1 minute and
+  your apps open for the rest of the day."), the sit screen while apps are
+  held, the Ready line, Otto's one-minute screen, the Block intro, the
+  onboarding app pick's "Done" line, and two shield subtitles.
+
+## THE STREAK SAVER: 11:30 PM, ONLY ON A NIGHT THE STREAK ENDS (2026-10-27, Melvin)
+
+"A streak reminder, like if you're about to lose your streak, maybe 30 mins
+before midnight or whenever it is you'll lose it."
+
+- `ReminderSlot.streakSaver` at 11:30 pm, topic streak, on exactly the
+  nights `StreakCalculator.endsTonight` says the streak ends at midnight:
+  nothing yet today, a streak of 2 or more, and no rest day to carry it
+  (yesterday already was one, or one was taken in the last seven days). On
+  a night a rest day can still bridge, missing today costs nothing until
+  tomorrow, so no saver; it comes tomorrow night instead.
+- **It takes the follow-up's place**, so a day still gets three at most,
+  the number Settings and the privacy policy state. Smart cadence only:
+  "Once a day" is a promise. It keeps the 90 minutes every reminder keeps
+  apart (`saverMinutes(anchor:)`), so a late own time or a 10:30 pm evening
+  one, which already says the streak is on the line, means no saver.
+- Still `.active`, never Time Sensitive (the reminders rule).
+
+## FRIENDS AWARDS, AND A WEEK FINISHED TOGETHER IS AN EVENT (2026-10-27, Melvin)
+
+"We need more awards ... added your first friend, 5 friends, 10 friends,
+etc. And then also nothing happened when aziz and i just finished a full
+week together. no notification no points no awards no nothing. There
+should be award for sure, points as well, a notification, and a history."
+
+- **`FriendsLedger`** (`Shared/Community/`, UserDefaults `friends.ledger.v1`,
+  this phone only, keyed to the Friends identity): the most friends ever
+  reached (with when each count was first reached), when a goal was first
+  seen running, and every week finished together. Written the first time
+  each is seen and kept, because the public database changes under us and
+  awards ask "did this ever happen". Cleared with the account
+  (`forgetPersonOnDevice`, `deleteAccountData`), kept on sign-out.
+- **The first look files the past quietly**: friends already made, a goal
+  already running and weeks finished before yesterday are marked announced
+  (`silence`), so updating does not open a run of unlock screens. A week
+  finished today or yesterday is still celebrated. A person with no profile
+  is seeded at zero, so their first friend is news.
+- **Awards, a new Friends group** (`Award.Group.friends`, shown last):
+  First friend, 5, 10, 25 friends; In it together (a goal started); First,
+  4 and 12 weeks together. Brought a friend moved into it. 66 awards now.
+- **Points: 50 per week finished** (`FriendsLedger.pointsPerWeek`), added to
+  every balance through `OttoPoints.balance(bonus:)`; `CommunityModel
+  .togetherBonus` is the published copy the Shop reads. A new phone
+  rebuilds what running goals still show; a week from a goal ended before
+  then is not recovered.
+- **Who hears about it** (`CommunityModel+Goals`, "Friends awards and weeks
+  finished together"): whoever did their share second finished the week
+  (`GoalPair.WeekRecord.iFinishedLast`, ties broken by record name so
+  exactly one phone sends), and their phone tells the other with a Nudge
+  record of kind `week` (`announceWeek`), which the other's new `goal-week`
+  subscription turns into a push (`GOAL_WEEK_ALERT`). No new record type or
+  field: `kind` is already queryable, so no Production deploy is needed.
+  The record's `day` is `0000-01-01` (`Nudge.weekRecordDay`) so builds
+  before 1.4.1, which read every Nudge as a nudge and show only recent
+  days, never show it. The finisher sees it on the reward screen ("Week
+  done with Aziz 🎉 +50 points", `WeekDone`), or as a local notification
+  (`FriendsWeekNotice`) when 808 is in the background or the friend's days
+  arrived after the reward was built. A session landing refreshes goals
+  first (`syncPracticeStats(force:)`) so the friend's latest days count.
+- **History**: "Weeks together" on the goal's page, every week newest
+  first with both counts, a check and "+50 points" on finished ones
+  (`GoalPair.weekRecords`).
+- DEBUG: `PREVIEW_WEEKDONE=Aziz` with `PREVIEW_REWARD` shows the reward
+  line; `PREVIEW_GOAL_WEEKS=<n>` starts the demo goal n weeks back.

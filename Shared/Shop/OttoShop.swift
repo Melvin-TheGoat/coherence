@@ -11,11 +11,11 @@ enum OttoShop {
     /// points), so a failed tap can never silently deduct anything.
     @discardableResult
     static func buy(_ hatID: String, prefs: Preferences, sessions: [Session],
-                    catalog: [HatCatalog.Item] = HatCatalog.all) -> Bool {
+                    catalog: [HatCatalog.Item] = HatCatalog.all, bonus: Int = 0) -> Bool {
         guard let item = HatCatalog.item(hatID) ?? catalog.first(where: { $0.id == hatID }) else { return false }
         var owned = prefs.ownedHatIDList
         guard !owned.contains(hatID) else { return false }
-        let balance = OttoPoints.balance(sessions: sessions, ownedHatIDs: owned, catalog: catalog)
+        let balance = OttoPoints.balance(sessions: sessions, ownedHatIDs: owned, catalog: catalog, bonus: bonus)
         guard balance >= item.price else { return false }
         owned.append(hatID)
         prefs.ownedHatIDList = owned

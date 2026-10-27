@@ -22,10 +22,11 @@ final class AwardEngineTests: XCTestCase {
 
     private func earned(_ facts: [AwardEngine.SessionFact],
                         created: Date? = Date(),
-                        friendBroughtAt: Date? = nil) -> [String: AwardEngine.Earned] {
+                        friendBroughtAt: Date? = nil,
+                        social: AwardEngine.SocialFacts = .init()) -> [String: AwardEngine.Earned] {
         Dictionary(uniqueKeysWithValues: AwardEngine
             .evaluate(sessions: facts, accountCreatedAt: created,
-                      friendBroughtAt: friendBroughtAt, calendar: cal)
+                      friendBroughtAt: friendBroughtAt, social: social, calendar: cal)
             .map { ($0.award.id, $0) })
     }
 
@@ -503,6 +504,36 @@ final class AwardEngineTests: XCTestCase {
         AwardsInbox.resetForPreview()
     }
 
+    // MARK: Friends (2026-10-27)
+
+    func test_friendAwardsCountTheMostFriendsEverReached() {
+        let t0 = Date(timeIntervalSince1970: 1_800_000_000)
+        let reached = (0..<6).map { t0.addingTimeInterval(Double($0) * 86_400) }
+        let a = earned([], social: .init(friendCountReached: reached))
+        XCTAssertEqual(a["friends1"]?.earnedAt, reached[0])
+        XCTAssertEqual(a["friends5"]?.earnedAt, reached[4], "the day the fifth friend arrived")
+        XCTAssertFalse(a["friends10"]!.isEarned)
+        XCTAssertEqual(a["friends10"]?.progressText, "6/10")
+    }
+
+    func test_weeksTogetherAndAGoalStarted() {
+        let t0 = Date(timeIntervalSince1970: 1_800_000_000)
+        let weeks = (0..<4).map { t0.addingTimeInterval(Double($0) * 7 * 86_400) }
+        let a = earned([], social: .init(goalStartedAt: t0, weeksTogether: weeks.reversed()))
+        XCTAssertEqual(a["goalStarted"]?.earnedAt, t0)
+        XCTAssertEqual(a["together1"]?.earnedAt, weeks[0], "sorted, whatever order they came in")
+        XCTAssertEqual(a["together4"]?.earnedAt, weeks[3])
+        XCTAssertEqual(a["together12"]?.progressText, "4/12")
+        XCTAssertFalse(earned([])["together1"]!.isEarned)
+    }
+
+    func test_everyFriendsAwardIsInTheFriendsGroup() {
+        for id in ["friendBrought", "friends1", "friends5", "friends10", "friends25",
+                   "goalStarted", "together1", "together4", "together12"] {
+            XCTAssertEqual(Award.award(id: id)?.group, .friends, id)
+        }
+    }
+
     // MARK: Catalog
 
     func test_catalogIsWellFormed() {
@@ -548,7 +579,11 @@ final class AwardEngineTests: XCTestCase {
         facts.append(day(-12, score: 0.8, minutes: 10, hasNote: true))
         facts.append(day(-11, score: 0.8, minutes: 10, hasPhoto: true))
 
-        let reachable = earned(facts, friendBroughtAt: Date())
+        // The Friends group reads what this phone has seen of Friends.
+        let social = AwardEngine.SocialFacts(friendCountReached: Array(repeating: Date(), count: 30),
+                                             goalStartedAt: Date(),
+                                             weeksTogether: Array(repeating: Date(), count: 12))
+        let reachable = earned(facts, friendBroughtAt: Date(), social: social)
         for award in Award.all {
             XCTAssertTrue(reachable[award.id]!.isEarned,
                           "\(award.id) cannot be earned by any history")

@@ -8,9 +8,9 @@ import Foundation
 /// tape as ∞ so nobody is made to choose a length.
 ///
 /// **Five minutes is the shortest timed session** (Aziz, 2026-09-22): the
-/// tape runs ∞, 5, 6, 7..., so sliding left past 5 lands on ∞. Five is also
-/// what opens Block's held apps (`Blocker.sessionMinutes`), so a timed sit
-/// always counts.
+/// tape runs ∞, 5, 6, 7..., so sliding left past 5 lands on ∞. Block's held
+/// apps open after one minute (`Blocker.sessionMinutes`, since 2026-10-27),
+/// so a timed sit always counts.
 ///
 /// Pure Foundation, so the rules are tested without a screen.
 enum SessionLength {

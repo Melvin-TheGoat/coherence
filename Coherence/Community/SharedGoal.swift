@@ -18,7 +18,8 @@ import Foundation
 /// - One session counts everywhere: every shared goal, the personal streak,
 ///   Otto's glow. Two sessions on one day are one day.
 /// - A day counts for a shared goal only through a session of 5 minutes or
-///   more (`minimumSeconds`, the same bar that opens Block's apps) that was
+///   more (`minimumSeconds`; it was Block's bar too until Block dropped to
+///   one minute on 2026-10-27, and goals stayed at five) that was
 ///   measured, not logged by hand: a typed-in session could fake one half of
 ///   a promise made to somebody else. Logged sessions still count for the
 ///   personal streak, as they always have.
@@ -28,8 +29,9 @@ import Foundation
 /// - Each person's days are THEIR local days, published as `yyyy-MM-dd` keys,
 ///   so a friend in another time zone is never judged by your clock.
 enum SharedGoal {
-    /// The shortest session that counts for a shared goal, in seconds.
-    /// Kept equal to `Blocker.sessionMinutes` (Block's bar) on purpose.
+    /// The shortest session that counts for a shared goal, in seconds. It
+    /// was kept equal to `Blocker.sessionMinutes`; Block went to one minute
+    /// on 2026-10-27 and this stayed at five, a promise made to a friend.
     static let minimumSeconds = 5 * 60
     static let targets = 1...7
     static let defaultTarget = 4
@@ -242,6 +244,58 @@ struct GoalPair: Identifiable, Equatable {
                       history: Array(results.suffix(8)), lastIsCurrent: true)
     }
 
+    /// One week of the goal, for the history on its page and for noticing a
+    /// week finished (2026-10-27).
+    struct WeekRecord: Equatable, Identifiable {
+        let index: Int
+        let first: String
+        let last: String
+        let mine: Int
+        let theirs: Int
+        let target: Int
+        /// The day each of us did our share (our `target`-th day that week),
+        /// nil until then.
+        let myDoneDay: String?
+        let theirDoneDay: String?
+        /// The week still running.
+        let isCurrent: Bool
+        var id: Int { index }
+        var bothDone: Bool { myDoneDay != nil && theirDoneDay != nil }
+        /// The day the second of us got there: when the week was finished.
+        var finishedDay: String? {
+            guard let a = myDoneDay, let b = theirDoneDay else { return nil }
+            return max(a, b)
+        }
+        /// Whether I was the second, so my phone is the one that tells them.
+        /// The same day breaks the tie by record name, so exactly one does.
+        func iFinishedLast(me: String, partner: String) -> Bool {
+            guard let a = myDoneDay, let b = theirDoneDay else { return false }
+            return a > b || (a == b && me < partner)
+        }
+    }
+
+    /// Every week from week one to the one running now, oldest first.
+    /// `myDays` can be handed in fresher than the goal's own copy (the
+    /// sessions on this phone, before they are published).
+    func weekRecords(today: String, myDays override: [GoalDay]? = nil) -> [WeekRecord] {
+        guard let start = startDay, let current = week(containing: today) else { return [] }
+        let mineAll = override ?? myDays
+        func doneDay(_ days: [GoalDay], _ first: String, _ last: String) -> String? {
+            let inWeek = Set(days.map(\.day).filter { $0 >= first && $0 <= last }).sorted()
+            return inWeek.count >= target ? inWeek[target - 1] : nil
+        }
+        return (0...current.index).map { k in
+            let first = DayKey.adding(k * 7, to: start), last = DayKey.adding(6, to: first)
+            return WeekRecord(index: k, first: first, last: last,
+                              mine: Self.count(mineAll, from: first, to: last),
+                              theirs: Self.count(theirDays, from: first, to: last),
+                              target: target,
+                              myDoneDay: doneDay(mineAll, first, last),
+                              theirDoneDay: doneDay(theirDays, first, last),
+                              isCurrent: k == current.index)
+        }
+    }
+
     /// Whether I may nudge them today. Never when it is not running, never
     /// when they have already meditated today, never twice a day
     /// (`alreadyNudged`), and only once I have meditated today or already
@@ -257,6 +311,18 @@ struct GoalPair: Identifiable, Equatable {
 
     enum NudgeState: Equatable {
         case ready, meditateFirst, alreadyNudged, theyMeditated, unavailable
+    }
+}
+
+/// The reward screen's line for a week this session finished together
+/// (2026-10-27): "Week done with Aziz 🎉 +50 points".
+enum WeekDone {
+    static func line(_ names: [String]) -> String? {
+        let names = names.filter { !$0.isEmpty }
+        guard !names.isEmpty else { return nil }
+        let who = names.count == 1 ? names[0]
+            : names.dropLast().joined(separator: ", ") + " and " + names[names.count - 1]
+        return "Week done with \(who) 🎉 +\(FriendsLedger.pointsPerWeek * names.count) points"
     }
 }
 

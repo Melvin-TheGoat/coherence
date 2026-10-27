@@ -48,10 +48,11 @@ on Home (built 2026-09-21). Tabs: Home, Block, the plus, Friends, Profile.
    not allowed to open an app. You tap the notification and 808 opens.
 5. Otto meets you with one of about twenty interventions (below). Every one
    ends in the same two doors:
-   - **"Okay, let's meditate"**: the session starts. Finishing it (five
-     minutes or longer, `Blocker.sessionMinutes`) releases the apps for the rest of that window, not the rest
-     of the day, so someone with a morning and an evening window meditates
-     in each. It also feeds Otto.
+   - **"Okay, let's meditate"**: the session starts. Finishing it (one
+     minute or longer since 2026-10-27, `Blocker.sessionMinutes`; it was
+     five) releases the apps for the rest of the day, every blocker, and a
+     session earlier in the day means a later window never holds. It also
+     feeds Otto.
    - **"Not now"**: Otto asks how long, 5, 10, 15, 30 or 60 minutes, and the
      apps open for that long. Then they are held again. There is no daily
      limit on it (Aziz, 2026-09-22).
@@ -222,8 +223,13 @@ minutes is the floor (Aziz, 2026-09-22).
 
 ## Decided (Melvin, 2026-09-22)
 
-1. **Meditating releases the apps for the rest of the window**, not the rest
-   of the day, in case someone wants to meditate twice a day.
+1. **REVERSED 2026-10-27 (Melvin): meditating releases the apps for the
+   rest of the DAY, every blocker, including windows that have not opened
+   yet.** "The app encourages you to meditate at least once every day, and
+   if you fail to do that then the blocking starts happening based on when
+   you wanted it to." It was the rest of the window, in case someone wanted
+   to meditate twice a day. A window that already closed is left alone, so
+   a "Not now" in it still prices Otto's glow (rule 2).
 2. **"Not now" costs Otto only if the window then passes without a
    meditation, in proportion to how long the apps were held** (Melvin's
    formula): glow lost = 20 × hours / 24. A skipped Mindful day costs 20,

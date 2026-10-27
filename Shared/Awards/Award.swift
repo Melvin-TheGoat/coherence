@@ -35,7 +35,7 @@ import Foundation
 public struct Award: Identifiable, Hashable {
 
     public enum Group: String, CaseIterable {
-        case beginning, consistency, depth, endurance, timeOfDay, variety, otto
+        case beginning, consistency, depth, endurance, timeOfDay, variety, otto, friends
 
         public var title: String {
             switch self {
@@ -46,6 +46,7 @@ public struct Award: Identifiable, Hashable {
             case .timeOfDay:   return "Time of day"
             case .variety:     return "Variety"
             case .otto:        return "Otto"
+            case .friends:     return "Friends"
             }
         }
     }
@@ -92,7 +93,7 @@ public struct Award: Identifiable, Hashable {
 
         Award(id: "friendBrought", title: "Brought a friend",
               blurb: "Someone you invited sat their first session.",
-              group: .beginning, face: .mark,
+              group: .friends, face: .mark,
               meaning: """
               You asked someone to sit with you, they said yes, and they sat. \
               Practice is easier to keep with company, and you gave someone \
@@ -359,7 +360,53 @@ public struct Award: Identifiable, Hashable {
               As bright as Otto gets. Nothing else to unlock in him after \
               this, just more days like the ones that got you here.
               """),
+
+        // MARK: Friends (2026-10-27, Melvin: "awards related to friend
+        // stuff, like added your first friend, 5 friends, 10 friends, etc.",
+        // and for a week finished together). Earned from what this phone has
+        // seen of Friends (`FriendsLedger`), since none of it is a session.
+
+        friends(1,  "First friend",        "Added your first friend."),
+        friends(5,  "Five friends",        "Five friends on 808."),
+        friends(10, "Ten friends",         "Ten friends on 808."),
+        friends(25, "Twenty five friends", "Twenty five friends on 808."),
+
+        Award(id: "goalStarted", title: "In it together",
+              blurb: "Started a weekly goal with a friend.",
+              group: .friends, face: .mark,
+              meaning: """
+              You and a friend each picked a number of days a week and agreed \
+              on it together. From here the weeks count for both of you.
+              """),
+
+        together(1,  "First week together",  "You and a friend both hit your weekly goal."),
+        together(4,  "Four weeks together",  "Four weeks finished with friends."),
+        together(12, "Twelve weeks together", "Twelve weeks finished with friends."),
     ]
+
+    private static func friends(_ n: Int, _ title: String, _ blurb: String) -> Award {
+        Award(id: "friends\(n)", title: title, blurb: blurb,
+              group: .friends, face: .number("\(n)", unit: n == 1 ? "friend" : "friends"),
+              meaning: n == 1 ? """
+              Someone to meditate alongside. You can see how often each other \
+              sits, nudge each other, and set a weekly goal together.
+              """ : """
+              \(n) people on 808 you can see, nudge and meditate alongside.
+              """)
+    }
+
+    /// Weeks two friends both finished, added up across every goal.
+    private static func together(_ n: Int, _ title: String, _ blurb: String) -> Award {
+        Award(id: "together\(n)", title: title, blurb: blurb,
+              group: .friends, face: .number("\(n)", unit: n == 1 ? "week" : "weeks"),
+              meaning: n == 1 ? """
+              A week where you and a friend both did what you said you would. \
+              Each of you counted on the other, and it held.
+              """ : """
+              \(n) weeks where you and a friend both did your share, across \
+              every goal you have had.
+              """)
+    }
 
     private static func streak(_ days: Int, _ title: String, _ blurb: String) -> Award {
         Award(id: "streak\(days)", title: title, blurb: blurb,

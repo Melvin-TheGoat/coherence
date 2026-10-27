@@ -344,7 +344,10 @@ enum DemoCommunity {
         // founders' names.
         if ProcessInfo.processInfo.environment["PREVIEW_GOALS"] != "none" {
             let today = DayKey.key(Date())
-            let start = DayKey.adding(-2, to: today)
+            // PREVIEW_GOAL_WEEKS=<n>: the goal began n weeks earlier, so the
+            // goal page's "Weeks together" has a history to show (2026-10-27).
+            let pastWeeks = Int(ProcessInfo.processInfo.environment["PREVIEW_GOAL_WEEKS"] ?? "") ?? 0
+            let start = DayKey.adding(-2 - 7 * pastWeeks, to: today)
             db.user = "_demo_me"
             let myName = shots ? (ProcessInfo.processInfo.environment["DEMO_NAME"] ?? "Maya") : "Aziz"
             let goal = try? await me.inviteGoal(to: CommunityNames.profile(user: "_demo_melvin"), target: 4, myName: myName)
@@ -352,8 +355,15 @@ enum DemoCommunity {
             if let goal, let pair = try? await melvin.goals(friends: [CommunityNames.profile(user: "_demo_me")])
                 .first(where: { $0.id == goal }) {
                 try? await melvin.acceptGoal(pair, today: start, myName: shots ? "Priya" : "Melvin")
-                try? await melvin.publishGoalDays(goal: goal, days: [
-                    GoalDay(day: start, minutes: 14), GoalDay(day: DayKey.adding(1, to: start), minutes: 22),
+                // Each past week: four days, except the second to last (two).
+                let past: [GoalDay] = (0..<pastWeeks).flatMap { w -> [GoalDay] in
+                    let first = DayKey.adding(7 * w, to: start)
+                    let count = w == pastWeeks - 2 ? 2 : 4
+                    return (0..<count).map { GoalDay(day: DayKey.adding($0, to: first), minutes: 12 + $0) }
+                }
+                let current = DayKey.adding(7 * pastWeeks, to: start)
+                try? await melvin.publishGoalDays(goal: goal, days: past + [
+                    GoalDay(day: current, minutes: 14), GoalDay(day: DayKey.adding(1, to: current), minutes: 22),
                     GoalDay(day: today, minutes: 11),
                 ])
             }
