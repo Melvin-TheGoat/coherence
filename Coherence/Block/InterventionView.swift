@@ -941,10 +941,14 @@ private struct LinedNote<Peek: View>: View {
                 ForEach(lines, id: \.self) { line in
                     Text(line)
                         .font(.custom("MarkerFelt-Wide", size: 25))
+                        // The app's root `.fontDesign(.rounded)` replaces even
+                        // a custom font on iOS 26; every Marker Felt use needs this.
+                        .fontDesign(nil)
                         .frame(height: Self.rule, alignment: .bottom)
                 }
                 Text(signature)
                     .font(.custom("MarkerFelt-Wide", size: 25))
+                    .fontDesign(nil)
                     .frame(height: Self.rule, alignment: .bottom)
                     .frame(maxWidth: .infinity, alignment: .trailing)
                     .padding(.trailing, 28)
@@ -1020,6 +1024,7 @@ private struct StickyNote: View {
         ZStack(alignment: .bottomTrailing) {
             Text(text)
                 .font(.custom("MarkerFelt-Wide", size: 34))
+                .fontDesign(nil)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(AppColor.textPrimary)
                 .frame(width: 250, height: 250)
@@ -1086,6 +1091,7 @@ private struct SignScene: View {
         ValleyStage(pose: "OttoWave", line: "", doors: doors) { size, ottoTop in
             Text("Meditate\nfirst :)")
                 .font(.custom("MarkerFelt-Wide", size: 28))
+                .fontDesign(nil)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(AppColor.textPrimary)
                 .padding(.horizontal, 22)
