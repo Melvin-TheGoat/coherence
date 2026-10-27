@@ -327,8 +327,10 @@ The order before that (Otto, Ready, week, Friends, Watch, awards, Guide,
 Record one) was superseded earlier the same day. Guide and Record one stay in
 the description.
 
-**Apple Watch (required, we ship a Watch app)**: `appstore/watch/01-begin.png`
-(start screen) and `02-measuring.png` (a live session), both 422 x 514, the
+**Apple Watch (required, we ship a Watch app)**: four, retaken 2026-10-27 in
+the valley design: `appstore/watch/01-begin.png` (start screen, 10 min,
+Silence), `02-length.png` (the length tape), `03-sound.png` (the sound list)
+and `04-measuring.png` (a timed session, 6:07 left), all 422 x 514, the
 Apple Watch Ultra 3 size, which is the largest App Store Connect takes. The
 watchOS simulator will not override its clock, so the corner shows whatever
 time they were captured at.

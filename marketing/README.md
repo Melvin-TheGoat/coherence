@@ -136,9 +136,14 @@ done
 
 ## `appstore/watch/`
 
-The two Apple Watch screenshots, **422 x 514**, the Apple Watch Ultra 3 size
-(the largest App Store Connect takes): `01-begin` (start screen) and
-`02-measuring` (a live session). No frame. Captured from a watchOS simulator
+The four Apple Watch screenshots, **422 x 514**, the Apple Watch Ultra 3 size
+(the largest App Store Connect takes): `01-begin` (start screen), `02-length`,
+`03-sound` and `04-measuring` (a timed session). No frame. Retaken 2026-10-27
+with `PREVIEW_WATCH_STAGE=6` and the Watch's length set to 10 minutes
+(`simctl spawn <watch> defaults write com.lockout.meditate808.watchkitapp
+watch.lengthSec.v1 -int 600`); `=length`, `=sound` and `=liveTimed` open the
+other three. Install the Watch app from the NEWEST DerivedData folder: there
+are many `Coherence-*` folders and an old one installs the black design. Captured from a watchOS simulator
 (`xcrun simctl create ... "Apple Watch Ultra 3 (49mm)"`), standalone, with the
 Watch app built Debug and launched with `SIMCTL_CHILD_PREVIEW_WATCH_SCREEN=start`
 or `=live`: that hook skips the HealthKit prompt and the phone's onboarding flag

@@ -1140,7 +1140,9 @@ friends at once. Behind `FeatureFlags.friends`. Never run on real iCloud yet.
 - [ ] **App Store Connect: replace the two Apple Watch screenshots** (still
       the 1.0 black Watch screens) with the valley Watch screens, in the next
       version (`PREVIEW_WATCH_SCREEN`, Watch simulator). Anything that links
-      straight to the App Store can still preview them.
+      straight to the App Store can still preview them. **Made 2026-10-27**:
+      four in `marketing/appstore/watch/` (and `~/Downloads/808-watch-1.4.1/`);
+      upload them to 1.4.1 in listing order, one at a time.
 - [x] (2026-10-18, approved by Melvin) **Privacy policy (both copies), the founders' wording:** a person's
       invite code is public like their username, and anyone who has it can
       see their name and @username. Who joined with whose code is public like
