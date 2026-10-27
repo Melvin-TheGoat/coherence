@@ -1726,7 +1726,10 @@ So the release branch is **`social-1.1`**, not `mvp`: Friends ON
   first "No Accounts" was timing, not a missing certificate;
   `-allowProvisioningUpdates` minted the distribution cert. **Never pipe
   the upload through `head`:** it closes the pipe at N lines and can kill
-  xcodebuild mid-upload. Log to a file and grep after.
+  xcodebuild mid-upload. Log to a file and grep after. **Run the upload
+  outside Claude Code's sandbox**: inside it, 1.4.1's upload hung at
+  "Sending SPI analysis to App Store Connect" with no connection open
+  (2026-10-27); the same command unsandboxed finished in four minutes.
 
 ## OTTO IS RIGGED IN RIVE (2026-09-20): `Coherence/Otto/Otto.riv`
 
