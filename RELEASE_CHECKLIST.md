@@ -944,7 +944,13 @@ Archive from `mvp` at or after the commit that added `FeatureFlags`. It ships:
 The 1.0.2 build uploaded earlier (202609141719) predates all of this, so
 this release needs a NEW archive.
 
-## OPEN for 1.4.1 (2026-10-26): the paywall rebuild
+## OPEN for 1.4.1 (2026-10-26): the paywall rebuild, the founders' note, five new hats
+
+One release, merged on `block` (Melvin: 1.4.1, "not big enough to call 1.5"). It also carries
+the five new hats (Baseball Cap, Sombrero, Top Hat, Tiara, the glass-dome Astronaut
+Helmet) and the six older hats' glow fix, which need nothing at submission beyond What's New.
+
+### The paywall rebuild
 
 Yearly preselected over Monthly, Lifetime off the paywall, the half-price
 banner in place of the two rung screens, 7-day trials. Prices are UNCHANGED.
@@ -969,6 +975,34 @@ banner in place of the two rung screens, 7-day trials. Prices are UNCHANGED.
 - [ ] **PostHog:** `offer_viewed` now carries `trigger` (`no_link` or
       `cancelled_sheet`); the trial rung no longer fires. Rebuild any tile
       that funnels through `rung = trial`.
+
+### The founders' note and the 1.4 screens' analytics
+
+From branch `posthog-1.4-screens`. Two things:
+
+- The founders' note (`FoundersNote`, `FoundersNoteView`): Melvin and Aziz's
+  thanks, "Write a review" (the App Store review page) and "Tell us anything"
+  (an email to support@meditate808.com), once after a member's second session,
+  back once a week later on "Maybe later", never the same day as Apple's rating
+  sheet. No new data leaves the phone (two event names, `founders_note_shown`
+  and `founders_note_answered`, carrying only which button), so the privacy
+  manifest, policy and App Privacy label do not change.
+- Analytics for Meditating together, profile pictures and invite codes (the
+  events in CLAUDE.md, "1.4'S FRIENDS SCREENS REACH POSTHOG"). Same: no privacy
+  change.
+
+- [ ] **support@meditate808.com is read.** "Tell us anything" sends people
+      there and the note promises "we'll look into it".
+- [ ] **On a phone:** after a second session the note opens on Home once the
+      reward and the session's page close; "Write a review" lands on the App
+      Store's review page; "Tell us anything" opens Mail to support; "Maybe
+      later" brings it back a week later. Checked on the simulator only
+      (iPhone 17 and SE sizes), where the App Store link cannot open.
+
+### Both
+
+- [ ] **Review notes recounted after the merge**: under 4,000 counting line
+      breaks twice (`marketing/APP_STORE_PASTE.md`).
 - [ ] New archive (this is on `block`, after 1.4).
 
 ## OPEN for 1.4 (2026-10-18): Meditating together, invite codes, profile pictures

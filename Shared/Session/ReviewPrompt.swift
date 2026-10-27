@@ -44,6 +44,11 @@ enum ReviewPrompt {
     static let laterGapSec: TimeInterval = 120 * 24 * 3600
     static let weekStreakDays = 7
 
+    /// The App Store's write-a-review page, for a button a person taps
+    /// (Settings, the founders' note). Apple's own sheet is for asks the
+    /// app makes unprompted.
+    static let writeReviewURL = URL(string: "https://apps.apple.com/app/id6806785308?action=write-review")!
+
     static let lastAskedKey = "reviewPrompt.lastAskedAt"
     static let askedMomentsKey = "reviewPrompt.askedMoments.v1"
 

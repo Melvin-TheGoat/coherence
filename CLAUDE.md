@@ -2227,6 +2227,38 @@ so nobody reads the numbers the old way again.
   covered. The token is renewed weekly by the script. Not yet run against
   the real account (no Meta app existed on 2026-10-15).
 
+## THE FOUNDERS' NOTE ASKS FOR A REVIEW (2026-10-26, Melvin, ships in 1.4.1)
+
+"I want our app to have more reviews." Emailing subscribers is impossible:
+Apple shares no subscriber emails, Sign in with Apple asks only for a name,
+and the privacy policy promises no marketing email without asking first. So
+Melvin's message lives in the app. PostHog showed why reviews were few: Apple's
+sheet had been requested 6 times since 1.4 and 5 in the two months before.
+
+- **Direction A of the "Founders' note" canvas**
+  (https://claude.ai/artifact/A8GjfaMi2aAozXfZvhTvRc): a cream sheet over a
+  dimmed Home, Otto between "M" and "A", the thanks on a sand card signed in
+  Marker Felt, then "Write a review" (green), "Tell us anything" (mail to
+  support) and "Maybe later". Melvin chose it over B, Otto handing over a
+  handwritten letter, because the handwriting was harder to read.
+- **When (`FoundersNote`, Shared, tested):** after a session the person ran,
+  once they have run two; after the session's page and Apple's rating sheet in
+  `QuietHomeHooks`; never the same day as Apple's sheet; "Maybe later" or a tap
+  outside brings it back ONCE, a week later; a review or a message ends it.
+  Never conditional on how the session went (the same rule as `ReviewPrompt`).
+- **Home's covers are full screen**, so the note is a full-screen cover with
+  `presentationBackground(.clear)` drawing its own dim. **A fade started in
+  `onAppear` never drew** inside a presenting cover; it starts from `.task`
+  after 50 ms.
+- **THE APP-WIDE `.fontDesign(.rounded)` REPLACES CUSTOM FONTS on iOS 26.**
+  `Font.custom("Noteworthy-Bold")` and `"MarkerFelt-Wide"` both drew as SF
+  Rounded until the signature got `.fontDesign(nil)`. **Otto's Marker Felt
+  notes (`InterventionView`, the fridge note and three more) fall back the
+  same way today** and need the same one line.
+- `ReviewPrompt.writeReviewURL` is the one review link (Settings uses it too).
+  `PREVIEW_FOUNDERS_NOTE=1` (DEBUG) opens the note over Home; set Friends test
+  mode off first on a fresh simulator or "Brought a friend" covers it.
+
 ## 1.4'S FRIENDS SCREENS REACH POSTHOG (2026-10-23, Melvin, branch `posthog-1.4-screens`)
 
 "Integrate the new screen pages with posthog." Meditating together, profile

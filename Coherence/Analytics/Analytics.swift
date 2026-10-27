@@ -89,6 +89,10 @@ enum Analytics {
         case ratingPrompted(placement: String)
         /// "Rate 808 on the App Store" in Settings opened the review page.
         case rateLinkOpened
+        /// The founders' note opened on Home (`FoundersNote`).
+        case foundersNoteShown
+        /// `answer`: "review", "feedback", "later", "dismissed".
+        case foundersNoteAnswered(answer: String)
 
         // Monetization
         case paywallViewed(placement: String)
@@ -240,6 +244,8 @@ enum Analytics {
             case .resultMissing: "result_missing"
             case .ratingPrompted: "rating_prompted"
             case .rateLinkOpened: "rate_link_opened"
+            case .foundersNoteShown: "founders_note_shown"
+            case .foundersNoteAnswered: "founders_note_answered"
             case .paywallViewed: "paywall_viewed"
             case .paywallDismissed: "paywall_dismissed"
             case .planSelected: "plan_selected"
@@ -354,7 +360,7 @@ enum Analytics {
             case .pictureChosen(let source, let placement, let preset):
                 preset.map { ["source": source, "placement": placement, "preset": $0] }
                     ?? ["source": source, "placement": placement]
-            case .picturePromptAnswered(let answer): ["answer": answer]
+            case .picturePromptAnswered(let answer), .foundersNoteAnswered(let answer): ["answer": answer]
             case .inviteOpened(let source): ["source": source]
             case .inviteCodeLookedUp(let outcome, let source): ["outcome": outcome, "source": source]
             default: [:]

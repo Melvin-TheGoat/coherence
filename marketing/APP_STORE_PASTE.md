@@ -43,13 +43,13 @@ copies, because copies drift and the drifted one is the one that gets pasted.
 Report, Block and Requests live instead of naming a profile to find
 (`RELEASE_CHECKLIST.md`, item R1).
 
-**The description's subscription block and the review notes say "3 day free
-trial" for the ladder plans only.** That must be what App Store Connect
-holds on `monthlytrial`, `yearlytrial` and `monthly50`, and `monthly` and
-`yearly` must carry
-NO introductory offer (`RELEASE_CHECKLIST.md`, step 0 and R25). If Connect
-ends up with any other trial length, change every "3 day" in this file before
-pasting. What's New and the promotional text mention no trial, on purpose: the
+**Since 1.4.1 the description's subscription block and the review notes say
+"7 day free trial", for the half-price plan only.** That must be what App
+Store Connect holds on `monthly50` (and, to match, on the dormant
+`monthlytrial` and `yearlytrial`), and `monthly` and `yearly` must carry NO
+introductory offer (`RELEASE_CHECKLIST.md`, OPEN for 1.4.1). If Connect ends
+up with any other trial length, change every "7 day" in the pasted text
+before pasting. (1.1 to 1.4 said "3 day"; the history below still does.) What's New and the promotional text mention no trial, on purpose: the
 trial is only offered after a "no".
 
 ---
@@ -219,6 +219,16 @@ https://meditate808.com/privacy
 
 ```
 © 2026 Lock Out Inc.
+```
+
+**What's New in This Version, 1.4.1** (4000 max; this one is 173, 177 counting line breaks twice; 2026-10-26, for Melvin to approve. It names only what a member can see: the paywall rebuild and the founders' note are left out on purpose.)
+
+```
+Five new hats for Otto in the Shop: a baseball cap, a sombrero, a top hat, a tiara, and a glass astronaut helmet.
+
+Hats sit more cleanly on Otto when he glows.
+
+Small fixes.
 ```
 
 **What's New in This Version, 1.4** (4000 max; this one is 354, 360 counting line breaks twice; 2026-10-19, approved by Melvin.)
