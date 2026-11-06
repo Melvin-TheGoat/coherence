@@ -13,6 +13,7 @@
  *   Problems      what went wrong, by kind and reason, last 30 days
  *   Purchases     one row per buyer: plan, where they bought, which version
  *   Members       who pays now: trials past day 3, subscriptions still on or lapsed
+ *   Apple         App Store Connect's own active, renewed and cancelled counts
  *   Apple Watch   paired Watches, the measuring switch, measured sessions, by week
  *   Installs      one row per new install: when, where, phone, how far they got
  *   Updaters      one row per person who updated from 1.0: did they subscribe
@@ -1237,6 +1238,104 @@ function writeUpdaters() {
 }
 
 // ---------------------------------------------------------------------------
+// Apple
+//
+// The one tab PostHog cannot fill. Apple never tells the app that a
+// subscription was cancelled, so the Members tab can only report what 808
+// saw the last time somebody opened it. These numbers come from App Store
+// Connect's own Sales and Trends subscription reports, pushed in by
+// tools/apple_subscriptions.py (which has the whole story in its header).
+//
+// Pushed, not pulled, for a hard reason: the App Store Connect API signs its
+// requests with ES256, and Apps Script can only do HMAC. There is no ECDSA
+// here to sign a token with, so the signing happens in Python on a Mac and
+// the result is posted to this web app.
+//
+// Deploy once: Deploy > New deployment > Web app, execute as me, access
+// "Anyone", then put the URL in the script's SHEET_URL on the Mac side. Set
+// SHEET_SECRET in Project Settings > Script Properties to the same value
+// both sides, or anyone with the URL could write to the sheet.
+
+function doPost(e) {
+  var want = PropertiesService.getScriptProperties().getProperty('SHEET_SECRET');
+  var body;
+  try { body = JSON.parse(e.postData.contents); } catch (err) { body = {}; }
+  // A missing SHEET_SECRET refuses everything rather than accepting
+  // everything, which is the way round that cannot leak the sheet.
+  if (!want || body.secret !== want) {
+    return ContentService.createTextOutput('no').setMimeType(ContentService.MimeType.TEXT);
+  }
+  if (!body.apple) {
+    return ContentService.createTextOutput('nothing to write')
+      .setMimeType(ContentService.MimeType.TEXT);
+  }
+  writeAppleTab(body.apple);
+  // Remembered so stamp() can say the tab has gone stale if the Mac job
+  // stops running. A tab that quietly keeps last month's numbers is worse
+  // than an empty one.
+  PropertiesService.getScriptProperties().setProperty('APPLE_FETCHED_AT', body.apple.fetched_at || '');
+  return ContentService.createTextOutput('ok').setMimeType(ContentService.MimeType.TEXT);
+}
+
+/** Apple's subscription truth, laid out the way the other tabs are. */
+function writeAppleTab(a) {
+  var active = a.active || [], byEvent = a.by_event || [];
+  var reasons = a.reasons || [], byDay = a.by_day || [];
+  var span = a.days || 0;
+
+  var total = 0;
+  active.forEach(function (r) { total += Number(r[2]) || 0; });
+
+  var rows = [['Apple (App Store Connect)', 'Count', 'What it is']];
+  rows.push(['Active subscriptions' + (a.active_day ? ' on ' + a.active_day : ''), total, '',
+    'Apple’s own count, every state added together. This is the number to trust.']);
+  rows.push(['']);
+
+  rows.push(['Active now, by subscription and state', 'Count', '']);
+  if (active.length) {
+    active.forEach(function (r) { rows.push(['  ' + r[0] + ' · ' + r[1], Number(r[2]) || 0, '']); });
+  } else {
+    rows.push(['  Nothing reported', '', '',
+      'At a small subscriber count this is usually Apple’s privacy threshold rather than a fault: the Subscription report fills some fields only above three subscriptions, and the Detailed reports return no rows below about five devices.']);
+  }
+  rows.push(['']);
+
+  rows.push(['What happened in the last ' + span + ' days', 'Count', '',
+    a.first_day ? a.first_day + ' to ' + a.last_day : '']);
+  if (byEvent.length) {
+    byEvent.forEach(function (r) { rows.push(['  ' + r[0], Number(r[1]) || 0, '']); });
+  } else {
+    rows.push(['  No events reported', '', '', 'No subscription activity Apple is willing to report in this window.']);
+  }
+  rows.push(['']);
+
+  if (reasons.length) {
+    rows.push(['Why people left', 'Count', '']);
+    reasons.forEach(function (r) { rows.push(['  ' + r[0] + ' · ' + r[1], Number(r[2]) || 0, '']); });
+    rows.push(['']);
+  }
+
+  // Day by day, with a column per event type. The types are whatever Apple
+  // sent, most frequent first and capped at eight, so a new event name needs
+  // no change here and a long tail cannot push the table off the screen.
+  if (byDay.length) {
+    var names = byEvent.slice(0, 8).map(function (r) { return r[0]; });
+    rows.push(['Day'].concat(names));
+    byDay.forEach(function (d) {
+      var counts = d[1] || {};
+      rows.push([d[0]].concat(names.map(function (n) { return Number(counts[n]) || 0; })));
+    });
+    rows.push(['']);
+  }
+
+  rows.push(['Where this comes from', '', '',
+    'App Store Connect’s daily Subscription and Subscription Event reports, fetched by tools/apple_subscriptions.py and posted here. Apple’s reports are AGGREGATE: there is no per-person status in them, so none of this can be joined to a row on the Members tab. Read Apple for how many, and Members for who.']);
+  rows.push(['Last fetched', '', '', a.fetched_at || 'unknown']);
+
+  write('Apple', rows, [380, 110, 60, 620]);
+}
+
+// ---------------------------------------------------------------------------
 // Plumbing
 
 /** When this run started, so retries can stop before Apps Script's 6-minute cap. */
@@ -1350,6 +1449,13 @@ function stamp(failed) {
   // stamp has to name it. Otherwise the sheet looks current and is not.
   if (failed && failed.length) {
     note += '. Still on last hour: ' + failed.map(function (f) { return f.split(':')[0]; }).join(', ');
+  }
+  // The Apple tab is pushed in from a Mac, not pulled by this refresh, so it
+  // is the one tab that can go stale while everything else is current.
+  var appleAt = PropertiesService.getScriptProperties().getProperty('APPLE_FETCHED_AT');
+  if (appleAt) {
+    var days = (Date.now() - Date.parse(appleAt)) / 86400000;
+    if (days > 2) note += '. Apple tab is ' + Math.floor(days) + ' days old';
   }
   sheet.getRange(1, 7).setValue(note);
   ss.setActiveSheet(sheet);

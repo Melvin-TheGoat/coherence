@@ -2286,6 +2286,61 @@ Two additions to `tools/posthog_sheet.gs`. Paste it into Apps Script and run
   no node on either Mac**; that is the way to check this file without a
   PostHog key, which lives only in Script Properties.
 
+### Apple's side of it: `tools/apple_subscriptions.py` and the Apple tab
+
+Aziz, same day: "if u cant get that data from posthog try getting it from
+apple i want everything in that sheet." So the sheet gets an **Apple** tab
+with App Store Connect's own active, renewed and cancelled counts.
+
+- **PUSHED in, not pulled, and the reason is hard.** The App Store Connect
+  API signs every request with an **ES256 JWT, and Apps Script can only do
+  HMAC**; there is no ECDSA in it. So the signing happens in Python on a Mac
+  and the result is POSTed to a `doPost` web app in the same Apps Script
+  project (the pattern `nowatch-waitlist.gs` and `community-reports.gs`
+  already use). Do not go looking for a way to call Apple from Apps Script:
+  the only routes are a pure-JS ECDSA or signing through Cloud KMS, both far
+  more work than a local script.
+- **`doPost` fails closed.** No `SHEET_SECRET` in Script Properties refuses
+  everything rather than accepting everything, since the deployment has to be
+  readable by "Anyone" for the Mac to reach it.
+- **Apple's reports are AGGREGATE. They cannot be joined to the Members
+  tab.** The Subscriber report's "Subscriber ID" is Apple's own anonymous id,
+  not ours, and there is no per-person status anywhere in Sales and Trends.
+  Read Apple for how many and Members for who. Per-person truth would need
+  the App Store **Server** API, which needs a transaction id the app
+  deliberately does not send (the "no identity" rule), so it is not a small
+  change.
+- **Daily only, version 1_3**, for all three reports (Subscription,
+  Subscription Event, Subscriber), confirmed against Apple's availability
+  table 2026-11-06: no weekly or monthly roll-up exists, available the next
+  day by about 8am Pacific, kept one year. A month of history is a month of
+  requests, which is why the script caches each day under
+  `~/.cache/808-apple` and only caches a 404 once the day is more than two
+  days old.
+- **An empty Apple tab is probably Apple, not a bug.** Privacy thresholds
+  bite at 808's size: the Subscription report fills Customer Price only above
+  three subscriptions, and the Detailed subtypes return no rows below about
+  five devices. The tab and `--probe` both say this rather than reading as a
+  failure.
+- **Active counts are a STATE and are never summed across days.** Only the
+  newest day's snapshot is used; adding thirty days of them would multiply
+  the subscriber base by thirty. Locked by a test.
+- **Every column is read by HEADER NAME, never by position.** Apple has
+  reordered these reports before, and a positional parser files the wrong
+  number under the right label, which is worse than failing.
+- Two JWT details that fail with an opaque 401: the signature must be the
+  **raw r||s pair, 64 bytes**, not the DER sequence `cryptography` returns,
+  and `exp` may be at most **20 minutes** out (Apple rejects longer rather
+  than clamping).
+- Dependencies via `uv run --with cryptography`, so there is no venv to keep.
+  System Python here is 3.9 with no `cryptography` and no `pyjwt`.
+- Verified without Apple credentials: a throwaway P-256 key signs a token
+  that verifies against its own public key, and synthetic reports in Apple's
+  shape exercise the parser and the tab. **The live HTTP call is the one
+  thing still unproven**, and needs `ASC_ISSUER_ID`, `ASC_KEY_ID`,
+  `ASC_KEY_PATH` and `ASC_VENDOR_NUMBER`. Creating the key needs Account
+  Holder or Admin, so it may be Melvin's to make.
+
 ## RELEASE_CHECKLIST.md GATES EVERY SUBMISSION (2026-09-14)
 
 Aziz: "before we push, make sure you tell us to check if these are done."
