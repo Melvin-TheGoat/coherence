@@ -8600,3 +8600,108 @@ should be award for sure, points as well, a notification, and a history."
   (`GoalPair.weekRecords`).
 - DEBUG: `PREVIEW_WEEKDONE=Aziz` with `PREVIEW_REWARD` shows the reward
   line; `PREVIEW_GOAL_WEEKS=<n>` starts the demo goal n weeks back.
+
+## OPEN TASK: LOCK THE PHONE DURING A SESSION, AND MONK MODE (2026-10-31, Melvin, not built, not decided)
+
+A customer wants to turn their phone off during a session to save battery,
+with the timer carrying on. Today that voids the session: locking counts as
+leaving (`LeftAppRule`), and leaving for over 10 seconds ends it. That was
+deliberate. Melvin's idea: a relaxed mode and a strict mode, with streak rules
+bundled in, one tap, a default, and a line in the tour. Everything below is a
+recommendation for Melvin and Aziz to approve. Design first: HTML mockup
+before any Swift.
+
+**Recommended: one switch, not a tier picker.** Everyone gets the default,
+which has no name. **Monk Mode** is a single switch that turns on the strict
+rules. Two states, no choice to make at signup, so nobody meets a decision on
+day one.
+
+| | Default (no name) | Monk Mode (off by default) |
+|---|---|---|
+| Lock the phone | Fine, the timer keeps going | Ends the session after 10 seconds, as today |
+| Use another app | Ends it after 10 seconds, as today | Same |
+| "I was still meditating" | Stays | Gone |
+| "Record one" | Counts for streak and glow, as today | Saved, but does not count |
+| Rest day (one per seven) | Yes | Yes |
+
+So Monk Mode is roughly today's rules, and the new work is the default.
+
+**The insight: locking is not leaving.** Someone with a dark phone in their lap
+is meditating; someone on TikTok is not. Forest draws the same line, going by
+third-party reviews: locking is fine, opening another app kills the tree.
+Keeping the other-app rule in the default also protects Block, which a
+one-minute session opens.
+
+**Naming.** "Monk Mode" is an established phrase for going all in, it suits
+this audience, and Otto already has a Monk's hat in the Shop. Do not call the
+default Easy or Normal: "Easy" makes it the lesser way to meditate, which
+breaks the rule against telling people what they lack. If Monk Mode is
+rejected, Relaxed and Strict are the plain fallback. Several App Store apps
+use "Monk" or "Monk Mode" in their names (one, MonkMode, has difficulty
+levels), so it is common and generic, but no trademark check has been done.
+
+**What the research supports:**
+- **Two options over three.** Choice overload appears when options are hard
+  to compare or the person is unsure what they want (Chernev, Bockenholt and
+  Goodman 2015, 99 observations). A new user is exactly that person. Focus0
+  ships Easy, Harder and Strict, so three tiers is a real pattern; there is
+  simply nothing to gain from it here.
+- **Strict stays opt-in.** Commitment devices help the people who choose them,
+  and few do: 11% took up a smoking commitment account, and being offered it
+  raised quit rates by 3 points (Gine, Karlan and Zinman 2010). Expect a small
+  minority, and never make this the default.
+- **Keep the rest day in Monk Mode.** Goals with "emergency reserves" kept
+  people going after a miss better than equivalent goals without them
+  (Sharif and Shu 2019), and Duolingo reports a small gain from allowing a
+  second streak freeze (0.38% daily learners, company figure). It also means
+  one streak rule, not two.
+- **Competitors:** Insight Timer's help page tells people to set Auto-Lock to
+  Never. Fitbit users complain about audio stopping on lock. Headspace's and
+  Calm's behaviour could not be confirmed.
+- **Gap:** no study was found on difficulty settings in habit apps. The
+  two-state design is a reasoned call, not a measured one.
+
+**Our own numbers** (PostHog, last 30 days, App Review and test builds removed;
+`team_device` is not in the project's data, so founders' phones may be in
+this): 135 sessions started, 106 completed, 22 too short, 3 voided for leaving.
+`session_left_app` fired 10 times from 9 of 14 people, with 4 returning in
+time. So the rule rarely voids a session, but most people have run into it.
+Small numbers; do not over-read them.
+
+**One-tap surfaces:** a switch in Settings; one tour line (74 characters at
+most), for example "Lock your phone if you like. I'll keep time. Monk Mode is
+in Settings."; and a one-tap offer from Otto after a 7-day streak, when someone
+has shown they want it. Leave the + screen alone: Aziz has already taken a
+switch off it for being crowded. This brings back a strictness setting after
+Aziz removed Block's per-blocker strictness on 2026-09-22; that was three
+settings on every blocker, this is one, but check with him.
+
+**Build notes, found reading the code:**
+- `phoneScenePhaseChanged` cancels the finish timer and the end notification
+  on background. In the default, a lock must leave both running.
+- **Telling a lock from an app switch is unproven.** Apple's
+  `protectedDataWillBecomeUnavailable` is the documented signal, but its
+  timing, whether it fires with no passcode set, and whether a silent
+  suspended app receives it are all unverified. **Test this on a phone first;
+  the simulator cannot.** If it fails, the default drops the rule entirely and
+  a session that spent over 10 seconds away does not open Block.
+- **An active session lives only in memory.** A silent session lets iOS suspend
+  808 and possibly kill it, so the session would vanish. Save it to disk at
+  Begin and finish it on the next launch. Sessions with sound stay alive
+  through the `audio` background mode. A late finish is already capped at the
+  planned length.
+- **Open-ended sessions have no end when locked**, and points are one per
+  minute, so an hours-long lock would pay out. Needs a cap or a question on
+  return. Undecided.
+- **The end bell only rings with 808 on screen.** On a locked phone the Time
+  Sensitive notification is all there is, and the ring switch silences its
+  sound (the banner and vibration still come).
+- **A Lock Screen timer** is a Live Activity (ActivityKit, `Text(timerInterval:)`,
+  no push) and fits inside the existing `OttoWidget` extension. It is what
+  makes "the timer goes in the background" visible.
+- **Stamp the rule on the session when it is written.** The streak is derived,
+  so if Monk Mode simply stopped counting logged sessions, flipping the switch
+  would rewrite past streaks. A new `Session.source` value carries it with no
+  CloudKit schema change.
+- Update `LeftAppNotice`'s copy, `SessionLeftAppView`, the review notes, and
+  add analytics for the switch (choice only, nothing biometric).

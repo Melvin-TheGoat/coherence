@@ -1,569 +1,308 @@
 # 808 backlog
 
 One list, so nothing said in a session is lost between sessions (Melvin,
-2026-09-12: "I am saying a lot and not finishing much"). Potential features
-come first, then open threads, then standing notes, then a one-line record
-of what shipped. When something ships it becomes one line under Done; the
-detail lives in CLAUDE.md and in git. Swept 2026-09-23: finished,
-superseded and decided-against items were taken out (git history has them).
+2026-09-12: "I am saying a lot and not finishing much"). Order: work that
+is finished but sitting on a branch, then features not built, then small
+fixes, then open threads, standing notes, and a one-line record of what
+shipped. When something ships it becomes one line under Done; the detail
+lives in CLAUDE.md and in git.
 
-## Potential features (not built yet)
+**Swept 2026-11-06 against the code on `block`** (a1e7c1b), not against the
+notes. Every entry below was checked: "not built" means no code for it was
+found. Things that turned out to be built, decided against or superseded
+were taken out; the list of those is at the bottom of this sweep's commit.
 
-Every feature idea in the repo's docs that is not in the product, checked
-against the code on `block` on 2026-09-23. "(unverified)" means the code
-could not settle it. Each entry says what it is, where it came from, and
-what it waits on.
+## Finished or half-finished, but not merged into `block`
 
-Not listed, because they are built and waiting on a release: Otto's
-on-device chat (`FeatureFlags.ottoInRelease` is off), Block
-(`blockInRelease` is off) and Friends (1.1). Otto's seven aura states
-animated in Rive shipped to `block` on 2026-09-23 (`OttoAura.riv`).
+Nothing on these branches ships until it is merged. Check each with Melvin
+before merging: they predate the 1.4.1 work.
 
-### Show the mind profile in Settings (Melvin, 2026-10-19): for 1.5
+- **The friends feed comes back** (branch `social-feed`, 3 commits, Melvin
+  2026-10-23). Posts with photos, video, how it felt, a note and the 🙏
+  reaction; a friend's page with their sessions; "Who can see this?" with
+  Friends as the default; Friends gets its tab back and the Shop moves to a
+  corner circle on Home. Never the score. On `block` the feed is dead code
+  (`CommunityModel.postInBackground` has no caller, `CommunityStore.feed()`
+  is never called) and `clearMyPostsIfNeeded` deletes old posts. Before it
+  ships: delete `clearMyPostsIfNeeded`, report and block on a post, the
+  `Post` media fields and the new `rating` field promoted in CloudKit
+  Production, and the privacy policy and App Privacy labels.
+- **Ask Otto: a fresh notification every time** (branch
+  `ask-otto-fresh-banner`, fce0838, 2026-10-08). A bug fix: every ask still
+  reuses one identifier (`BlockAsk.notificationID = "808.block.ask"`,
+  BlockKit/BlockStore.swift:206), so a second ask can replace the first
+  instead of showing a new banner. Small; merge it.
+- **Camera-verified sessions** (branch `camera-verify`, 29315be, and the
+  untracked `mockups/camera-verify.html`, Melvin 2026-10-08). The front
+  camera checks you are there and still, and only verified sessions count
+  for the streak, the glow and Block. Mockup only, with an open "To decide"
+  list. No code.
 
-Onboarding's "Your mind profile is" (`MindProfile.of`, The Racing Mind, The
-Full Plate, The Always-On Mind, The Comeback, The Fresh Start) is worked out
-from four answers, shown once and never saved, so Settings has nothing to
-show. Two parts:
+## Decided, waiting to be built
 
-1. **Save it from now on** when onboarding works it out. On the account
-   (a `Preferences` field, so it follows the person to a new phone) needs a
-   private-database schema field promoted to Production in the same release;
-   phone-only (UserDefaults) needs none. Decide which when building.
-2. **"Find your mind profile" in Settings** for everyone onboarded before
-   that: ask the four questions again (what matters most, what gets in the
-   way, how often you meditate, tried before) and show the result screen.
-   Works for every user and guesses nothing.
+- **Show their real top apps on the Block pick screen** (decided "next
+  build", 2026-10-13). "Your top apps this week", with icons and minutes,
+  above "Choose apps" in onboarding and in Home's one-time ask. Apple lets
+  808 show this but never read it: it is drawn by a DeviceActivityReport
+  extension, which cannot write to the App Group or pass a token back, so
+  people still tap the app themselves. Needs: a fourth Block extension
+  (`com.lockout.meditate808.report`, and `.dev.report` for the beta) with
+  the App Group; a Family Controls (Distribution) request for that App ID,
+  made by Melvin as Account Holder; a test on a real phone. Mockup:
+  `mockups/retention-v1.html`, fourth phone.
+- **Mind profile in Settings, for 1.5** (Melvin, 2026-10-19). The type
+  (`MindProfile.of`) is worked out once in onboarding and never saved. (1)
+  Save it from now on: a `Preferences` field follows the person to a new
+  phone but needs a private-schema field in Production; UserDefaults needs
+  none. (2) "Find your mind profile" in Settings for everyone onboarded
+  earlier: ask the four questions again and show the result screen. Reading
+  PostHog back into the app is not a route (the privacy policy says what
+  analytics is for).
+- **What's-new screens for free 1.0 users who update** (Aziz 2026-10-07,
+  option 2 chosen by Melvin 2026-10-13). "Welcome back!" with Otto glowing,
+  "I hold your apps until you've meditated", "Every minute earns points for
+  my hats", then the paywall. Once, only for someone whose 808 predates
+  1.1 (`Preferences.createdAt` before `OttoAura.glowStart()`) with no
+  membership. **Mockup `mockups/whats-new-v1.html` awaits approval**
+  (https://claude.ai/artifact/Psppdu6UpowTiM7kN1yHwm).
 
-What is on the phone today, so nobody re-derives it: since 1.3 the goals and
-what-gets-in-the-way answers live in `reminders.profile.v1`
-(`ReminderScheduler.profile`), which recovers the type exactly only for
-anyone who picked the phone, a mind that won't settle, overthinking, no time
-or "not sure I'm doing it right"; the rest need the two answers that were
-never kept. Before 1.3, nothing. PostHog holds `onboarding_mind_profile` for
-1.3+ users, but reading analytics back into the app is not what the privacy
-policy says analytics is for: not a route.
+## Proposed, needs a decision
 
-### What a free 1.0 user sees on updating (Aziz, 2026-10-07): option 2 chosen, MOCKUP AWAITING APPROVAL
+- **Lock the phone during a session, and Monk Mode** (a customer, Melvin
+  2026-10-31). Locking stops counting as leaving for everyone; one optional
+  Monk Mode switch keeps the strict rules (screen on, hand-logged sessions
+  do not count). Research and build notes in CLAUDE.md, "OPEN TASK: LOCK THE
+  PHONE". The lock-versus-app-switch signal is unproven: test on a phone
+  first. Needs a mockup and a yes.
+- **Guided meditations with an AI voice** (Melvin, 2026-11-06, after
+  ElevenLabs released Eleven v4 on 2026-09-28). Replaces the "AI coach voice
+  library" that was on hold because ElevenLabs "is not there yet". The
+  tester ask it answers: 10, 15 and 20 minute versions and a choice of
+  voice (2026-09-12). Rules if it goes ahead: every track generated ahead
+  of time and shipped, never generated at run time (keeps "no AI service,
+  no server" true and sessions offline); generated sentence by sentence with
+  silences placed by us; mixed over the existing beds; paid ElevenLabs plan
+  only; a "Voice made with AI" credit; more tracks delivered as Apple-hosted
+  Background Assets rather than in the app download. Open: a stock voice or
+  a clone of Donny (needs his written consent and likely a fee); whether
+  Otto ever speaks (keep the narrator separate at first); who writes the
+  scripts. Next step proposed: one 10 minute pilot script in two or three
+  voices, judged blind against Donny's track on a phone. Donny's 25 minute
+  journey stays the flagship. Commissioning Donny for shorter cuts is the
+  non-AI alternative.
 
-**Decided 2026-10-13 (Melvin): option 2, a few what's-new screens.** Mockup:
-`mockups/whats-new-v1.html` (artifact
-https://claude.ai/artifact/Psppdu6UpowTiM7kN1yHwm): "Welcome back!" with Otto
-glowing, "I hold your apps until you've meditated" with a real block screen,
-"Every minute earns points for my hats", then the paywall as today. Shown
-once, only to someone whose 808 was set up before this phone first ran 1.1
-(`Preferences.createdAt` before `OttoAura.glowStart()`) and who has no
-membership. Build after approval.
+## Not built yet
 
+### Friends
 
-Today an updater with no membership opens 1.1 straight onto the paywall
-(onboarding stays finished; `LaunchLock` shows `root_lock`). They never see
-Otto, Block or the hats before being asked to pay. Options: (1) run them
-through the new onboarding, (2) three or four "what's new" screens before
-the paywall (recommended), (3) leave it. Data so far: the one stranger who
-updated (England, 2026-10-07) bought the $3.99 plan from the bare paywall;
-a friend in Ohio declined. Mockup first if anything changes.
-
-### Home screen widget (Melvin, 2026-10-05): BUILT, ships in 1.2
-
-Otto on the home screen as he is right now: the valley at the real hour,
-the still drawing for his glow, the glow percentage and the streak. Small
-(Otto, streak, glow) and medium (adds Otto's line for today). Built from
-`mockups/widget-v1.html` on branch `widget` with Melvin's picks: both
-sizes; members only (808 is premium only, so anyone else gets "Open 808",
-never numbers); a tap opens Home; ships in 1.2, not 1.1. Verified on the
-simulator at night, morning and evening, and the tap from Profile lands on
-Home. Before the 1.2 archive: the portal steps in RELEASE_CHECKLIST.md
-("OPEN for 1.2") and a pass on a real phone.
-
-### Friends and social
-
-- **Friends who keep each other meditating (Melvin and Aziz, 2026-10-12).**
-  The retention push: "our users are not meditating... definitely increase
-  the friends thing." Deliberately NOT built yet ("a bit ambitious"). Three
-  shapes, in rough order of cost:
-  - **Streak duels.** Challenge a friend: whoever keeps the longer streak
-    over a week (or until one breaks) wins, maybe a hat or points. Compete
-    on SHOWING UP, never on the score: the 2026-09-14 decision that left
-    leaderboards out was about a score to beat raising heart rate, and a
-    streak race has no such problem. "Who meditated longest today" is the
-    riskier variant: it rewards long sits, while the research 808 cites
-    (Cearns & Clark 2023) says consistency predicts improvement and length
-    does not, so it should be a secondary stat at most.
-  - **Accountability pair.** Two friends share one streak, or each see the
-    other's day ("Maya meditated today"), with a one-tap nudge. Overlaps
-    the "accountability friend" entry below; merge when designed.
-  - **Meditate together.** Start a session with a friend at the same time
-    (both Ottos on one cushion row, both timers start together). Needs a
-    live channel: CloudKit has none, so it needs a backend or SharePlay
-    (GroupActivities works between iCloud contacts with no server).
-  What it waits on: friend data is only as fresh as the last app open,
-  because there is no server. **CloudKit query subscriptions on the public
-  database can push to a phone when a friend's Profile record changes**,
-  which would make "your friend just meditated" possible with no backend of
-  our own (aps-environment is already in the entitlements). Everything a
-  friend sees must come from sessions alone, never Block or Screen Time
-  data (Apple's Family Controls terms). The smarter reminders started
-  2026-10-12 should gain a friends message category once this exists.
-- **Meditate first, then see your friends' day (BeReal style).** Melvin,
-  2026-09-23: "you can only see your friends meditations for the day (in the
-  social tab) if you meditate first, just like BeReal. Maybe you can see a
-  Weekly view for those who just like to meditate a few times a week." So
-  today's posts stay hidden until you have a session today, and perhaps a
-  weekly mode where one session this week opens the week, for people who
-  sit a few times a week. Waits on Friends (1.1). Open: whether a
-  phone-timed session counts (every other rule counts it), what the locked
-  tab shows (the meadow already lights up friends who posted today, which
-  could stay visible as the pull), whether a rest day opens it, and whether
-  weekly is a setting or the default. The public database runs no server
-  logic, so the app enforces the gate the way it enforces blocks, and the
-  gate must read 808's own sessions, never Block or Screen Time data.
-- **An accountability friend.** Opt in, and a friend sees when your Otto is
-  low and can nudge you. CONSISTENCY.md, 2026-09-21. The glow a friend sees
-  must come from sessions alone: skipped Block windows come from Screen
-  Time, and Apple's Family Controls terms forbid sharing that.
-- **Friends shown as their own Otto.** A friend with no photo appears as
-  Otto at their own aura stage, so a feed is not six identical sloths.
-  CLAUDE.md "PROFILE IS THE VALLEY TOO", 2026-09-21. Needs a glow level on
-  the public Profile, under the same sessions-only rule.
-- **Shared streaks, and "3 friends meditated today".** Presence, never
-  ranking. STAGE2_ROADMAP.md, Phase 3 (August). The meadow's glow for
-  friends who posted today already covers part of it.
-- **Challenges and group meditations.** Suggested in the August onboarding
-  revisions (in git history); an onboarding screen once promised
-  "challenges and group sits" that did not exist and was fixed in review
-  (CLAUDE.md, pass 14, 2026-09-01). Needs a design.
-- **Show my scores to friends, as a profile preference.** A post's score has
-  been optional since 2026-09-22 (`mockups/post-score.html`). The
-  recommendation on record: no per-post switch, because the posts that keep
-  their score give away the hidden ones; if real posts show people choosing
-  Only you on low days, one profile preference, on by default. Aziz asked,
-  2026-09-15; decide after the first weeks of real posts.
-- **Video in feed posts.** A session can hold a video since 2026-09-22, but
-  the feed posts only its first frame ("a video in a post is its own piece
-  of work"). CLAUDE.md, 2026-09-22.
-- **A share card for a phone session.** The share image is built from
-  measurements and lives on the results screen, so a sit the phone timed
-  has no card. Posting it to Friends already works without a score.
-  CLAUDE.md "THE SIT IS THE PRODUCT", 2026-09-21.
-- **An invite page and a universal link.** `meditate808.com/f/<username>`
-  says who invited you and links to the App Store (`ct=invite`); a
-  universal link (the Associated Domains entitlement plus an
-  apple-app-site-association file on Cloudflare Pages) would open straight
-  to the friend's profile. COMMUNITY.md, 2026-09-14. A new entitlement
-  means a fresh review.
-- **Instagram Stories without the Photos detour.** The code is done and
-  turns itself on once `InstagramShare.metaAppID` is set. Waits on a Meta
-  app ID: registration was geo-blocked for Aziz, so the plan is that Melvin
-  or a friend registers it and adds both founders. CLAUDE.md, 2026-07-28.
-- **Share card skins with real artwork.** A paid cosmetic line, and the
-  "Circle" skin once proposed as the reward for paid inviters. `CardSkin`
-  exists with nothing drawn; today the paid "skins" are the four locked
-  card layouts. A skin must never change what data a card shows.
-  ENTITLEMENTS.md (2026-08-24), COMMUNITY.md (2026-09-14).
-- **Friends without iCloud.** Needs a backend: accounts, a database,
-  hosting, a privacy policy that names it and a new App Review answer.
-  Today the iCloud account is both the identity and the storage. Melvin,
-  2026-09-15. Founders' call: stay serverless, or fund a backend.
-- **A badge for friend requests.** Push was left out of Friends v1 ("a
-  badge is enough"), and there is no tab badge yet; the requests pill sits
-  inside the tab. COMMUNITY.md, 2026-09-14.
-- Left out of Friends v1 on purpose, so they come back only with a reason:
-  comments, clubs, leaderboards (a score to beat raises heart rate, the
-  very thing being measured), contact-list matching and a public feed of
-  strangers. COMMUNITY.md, STAGE2_ROADMAP.md. Follower and following
-  counts were on that list too and were added on 2026-09-18.
+- **Meditate first, then see your friends' day** (BeReal style, Melvin
+  2026-09-23), perhaps with a weekly mode where one session opens the week.
+  Waits on the feed. Open: whether a phone session counts, what the locked
+  tab shows, whether a rest day opens it. The gate must read 808's own
+  sessions, never Screen Time.
+- **Streak duels**, and **meditating together at the same moment**
+  (both timers start together) (Melvin and Aziz, 2026-10-12). Compete on
+  showing up, never on the score. The live version needs SharePlay
+  (GroupActivities) or a backend. The weekly shared goals that shipped in
+  1.4 cover the accountability-pair shape.
+- **A daily shared streak, and Friends Quests** (Aziz, 2026-10-14). Left
+  out of Meditating together on purpose; the weekly streak shipped first.
+- **Change a shared goal's number.** Today you end the goal and start a new
+  one (each person owns their own half).
+- **An accountability friend who sees when your Otto is low**
+  (CONSISTENCY.md, 2026-09-21). Partly met by goal nudges and the practice
+  stats. A shared glow level must come from sessions alone: Apple's Family
+  Controls terms forbid sharing anything from Screen Time.
+- **Friends drawn as their own Otto** at their own aura stage, so friends
+  without a photo are not all one silhouette (CLAUDE.md, 2026-09-21). Needs
+  a glow level on the public Profile, sessions only.
+- **A friends topic in the reminders.** The planner's topics are streak,
+  glow, apps, goal, gentle, shop, comeback and farewell; nothing about
+  friends yet.
+- **A push for an ordinary friend request.** Goal invites, answers,
+  nudges, cheers, finished weeks and code joins all push; a plain friend
+  request only shows on Home's badge.
+- **A universal link that opens a friend's profile.** The invite page is
+  live; opening the app straight to the person needs the Associated Domains
+  entitlement, an apple-app-site-association file and a fresh review.
+- **Video in feed posts.** The old feed posted only a video's first frame.
+  Matters again once `social-feed` lands; check what that branch does.
+- **Instagram Stories without the Photos detour.** Code is done and turns on
+  once `InstagramShare.metaAppID` is set. Waits on someone registering a
+  Meta app (it was geo-blocked for Aziz).
+- **Share card skins with real artwork.** `CardSkin` has no art. A skin must
+  never change what data a card shows.
+- **Friends without iCloud.** Needs a backend. Founders' call (Melvin,
+  2026-09-15).
 
 ### Otto
 
-- **Customize Otto with points earned by the habit.** Aziz, 2026-09-21:
-  points come from meditating habitually and are spent on the sloth. The
-  currency is consistency, never the score. Points would be the first
-  stored, synced progress, so a CloudKit schema change and a release step.
-  A customized Otto still has to draw at all seven aura stages. Open:
-  spendable points or unlocks; visible to friends or not; awards as the
-  unlock rather than a second ladder beside them.
-- **Otto on the Home Screen and Lock Screen (widgets).** "his mood where
-  you look eighty times a day. The strongest tamagotchi move there is."
-  CONSISTENCY.md, 2026-09-21. Needs a widget extension and the glow shared
-  through the App Group.
-- **A weekly letter from Otto.** What the week looked like, in his voice.
-  CONSISTENCY.md, 2026-09-21. Rule-written like his Home lines, unless his
-  on-device chat ships first.
-- **More animation.** A tail flick, a reaction when an answer is tapped,
-  leaves that move when he waves, a generated branch in place of the vector
-  one, and an arm that bends (bones have to be weighted by hand in the Rive
-  editor; the MCP cannot do it). Melvin's second Otto pass, 2026-09-20;
-  CLAUDE.md's Rive sections.
-- **The valley matches Otto's state.** Melvin, 2026-09-23: "when you
-  meditate less/otto gets sadder, make the flowers around him die and maybe
-  the weather worse as he gets sadder, and maybe less birds, maybe crows or
-  uglier bugs, basically environment matches his state." So the scene reads
-  the aura stage too: flowers wilting and fewer of them, a grayer sky or
-  rain, fewer birds and crows instead of songbirds, uglier bugs in the
-  grass; the reverse as he glows. Everything in the valley is already drawn
-  from code (`ValleyScene`, `Meadow`, `ValleyLife`, `DayLight`), so most of
-  it is palette and counts keyed to the stage; crows need sprites. Not to be
-  built yet.
-- **Otto's chat on a cloud model.** Only if Apple's on-device model is not
-  good enough. It would send session data off the phone, so consent, the
-  privacy policy, the labels and the "no AI service" answer to App Review
-  would all change. 2026-09-15.
+- **A weekly letter from Otto**: the week, in his voice, rule-written like
+  his Home lines (CONSISTENCY.md).
+- **The valley matches his state** (Melvin, 2026-09-23): flowers wilting,
+  greyer sky or rain, crows instead of songbirds, uglier bugs as he gets
+  sadder, the reverse as he glows. The scene is all code, so most of it is
+  palette and counts keyed to the stage; crows need sprites. Marked "not to
+  be built yet".
+- **A Lock Screen widget.** The widget ships small and medium Home Screen
+  sizes only.
+- **More animation**: a tail flick, reactions, moving leaves, an arm that
+  bends (bones must be weighted by hand in the Rive editor).
+- **Hats inside the aura rig**, so bugs stop passing under the hat. Blocked:
+  the editor's copy of `OttoAura.riv` is older than the shipped file, which
+  must be rebuilt in the editor first.
+- **A hat award.** Left out while the Shop was off in Release; the Shop
+  ships now and there is still no award for a first hat.
+- **Otto's chat in Release.** Built and off (`ottoInRelease = false`). Waits
+  on Melvin and Aziz reading a dozen answers on a phone, then the
+  RELEASE_CHECKLIST items for that flag. A cloud model only if on-device
+  is not good enough.
 
-### Block and consistency
+### Block
 
-- **Show their real top apps on the pick screen (NEXT BUILD, decided
-  2026-10-13).** "Your top apps this week" with icons and minutes, above
-  "Choose apps" in onboarding and in Home's one-time ask. Apple lets 808
-  SHOW this, never read it: it is drawn by a DeviceActivityReport extension
-  whose writes to the App Group are dropped on purpose (Apple DTS), it can't
-  pass a token back, and the picker can't be preselected, so people still tap
-  the app themselves. Needs: a fourth Block extension target
-  (`com.lockout.meditate808.report`, and `.dev.report` for the beta) with
-  the App Group; a Family Controls (Distribution) request for that App ID,
-  made by the Account Holder (Melvin) in the portal; testing on a real phone
-  (the simulator can't). Mockup: `mockups/retention-v1.html`, fourth phone.
-- **Block setup inside onboarding.** Ask when you want to meditate and which
-  apps to hold, then meet Otto. Today Mindful day waits on the Block tab,
-  and onboarding's explain-only Block screen was cut on 2026-09-22.
-  CONSISTENCY.md. Waits on Block shipping.
-- **Longer sessions earn more open time.** For example, a long session
-  opens the apps until the window ends and a short one for an hour. Today
-  any session of five minutes or more opens the rest of the window.
-  CONSISTENCY.md, 2026-09-21.
-- **A Live Activity during a hold.** "A five minute session opens your
-  apps" on the Lock Screen and in the Dynamic Island. CONSISTENCY.md,
-  2026-09-21.
-- **A wind-down window that follows iOS Sleep.** The bedtime window takes
-  the Sleep schedule instead of a typed time. CONSISTENCY.md, 2026-09-21.
-  (unverified: whether a third-party app can read that schedule.)
-- **Smarter reminders.** Words drawn from the person's own practice, no
-  reminder on a day already practiced, and a time that follows when they
-  usually first unlock the phone. Today one fixed daily reminder fires
-  regardless. STAGE2_ROADMAP.md (August), CONSISTENCY.md (2026-09-21).
-- **"Your apps are open" on the sit screen.** Aziz's valley sit left room
-  for a chip ("Instagram is open again") for when a session releases held
-  apps; only the Block tab says it today. CLAUDE.md, 2026-09-21.
-- Related, and kept outside 808 on purpose: "Unlock", an app that keeps
-  chosen apps locked each morning until you say your affirmations out loud
-  (Aziz, 2026-09-18; BACKLOG on `origin/camera-vision`, `UNLOCK.md` outside
-  this repo).
+- **A Live Activity** during a hold or a session (Lock Screen and Dynamic
+  Island). Also the visible half of the Monk Mode idea.
+- **A wind-down window that follows iOS Sleep.** Unverified whether a
+  third-party app can read the sleep schedule at all.
+- **"Your apps are open" on the sit screen** once a session opens them. The
+  sit says "Your apps open when you end"; nothing says it after they open.
 
 ### Sessions and sound
 
-- **Guided sessions in more lengths and voices.** 10, 15 and 20 minute
-  versions beside the 25 minute journey, and a man's or a woman's voice
-  (tester feedback, 2026-09-12). The cheapest honest path: commission Donny
-  for cuts of the same script, then a length picker on the Guided card.
-  The narrated coach still has no name (offered: Eight, Cadence, Tempo,
-  Coach 808).
-- **An AI coach voice library.** Melvin's wedge, on hold: ElevenLabs "is not
-  there yet". When it is, the first version is a pre-generated library by
-  length and voice, offline, with nothing generated at run time, which
-  keeps the "no AI service, no server" answers true. 2026-09-12.
-- **Log a session after the fact.** "I did one", for a sit done without the
-  app, shown as logged rather than timed or measured. 2026-09-15. Open:
-  whether it counts toward the streak, the glow, awards and Block releases,
-  and how the feed marks it. Needs a mockup.
-- **Show, don't tell, in the guide.** A method page lets you try a breath
-  rather than read about it (the rule that replaced the explainer screens,
-  CLAUDE.md, 2026-09-22). The same note asks for a three-second taste of
-  each sound; the Ready screen already plays a sound when it is tapped.
-- **A headphones (binaural) mode.** The tone engine and the session code
-  support binaural playback, but nothing offers it: every session has
-  played the speaker version since the sound picker was redesigned.
-  CLAUDE.md, Phase 5 audio. (unverified whether it was dropped on purpose.)
-- **A nature sound layered with a tone.** Deferred in the v1 plan; a
-  session has one sound. App_ROADMAP_v2.md, "After Phase 7".
-- **"Your best technique".** Once someone has enough sessions labeled with
-  a technique, compare their own: "across 11 sessions, your score averages
-  74 with body scan and 61 with blue sky". Within one person only, because
-  pooling people is confounded. The same idea covers how-it-felt ratings
-  against the measurements over time. METHODS.md (2026-08-09),
-  App_ROADMAP_v2.md. It needs measured sessions, so today it reaches only
-  Watch users.
+- **Headphones (binaural) mode.** The engine supports it
+  (`ToneEngine.Method.binaural`), but every call site passes
+  `headphones: false`, so it is unreachable.
+- **A nature sound layered under a tone.** `playNature` stops whatever was
+  playing; one sound at a time.
+- **Try a breath inside the guide** instead of reading about it (the
+  "show, don't tell" rule, 2026-09-22).
+- **"Your best technique"**: your own average score by technique, within one
+  person only (METHODS.md). Needs measured sessions, so Watch users only.
+- **Compression pass on the two quiet beds**, Manifest and Awaken, about
+  2 dB under the rest. Likely never done (the files predate the note).
 
 ### Onboarding and paywall
 
-- **Sell premium properly in onboarding.** Melvin and Aziz, 2026-09-23,
-  after deciding 1.1 is premium only: "going to have to refine the
-  onboarding a bit more to really sell the user on this." The paywall is
-  back at the end of onboarding and the Block setup now comes before it;
-  the selling itself (what the screens before the paywall show, in what
-  order) is theirs to shape next.
-
-- **Use the onboarding answers in the app.** Only the reminder time is
-  used; what people said they were chasing is read once and dropped, the
-  "decorative questions" failure. The cheap fix is Home and Otto's lines
-  referring to it. CLAUDE.md "STILL TO DO", 2026-08-06.
-- **A weekly plan with a three-day trial.** One benchmark found it returns
-  about 1.5 times the first-year value of any other setup. Never adopted;
-  the ladder is two rungs now (the free week, then half off the first
-  year). It would need its own permanent product ID. August onboarding
-  revisions, 2026-08-17 (in git history).
+- **Use the onboarding answers in the app.** Reminders use the goals and
+  obstacles; Home and Otto's lines never refer to them.
+- **Sell membership better in onboarding** (Melvin and Aziz, 2026-09-23).
+  A design thread, not a feature yet.
 
 ### Watch and measurement
 
-- **A camera session, no Watch.** A propped phone reads stillness and
-  breathing (never heart rate). The engine, its harness and the framing
-  outline are built on branch `camera-vision` (Melvin still to check the
-  outline on a phone); the session flow is designed in
-  `CAMERA_VISION_PLAN.md` there and not built. Waits on the ground-truth
-  sits in section 5 of that plan (paced breathing at 6, 8 and 12 a minute
-  from two people, then counted natural breathing, distance and light);
-  the first capture's results are in the plan. MARKET.md calls it the
-  largest lever on market size. Paused 2026-08-24, resumed 2026-09-14.
-- **An AirPods heart-rate session, no Watch.** On iOS 26 an iPhone workout
-  receives heart rate from AirPods Pro 3 or Powerbeats Pro 2; head motion
-  gives stillness; breathing from head motion is unproven. A DEBUG-only
-  capture probe is built (Settings > AirPods (debug)). Waits on a first
-  capture with a pair, which nobody on the team owns. Shipping it changes
-  Info.plist, the Health strings and the privacy policy. AIRPODS_PLAN.md,
-  2026-09-14.
-- **Other wearables.** Aziz ranked them on 2026-09-18 (BACKLOG on
-  `origin/camera-vision`): any watch or strap that broadcasts standard
-  Bluetooth heart rate (about a week of work, heart only); a Polar H10 or
-  Verity Sense through the Polar SDK (real beat-to-beat intervals, so true
-  HRV and coherence, the "Pro" tier parked in CLAUDE.md's coherence note);
-  Garmin through Connect IQ (in progress on `origin/camera-vision`, see
-  `GARMIN.md` there; Garmin also gives beat-to-beat intervals); Wear OS and
-  Fitbit only with an Android 808; Oura and Whoop cloud summaries cannot
-  measure a sit. Cheap first move: ask people without a Watch which
-  wearable they own. The privacy policy and labels move with any of them.
-- **The camera finger check (PPG).** A 45 second finger-on-lens read before
-  and after a session; real beat-to-beat intervals, so HRV and coherence
-  are reachable. Built and verified, then cut in the MVP on 2026-08-05; the
-  code is on `full-feature-set`. Waits on testing across skin tones and
-  lighting (validated on two people). CLAUDE.md Phase 9.
-- **Heartbeat from wrist motion (BCG).** In two still sessions the 100 Hz
-  accelerometer's cardiac band matched heart rate; if it holds, beat-to-beat
-  intervals with no camera and no strap. Research, not a feature yet: next
-  is a three-minute maximum-stillness capture and offline beat
-  segmentation. CLAUDE.md "MOTION EXPERIMENTS", 2026-08-07.
-- **A heart rate variability (SDNN) trend.** Parked. The Watch pipeline is
-  built and dormant. Apple writes SDNN about every two hours and never
-  during a session, so nobody can build per-session HRV this way, and a
-  real baseline needs the phone to read HealthKit, which is an
-  architecture, privacy and App Review decision. The per-person trend is
-  weak science: never a causal claim. CLAUDE.md, 2026-08-07.
-- **A verified-session mark.** Good stillness plus heart rate sensed for the
-  whole session defeats the take-the-watch-off cheat. Worth having if
-  Friends ever marks a session as verified. CLAUDE.md, Phase 4.
-- **EEG validation, and hardware of our own.** A consumer EEG headband is
-  the only way to earn any claim about the brain state; it starts as a
-  study of 20 to 30 people, not a product. White-label or our own device
-  only after launch data, and a lawyer before a manufacturer.
-  STAGE2_ROADMAP.md, Phases 1 and 6. Parked.
+- **A camera session with no Watch** (branches `camera-vision` and
+  `camera-vision-work`, paused). Waits on the ground-truth sits in
+  `CAMERA_VISION_PLAN.md`. Different from camera-verified sessions above.
+- **An AirPods heart-rate session** (branch `airpods`, a DEBUG probe in
+  Settings). Waits on someone owning AirPods Pro 3 or Powerbeats Pro 2.
+- **Other wearables**: Bluetooth heart-rate straps (about a week, heart
+  only), Polar H10 or Verity Sense (beat-to-beat, so real HRV), Garmin
+  (a `GarminWatch/` folder exists). Cheap first move: ask people without a
+  Watch what they own.
+- **The camera finger check (PPG)** on `full-feature-set`. Waits on testing
+  across skin tones and lighting.
+- **Heartbeat from wrist motion (BCG)**, research only; **an HRV trend**,
+  parked; **a verified-session mark**; **EEG validation**, parked.
+- **Credit for how long the breath doorway was held.** Stored
+  (`breathDoorwayHeldSec`), never scored. Waits on long counted sessions;
+  do not guess a curve (the last one wrecked verified sessions).
+
+### Engine and score
+
+- **Retune the VerdictEngine thresholds** (0.75 / 0.55 / 0.35, tuned to the
+  v2 score in August and never retuned). Do it against real v5 sessions.
 
 ### Website and marketing
 
-- **Test the mascot and the pitch in the App Store.** Product Page
-  Optimization (icon and screenshots per variant) answers "which one do
-  people pick" in days; a PostHog experiment on onboarding cannot reach
-  significance on retention at about 20 installs a week. 2026-09-21.
-  **Icon research 2026-10-20** (CLAUDE.md, "THE APP ICON"): proposed
-  candidates are today's icon, a head-and-shoulders close-up on a stronger
-  solid background, and a flatter close-up; all three must ship as alternate
-  icons in a build before PPO can test them. Waiting on Melvin's art.
-- **Meta app-install campaigns.** They need the Meta SDK or an MMP in the
-  app (a build, a review, new App Privacy labels), 8 to 10 creatives at a
-  time and about 50 installs per ad set per week. Gated: only after a
-  format holds organically and install to trial reaches 5 percent.
-  marketing/LAUNCH_PLAN.md, 2026-09-11.
-- **Instagram comment-to-DM.** A post says "comment a word and I'll send
-  you the link"; the comment opens Meta's 24-hour window, so an automated
-  reply is allowed (DMs triggered by a follow are not). Needs a Business or
-  Creator account and a tool from Meta's Partner Directory.
-  STAGE2_ROADMAP.md, Phase 5. (unverified whether it was ever set up.)
+- **Test icons and screenshots with Product Page Optimization.** Every test
+  icon must ship as an alternate icon in a build first; none do. Waits on
+  Melvin's art (`mockups/icon-flat.html` is in progress).
+- **Meta app-install campaigns.** Gated: need an SDK or MMP in the app and
+  install to trial at 5 percent first.
+- **Instagram comment-to-DM.** Unverified whether it was ever set up.
 
 ### Other
 
-- **Tab bar icons, drawn by Melvin.** He will generate new ones himself
-  (2026-09-23): none of the three directions in `mockups/tabbar-icons.html`
-  (Meadow, Line, Otto) were taken. The bar keeps its SF Symbols until the
-  art lands; the icons already sit 6pt lower in a bar of unchanged height.
-- **Accessibility.** Dynamic Type (282 fixed-size fonts and no
-  `@ScaledMetric`, counted 2026-09-23), VoiceOver labels on the custom
-  drawing (29 labels today) and a contrast check. The App Store
-  accessibility labels stay empty until each one is verified on a device.
-  App_ROADMAP_v2.md 8a.2, 2026-09-01.
-- **Product emails.** Settings has a "Product emails" opt-in
-  (`User.marketingOptIn`), but no list export was ever built, so turning it
-  on sends nothing anywhere. Build the export (the privacy policy and label
-  move with it) or take the switch out. App_ROADMAP_v2.md, Phase 7.
-- **Sign in with Google or email.** Deferred in the v1 plan, which kept
-  Sign in with Apple only. App_ROADMAP_v2.md.
+- **Accessibility.** 439 fixed-size fonts, no `@ScaledMetric`, 74
+  VoiceOver labels. Dynamic Type, labels on the custom drawing and a
+  contrast check. App Store accessibility labels stay empty until verified.
+- **Sign in with Google or email.** Deferred since v1.
+- **DIN Next Rounded or SF Pro Rounded.** DIN needs an app licence from
+  Monotype; the swap is in CLAUDE.md "ONE ROUNDED FONT EVERYWHERE".
+- **Tab bar art.** Ink, Lifted, Meadow and Sloths bars exist; check whether
+  Melvin still wants new icons.
+
+## Small fixes noted and never made
+
+- **Onboarding saves answers to the wrong Preferences row** when a phone has
+  several: `persistAnswers` (OnboardingView.swift:1323) takes the row
+  matching `userID` before the oldest, against the "oldest row" rule.
+- **The Ask Otto notification identifier**, fixed only on
+  `ask-otto-fresh-banner` (above).
+- **No analytics event when a week together finishes.** The push and the
+  points exist; PostHog never hears about it.
 
 ## Open threads
 
-- **Music and sound effects: judge them on a phone (Melvin, 2026-10-09).**
-  Built on `sound-and-haptics` (CLAUDE.md "MUSIC, SOUND EFFECTS, AND A PRESS
-  ON EVERY BUTTON"). **Decided 2026-10-12 from the listening page
-  (https://claude.ai/artifact/ApabV3mrmQHArLJgnU2V8c):** the music is the
-  Manifest bed, the presses and the after-session sounds are right. **Same
-  day, on the phone: Manifest is out ("too ethereal for the theme"); he wants
-  music with actual notes, zen but gently playful,** somewhere between a
-  village tune (too busy) and slow solo piano (too sleepy). **His first
-  ElevenLabs take is in the app** (`music-garden`, a 61-second loop).
-  Owed before release: confirm it came from a paid ElevenLabs plan (the free
-  plan does not allow commercial use), and ideally a two to three minute
-  take so the loop repeats less often. The presses became a water droplet, landing
-  higher on main buttons; he picked it over three others.
-  Still open: where the music comes from (ElevenLabs Music, a composer, or a
-  library licence that covers in-app use), whether Home wants a quick mute
-  beside Settings > Music, and the haptics, which only a phone can judge.
-- **Decisions from the 2026-09-23 call.**
-  - **Trial length: "likely 3 days".** The app reads the trial off the
-    monthly product in App Store Connect (`Store.trialDays`), so deciding is
-    one change there, on both subscriptions' introductory offers; every line
-    in the app follows. Today Connect says 7 days.
-  - **DECIDED 2026-09-25 (Melvin): glow gains stay a flat 10 a day.** "Forget
-    about the daily glow gains." Only missed days escalate (10, 15, 20 ...).
-  - **DECIDED 2026-09-25 (Melvin): people who installed 1.0 or 1.0.1 for
-    free meet the paywall** after updating ("Send them to paywall"). No
-    grandfathering. Anyone who bought a plan or Lifetime is entitled and
-    never sees it.
-  - **Premium only in the store listing and review notes.** The description
-    should say plainly that 808 is a subscription with a free trial, and the
-    review notes that the reviewer starts the sandbox trial on the paywall.
-
-- **DECIDED 2026-09-25 (Melvin): keep Aziz's onboarding changes** that undid
-  earlier calls: green buttons and progress bar (not gold), the optional age
-  question (read by nothing yet), and one 4-2-4 breath instead of three.
-
-- **Screen posted photos: DONE (2026-09-26).** Melvin said yes to Sensitive
-  Content Analysis (2026-09-25) and ticked the capability on both App IDs;
-  `com.apple.developer.sensitivecontentanalysis.client` = [`analysis`] is in
-  `Coherence/Coherence.entitlements`, and the beta on his phone (202609260240)
-  carries it in both its signature and its profile. `PhotoScreen` runs on
-  every post item and profile photo before upload. Apple only analyses for people
-  who turned on Sensitive Content Warning (or Communication Safety), so it
-  screens a minority of adults; report, block and removal stay the backstop.
-
-- **Silence notifications: the two shortcuts are published and in the app
-  (2026-09-25).** `808 Silence` and `808 Restore`, checked against iCloud
-  (names exact, one Do Not Disturb action each), so Release now draws the
-  switch and setup is two taps. Still to see on a phone: install both from
-  the setup sheet, silence and restore around a sit.
-- **The real time of day on every valley screen.** Home follows the clock
-  since 2026-09-23 (`ValleyScene(clock: true)`, `DayLight.clockProgress`,
-  `VALLEY_HOUR` in DEBUG). Onboarding, Block, Friends, Profile, the Guide,
-  the Ready screen and the interventions still draw the top of the day,
-  because their type on the sky uses daytime ink (`ValleyGround.ink`,
-  `DayLight.at(0)`) and would vanish against a night sky. Turning them on
-  means checking each one's text for night. The status bar also stays dark
-  over a night sky; it needs a light style after dusk.
-- **Block: see it work on a phone.** Built and checked on the simulator
-  (`block`, behind `FeatureFlags.block`), but only a phone shows a shield,
-  Ask Otto's notification, a pass closing the apps on time (the fifteen
-  minute DeviceActivity floor and the start-in-the-past trick) and a daily
-  limit's threshold. Install 808 Beta with `tools/beta_install.sh` and walk
-  RELEASE_CHECKLIST.md's Block list. The breathing screen's haptic
-  (`BreathHaptics`) also needs a phone.
-- **1.1 (Friends): the real round trip.** The CloudKit Console setup is done
-  (CLOUDKIT_SETUP.md). Still owed: one round trip on two phones through
-  TestFlight (claim a username, add each other, post, see it land, react,
-  report, block), then RELEASE_CHECKLIST.md "OPEN for 1.1", which since
-  2026-09-23 includes promoting the private schema for `SessionPhoto` and
-  `Session.source`. What's New has to say that past scores were rescored
-  (v5.3).
-- **Copy for the pivot.** PURPOSE.md, SCIENCE.md, the website (its title and
-  footer still read "Meditation, measured on your Apple Watch", beside the
-  "first app that scores your meditation" claim), the App Store
-  description, keywords and screenshots, and marketing/CAROUSEL_BRIEF.md
-  (still pre-launch: a waitlist call to action, a dark palette, the Watch
-  pitch) all still sell a Watch measurement app. SCIENCE.md also says
-  breath counts for more of the score than anything else, which has been
-  untrue since score v5.0.0 (2026-08-14; breath is the smallest weight).
-  The release that ships Block has to lead with it (Apple's purpose 2 for
-  Family Controls). CONSISTENCY.md.
-- **Website redeploy.** Cloudflare Pages is a manual drag of `website/`.
-  Waiting in the repo: the branded short links (`_redirects`), the privacy
-  page updates and the Google preferred-source badge. After deploying,
-  Melvin clicks the badge while signed in to Google to see whether
-  meditate808.com is listed.
-- **Decide: DIN Next Rounded or SF Pro Rounded.** DIN Next Rounded needs an
-  app license from Monotype; the swap is written up in CLAUDE.md "ONE
-  ROUNDED FONT EVERYWHERE".
-- **Watch `onboarding_completed`.** The payoff screens were cut and
-  onboarding was removed and restored within two days; compare completion
-  with the rate before the cut, and if it drops, the cut is the first
-  suspect.
-- **Launch plan items with no record of being done** (checked 2026-09-14;
-  confirm or strike): Apple Search Ads ($15 a day, exact match); the
-  featuring nomination; press tips; promo codes; Reddit per
-  `marketing/REDDIT.md`; reels and carousels logged somewhere the weekly
-  review can read; the weekly review against section 6 of
-  `marketing/LAUNCH_PLAN.md`. The plan pitched the Watch, and the pivot
-  changes that.
-- **Ask what "808" means to people.** The no-Watch tester of 2026-09-14 did
-  not know what the name meant on first sight; worth one question in the
-  next tester conversations or the survey.
+- **Ship 1.4.1.** Build 202610271827 uploaded 2026-10-27. Before Submit:
+  the four new Watch screenshots (`~/Downloads/808-watch-1.4.1/`) and the
+  phone checks in RELEASE_CHECKLIST.md: Block open after a morning
+  session, a session across midnight raises the streak by one, the
+  week-together test on two phones, the sandbox banner, the founders' note.
+- **Copy for the pivot.** PURPOSE.md, SCIENCE.md (still says breath counts
+  most, untrue since score v5.0.0), the website footer and its "first app
+  that scores your meditation" line, and marketing/CAROUSEL_BRIEF.md still
+  sell a Watch measurement app.
+- **Website redeploy** whenever the site changes (manual drag of `website/`
+  into Cloudflare Pages, or the `deploy-website` skill). After the next one,
+  Melvin clicks the Google preferred-source badge while signed in to see
+  whether meditate808.com is listed.
+- **Watch `onboarding_completed`** against the rate before the onboarding
+  cuts; if it drops, the cuts are the first suspect.
+- **Launch plan items with no record of being done**: Apple Search Ads, the
+  featuring nomination, press tips, promo codes, Reddit, the weekly review.
+  Confirm or strike.
+- **Ask people what "808" means to them** in the next tester conversations.
+- **Music**: Home may want a quick mute beside Settings > Music; the haptics
+  can only be judged on a phone.
 
 ## Standing notes
 
 - **TestFlight replaces the App Store app on a phone.** One bundle ID, one
-  app: it is never a second copy. Do not delete it to get 1.0.1 back.
-  `MeditationStats` is device-local, so deleting the app deletes every
-  curve recorded on that phone, and CloudKit brings back the sessions but
-  not those. Side by side is the `.dev` beta (`tools/beta_install.sh`).
-  2026-09-19.
-- **Where Friends can be tested.** A plain beta install names
-  `iCloud.com.lockout.meditate808.dev`, a container that does not exist, so
-  Friends has no schema there. `WITH_ICLOUD=1` pins the beta to the real
-  container's Development environment. TestFlight talks to Production, so
-  the two never see each other's friends or posts, and TestFlight is the
-  release test. On a simulator, `CommunityModel.testMode` runs Friends
-  against the in-memory fake. 2026-09-19 and 09-22.
-- **Health permission is asked on the phone.** The Watch cannot show the
-  Health sheet itself (it appears on the iPhone, where nobody is looking),
-  and authorization is shared between the app and its Watch app, so the
-  phone asks for the whole scope (`HealthScope`, in Shared), and only when
-  a Watch is paired. HealthKit never says whether a read was denied, so
-  someone who taps Don't Allow still meets the 30-second heart-rate
-  watchdog on a first Watch session. 2026-09-12.
+  app. `MeditationStats` is device-local, so deleting the app deletes every
+  curve recorded on that phone. Side by side is the `.dev` beta
+  (`tools/beta_install.sh`).
+- **Where Friends can be tested.** A plain beta names a container that does
+  not exist; `WITH_ICLOUD=1` pins it to the real container's Development
+  environment. TestFlight talks to Production. On a simulator,
+  `CommunityModel.testMode` runs Friends against the in-memory fake. Look
+  for the Test mode banner on both phones before trusting a two-phone test.
+- **Health permission is asked on the phone**, and only when a Watch is
+  paired. HealthKit never says whether a read was denied.
 
 ## Done
 
-One line per day; the detail is in CLAUDE.md and git.
+One line per release or day; the detail is in CLAUDE.md and git.
 
-- **2026-09-22:** Block built on `block` (the tab, the editor, Otto's twenty
-  screens, "Not now" passes, the glow rule, three extensions, the Ask Otto
-  notification), then strictness and pass limits removed; Family Controls
-  approved on all four App IDs; onboarding back without the Watch question,
-  in the valley, with the stress question answered on Otto; Otto's seven
-  states; Friends, the Guide and the blocker editor in the valley; the
-  Profile log as a week; a timer tape on the Ready screen and a
-  notification when a timed session ends; Otto's glow after a session, then
-  the session's own page; Friends and Block testable on a simulator; the
-  paywall ladder cut to two rungs.
-- **2026-09-21:** the valley sit and Ready screen, with Begin never asking
-  about a Watch; Home and Profile in the valley; Otto's aura; question
-  screens, bubble and font after Duolingo; the website's Google
-  preferred-source badge (deploy pending).
-- **2026-09-20:** Otto rigged in Rive (breathing, blinking, waving, on a
-  branch); onboarding in Headspace's shape.
-- **2026-09-19:** the friendly redesign; onboarding round 3; the Friends
-  CloudKit Console setup (CLOUDKIT_SETUP.md).
-- **2026-09-18:** the 1.1 social branch (`social-1.1`): followers and
-  following, one technique list; the Friends feed given Strava's spacing.
-- **2026-09-16:** score v5.3 (stillness cubed) with history rescored; one
-  rest day per seven for the streak; Otto's chat quotes the score's working
-  and keeps its chats.
-- **2026-09-15:** the paywall after the first session; onboarding cut by
-  seven screens; Save session rebuilt with an in-app camera and a photo per
-  session; delete a session; a five-second countdown on the wrist; Otto's
-  chat v1 (on-device, off in Release); the invite reward set to 3 sessions,
-  capped at 15; the beta's launch crash fixed with `CloudEntitlement`.
-- **2026-09-14:** 1.0.1 live (the Watch start-failure fixes, Health asked on
-  the phone, the purchase double-count guard); Friends v1 and v2 built
-  behind a flag; no sign-in before onboarding ends, and onboarding resumes;
-  no-Watch waitlist emails reach their sheet; the too-short screen; the
-  round 2 onboarding fixes.
-- **2026-09-13:** the launch email to 33 people (marketing/LAUNCH_EMAIL.md);
-  the first Reddit post, removed by Reddit's filters (marketing/REDDIT.md).
-- **2026-09-12:** five tabs and usernames; "Give us feedback"; average heart
-  rate on the heart panel; reflections that save themselves; "How is this
-  scored?"; mindful minutes to Health; the airplane-mode premium hole
-  closed; the CloudKit Production schema promoted; the PostHog dashboard and
-  its sheet.
+- **1.4.1 (built 2026-10-26/27, not yet submitted):** paywall rebuilt
+  (Yearly first, half price as a one-tap banner, 7-day trials); Block opens
+  for the rest of the day after 1 minute; the 11:30 pm streak saver; Friends
+  awards and weeks finished together (10 points, push, history); goals count
+  from a minute; a session across midnight keeps the streak; five new hats
+  and the glow fix on six; the founders' note; Marker Felt notes; new Watch
+  screenshots.
+- **1.4 (live):** Meditating together (weekly shared goals, nudges, pushes);
+  invite codes and `meditate808.com/invite`; profile pictures with 21
+  presets; the onboarding science screens and one progress bar; the
+  analytics for all of it.
+- **1.3.1 (live):** the rating ask moved to Home after a session.
+- **1.3:** planned reminders (up to three a day, tapering, then a farewell);
+  the required Block app pick; music and sound effects; the Watch in the
+  valley with length and sound on the wrist; onboarding answers in PostHog;
+  the session's page opens after the reward.
+- **1.2:** the home screen widget; the new Block shield; Otto's replies on
+  every "Not now"; the session bell.
+- **1.1:** premium only; Block; the Shop and hats; Friends (profiles,
+  requests, practice stats); the valley everywhere; Otto's aura rig.
+- **2026-09-12 to 09-22:** see the git history and CLAUDE.md; the first
+  version of this list recorded them day by day.
