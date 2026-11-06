@@ -9,8 +9,10 @@
  *   Overview      the KPIs for the last 7 days, last 30 days, and all time
  *   Daily         one row per day (Detroit time) for the last 30 days
  *   Screens       every onboarding screen, in order, with users and drop-off
+ *                 (compared only on the versions a pair of screens share)
  *   Problems      what went wrong, by kind and reason, last 30 days
  *   Purchases     one row per buyer: plan, where they bought, which version
+ *   Members       who pays now: trials past day 3, subscriptions still on or lapsed
  *   Apple Watch   paired Watches, the measuring switch, measured sessions, by week
  *   Installs      one row per new install: when, where, phone, how far they got
  *   Updaters      one row per person who updated from 1.0: did they subscribe
@@ -24,6 +26,15 @@
  * Installed or onboarding_completed again. The first real 1.1 sale was one of
  * those, and every tab built on installs missed him. Hence the Updaters tab
  * and the "update paywall" rows.
+ *
+ * Members tab and version-aware drop-off added 2026-11-06 (Aziz). Two things
+ * were wrong. There was nowhere to see whether the people who paid are still
+ * paying, which PostHog can only partly answer and the tab says so out loud.
+ * And the Screens tab compared a screen added in an update against everybody,
+ * so a screen that shipped in 1.4 showed an invented 87% drop while most of
+ * the window was still on 1.2 and 1.3. Drop-off is now computed on the
+ * versions the two screens share, and the version a screen arrived in is read
+ * from the events rather than from a list kept by hand.
  *
  * 1.0's events that 1.1 no longer sends (watch_gate, free_tier_entered) are
  * gone from every tab. The Failures and Watch gate tabs are replaced by
@@ -151,16 +162,21 @@ function people() {
   if (PEOPLE) return PEOPLE;
   var rows = query(
     "SELECT toString(id), ifNull(toString(properties.$internal_or_test_user), ''), " +
-    "ifNull(toString(properties.has_paired_watch), ''), ifNull(toString(properties.plan), '') " +
+    "ifNull(toString(properties.has_paired_watch), ''), ifNull(toString(properties.plan), ''), " +
+    "ifNull(toString(properties.is_subscriber), '') " +
     "FROM persons WHERE ifNull(toString(properties.$internal_or_test_user), '') = 'true' " +
     "OR notEmpty(ifNull(toString(properties.has_paired_watch), '')) " +
     "OR notEmpty(ifNull(toString(properties.plan), '')) LIMIT 100000").results || [];
-  var p = { internal: [], watch: {}, plan: {}, lifetime: [] };
+  var p = { internal: [], watch: {}, plan: {}, subscriber: {}, lifetime: [] };
   rows.forEach(function (r) {
     var id = String(r[0]).toLowerCase();
     if (r[1] === 'true') p.internal.push(id);
     if (r[2]) p.watch[id] = r[2];
     if (r[3]) p.plan[id] = r[3];
+    // The app's own last word on whether this install pays, written by
+    // Store.refreshEntitlement on every launch. Only as fresh as their last
+    // open, which is why the Members tab prints that date beside it.
+    if (r[4]) p.subscriber[id] = r[4];
   });
   p.lifetime = (query(
     "SELECT DISTINCT toString(person_id) FROM events WHERE event = 'purchase' " +
@@ -284,6 +300,7 @@ function refreshAll() {
   var tabs = [
     ['Overview', writeOverview], ['Daily', writeDaily], ['Screens', writeScreens],
     ['Problems', writeProblems], ['Purchases', writePurchases],
+    ['Members', writeMembers],
     ['Apple Watch', writeAppleWatch], ['Installs', writeInstalls],
     ['Updaters', writeUpdaters], ['Who they are', writeWhoTheyAre],
   ];
@@ -460,23 +477,88 @@ function writeDaily() {
   write('Daily', rows);
 }
 
+/**
+ * Numeric version compare, so "1.10" counts as newer than "1.9" rather than
+ * older, which is what a plain string compare would say. True when `a` is the
+ * same version as `b` or newer.
+ */
+function verAtLeast(a, b) {
+  var x = String(a).split('.'), y = String(b).split('.');
+  for (var i = 0; i < Math.max(x.length, y.length); i++) {
+    var d = (parseInt(x[i], 10) || 0) - (parseInt(y[i], 10) || 0);
+    if (d !== 0) return d > 0;
+  }
+  return true;
+}
+
+/**
+ * Every onboarding screen in order, with how many people got past it and how
+ * many were lost since the screen before.
+ *
+ * **Drop-off is computed on the versions the two screens SHARE** (Aziz,
+ * 2026-11-06: "one of the screens says 87% drop off, and it's only because
+ * like 30 people saw the screen, but it's because we made an update"). A
+ * screen added in 1.4 is shown to nobody still on 1.2, so comparing all of
+ * 1.4's people against all of 1.2's and 1.3's reads as a collapse that never
+ * happened. The science screens (26a to 26c) and the invite screen landed
+ * 2026-10-18, the same day 1.4 was stamped, while most of any 30-day window
+ * is still on the version before it, which is exactly where that 87% came
+ * from.
+ *
+ * The version a screen arrived in is read from the DATA, not from a list kept
+ * by hand here, so adding a screen to the app needs no change on this side
+ * and the tab cannot drift out of date.
+ */
 function writeScreens() {
-  // Prefer the readable name the 1.0.1 events carry; name 1.0 events here.
-  // One query covers the screens AND the "finished onboarding" footer: the
-  // completion event is folded in as a pseudo-screen so the tab costs a
-  // single round trip.
-  var sql =
-    "SELECT if(event = 'onboarding_completed', '__finished', toString(properties.step)) AS step, " +
-    "count(DISTINCT person_id) AS people " +
+  // Two queries on purpose. The first is the exact number of distinct people
+  // per screen, which is what the tab prints. The second splits those counts
+  // by app version and exists only to work out which version each screen
+  // arrived in and to build matched denominators.
+  var base =
     "FROM events WHERE event IN ('onboarding_step', 'onboarding_completed') " +
     "AND timestamp > now() - INTERVAL 30 DAY AND " + notInternal() + " " +
     // 1.1 onwards only: 1.0 used some of the same step ids (relief, breath,
     // stress) for different screens in a different order.
-    "AND NOT " + OLD + " " +
-    "GROUP BY step ORDER BY people DESC LIMIT 100";
-  var res = query(sql);
+    "AND NOT " + OLD + " ";
+  var stepExpr = "if(event = 'onboarding_completed', '__finished', toString(properties.step))";
+
   var counts = {};
-  res.results.forEach(function (r) { counts[r[0]] = r[1]; });
+  query("SELECT " + stepExpr + " AS step, count(DISTINCT person_id) AS people " + base +
+        "GROUP BY step ORDER BY people DESC LIMIT 100")
+    .results.forEach(function (r) { counts[r[0]] = r[1]; });
+
+  // step -> { version: people }
+  var byVer = {};
+  query("SELECT " + stepExpr + " AS step, " +
+        "ifNull(toString(properties.$app_version), '') AS ver, " +
+        "count(DISTINCT person_id) AS people " + base +
+        "GROUP BY step, ver LIMIT 2000")
+    .results.forEach(function (r) {
+      if (!r[1]) return;
+      (byVer[r[0]] = byVer[r[0]] || {})[r[1]] = r[2];
+    });
+
+  /**
+   * The version a screen arrived in: the oldest version that sent it with
+   * more than one person behind it. The "more than one" shrugs off a single
+   * stray (a resume record carried across an update, one sideloaded build),
+   * which would otherwise date a brand new screen to 1.1 and undo the point
+   * of this. With nothing but strays, the oldest version is used.
+   */
+  function arrivedIn(id) {
+    var vers = Object.keys(byVer[id] || {});
+    if (!vers.length) return null;
+    var solid = vers.filter(function (v) { return byVer[id][v] > 1; });
+    var pool = solid.length ? solid : vers;
+    return pool.reduce(function (a, b) { return verAtLeast(a, b) ? b : a; });
+  }
+
+  /** People who got past a screen while on `floor` or newer. */
+  function peopleSince(id, floor) {
+    var m = byVer[id] || {}, total = 0;
+    Object.keys(m).forEach(function (v) { if (verAtLeast(v, floor)) total += m[v]; });
+    return total;
+  }
 
   // Which screens only SOME people see, read from the routing in
   // OnboardingView.swift rather than guessed from the name. The first
@@ -492,35 +574,62 @@ function writeScreens() {
   };
   // Screens a payer skips. A loss is computed, but never a negative one.
   var PAYERS_SKIP = { paywall: 'Anyone who already pays skips this screen' };
-  // Screens where the group of people changes, so "lost vs previous" would
-  // count routing as churn. The number is shown; the drop is explained.
-  var REBASE = {};
 
-  var rows = [['#', 'Screen', 'People who completed it (30d)', 'Lost vs previous screen', 'Note']];
-  var prev = null;
-  Object.keys(SCREEN_NAMES).forEach(function (id) {
+  var ids = Object.keys(SCREEN_NAMES);
+  var floors = {};
+  ids.forEach(function (id) { floors[id] = arrivedIn(id); });
+  // The oldest version any screen arrived in is the flow's own baseline, so a
+  // screen sitting at the baseline is not new and needs no special note.
+  var baseline = null;
+  ids.forEach(function (id) {
+    var f = floors[id];
+    if (f && (!baseline || !verAtLeast(f, baseline))) baseline = f;
+  });
+
+  var rows = [['#', 'Screen', 'Arrived in', 'People who completed it (30d)',
+               'Lost vs previous screen', 'Note']];
+  var prevId = null, prevN = null;
+  ids.forEach(function (id) {
     var name = SCREEN_NAMES[id];
     var n = counts[id] || 0;
+    var floor = floors[id];
+    var isNew = floor && baseline && !verAtLeast(baseline, floor);
     var lost = '', note = '';
+
     if (BRANCH[id]) {
       note = 'Branch screen (' + BRANCH[id] + '): no drop-off computed';
-    } else if (REBASE[id]) {
-      if (prev) lost = Math.round((1 - n / prev) * 100) + '%';
-      note = REBASE[id];
-    } else if (prev) {
-      lost = n <= prev ? Math.round((1 - n / prev) * 100) + '%' : '';
-      if (PAYERS_SKIP[id]) note = PAYERS_SKIP[id];
+    } else if (prevId) {
+      // Judge the two screens on the newest version either of them needs, so
+      // both sides of the ratio are people who could have seen both screens.
+      var a = floor || baseline, b = floors[prevId] || baseline;
+      var common = verAtLeast(a, b) ? a : b;
+      var num = peopleSince(id, common), den = peopleSince(prevId, common);
+      if (den) lost = num <= den ? Math.round((1 - num / den) * 100) + '%' : '';
+      if (isNew) {
+        note = 'New in ' + floor + ', so it is measured against the ' + den +
+          ' people who reached the screen before it on ' + floor +
+          ' or newer, not all ' + prevN + '. Anyone still on an older build ' +
+          'never saw this screen and is not a drop-off.';
+      } else if (floors[prevId] && baseline && !verAtLeast(baseline, floors[prevId])) {
+        note = 'Measured against ' + floors[prevId] + ' or newer, because the ' +
+          'screen before it is new in ' + floors[prevId] + '.';
+      } else if (PAYERS_SKIP[id]) {
+        note = PAYERS_SKIP[id];
+      }
     }
     // A string, so "09" stays "09" (write() formats every string as text).
-    rows.push([name.split(' ')[0], name.replace(/^\S+\s/, ''), n, lost, note]);
-    if (!BRANCH[id]) prev = n;
+    rows.push([name.split(' ')[0], name.replace(/^\S+\s/, ''), floor || '', n, lost, note]);
+    if (!BRANCH[id]) { prevId = id; prevN = n; }
   });
+
   rows.push(['']);
-  rows.push(['', 'Finished onboarding', counts['__finished'] || 0,
+  rows.push(['', 'Finished onboarding', '', counts['__finished'] || 0,
     '', 'An onboarding_step fires when a screen is LEFT, so each count is people who got past that screen. 1.1 and later only.']);
-  rows.push(['', 'Who is counted', '', '',
+  rows.push(['', 'How drop-off is measured', '', '', '',
+    'Each pair of screens is compared on the newest version either of them needs, so a screen added in an update is never judged against people whose build does not contain it. "Arrived in" is the oldest version that screen was ever seen on, read from the events themselves, so it keeps up with the app on its own. Where that version is newer than the rest of the flow, the note says what the comparison was against.']);
+  rows.push(['', 'Who is counted', '', '', '',
     'New installs, plus 1.0 users who never finished 1.0’s onboarding. A 1.0 user who did finish it skips straight to the launch paywall (see the Updaters tab). Apple’s devices and the founders’ phones are left out; family and friends count. A founder’s NEW install counts until its team-device switch is on.']);
-  write('Screens', rows, [50, 380, 200, 170, 620]);
+  write('Screens', rows, [50, 340, 90, 200, 170, 620]);
 }
 
 /** What each problem means, keyed "event:reason". */
@@ -603,6 +712,206 @@ function writePurchases() {
   rows.push(['BUYERS', res.results.length, '', '', '', '', '', '', 'This is the number that matters.']);
   rows.push(['Note', 'A trial counts as a purchase the moment it starts; PostHog never hears whether it renewed or was cancelled, so check App Store Connect for paying members. Trials in 1.1 are 3 days; in 1.0 they were 7. Before the build after 1.0.1, repeat taps logged repeat purchases, and a Lifetime purchase also logged a trial it never had (left out of the Trial column).']);
   write('Purchases', rows, [280, 130, 260, 300, 70, 60, 120, 120, 340]);
+}
+
+/** Plans whose purchase begins with a free trial (`SubscriptionPlan`). */
+var TRIAL_PLANS = { monthTrial: 1, yearTrial: 1, monthHalf: 1, yearHalf: 1 };
+
+/**
+ * What a buyer bought, as the three things that can happen next:
+ * a trial that either converts or does not, a subscription that renews or is
+ * cancelled, and a Lifetime that can never lapse.
+ */
+function memberKind(plans, trials) {
+  var list = String(plans || '').split(',').filter(String);
+  if (list.indexOf('lifetime') >= 0) return 'lifetime';
+  if (trials > 0) return 'trial';
+  for (var i = 0; i < list.length; i++) if (list[i] in TRIAL_PLANS) return 'trial';
+  return 'subscription';
+}
+
+/** The free trial 1.1 onwards sells is 3 days. 1.0's was 7. */
+function trialDaysFor(ver) { return String(ver).indexOf('1.0') === 0 ? 7 : 3; }
+
+/**
+ * Who paid, and whether they are still paying.
+ *
+ * **The limit this tab is built around, and the reason the last two columns
+ * exist.** Apple never tells the app that a subscription was cancelled. The
+ * app only finds out by reading StoreKit's on-device record the next time it
+ * is opened (`Store.refreshEntitlement`), which writes the `is_subscriber`
+ * and `plan` person properties and fires `entitlement_lost` when an
+ * entitlement that was there has gone. So:
+ *
+ * - Somebody who cancels and opens 808 again is seen, and reads "Lapsed".
+ * - Somebody who cancels and never opens 808 again sends nothing at all, and
+ *   their person record goes on saying they pay. They read "Unknown, never
+ *   came back", never "Still paying", because a yes there would be the sheet
+ *   inventing a renewal nobody confirmed.
+ *
+ * A trial is the sharpest case: `is_subscriber` written on day 1 of a 3-day
+ * trial says only that the trial is running. It is evidence of conversion
+ * only once it was written AFTER the trial window closed, which is what the
+ * "Past the 3-day trial" column tests.
+ *
+ * **App Store Connect is the only source of truth for money** (Subscriptions,
+ * then Events or the Subscription Retention report: active, cancelled,
+ * renewal rate). This tab is what the app can see from the inside, which is
+ * who bought what and who is still turning up.
+ */
+function writeMembers() {
+  var BOUGHT = "event IN ('trial_started', 'purchase')";
+  var sql =
+    "SELECT toString(person_id), " +
+    "toUnixTimestamp(minIf(timestamp, " + BOUGHT + ")) AS bought_at, " +
+    "arrayStringConcat(groupUniqArrayIf(toString(properties.plan), " + BOUGHT + "), ',') AS plans, " +
+    "arrayStringConcat(groupUniqArrayIf(toString(properties.placement), event = 'purchase'), ',') AS places, " +
+    "countIf(" + realTrial() + ") AS trials, " +
+    "toUnixTimestamp(maxIf(timestamp, event = 'entitlement_lost')) AS lost_at, " +
+    "argMinIf(toString(properties.$app_version), timestamp, " + BOUGHT + ") AS ver, " +
+    "argMaxIf(toString(properties.$geoip_country_name), timestamp, " +
+    "notEmpty(ifNull(toString(properties.$geoip_country_name), ''))) AS country " +
+    "FROM events WHERE event IN ('trial_started', 'purchase', 'entitlement_lost') " +
+    "AND timestamp > now() - INTERVAL 3650 DAY AND " + notInternal() + " " +
+    "GROUP BY person_id ORDER BY bought_at DESC LIMIT 500";
+  var res = query(sql);
+
+  // When each buyer was last heard from at all, which is how fresh the
+  // "still paying" fact above is. One extra query over the buyers only.
+  var ids = res.results.map(function (r) { return String(r[0]).toLowerCase(); });
+  var lastSeen = {};
+  if (ids.length) {
+    (query("SELECT toString(person_id), toUnixTimestamp(max(timestamp)) FROM events " +
+           "WHERE " + personIn(ids) + " GROUP BY person_id LIMIT 1000").results || [])
+      .forEach(function (r) { lastSeen[String(r[0]).toLowerCase()] = secs(r[1]); });
+  }
+
+  var DAY = 86400, now = Date.now() / 1000;
+  /**
+   * Seconds since the epoch from whatever PostHog hands back for a time: the
+   * number toUnixTimestamp returns, or a date string if it ever answers with
+   * one. 0 means nothing is there, which every caller below reads as "never
+   * happened" rather than as 1970.
+   */
+  function secs(v) {
+    if (v === null || v === undefined || v === '') return 0;
+    var n = Number(v);
+    if (!isNaN(n)) return n > 0 ? n : 0;
+    var t = Date.parse(String(v).replace(' ', 'T'));
+    return isNaN(t) || t <= 0 ? 0 : Math.floor(t / 1000);
+  }
+  function day(ts) {
+    return ts ? Utilities.formatDate(new Date(ts * 1000), TZ, 'yyyy-MM-dd') : '';
+  }
+
+  var tally = {
+    trial:        { ended: 0, paying: 0, lapsed: 0, unknown: 0, running: 0 },
+    subscription: { ended: 0, paying: 0, lapsed: 0, unknown: 0, running: 0 },
+    lifetime:     { ended: 0, paying: 0, lapsed: 0, unknown: 0, running: 0 }
+  };
+  var list = [];
+
+  res.results.forEach(function (r) {
+    var id = String(r[0]).toLowerCase();
+    var boughtAt = secs(r[1]);
+    // An entitlement_lost with no purchase behind it: nothing was ever sold
+    // to this person on this install, so they are not a member.
+    if (!boughtAt) return;
+    var plans = r[2], places = r[3];
+    var trials = Number(r[4]) || 0;
+    var lostAt = secs(r[5]);
+    var ver = r[6] || '';
+    var country = r[7] || '';
+
+    var kind = memberKind(plans, trials);
+    var win = kind === 'trial' ? trialDaysFor(ver) : 0;
+    var ageDays = (now - boughtAt) / DAY;
+    var seen = lastSeen[id] || 0;
+    var sub = people().subscriber[id];     // 'true' | 'false' | undefined
+    // Seen by the app itself, either as the event or as the person property
+    // on the last launch. Lifetime cannot lapse, so a stale 'false' there
+    // (read before the purchase landed) is never treated as a loss.
+    var lapsed = kind !== 'lifetime' && (lostAt > boughtAt || sub === 'false');
+    var afterWindow = seen > boughtAt + win * DAY;
+
+    var status, past;
+    if (lapsed) {
+      status = 'Lapsed' + (lostAt > boughtAt ? ' (app saw it ' + day(lostAt) + ')' : '');
+      past = win ? 'No' : '';
+    } else if (kind === 'lifetime') {
+      status = 'Lifetime, cannot lapse';
+      past = '';
+    } else if (win && ageDays < win) {
+      status = 'Trial still running';
+      past = 'Too early to say';
+    } else if (win && !afterWindow) {
+      status = 'Unknown, never opened 808 after the trial';
+      past = 'Unknown';
+    } else if (sub === 'true') {
+      var stale = Math.floor((now - seen) / DAY);
+      status = 'Still paying' + (stale > 7 ? ', as of ' + stale + ' days ago' : '');
+      past = win ? 'Yes' : '';
+    } else {
+      status = 'Unknown, no entitlement read on this install';
+      past = win ? 'Unknown' : '';
+    }
+
+    var t = tally[kind];
+    if (win && ageDays < win) { t.running++; }
+    else {
+      t.ended++;
+      if (lapsed) t.lapsed++;
+      else if (kind === 'lifetime' || sub === 'true') {
+        if (win && !afterWindow) t.unknown++; else t.paying++;
+      } else t.unknown++;
+    }
+
+    list.push([id, day(boughtAt), namesOf(plans, PLAN_NAMES),
+               namesOf(places, PLACE_NAMES) || (ver.indexOf('1.0') === 0 ? 'Not recorded (1.0)' : ''),
+               trials > 0 ? 'Yes' : 'No', past, status,
+               seen ? day(seen) + ' (' + Math.floor((now - seen) / DAY) + 'd ago)' : '',
+               country]);
+  });
+
+  var buyers = list.length;
+  var rows = [['Members', 'People', 'Share', 'What it means']];
+  rows.push(['Buyers, all time', buyers, '', 'One row each, however many times they tapped buy.']);
+  rows.push(['  Started a free trial', tally.trial.ended + tally.trial.running, '',
+    'The downsell ladder: "No, I don’t want to pay" offers the 3-day trial.']);
+  rows.push(['  Bought a plan outright', tally.subscription.ended + tally.subscription.running, '',
+    'Monthly or Yearly straight off the paywall, no trial.']);
+  rows.push(['  Bought Lifetime', tally.lifetime.ended + tally.lifetime.running, '',
+    'A one-off purchase. It can never lapse.']);
+  rows.push(['']);
+
+  rows.push(['TRIALS past their 3 days', tally.trial.ended, '',
+    'Only trials old enough to have ended. The ' + tally.trial.running + ' still running are left out.']);
+  rows.push(['  Still paying', tally.trial.paying, pct(tally.trial.paying, tally.trial.ended),
+    'The app read a live entitlement AFTER the trial window closed, so the trial converted.']);
+  rows.push(['  Lapsed', tally.trial.lapsed, pct(tally.trial.lapsed, tally.trial.ended),
+    'entitlement_lost fired, or the app found no entitlement on a later launch.']);
+  rows.push(['  Unknown, never came back', tally.trial.unknown, pct(tally.trial.unknown, tally.trial.ended),
+    'Never opened 808 after the trial, so the app never learned either way. Not a cancellation and not a renewal: App Store Connect is the only place these are settled.']);
+  rows.push(['']);
+
+  rows.push(['SUBSCRIPTIONS bought outright', tally.subscription.ended, '', 'Monthly and Yearly, no trial.']);
+  rows.push(['  Still paying', tally.subscription.paying, pct(tally.subscription.paying, tally.subscription.ended),
+    'A live entitlement on their last launch.']);
+  rows.push(['  Lapsed', tally.subscription.lapsed, pct(tally.subscription.lapsed, tally.subscription.ended),
+    'Cancelled or expired, and they opened 808 again afterwards so the app saw it.']);
+  rows.push(['  Unknown, never came back', tally.subscription.unknown, pct(tally.subscription.unknown, tally.subscription.ended),
+    'No entitlement read since they bought.']);
+  rows.push(['']);
+
+  rows.push(['Where the truth is', '', '',
+    'App Store Connect, Subscriptions. Apple never tells the app about a cancellation, so 808 only learns of one when the person opens it again; anyone who cancels and walks away sits in "Unknown, never came back" forever. Read this tab as what the app can see, and Connect for what was actually billed.']);
+  rows.push(['']);
+
+  rows.push(['Buyer (anonymous id)', 'Bought (Detroit)', 'Plan', 'Where', 'Trial',
+             'Past the 3-day trial', 'Status', 'Last opened 808', 'Country']);
+  list.forEach(function (r) { rows.push(r); });
+
+  write('Members', rows, [280, 130, 240, 290, 60, 150, 330, 170, 120]);
 }
 
 function writeAppleWatch() {

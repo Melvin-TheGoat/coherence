@@ -2238,6 +2238,54 @@ is LEFT, so people who stop halfway count.
   1.3 users arrive. Build PostHog tiles only once data exists, and ask
   Melvin first, as with any PostHog change.
 
+## WHO STILL PAYS, AND A DROP-OFF THAT SURVIVES AN UPDATE (2026-11-06, Aziz)
+
+Two additions to `tools/posthog_sheet.gs`. Paste it into Apps Script and run
+`refresh` for either to appear.
+
+- **The `Members` tab**: every buyer, the plan, whether a trial started,
+  whether they got past the 3 days, and whether they are still on, with a
+  summary at the top split into trials, subscriptions bought outright, and
+  Lifetime.
+- **`PostHog CANNOT see a cancellation, and the tab must never pretend it
+  can.`** Apple tells the app nothing. `Store.refreshEntitlement` reads
+  StoreKit's on-device record on every launch, writes the `is_subscriber` and
+  `plan` person properties and fires `entitlement_lost` when an entitlement
+  that was there has gone. So somebody who cancels and opens 808 again reads
+  "Lapsed", and somebody who cancels and walks away sends nothing while their
+  person record goes on saying they pay. Those read **"Unknown, never came
+  back"**, never "Still paying". Do not simplify that bucket away: it is the
+  difference between a number and a guess. **App Store Connect's Subscriptions
+  report is the only truth for money.**
+- **A trial is the sharp case.** `is_subscriber: true` written on day 1 of a
+  3-day trial says only that the trial is running. It is evidence of
+  conversion only once written AFTER the window closed, which is why the tab
+  carries "Last opened 808" beside the status. `plan` keeps the trial
+  product's own raw value (`monthTrial`), and a renewal does not change the
+  product id, so `plan` never says whether a trial converted.
+- **Screens drop-off is computed on the versions a PAIR of screens share.**
+  Aziz: "one of the screens says 87% drop off, and it's only because like 30
+  people saw the screen, but it's because we made an update." The science
+  screens (26a to 26c) and the invite screen landed 2026-10-18, the day 1.4
+  was stamped, while most of a 30-day window was still on 1.2 and 1.3, so
+  `1 - 26/200` printed as 87% churn that never happened. Each pair is now
+  compared on the newer of their two floors, and the tab prints an "Arrived
+  in" column plus a note naming what the comparison was against.
+- **The version a screen arrived in is READ FROM THE DATA**, as the oldest
+  `$app_version` that ever sent that step with more than one person behind it
+  (the "more than one" shrugs off a stray resume record, which would
+  otherwise date a new screen to 1.1 and undo the fix). **Do not replace this
+  with a hand-maintained map of screen to version**: `SCREEN_NAMES` already
+  has to be edited by hand when onboarding changes, and a second list that
+  must agree with it would silently rot and bring the phantom drop back.
+- `verAtLeast` compares versions numerically, so "1.10" counts as newer than
+  "1.9" rather than older. Use it for any version comparison in that file.
+- Verified by running the file under JavaScriptCore (`osascript -l
+  JavaScript`) with `query`, `write` and `people` stubbed and fabricated
+  rows, including Aziz's exact 87% case and one buyer per outcome. **There is
+  no node on either Mac**; that is the way to check this file without a
+  PostHog key, which lives only in Script Properties.
+
 ## RELEASE_CHECKLIST.md GATES EVERY SUBMISSION (2026-09-14)
 
 Aziz: "before we push, make sure you tell us to check if these are done."
