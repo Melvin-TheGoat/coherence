@@ -244,11 +244,10 @@ before merging: they predate the 1.4.1 work.
 
 ## Open threads
 
-- **Ship 1.4.1.** Build 202610271827 uploaded 2026-10-27. Before Submit:
-  the four new Watch screenshots (`~/Downloads/808-watch-1.4.1/`) and the
-  phone checks in RELEASE_CHECKLIST.md: Block open after a morning
-  session, a session across midnight raises the streak by one, the
-  week-together test on two phones, the sandbox banner, the founders' note.
+- **Watch 1.4.1 through review.** Submitted 2026-11-06 (build
+  202610271827). Once it is live, deploy the website if anything on it
+  changed, and watch PostHog for the paywall banner's `offer_viewed`
+  against the Oct 1 to 26 baseline (13 buyers from 110 installs).
 - **Copy for the pivot.** PURPOSE.md, SCIENCE.md (still says breath counts
   most, untrue since score v5.0.0), the website footer and its "first app
   that scores your meditation" line, and marketing/CAROUSEL_BRIEF.md still
@@ -284,7 +283,7 @@ before merging: they predate the 1.4.1 work.
 
 One line per release or day; the detail is in CLAUDE.md and git.
 
-- **1.4.1 (built 2026-10-26/27, not yet submitted):** paywall rebuilt
+- **1.4.1 (built 2026-10-26/27, submitted 2026-11-06):** paywall rebuilt
   (Yearly first, half price as a one-tap banner, 7-day trials); Block opens
   for the rest of the day after 1 minute; the 11:30 pm streak saver; Friends
   awards and weeks finished together (10 points, push, history); goals count
