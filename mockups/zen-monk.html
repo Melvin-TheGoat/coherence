@@ -1,0 +1,443 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Zen and Monk</title>
+<style>
+:root{
+  --paper:#FEF9F2; --sand:#F0E9DC; --ink:#413024; --soft:#877160; --line:#E4D9C3;
+  --green:#5E9B5A; --greenSh:#477C44; --amber:#F0C47B; --amberText:#9B6B19;
+  --measure:#62A3D4; --measureInk:#1F4E70; --sky:#3F7FB0;
+  --skyInk:#24414F; --skySoft:#47697A; --cream:#FBF3E4; --terra:#B4664E;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#EFE5D8;color:var(--ink);padding:36px 26px 90px;
+ font-family:ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif}
+main{max-width:1260px;margin:0 auto}
+h1{font-size:28px;margin:0 0 8px;font-weight:800;letter-spacing:-.01em}
+h2{font-size:19px;margin:48px 0 6px;font-weight:800}
+.lede,.sect{color:var(--soft);font-size:14.5px;max-width:900px;line-height:1.6;margin:0}
+.lede b,.sect b{color:var(--ink)}
+.row{display:flex;gap:30px;flex-wrap:wrap;align-items:flex-start;margin-top:22px}
+.col{width:390px;flex:none}
+.tag{font-size:10.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--soft);padding-bottom:9px}
+.tag b{color:var(--ink)}
+.note{color:var(--soft);font-size:13.5px;line-height:1.6;margin-top:13px}
+.note b{color:var(--ink)}
+.rec{display:inline-block;background:#E3EFDE;color:var(--greenSh);font-size:9.5px;font-weight:800;
+ letter-spacing:.08em;border-radius:999px;padding:3px 8px;margin-left:6px;vertical-align:1px}
+
+/* ---------- phone ---------- */
+.p{width:390px;height:800px;border-radius:46px;overflow:hidden;position:relative;flex:none;
+ box-shadow:0 14px 38px rgba(80,55,30,.18);background:#8CBBD4}
+.status{position:absolute;top:16px;left:34px;right:30px;display:flex;justify-content:space-between;
+ font-size:14px;font-weight:700;color:var(--skyInk);z-index:5}
+.status.light{color:#F6EEDF}
+.island{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:118px;height:34px;border-radius:20px;background:#0c0c0c;z-index:6}
+.scene{position:absolute;inset:0}
+.sun{position:absolute;width:52px;height:52px;border-radius:50%}
+.mt{position:absolute;left:0;width:100%}
+.field{position:absolute;left:0;width:100%;bottom:0}
+.fl{position:absolute;transform-origin:50% 100%}
+.seat{position:absolute;left:50%;transform:translateX(-50%);width:204px;height:52px;border-radius:50%;
+ background:linear-gradient(180deg,#D98B6E,#B96A50);box-shadow:inset 0 6px 0 rgba(255,220,200,.30),0 3px 8px rgba(40,25,15,.22)}
+.otto{position:absolute;left:50%;transform:translateX(-50%);background:center bottom/contain no-repeat}
+
+/* bubble, Otto's sand card */
+.bub{position:absolute;left:50%;transform:translateX(-50%);background:var(--sand);border-radius:18px;
+ padding:11px 15px;font-size:15px;font-weight:700;color:var(--ink);line-height:1.35;text-align:center;
+ box-shadow:0 2px 0 #DCCFB9,0 4px 12px rgba(40,25,15,.10)}
+.bub:after{content:"";position:absolute;left:50%;bottom:-9px;transform:translateX(-50%);
+ border-left:9px solid transparent;border-right:9px solid transparent;border-top:10px solid var(--sand)}
+.bub.night{background:rgba(20,22,40,.42);color:#F6EEDF;box-shadow:none;backdrop-filter:blur(4px)}
+.bub.night:after{border-top-color:rgba(20,22,40,.42)}
+
+/* pills and buttons */
+.ctl{position:absolute;left:0;bottom:0;width:100%;padding:0 20px 30px}
+.pill{display:flex;align-items:center;gap:12px;background:rgba(254,249,242,.95);border-radius:18px;
+ padding:12px 15px;margin-bottom:9px;box-shadow:0 2px 8px rgba(40,25,15,.14)}
+.pill .rd{width:40px;height:40px;border-radius:50%;background:#F3E8D6;display:flex;align-items:center;justify-content:center;font-size:19px;flex:none}
+.pill .tx{flex:1}
+.pill .tx b{display:block;font-size:16px;font-weight:800}
+.pill .tx i{display:block;font-style:normal;font-size:13px;color:var(--soft);margin-top:1px}
+.pill .chev{color:var(--soft);font-size:18px;font-weight:700}
+.pairs{display:flex;gap:9px}.pairs .pill{flex:1}
+.cta{background:var(--green);color:#fff;font-size:18px;font-weight:800;text-align:center;
+ padding:16px 0;border-radius:22px;box-shadow:0 5px 0 var(--greenSh);margin-top:12px}
+.cta.blue{background:var(--sky);box-shadow:0 5px 0 #2C5F87}
+.ghost{background:rgba(254,249,242,.95);color:var(--ink);font-size:16px;font-weight:800;text-align:center;
+ padding:14px 0;border-radius:999px;margin-top:12px;box-shadow:0 2px 8px rgba(40,25,15,.14)}
+.chip{position:absolute;left:50%;transform:translateX(-50%);display:inline-flex;align-items:center;gap:6px;
+ background:rgba(254,249,242,.88);border-radius:999px;padding:6px 13px;font-size:13px;font-weight:800;color:var(--ink);
+ box-shadow:0 1px 5px rgba(40,25,15,.12);white-space:nowrap}
+.chip .dot{width:8px;height:8px;border-radius:50%;background:var(--sky)}
+.chip i{font-style:normal;color:var(--soft);font-weight:700}
+.cancel{position:absolute;top:58px;left:24px;font-size:15px;font-weight:700;color:rgba(15,40,52,.55)}
+
+/* readouts */
+.clock{position:absolute;left:0;width:100%;text-align:center;font-variant-numeric:tabular-nums}
+.clock .big{font-size:62px;font-weight:800;letter-spacing:-.02em;line-height:1}
+.clock .sub{font-size:13px;font-weight:700;margin-top:4px}
+.tape{position:absolute;left:30px;right:30px;height:34px;
+ background:repeating-linear-gradient(90deg,rgba(36,65,79,.38) 0 2px,transparent 2px 14px);
+ -webkit-mask-image:linear-gradient(90deg,transparent,#000 25%,#000 75%,transparent);mask-image:linear-gradient(90deg,transparent,#000 25%,#000 75%,transparent);border-radius:2px}
+.needle{position:absolute;left:50%;margin-left:-2px;width:4px;height:42px;border-radius:3px;background:var(--amber);box-shadow:0 0 0 2px rgba(254,249,242,.8)}
+.head{position:absolute;left:0;width:100%;text-align:center;padding:0 28px}
+.head b{display:block;font-size:19px;font-weight:800}
+.head i{display:block;font-style:normal;font-size:14px;margin-top:5px;line-height:1.4}
+.end{position:absolute;left:50%;transform:translateX(-50%);bottom:52px;background:rgba(254,249,242,.16);
+ border:1.5px solid rgba(254,249,242,.45);color:#F6EEDF;border-radius:999px;padding:12px 34px;font-size:15px;font-weight:800}
+.sitline{position:absolute;left:50%;transform:translateX(-50%);display:inline-flex;align-items:center;gap:7px;
+ background:rgba(20,22,40,.34);color:#F6EEDF;border-radius:999px;padding:7px 14px;font-size:13px;font-weight:700;white-space:nowrap;backdrop-filter:blur(4px)}
+
+/* settings */
+.band{position:absolute;left:0;top:0;width:100%;height:170px;overflow:hidden}
+.band:after{content:"";position:absolute;left:0;right:0;bottom:0;height:40px;background:linear-gradient(180deg,rgba(156,188,133,0),#9CBC85)}
+.grass{position:absolute;left:0;right:0;top:170px;bottom:0;background:#9CBC85}
+.stitle{position:absolute;top:66px;left:0;width:100%;text-align:center;font-size:22px;font-weight:800;color:var(--skyInk)}
+.sback{position:absolute;top:66px;left:22px;font-size:22px;font-weight:800;color:var(--skyInk)}
+.gh{font-size:13px;font-weight:800;color:#2E4A2A;margin:0 6px 7px}
+.card{background:var(--sand);border-radius:20px;box-shadow:0 2px 0 #D9CCB5;overflow:hidden;margin-bottom:20px}
+.opt{display:flex;gap:12px;align-items:flex-start;padding:14px 16px}
+.opt+.opt{border-top:1px solid rgba(65,48,36,.10)}
+.opt .ico{width:38px;height:38px;border-radius:50%;background:#E8DCC8;display:flex;align-items:center;justify-content:center;font-size:19px;flex:none}
+.opt .tx{flex:1}
+.opt .tx b{font-size:16px;font-weight:800}
+.opt .tx .def{font-size:11px;font-weight:800;letter-spacing:.06em;color:var(--soft);margin-left:6px}
+.opt .tx i{display:block;font-style:normal;font-size:13.5px;color:var(--soft);line-height:1.4;margin-top:2px}
+.radio{width:24px;height:24px;border-radius:50%;border:2px solid #CDBFA8;flex:none;margin-top:7px}
+.radio.on{border:7px solid var(--sky)}
+.opt.on{background:rgba(63,127,176,.07)}
+.srow{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;font-size:16px;font-weight:700}
+.srow+.srow{border-top:1px solid rgba(65,48,36,.10)}
+.srow span{color:var(--soft);font-weight:600}
+.sw{width:48px;height:29px;border-radius:999px;background:var(--green);position:relative}
+.sw:after{content:"";position:absolute;top:3px;right:3px;width:23px;height:23px;border-radius:50%;background:#fff}
+.seg{display:flex;background:#E6DCCB;border-radius:14px;padding:4px;margin:12px 14px 4px}
+.seg div{flex:1;text-align:center;padding:9px 0;border-radius:11px;font-size:15px;font-weight:800;color:var(--soft)}
+.seg div.on{background:var(--sky);color:#fff}
+.segnote{font-size:13.5px;color:var(--soft);padding:6px 18px 14px;line-height:1.45}
+
+/* sheet */
+.dim{position:absolute;inset:0;background:rgba(20,30,40,.35)}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--paper);border-radius:28px 28px 0 0;padding:12px 20px 34px}
+.grab{width:40px;height:5px;border-radius:3px;background:#DCCFB9;margin:0 auto 14px}
+.sheet h3{margin:0 0 4px;font-size:20px;text-align:center}
+.sheet p{margin:0 0 14px;text-align:center;color:var(--soft);font-size:14px}
+
+/* comparison table */
+.cmp{width:390px;background:var(--paper);border-radius:28px;padding:22px 20px;box-shadow:0 14px 38px rgba(80,55,30,.12)}
+.cmp h3{margin:0 0 4px;font-size:21px}
+.cmp .sub{margin:0 0 16px;color:var(--soft);font-size:14px}
+.cmp table{width:100%;border-collapse:collapse}
+.cmp th{font-size:15px;font-weight:800;text-align:center;padding:0 0 10px;width:92px}
+.cmp th small{display:block;font-size:10.5px;font-weight:800;letter-spacing:.06em;color:var(--soft);margin-top:2px}
+.cmp td{padding:11px 4px;border-top:1px solid var(--line);font-size:14px;line-height:1.35;vertical-align:middle}
+.cmp td.v{text-align:center;font-size:13px;font-weight:700}
+.yes{color:var(--greenSh)} .end10{color:var(--terra)}
+.mk{display:inline-block;width:22px;height:22px;border-radius:50%;line-height:22px;font-size:13px;font-weight:900}
+.mk.y{background:#E3EFDE;color:var(--greenSh)} .mk.n{background:#F4E2DB;color:var(--terra)}
+.cmp .foot{font-size:12.5px;color:var(--soft);margin-top:12px;line-height:1.5}
+.zenhead{color:var(--sky)} .monkhead{color:#6B4E8C}
+
+/* open questions */
+.oq{background:#FFFBF2;border:1px solid var(--line);border-radius:22px;padding:6px 28px 22px;margin-top:54px;max-width:1000px}
+.oq li{color:var(--soft);font-size:14.5px;line-height:1.6;margin:12px 0}
+.oq li b{color:var(--ink)}
+.opts{display:flex;gap:16px;flex-wrap:wrap;margin:10px 0 4px}
+.opts div{flex:1;min-width:260px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px 14px;font-size:13.5px;line-height:1.5}
+.opts div b{display:block;margin-bottom:2px}
+</style></head><body><main>
+
+<h1>Zen mode and Monk mode</h1>
+<p class="lede">Melvin's decision, 2026-11-06. <b>Zen mode is the default</b>: lock the phone, put the screen
+to sleep, even open another app, and the timer keeps going. <b>Monk mode is opt-in</b> and is roughly
+today's rules. Frames are 390 wide (iPhone 17 Pro), drawn in the app's valley, sand cards, cream pills,
+green for doing and sky blue for choosing. Design only, nothing built.</p>
+
+<!-- 1 -->
+<h2>1. What each mode allows</h2>
+<p class="sect">The card a person sees when they open the choice (Settings, or the chip on the + screen).
+Same words in both places. The rest day is the same in both, so there is one streak rule, not two.</p>
+<div class="row">
+ <div class="cmp">
+  <h3>Two ways to meditate</h3>
+  <p class="sub">Pick the one that suits you. You can switch any time.</p>
+  <table>
+   <tr><td></td><th class="zenhead">Zen<small>DEFAULT</small></th><th class="monkhead">Monk<small>STRICT</small></th></tr>
+   <tr><td>Lock your phone or let the screen sleep</td><td class="v yes"><span class="mk y">&#10003;</span><br>Timer keeps going</td><td class="v end10">Ends after<br>10 seconds</td></tr>
+   <tr><td>Open another app</td><td class="v yes"><span class="mk y">&#10003;</span><br>Timer keeps going</td><td class="v end10">Ends after<br>10 seconds</td></tr>
+   <tr><td>"I was still meditating" if a session ends early</td><td class="v"><span class="mk y">&#10003;</span></td><td class="v"><span class="mk n">&times;</span></td></tr>
+   <tr><td>Sessions you record by hand count for your streak and Otto's glow</td><td class="v"><span class="mk y">&#10003;</span></td><td class="v">Saved to<br>your history</td></tr>
+   <tr><td>One rest day each week</td><td class="v"><span class="mk y">&#10003;</span></td><td class="v"><span class="mk y">&#10003;</span></td></tr>
+  </table>
+  <p class="foot">Monk mode is for people who want every session to be a full one, with 808 open the whole time.</p>
+ </div>
+ <div class="col" style="width:380px">
+  <p class="note" style="margin-top:0"><b>Copy notes.</b> Monk's "recorded by hand" cell says what happens
+  ("Saved to your history"), not a cross, so the table never tells somebody what their session is missing.
+  The "Ends after 10 seconds" cells are the only terracotta on the card: it is the one real cost.</p>
+  <p class="note"><b>Naming.</b> Zen reads as calm, not as "easy", so the default is never the lesser way to
+  meditate. Monk matches Otto's Monk's hat in the Shop, which could be the badge for the mode later.</p>
+  <p class="note"><b>Where Zen is looser than the CLAUDE.md write-up:</b> that draft kept "another app ends it
+  after 10 seconds" in the default. Melvin's decision lets Zen switch apps too. That moves the Block question
+  in the open questions below from a footnote to a real decision.</p>
+ </div>
+</div>
+
+<!-- 2 -->
+<h2>2. Where you choose: Settings</h2>
+<p class="sect">A "Session mode" card near the top of Settings, under Apple Watch. Two options, one tap.
+Left: a row per mode with its line (recommended, it states the rule in the place the rule is chosen).
+Right: a segmented control with one line under it, if the card needs to be shorter.</p>
+<div class="row">
+ <div class="col"><div class="tag"><b>2a</b> &nbsp;two rows <span class="rec">RECOMMENDED</span></div>
+  <div class="p" id="set1"></div>
+  <p class="note"><b>Selection is sky blue</b>, the app's choosing colour; nothing on the card is gold or green
+  because nothing here is "doing". The "What's the difference?" row opens the card from section 1.</p></div>
+ <div class="col"><div class="tag"><b>2b</b> &nbsp;segmented</div>
+  <div class="p" id="set2"></div>
+  <p class="note">Shorter, and the line underneath swaps with the choice. Costs a tap to compare, since
+  only one mode's line shows at a time.</p></div>
+</div>
+
+<!-- 3 -->
+<h2>3. The + screen</h2>
+<p class="sect">Aziz has taken switches off this screen before for clutter, so the mode is never a switch
+here. Two options: a small chip under the clock that opens the choice as a sheet, or nothing at all and
+the mode lives in Settings only.</p>
+<div class="row">
+ <div class="col"><div class="tag"><b>3a</b> &nbsp;a quiet chip</div>
+  <div class="p" id="ready1"></div>
+  <p class="note"><b>"Zen mode &rsaquo;"</b> sits under the timer tape, the size of a caption. It is the only
+  new thing on the screen and it is not a control you have to read past to Begin.</p></div>
+ <div class="col"><div class="tag"><b>3a</b> &nbsp;tapping the chip</div>
+  <div class="p" id="ready2"></div>
+  <p class="note">The same two rows as Settings in a sheet. Picking one closes it. Choosing here changes the
+  setting, not just this session, so there is only one place the mode is stored.</p></div>
+ <div class="col"><div class="tag"><b>3b</b> &nbsp;no chip <span class="rec">ALSO FINE</span></div>
+  <div class="p" id="ready3"></div>
+  <p class="note"><b>Today's screen, unchanged.</b> Most people never change the default, and the sit
+  screen itself says which mode is running (section 4). Monk users set it once in Settings.</p></div>
+</div>
+
+<!-- 4 -->
+<h2>4. The live session, in each mode</h2>
+<p class="sect">The same dusk valley and medallion clock as today. One line under the headline names the
+mode's rule, and it fades after the first half minute like the opening frame does today.</p>
+<div class="row">
+ <div class="col"><div class="tag"><b>4a</b> &nbsp;Zen mode</div>
+  <div class="p" id="sitZen"></div>
+  <p class="note"><b>"Lock your phone if you like. I'll keep time."</b> (44 characters). This replaces
+  today's "Keep 808 open to ensure you are meditating", which is the very rule Zen removes.</p></div>
+ <div class="col"><div class="tag"><b>4b</b> &nbsp;Monk mode</div>
+  <div class="p" id="sitMonk"></div>
+  <p class="note"><b>"Monk mode. Keep 808 open until the bell."</b> (40 characters). Under it a small pill
+  says the rule once: "Leaving for 10 seconds ends the session." Same words as the table.</p></div>
+</div>
+
+<!-- 5 -->
+<h2>5. Coming back after locking the phone</h2>
+<p class="sect">Zen: the session simply carries on, and Otto says so once. Monk: the session has ended, and
+the screen offers to start again. There is no "I was still meditating" in Monk mode.</p>
+<div class="row">
+ <div class="col"><div class="tag"><b>5a</b> &nbsp;Zen, unlocking mid-session</div>
+  <div class="p" id="backZen"></div>
+  <p class="note"><b>Nothing to tap.</b> The clock reads the real elapsed time (12:40 in, of 20), Otto's
+  bubble shows for a few seconds and fades. If the timer ran out while locked, the Time Sensitive
+  notification already rang and this opens straight on the reward.</p></div>
+ <div class="col"><div class="tag"><b>5b</b> &nbsp;Monk, returning after 10 seconds</div>
+  <div class="p" id="backMonk"></div>
+  <p class="note"><b>The session up to the moment you left is not kept</b>, as today. The line reports what
+  happened in plain words and points at the fix ("Start again"), and the smaller link tells the person Zen
+  exists without arguing for it.</p></div>
+</div>
+
+<!-- 6 -->
+<h2>6. Otto offers Monk mode, once, after a 7-day streak</h2>
+<p class="sect">On a quiet Home after the reward screen of the seventh day in a row, in the same slot as the
+rating ask (never the same day as it). Shown once per phone. "Not now" never comes back.</p>
+<div class="row">
+ <div class="col"><div class="tag"><b>6</b> &nbsp;the offer</div>
+  <div class="p" id="offer"></div>
+  <p class="note"><b>"Seven days in a row! Want to try Monk mode?"</b> (43 characters). Framed as a step up
+  the person earned, not a correction. "Stay in Zen" is a cream pill of equal size, so saying no is as easy
+  as saying yes.</p></div>
+ <div class="col" style="width:380px">
+  <p class="note" style="margin-top:0"><b>Why after seven days.</b> Commitment devices help the people who
+  choose them, and few do (11% take-up in Gine, Karlan and Zinman 2010). A week in a row is the first
+  moment someone has shown they want more structure, and offering earlier would put a strict mode in front
+  of somebody still deciding whether to come back tomorrow.</p>
+  <p class="note"><b>Tour line</b> (onboarding's last tour stop, 74 characters max):<br>
+  "Lock your phone if you like. I'll keep time. Monk mode is in Settings." (70)</p>
+  <p class="note"><b>Analytics:</b> the switch (zen / monk, and where it was changed), and whether the offer
+  was taken. A choice only, nothing biometric.</p>
+ </div>
+</div>
+
+<!-- open questions -->
+<div class="oq">
+ <h2 style="margin-top:22px">Open questions</h2>
+ <ol>
+  <li><b>An open-ended session with the phone locked has no end.</b> Points are one per whole minute, so a
+   session left running overnight would pay out hours. Options: cap open-ended Zen sessions (say 2 hours,
+   then it ends itself at the cap), or ask on return when it has run past a limit ("Still meditating? You've
+   been going 3 hours") with the minutes kept only up to when the phone was last touched. Recommended: the
+   cap, because it needs no answer from someone who has already left.</li>
+  <li><b>Should a Zen session spent in other apps still open Block's apps?</b> One minute of session opens
+   them for the day, so a "session" spent scrolling TikTok would unlock TikTok.
+   <div class="opts">
+    <div><b>A. Time in other apps doesn't count toward Block's minute</b>Locked-screen time counts, app-switch
+    time doesn't. The session still counts for streak, glow and points. Recommended, if a lock can be told
+    from a switch (question 3).</div>
+    <div><b>B. Any Zen session still opens Block</b>Simplest and honest to the "your way" promise, but it makes
+    Zen the way round Block for anyone who wants one. If chosen, Block users may want Monk as their default.</div>
+   </div></li>
+  <li><b>Telling "locked" from "switched apps" needs a phone test.</b> Apple's
+   <code>protectedDataWillBecomeUnavailable</code> is the documented signal for a lock, but its timing, whether
+   it fires with no passcode set, and whether a silent suspended app receives it are unverified. The simulator
+   cannot answer this. If it fails, option A in question 2 is not buildable and the choice falls to B or to
+   Monk-for-Block.</li>
+  <li><b>A silent session can be killed by iOS while locked.</b> The active session only lives in memory today,
+   so Zen needs it saved at Begin and finished on the next launch. Sessions with sound stay alive through the
+   audio background mode.</li>
+  <li><b>Monk mode and recorded sessions.</b> Stamp the rule on each session when it is written, so switching
+   modes later never rewrites past streaks.</li>
+ </ol>
+</div>
+
+</main>
+<script>
+/* ---------------- valley ---------------- */
+const FL=[[12.8,41,8,16,7,"#FFFFFF","#F5A623"],[19.4,40.9,8,16,6,"#FFC2A8","#E8564F"],[5.1,40.8,8,16,-6,"#FFD86B","#E8862B"],
+[79.8,40.5,8,18,4,"#FFFFFF","#F5A623"],[84.7,40.3,8,18,8,"#FFB3C9","#E8564F"],[90,39.2,10,21,0,"#FFF3D6","#F5A623"],
+[17.4,38.9,10,21,3,"#FFFFFF","#F5A623"],[76.7,38.8,10,22,-5,"#FFFFFF","#F5A623"],[24,38.5,11,22,-3,"#FFB3C9","#E8564F"],
+[4.1,38.1,12,25,4,"#FFFFFF","#F5A623"],[11.6,37.2,12,27,4,"#FFF3D6","#F5A623"],[83.1,37.2,12,27,-7,"#FFF3D6","#F5A623"],
+[23.2,36.2,14,30,-4,"#FFB3C9","#E8564F"],[76,36,15,30,-2,"#FFD86B","#E8862B"],[6,30,17,36,5,"#FFB3C9","#E8564F"],
+[88,29,18,37,-4,"#FFFFFF","#F5A623"],[3,20,20,42,-6,"#FFD86B","#E8862B"],[93,19,20,42,6,"#FFC2A8","#E8564F"]];
+function flower(f,dim){const [l,b,w,h,r,petal,mid]=f;let p="";for(let a=0;a<360;a+=72)p+=`<ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(${a} 30 30)"/>`;
+ return `<div class="fl" style="left:${l}%;bottom:${b}%;width:${w}px;height:${h}px;transform:rotate(${r}deg);opacity:${dim?.55:.92}"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="${petal}">${p}</g><circle cx="30" cy="30" r="7.5" fill="${mid}"/></svg></div>`}
+const CLOUD=c=>`<svg viewBox="0 0 120 62" width="100%" height="100%"><g fill="${c}" opacity="0.92"><ellipse cx="33" cy="39" rx="26" ry="17"/><ellipse cx="62" cy="30" rx="31" ry="22"/><ellipse cx="91" cy="41" rx="23" ry="15"/><rect x="10" y="38" width="100" height="18" rx="9"/></g></svg>`;
+const DAY={sky:"linear-gradient(180deg,#8CBBD4 0%,#BBD8E4 46%,#E3E8DA 70%,#EFE0C9 100%)",sun:"#FFE9B8",sunGlow:"rgba(255,233,184,.55)",
+ m:["#AFC6CE","#8FAFB4","#6E9078"],field:"linear-gradient(180deg,#7FA87E,#9CBC85)",cloud:"#FFFFFF",dim:false};
+const DUSK={sky:"linear-gradient(180deg,#2B2F57 0%,#5A4C78 38%,#C27C78 62%,#E9A57A 74%,#F2C58E 100%)",sun:"#FFC98A",sunGlow:"rgba(255,170,110,.5)",
+ m:["#6F6A8E","#544F72","#3C4A52"],field:"linear-gradient(180deg,#4E6A55,#5E7A5B)",cloud:"#E7B9A8",dim:true};
+function valley(el,o){
+ const L=Object.assign({light:DAY,horizon:38,sunX:12,sunB:56,otto:"otto-v3/otto-sit-wave.png",ottoW:228,ottoB:31.5,seatB:29,stars:false,showOtto:true},o);
+ const t=L.light;
+ let stars="";if(L.stars){for(let i=0;i<26;i++){const x=(i*37)%100,y=(i*53)%34;stars+=`<div style="position:absolute;left:${x}%;top:${4+y}%;width:2px;height:2px;border-radius:50%;background:#fff;opacity:${.4+(i%3)*.2}"></div>`}}
+ el.insertAdjacentHTML("beforeend",`<div class="scene" style="background:${t.sky}">${stars}
+ <div class="sun" style="left:${L.sunX}%;bottom:${L.sunB}%;background:${t.sun};box-shadow:0 0 50px 22px ${t.sunGlow}"></div>
+ <div class="cloud" style="position:absolute;left:-8%;top:12%;width:150px;height:78px">${CLOUD(t.cloud)}</div>
+ <div class="cloud" style="position:absolute;right:-12%;top:24%;width:178px;height:92px">${CLOUD(t.cloud)}</div>
+ <svg class="mt" style="bottom:${L.horizon}%;height:28%" viewBox="0 0 300 260" preserveAspectRatio="none">
+  <path d="M0 150 L48 96 L86 132 L132 72 L186 128 L224 100 L300 148 L300 260 L0 260 Z" fill="${t.m[0]}"/>
+  <path d="M0 176 L40 138 L92 172 L140 122 L192 168 L246 138 L300 174 L300 260 L0 260 Z" fill="${t.m[1]}"/>
+  <path d="M0 206 L56 178 L110 204 L168 172 L228 202 L300 184 L300 260 L0 260 Z" fill="${t.m[2]}"/></svg>
+ <div class="field" style="height:${L.horizon+4}%;background:${t.field}"></div>${L.flowers===false?"":FL.map(f=>flower(f,t.dim)).join("")}
+ ${L.showOtto?`<div class="seat" style="bottom:${L.seatB}%"></div><div class="otto" style="bottom:${L.ottoB}%;width:${L.ottoW}px;height:${L.ottoW}px;background-image:url('${L.otto}')"></div>`:""}
+ </div><div class="island"></div><div class="status ${t.dim?"light":""}"><span>9:41</span><span>&#9679;&#9679;&#9679; &#9646;</span></div>`);
+}
+const $=id=>document.getElementById(id);
+
+/* ---------------- 2. settings ---------------- */
+function settingsBase(el){
+ el.insertAdjacentHTML("beforeend",`<div class="band"></div><div class="grass"></div>`);
+ const band=el.querySelector(".band");valley(band,{horizon:10,sunB:62,showOtto:false,flowers:false});
+ band.querySelector(".island").remove();
+ el.insertAdjacentHTML("beforeend",`<div class="island"></div><div class="status"><span>9:41</span><span>&#9679;&#9679;&#9679; &#9646;</span></div>
+ <div class="sback">&#8249;</div><div class="stitle">Settings</div>`);
+}
+function rows(sel){return `
+ <div class="opt ${sel==="zen"?"on":""}"><div class="ico">&#127811;</div><div class="tx"><b>Zen mode</b><span class="def">DEFAULT</span>
+  <i>Lock your phone or open other apps. The timer keeps going.</i></div><div class="radio ${sel==="zen"?"on":""}"></div></div>
+ <div class="opt ${sel==="monk"?"on":""}"><div class="ico">&#129496;</div><div class="tx"><b>Monk mode</b>
+  <i>Keep 808 open the whole session. Leaving for 10 seconds ends it.</i></div><div class="radio ${sel==="monk"?"on":""}"></div></div>`}
+(function(){const el=$("set1");settingsBase(el);
+ el.insertAdjacentHTML("beforeend",`<div style="position:absolute;top:186px;left:18px;right:18px">
+  <div class="gh">Apple Watch</div>
+  <div class="card"><div class="srow">Measure my sessions <div class="sw"></div></div></div>
+  <div class="gh">Session mode</div>
+  <div class="card">${rows("zen")}
+   <div class="srow" style="border-top:1px solid rgba(65,48,36,.10);color:var(--sky);font-size:15px">What's the difference? <span style="color:var(--sky)">&rsaquo;</span></div></div>
+  <div class="gh">Practice</div>
+  <div class="card"><div class="srow">Default length <span>10 min &rsaquo;</span></div><div class="srow">Reminders <span>Up to 3 a day &rsaquo;</span></div></div>
+ </div>`)})();
+(function(){const el=$("set2");settingsBase(el);
+ el.insertAdjacentHTML("beforeend",`<div style="position:absolute;top:186px;left:18px;right:18px">
+  <div class="gh">Apple Watch</div>
+  <div class="card"><div class="srow">Measure my sessions <div class="sw"></div></div></div>
+  <div class="gh">Session mode</div>
+  <div class="card"><div class="seg"><div class="on">Zen</div><div>Monk</div></div>
+   <div class="segnote">Lock your phone or open other apps during a session. The timer keeps going.</div></div>
+  <div class="gh">Practice</div>
+  <div class="card"><div class="srow">Default length <span>10 min &rsaquo;</span></div><div class="srow">Reminders <span>Up to 3 a day &rsaquo;</span></div></div>
+ </div>`)})();
+
+/* ---------------- 3. ready ---------------- */
+function ready(el,chip){
+ valley(el,{otto:"otto-v3/otto-sit-wave.png",ottoW:184,ottoB:35,seatB:32.5});
+ el.insertAdjacentHTML("beforeend",`<div class="cancel">Cancel</div>
+ <div class="clock" style="top:96px;color:var(--skyInk)"><div class="big">10:00</div><div class="sub" style="color:var(--skySoft)">10 minutes &middot; tap to type</div></div>
+ <div class="tape" style="top:188px"></div><div class="needle" style="top:184px"></div>
+ ${chip?`<div class="chip" style="top:236px"><span class="dot"></span>Zen mode <i>&rsaquo;</i></div>`:""}
+ <div class="bub" style="top:${chip?272:258}px;width:270px">Ready when you are. Start any audio you like first.</div>
+ <div class="ctl">
+  <div class="pairs">
+   <div class="pill"><div class="rd">&#9203;</div><div class="tx"><b>Meditate</b><i>Timer</i></div></div>
+   <div class="pill"><div class="rd">&#127925;</div><div class="tx"><b>Sound</b><i>Silence</i></div></div>
+  </div>
+  <div class="pill"><div class="rd">&#127769;</div><div class="tx"><b>Silence notifications</b><i>Do Not Disturb while you meditate</i></div><span class="chev">&rsaquo;</span></div>
+  <div class="cta">Begin</div></div>`);
+}
+ready($("ready1"),true);
+ready($("ready2"),true);
+$("ready2").insertAdjacentHTML("beforeend",`<div class="dim"></div><div class="sheet"><div class="grab"></div>
+ <h3>Session mode</h3><p>This changes it for every session. Settings has it too.</p>
+ <div class="card" style="margin-bottom:0">${rows("zen")}</div></div>`);
+ready($("ready3"),false);
+
+/* ---------------- 4. sit ---------------- */
+function ring(el,top,size,frac,clock,sub){
+ const R=size/2-8,C=2*Math.PI*R;
+ el.insertAdjacentHTML("beforeend",`<svg style="position:absolute;left:50%;transform:translateX(-50%);top:${top}px" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+  <circle cx="${size/2}" cy="${size/2}" r="${R}" fill="rgba(20,22,40,.20)" stroke="rgba(246,238,223,.25)" stroke-width="5"/>
+  <circle cx="${size/2}" cy="${size/2}" r="${R}" fill="none" stroke="#F0C47B" stroke-width="5" stroke-linecap="round" transform="rotate(-90 ${size/2} ${size/2})" stroke-dasharray="${C*frac} ${C}"/>
+  <text x="${size/2}" y="${size/2+9}" text-anchor="middle" font-size="30" font-weight="800" fill="#F6EEDF" font-family="ui-rounded,system-ui" style="font-variant-numeric:tabular-nums">${clock}</text>
+  <text x="${size/2}" y="${size/2+30}" text-anchor="middle" font-size="11.5" font-weight="700" fill="rgba(246,238,223,.75)" font-family="ui-rounded,system-ui">${sub}</text></svg>`);
+}
+function sit(el,head,line,pill,frac,clock){
+ valley(el,{light:DUSK,stars:true,sunX:66,sunB:40,otto:"otto-v3/otto-sit.png",ottoW:196,ottoB:31.5,seatB:29.5});
+ el.insertAdjacentHTML("beforeend",`<div class="head" style="top:96px;color:#F6EEDF"><b>${head}</b><i style="color:rgba(246,238,223,.82)">${line}</i></div>`);
+ ring(el,190,150,frac,clock,"left");
+ if(pill)el.insertAdjacentHTML("beforeend",`<div class="sitline" style="top:356px">${pill}</div>`);
+ el.insertAdjacentHTML("beforeend",`<div class="end">End</div>`);
+}
+sit($("sitZen"),"Let's start meditating","Lock your phone if you like. I'll keep time.","",.04,"9:48");
+sit($("sitMonk"),"Monk mode","Keep 808 open until the bell.","&#129496; Leaving for 10 seconds ends the session.",.04,"9:48");
+
+/* ---------------- 5. return ---------------- */
+(function(){const el=$("backZen");
+ valley(el,{light:DUSK,stars:true,sunX:62,sunB:34,otto:"otto-v3/otto-sit.png",ottoW:196,ottoB:31.5,seatB:29.5});
+ ring(el,150,150,.63,"7:20","left");
+ el.insertAdjacentHTML("beforeend",`<div class="head" style="top:96px;color:#F6EEDF"><b style="font-size:16px;opacity:.85">12:40 in &middot; 20 minutes</b></div>
+ <div class="bub night" style="top:338px;width:262px">Welcome back. I kept time the whole while.</div>
+ <div class="end">End</div>`)})();
+(function(){const el=$("backMonk");
+ valley(el,{otto:"otto-v3/otto-curious.png",ottoW:212,ottoB:31.5,seatB:29});
+ el.insertAdjacentHTML("beforeend",`
+ <div class="bub" style="top:150px;width:296px;font-size:15.5px"><b style="font-size:18px">That session ended.</b><br>You were away for more than 10 seconds. In Monk mode that ends it.</div>
+ <div class="ctl"><div class="cta">Start again</div><div class="ghost">Done</div>
+  <div style="text-align:center;margin-top:16px;font-size:13.5px;font-weight:700;color:#2E4A2A">Prefer to lock your phone? Zen mode is in Settings.</div></div>`)})();
+
+/* ---------------- 6. offer ---------------- */
+(function(){const el=$("offer");
+ valley(el,{otto:"otto-v3/otto-sit-wave.png",ottoW:212,ottoB:35,seatB:32.5});
+ el.insertAdjacentHTML("beforeend",`<div class="dim" style="background:rgba(20,30,40,.12)"></div>
+ <div style="position:absolute;top:70px;left:0;width:100%;text-align:center;color:var(--skyInk)">
+  <div style="font-size:46px;line-height:1">&#128293;</div><div style="font-size:30px;font-weight:800;margin-top:4px">7 days</div></div>
+ <div class="bub" style="top:190px;width:300px">Seven days in a row! Want to try Monk mode?</div>
+ <div class="ctl">
+  <div class="card" style="margin-bottom:6px;background:rgba(240,233,220,.97)"><div class="opt"><div class="ico">&#129496;</div><div class="tx"><b>Monk mode</b>
+   <i>Keep 808 open the whole session. Leaving for 10 seconds ends it. Switch back any time in Settings.</i></div></div></div>
+  <div class="cta">Try Monk mode</div><div class="ghost">Stay in Zen</div></div>`)})();
+</script>
+</body></html>

@@ -68,12 +68,17 @@ before merging: they predate the 1.4.1 work.
 
 ## Proposed, needs a decision
 
-- **Lock the phone during a session, and Monk Mode** (a customer, Melvin
-  2026-10-31). Locking stops counting as leaving for everyone; one optional
-  Monk Mode switch keeps the strict rules (screen on, hand-logged sessions
-  do not count). Research and build notes in CLAUDE.md, "OPEN TASK: LOCK THE
-  PHONE". The lock-versus-app-switch signal is unproven: test on a phone
-  first. Needs a mockup and a yes.
+- **Zen mode and Monk mode** (APPROVED, Melvin 2026-11-06, from
+  `mockups/zen-monk.html`). Zen is the default: lock the phone or switch
+  apps and the timer keeps going, "I was still meditating" stays, recorded
+  sessions count. Monk is opt-in and keeps today's strict rules (leaving
+  for 10 s ends it, recorded sessions are saved but do not count); the rest
+  day stays in both. Settings uses design **2B**, a Zen / Monk segmented
+  control. Otto offers Monk once after a 7-day streak. Still open: a cap for
+  open-ended Zen sessions with a locked phone, and whether time in other
+  apps counts toward Block's minute (recommended: no). Test the
+  lock-versus-app-switch signal on a phone first. Build notes in CLAUDE.md,
+  "OPEN TASK: LOCK THE PHONE".
 - **Guided meditations with an AI voice** (Melvin, 2026-11-06, after
   ElevenLabs released Eleven v4 on 2026-09-28). Replaces the "AI coach voice
   library" that was on hold because ElevenLabs "is not there yet". The
