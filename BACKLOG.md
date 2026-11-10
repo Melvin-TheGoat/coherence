@@ -44,12 +44,25 @@ before merging: they predate the 1.4.1 work.
   (Melvin, 2026-11-09). Everyone starts as Otto; points unlock the next
   creature. Each creature keeps its own seven glow states (consistency),
   separate from evolution. Animated in Rive with their light, like Otto;
-  every hat refitted per creature. In flight: dragon redrawn (less fluffy,
-  more epic), clean defringed cuts (`mockups/companions/master/`), the
-  level-up and collection mockups (`mockups/level-up.html`). Proposed,
-  not decided: evolve on LIFETIME points earned, so spending on a hat
-  never sets anyone back; thresholds. Hats need new renders per creature
-  (Higgsfield credits ran out 2026-11-09).
+  every hat refitted per creature. Done: dragon redrawn (less fluffy, more
+  epic), clean defringed cuts (`mockups/companions/master/`). In flight:
+  the Rive rigs (`Coherence/Otto/Companion<Name>.riv`, built in the Dragon
+  Rive file, art swapped per creature, because the MCP cannot switch
+  tabs), pasting the existing hats onto each form, the level-up mockup
+  (`mockups/level-up.html`).
+  **Decided 2026-11-10 (Melvin):**
+  - It is always OTTO, reincarnated into a new form, never a new friend.
+  - The moment: Pokémon-style evolution (silhouette flicker, flash) with
+    Duolingo's confetti, ending on a Finch-style card.
+  - LIFETIME points earned (spending on hats never slows it): red panda
+    300, tiger 800, phoenix 2,200, dragon 5,500 (about a year at 15
+    minutes a day).
+  - Every unlocked form can be chosen again, any time.
+  - A new form starts at 50% glow (Steady).
+  - Hats carry over to every form.
+  - Existing members with the points see each unlock in order.
+  - The widget and the Watch follow the chosen form.
+  Still open: the app icon; what the glow does when switching back.
 
 - **Show their real top apps on the Block pick screen** (decided "next
   build", 2026-10-13). "Your top apps this week", with icons and minutes,

@@ -329,38 +329,365 @@ th, td { text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--ha
 th { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-soft); background: var(--cream) }
 tr.rec td { background: #EEF6E8 }
 ol.qs { padding-left: 22px; margin: 10px 0 0 } ol.qs li { margin-bottom: 10px; max-width: 78ch }
+.track::after { width: var(--p, 30%) }
+.track::after { left: 18px }
+
+/* ========= THE CHOSEN SEQUENCE ========= */
+.lead { display: flex; flex-wrap: wrap; gap: 28px; align-items: flex-start; justify-content: center; margin-top: 22px }
+.lead .side { flex: 1 1 320px; max-width: 520px; display: grid; gap: 14px; align-content: start }
+.lead .ctrl { display: flex; gap: 10px; align-items: center; flex-wrap: wrap }
+.steps { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; counter-reset: s }
+.steps li { counter-increment: s; display: flex; gap: 12px; align-items: baseline; background: #fff; border-radius: 14px; padding: 10px 14px; box-shadow: 0 2px 0 var(--hair); transition: background .35s ease, transform .35s cubic-bezier(.2,.9,.3,1.2), box-shadow .35s ease; font-weight: 700 }
+.steps li::before { content: counter(s); flex: none; width: 24px; height: 24px; border-radius: 50%; background: var(--sand); color: var(--ink-soft); font-size: 13px; font-weight: 900; display: grid; place-items: center; transition: background .35s ease, color .35s ease }
+.steps li span { color: var(--ink-soft); font-weight: 600; font-size: 14px; display: block }
+.steps li.on { background: #EEF6E8; transform: translateX(4px); box-shadow: 0 0 0 2px var(--green), 0 2px 0 var(--hair) }
+.steps li.on::before { background: var(--green); color: #fff }
+.decided { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; margin-top: 12px }
+.decided div { background: var(--cream); border-radius: 14px; padding: 11px 13px; box-shadow: 0 2px 0 var(--hair); font-size: 14.5px }
+.decided b { display: block; font-size: 15px }
+
+#optZ { --T: 10s }
+#optZ .night { position: absolute; inset: 0; z-index: 2; opacity: 0; background: linear-gradient(180deg, #0F1634 0%, #222C58 55%, #3A3B6C 100%) }
+#optZ .night i { position: absolute; width: 3px; height: 3px; border-radius: 50%; background: #FFF6DA; box-shadow: 0 0 6px #FFF6DA }
+#optZ .seat { position: absolute; inset: 0; z-index: 6; transform-origin: 50% 70% }
+#optZ .seat .cushion { z-index: 1 }
+#optZ .stage { position: absolute; left: 50%; bottom: 31.5%; width: 58%; height: 30%; margin-left: -29%; z-index: 2; transform-origin: 50% 100% }
+#optZ .stage img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; object-position: 50% 100% }
+#optZ .morph { position: absolute; inset: 0 }
+#optZ .from { opacity: 1 } #optZ .to { opacity: 0 }
+#optZ .halo { position: absolute; left: 50%; top: 55%; width: 300px; height: 300px; margin: -150px 0 0 -150px; border-radius: 50%; opacity: 0;
+  background: radial-gradient(circle, rgba(255,240,190,.95), rgba(255,214,120,.45) 34%, rgba(255,214,120,0) 66%) }
+#optZ .rays { position: absolute; left: 50%; top: 55%; width: 560px; height: 560px; margin: -280px 0 0 -280px; border-radius: 50%; opacity: 0;
+  background: repeating-conic-gradient(rgba(255,240,190,.5) 0 7deg, rgba(255,240,190,0) 7deg 19deg);
+  -webkit-mask: radial-gradient(circle, #000 18%, transparent 68%); mask: radial-gradient(circle, #000 18%, transparent 68%) }
+#optZ .flash { position: absolute; inset: 0; background: #FFFDF6; opacity: 0; z-index: 20; pointer-events: none }
+#optZ .say { position: absolute; left: 18px; right: 18px; top: 17%; text-align: center; font-weight: 900; font-size: 22px; color: #FFF6E4; z-index: 21; opacity: 0; text-shadow: 0 2px 14px rgba(255,214,120,.55) }
+#optZ .say small { display: block; font-size: 14px; font-weight: 700; color: #D9D4EE; margin-top: 4px; text-shadow: none }
+#optZ .confetti { position: absolute; inset: 0; z-index: 22; pointer-events: none; overflow: hidden }
+#optZ .confetti i { position: absolute; left: 50%; top: 52%; will-change: transform, opacity }
+#optZ .gcard { position: absolute; left: 12px; right: 12px; bottom: 12px; z-index: 24; background: var(--cream); border-radius: 26px; padding: 18px 16px 16px; box-shadow: 0 -6px 26px rgba(0,0,0,.14); transform: translateY(115%) }
+#optZ .gcard .pair { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 4px 0 8px }
+#optZ .gcard .pair img { width: 60px; height: 60px; object-fit: contain }
+#optZ .gcard .pair img:first-child { opacity: .55; filter: saturate(.6) }
+#optZ .gcard .arrow { font-weight: 900; color: var(--ink-soft) }
+#optZ .gcard h4 { margin: 0; font-size: 21px; font-weight: 900; text-align: center; line-height: 1.2 }
+#optZ .gcard p { text-align: center; font-size: 14px; color: var(--ink-soft); margin: 6px 0 4px }
+#optZ .gcard .steady { display: flex; align-items: center; gap: 8px; justify-content: center; font-size: 13px; font-weight: 800; color: var(--blue-ink); margin: 6px 0 12px }
+#optZ .gcard .steady .bar { width: 70px; height: 7px }
+#optZ .kick { text-align: center; font-size: 12px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; color: var(--gold-ink) }
+#optZ .gcard .btn.quiet { margin-top: 8px }
+#optZ.play .night { animation: zNight var(--T) forwards }
+#optZ.play .night i { animation: zTwinkle 1.6s ease-in-out infinite alternate }
+#optZ.play .night i:nth-child(2n) { animation-delay: .5s } #optZ.play .night i:nth-child(3n) { animation-delay: .9s }
+#optZ.play .morph { animation: zSil var(--T) forwards }
+#optZ.play .from { animation: zFrom var(--T) linear forwards }
+#optZ.play .to { animation: zTo var(--T) linear forwards }
+#optZ.play .halo { animation: zHalo var(--T) forwards }
+#optZ.play .rays { animation: zRays var(--T) forwards, spin 16s linear infinite }
+#optZ.play .flash { animation: zFlash var(--T) forwards }
+#optZ.play .say { animation: zSay var(--T) forwards }
+#optZ.play .stage { animation: zPop var(--T) forwards }
+#optZ.play .seat { animation: zRise var(--T) forwards }
+#optZ.play .gcard { animation: zCard var(--T) forwards }
+#optZ.play .bubble { animation: zBub var(--T) forwards }
+@keyframes zNight { 0%,5% {opacity:0; animation-timing-function: cubic-bezier(.45,0,.25,1)} 17%,66% {opacity:1} 68% {opacity:1; animation-timing-function: cubic-bezier(.4,0,.2,1)} 80%,100% {opacity:0} }
+@keyframes zTwinkle { from {opacity:.35; transform: scale(.7)} to {opacity:1; transform: scale(1.1)} }
+@keyframes zSil { 0%,19% {filter: none; animation-timing-function: ease-in-out} 27%,66% {filter: brightness(0) invert(1) drop-shadow(0 0 16px #FFE9A8)} 70%,100% {filter: none} }
+@keyframes zFrom { 0%,30% {opacity:1} 33.5% {opacity:0} 36.8% {opacity:1} 39.8% {opacity:0} 42.5% {opacity:1} 45% {opacity:0} 47.2% {opacity:1} 49.2% {opacity:0} 51% {opacity:1} 52.6% {opacity:0} 54% {opacity:1} 55.3% {opacity:0} 56.5% {opacity:1} 57.6% {opacity:0} 58.6% {opacity:1} 59.5% {opacity:0} 60.3% {opacity:1} 61% {opacity:0} 61.6% {opacity:1} 62.2% {opacity:0} 62.7% {opacity:1} 63.2%,100% {opacity:0} }
+@keyframes zTo { 0%,30% {opacity:0} 33.5% {opacity:1} 36.8% {opacity:0} 39.8% {opacity:1} 42.5% {opacity:0} 45% {opacity:1} 47.2% {opacity:0} 49.2% {opacity:1} 51% {opacity:0} 52.6% {opacity:1} 54% {opacity:0} 55.3% {opacity:1} 56.5% {opacity:0} 57.6% {opacity:1} 58.6% {opacity:0} 59.5% {opacity:1} 60.3% {opacity:0} 61% {opacity:1} 61.6% {opacity:0} 62.2% {opacity:1} 62.7% {opacity:0} 63.2%,100% {opacity:1} }
+@keyframes zHalo { 0%,18% {opacity:0} 27% {opacity:.85} 46% {opacity:.65} 62% {opacity:1} 67% {opacity:0} 74% {opacity:.75} 100% {opacity:.55} }
+@keyframes zRays { 0%,67% {opacity:0} 74% {opacity:1} 100% {opacity:.55} }
+@keyframes zFlash { 0%,63.5% {opacity:0; animation-timing-function: cubic-bezier(.3,0,1,1)} 66.5% {opacity:1; animation-timing-function: cubic-bezier(0,0,.2,1)} 78%,100% {opacity:0} }
+@keyframes zSay { 0%,13% {opacity:0; transform: translateY(10px) scale(.98); animation-timing-function: cubic-bezier(.2,.8,.3,1)} 19%,58% {opacity:1; transform: none} 63%,100% {opacity:0; transform: translateY(-6px)} }
+@keyframes zPop { 0%,19% {transform: none} 22% {transform: scale(1.04) translateY(-4px)} 25%,63% {transform: none}
+  66.5% {transform: scale(.92); animation-timing-function: cubic-bezier(.2,1.6,.4,1)} 72% {transform: scale(1.1)} 76%,100% {transform: scale(1)} }
+@keyframes zRise { 0%,80% {transform: none; animation-timing-function: cubic-bezier(.25,1,.35,1)} 90%,100% {transform: translateY(-138px) scale(.86)} }
+@keyframes zCard { 0%,80% {transform: translateY(115%); animation-timing-function: cubic-bezier(.18,1.15,.32,1)} 91%,100% {transform: translateY(0)} }
+@keyframes zBub { 0% {opacity:1} 6%,100% {opacity:0} }
+
+ol.qs li { list-style: decimal }
+details > summary { list-style: none } details > summary::-webkit-details-marker { display: none }
+details > summary::before { content: "▸ "; color: var(--ink-soft) } details[open] > summary::before { content: "▾ " }
 @media (prefers-reduced-motion: reduce) { .play *, .play { animation-duration: .01s !important; animation-delay: 0s !important } }
 </style>
 </head>
 <body>
 <header class="hero-band">
   <div class="inner">
-    <span class="tag">Mockup · 9 Nov 2026 · nothing built</span>
-    <h1>Companions evolve</h1>
-    <p class="lede">Everyone starts with Otto. Points carry you along a line of five companions, each with its own seven glow states. Six ways to play the moment a new one arrives, the screens around it, and a recommendation.</p>
+    <span class="tag">Mockup · updated 10 Nov 2026 · nothing built</span>
+    <h1>Otto changes form</h1>
+    <p class="lede">It is always Otto. As you meditate, he is reborn into new forms: a red panda, a tiger, a phoenix, a dragon. Each form has its own seven glow states. This page shows the moment he changes, the screens around it, and what Melvin decided.</p>
   </div>
 </header>
 
 <div class="page">
 
-<h2>The rule, recommended</h2>
-<div class="panel">
-  <p><b>Evolution reads lifetime points earned, never the balance.</b> Points are spent on hats, so a balance can go down. If evolution followed the balance, buying a hat would push your next companion further away, and the Shop would feel like a penalty. Lifetime points only ever climb. The Shop and evolution read the same earnings but never compete.</p>
-  <p class="muted">Points stay as they are: 1 per whole minute meditated, plus 10 per week finished with a friend. Hand-logged sessions earn none, so evolution can only be reached by meditating in the app.</p>
-  <div class="ladder">
-    <div class="rung"><img src="companions/otto-4.png" alt="Otto"><b>Otto</b><div class="pts">Start</div><div class="hrs">Everyone</div></div>
-    <div class="rung"><img src="companions/redpanda-4.png" alt="Red panda"><b>Red panda</b><div class="pts">500</div><div class="hrs">about 8 hours meditated</div></div>
-    <div class="rung"><img src="companions/tiger-4.png" alt="Tiger"><b>Tiger</b><div class="pts">1,500</div><div class="hrs">25 hours</div></div>
-    <div class="rung"><img src="companions/phoenix-4.png" alt="Phoenix"><b>Phoenix</b><div class="pts">4,000</div><div class="hrs">about 67 hours</div></div>
-    <div class="rung"><img src="companions/dragon-4.png" alt="Dragon"><b>Dragon</b><div class="pts">10,000</div><div class="hrs">about 167 hours</div></div>
+<h2>The moment Otto changes form</h2>
+<p class="lede">Pokémon's evolution, Duolingo's confetti, Finch's card, played as one sequence. It plays after the reward screen's Continue, the slot the award unlock uses today, so it never stacks with points and glow. Tap anywhere to skip to the card.</p>
+
+<div class="lead">
+  <div class="phone"><div class="screen" id="optZ">
+    <div class="island"></div>
+    <div class="sky"></div><div class="ridge far"></div><div class="ridge mid"></div><div class="ridge mid2"></div><div class="grass"></div>
+    <i class="flower" style="left:12%;top:74%"></i><i class="flower p" style="left:80%;top:72%"></i><i class="flower y" style="left:30%;top:86%"></i><i class="flower" style="left:66%;top:90%"></i><i class="flower p" style="left:46%;top:80%"></i>
+    <div class="night"><i style="left:12%;top:8%"></i><i style="left:28%;top:14%"></i><i style="left:46%;top:6%"></i><i style="left:63%;top:11%"></i><i style="left:81%;top:7%"></i><i style="left:90%;top:19%"></i><i style="left:20%;top:24%"></i><i style="left:70%;top:22%"></i><i style="left:38%;top:28%"></i><i style="left:55%;top:19%"></i><i style="left:8%;top:33%"></i><i style="left:86%;top:31%"></i></div>
+    <div class="bubble" style="top:24%;z-index:7">That was a good one.</div>
+    <div class="seat">
+      <div class="cushion"></div>
+      <div class="stage">
+        <div class="rays"></div><div class="halo"></div>
+        <div class="morph"><img class="from" src="companions/otto-6.png" alt=""><img class="to" src="companions/redpanda-4.png" alt="Otto as a red panda"></div>
+      </div>
+    </div>
+    <div class="say">Otto is changing...<small>Every minute you meditated is coming together</small></div>
+    <div class="flash"></div>
+    <div class="confetti"></div>
+    <div class="gcard">
+      <div class="kick">300 lifetime points</div>
+      <div class="pair"><img src="companions/otto-6.png" alt=""><span class="arrow">→</span><img src="companions/redpanda-4.png" alt=""></div>
+      <h4>Otto was reborn as a red panda</h4>
+      <p>Same Otto, new form. His hat came with him.</p>
+      <div class="steady"><span>Starts at Steady</span><span class="bar"><b style="width:50%"></b></span><span>50%</span></div>
+      <p style="margin:-6px 0 12px">Keep meditating and he'll glow.</p>
+      <div class="btn">Meditate together</div>
+    </div>
+  </div></div>
+
+  <div class="side">
+    <div class="ctrl"><button class="replay" data-t="optZ">Replay</button><span class="muted" style="font-size:14px;font-weight:700">About 10 seconds. The card waits for a tap.</span></div>
+    <ol class="steps" id="zSteps">
+      <li data-at="0.5"><div>Night falls<span>The valley darkens and the stars come out. Otto's bubble clears.</span></div></li>
+      <li data-at="1.9"><div>"Otto is changing..."<span>He turns into a glowing white silhouette.</span></div></li>
+      <li data-at="3.0"><div>Silhouette flicker<span>He flickers between his old shape and his new one, faster and faster.</span></div></li>
+      <li data-at="6.4"><div>Flash<span>A warm white flash, eased in fast and out slow.</span></div></li>
+      <li data-at="6.9"><div>The new form<span>Day returns. He pops in, color first, light rays turning behind him.</span></div></li>
+      <li data-at="7.1"><div>Confetti<span>A burst from where he sits, in 808's six colors, falling with real gravity.</span></div></li>
+      <li data-at="8.0"><div>The card slides up<span>He rises to make room. The card says what happened and that he starts at Steady.</span></div></li>
+    </ol>
+    <div class="panel sand" style="margin-top:0">
+      <p style="margin:0"><b>Why it works.</b> The flicker gives the change its weight, the confetti makes it a celebration, and the card brings it back to 808: calm, honest, nothing to chase. All of it is SwiftUI over stills that already exist, so it ships without new Rive rigs.</p>
+    </div>
   </div>
-  <p style="margin-top:14px"><span class="ex">Example thresholds</span> At 15 minutes a day: Red panda in about 5 weeks, Tiger in about 3 months, Phoenix in about 9 months, Dragon in about 22 months. At 30 minutes a day, half that. The gaps widen on purpose so the first arrival comes early and the Dragon means something. For scale, hats cost 20 to 1,000 points today.</p>
-  <p><b>Earlier companions stay.</b> Reaching the Tiger does not take Otto away; it adds the Tiger to your collection and you choose who meditates with you. Recommended over a straight replacement because people get attached to Otto (he is the app icon, the widget and the onboarding), and replacing him would feel like losing something you earned. It also gives the collection screen a reason to exist.</p>
 </div>
 
-<h2>1. The moment a new companion arrives</h2>
-<p class="lede">Six directions, each modeled on an app people know. It plays after the reward screen's Continue, the same slot the award unlock uses today, so it never stacks with points and glow. Press Replay on each.</p>
+<h2>What's decided</h2>
+<div class="panel">
+  <p><b>Otto's form follows lifetime points earned, never the balance.</b> Points are spent on hats, so a balance can go down. Lifetime points only climb, so spending in the Shop never slows his next form. Points stay as they are: 1 per whole minute meditated, plus 10 per week finished with a friend. Hand-logged sessions earn none.</p>
+  <div class="ladder">
+    <div class="rung"><img src="companions/otto-4.png" alt="Otto as a sloth"><b>Sloth</b><div class="pts">Start</div><div class="hrs">Everyone</div></div>
+    <div class="rung"><img src="companions/redpanda-4.png" alt="Otto as a red panda"><b>Red panda</b><div class="pts">300</div><div class="hrs">5 hours meditated</div></div>
+    <div class="rung"><img src="companions/tiger-4.png" alt="Otto as a tiger"><b>Tiger</b><div class="pts">800</div><div class="hrs">about 13 hours</div></div>
+    <div class="rung"><img src="companions/phoenix-4.png" alt="Otto as a phoenix"><b>Phoenix</b><div class="pts">2,200</div><div class="hrs">about 37 hours</div></div>
+    <div class="rung"><img src="companions/dragon-4.png" alt="Otto as a dragon"><b>Dragon</b><div class="pts">5,500</div><div class="hrs">about 92 hours</div></div>
+  </div>
+  <p style="margin-top:14px">At 15 minutes a day: red panda in about 20 days, tiger in about 2 months, phoenix in about 5 months, dragon in about a year. At 30 minutes a day, half that.</p>
+  <div class="decided">
+    <div><b>Always Otto</b>Same name on the card, in "Otto's forms" and in the picker. "Otto was reborn as a red panda", never a new friend.</div>
+    <div><b>Switch back any time</b>Any form you've unlocked, whenever you like, from Otto's forms.</div>
+    <div><b>Each new form starts at Steady</b>50% glow. "Starts at Steady. Keep meditating and he'll glow."</div>
+    <div><b>Hats carry over</b>The hat he wears stays on in every form, and every hat you own works on every form.</div>
+    <div><b>Catching up, in order</b>Members who already have the points see each new form one after the other.</div>
+    <div><b>Widget and Apple Watch</b>Both show the form you chose.</div>
+    <div><b>Shopping never slows him</b>Spent points still count toward his next form.</div>
+  </div>
+</div>
 
+<h2>Around the moment</h2>
+<p class="lede">Where progress lives, what "almost there" looks like, Otto's forms, and choosing one. Numbers are examples.</p>
+
+<div class="options">
+
+  <div class="opt">
+    <div class="head"><h3>Home, progress</h3></div>
+    <div class="based">Under Otto's glow card, one more row</div>
+    <div class="phone"><div class="screen home">
+      <div class="island"></div>
+      <div class="sky"></div><div class="ridge far"></div><div class="ridge mid"></div><div class="ridge mid2"></div><div class="grass"></div>
+      <i class="flower" style="left:12%;top:70%"></i><i class="flower p" style="left:84%;top:69%"></i>
+      <div class="streak"><span>🔥</span>12</div>
+      <div class="greet">Good Morning</div>
+      <div class="bubble" style="top:21%">Ten minutes today would feel nice.</div>
+      <div class="cushion"></div>
+      <div class="sitter"><img src="companions/otto-5.png" alt="Otto"></div>
+      <div class="cards">
+        <div class="tile"><div class="row"><span>Otto's glow</span><span class="num">72%</span></div><div class="bar" style="margin-top:6px"><b style="width:72%"></b></div></div>
+        <div class="tile mini"><img class="sil" src="companions/redpanda-4.png" alt=""><div style="flex:1"><div class="row"><span>Otto's next form</span><span class="num">210 / 300</span></div><div class="bar" style="margin-top:5px;height:7px"><b style="width:70%"></b></div><div class="sub" style="margin-top:4px">At 300 lifetime points</div></div></div>
+      </div>
+      <div class="tabs"><span class="on">Home</span><span>Block</span><span class="plus">+</span><span>Shop</span><span>Profile</span></div>
+    </div></div>
+    <p class="note">Glow and form are two rows because they are two rules: glow is today's consistency and can fall, his form only moves forward. The silhouette is the teaser.</p>
+  </div>
+
+  <div class="opt">
+    <div class="head"><h3>Almost there</h3></div>
+    <div class="based">The same row, inside the last 10%</div>
+    <div class="phone"><div class="screen home">
+      <div class="island"></div>
+      <div class="sky"></div><div class="ridge far"></div><div class="ridge mid"></div><div class="ridge mid2"></div><div class="grass"></div>
+      <div class="streak"><span>🔥</span>12</div>
+      <div class="greet">Good Evening</div>
+      <div class="bubble" style="top:21%">I feel a change coming.</div>
+      <div class="cushion"></div>
+      <div class="sitter"><img src="companions/otto-5.png" alt="Otto"></div>
+      <div class="cards">
+        <div class="tile"><div class="row"><span>Otto's glow</span><span class="num">72%</span></div><div class="bar" style="margin-top:6px"><b style="width:72%"></b></div></div>
+        <div class="tile mini" style="box-shadow:0 0 0 2px #F7D88A,0 3px 0 var(--hair)"><img src="companions/redpanda-4.png" alt="" style="filter:brightness(0);opacity:.55"><div style="flex:1"><div class="row"><span>Otto's next form</span><span class="num">25 to go</span></div><div class="bar" style="margin-top:5px;height:7px"><b style="width:92%"></b></div><div class="sub" style="margin-top:4px">One 25 minute session gets him there</div></div></div>
+      </div>
+      <div class="tabs"><span class="on">Home</span><span>Block</span><span class="plus">+</span><span>Shop</span><span>Profile</span></div>
+    </div></div>
+    <p class="note">Otto hints, the silhouette darkens and the row gets a warm edge. The minutes line is plain arithmetic (1 point a minute), never a guess about the person.</p>
+  </div>
+
+  <div class="opt">
+    <div class="head"><h3>Reward screen</h3></div>
+    <div class="based">Where points are added after a session</div>
+    <div class="phone"><div class="screen reward">
+      <div class="island"></div>
+      <div class="scr"></div>
+      <div class="done">Session complete!</div>
+      <div class="cushion" style="bottom:auto;top:262px"></div>
+      <div class="sitter" style="bottom:auto;top:120px;height:150px"><img src="companions/otto-5.png" alt="Otto"></div>
+      <div class="tiles">
+        <div class="tile"><div class="v">25</div><div class="k">minutes</div></div>
+        <div class="tile"><div class="v">13</div><div class="k">day streak</div></div>
+        <div class="tile"><div class="v">+25</div><div class="k">points</div></div>
+      </div>
+      <div style="position:absolute;left:12px;right:12px;top:412px;display:grid;gap:9px">
+        <div class="tile mini"><img src="companions/redpanda-4.png" alt=""><div style="flex:1"><div class="row"><span>Otto's next form</span><span class="num">300 / 300</span></div><div class="bar" style="margin-top:5px;height:7px"><b style="width:100%"></b></div></div></div>
+        <div class="ribbon">Otto is ready to change</div>
+      </div>
+      <div style="position:absolute;left:18px;right:18px;bottom:26px"><div class="btn">Continue</div></div>
+    </div></div>
+    <p class="note">The coins land, the form bar fills, then a gold ribbon if it crossed. Continue plays the sequence above. Gold appears once: the ribbon.</p>
+  </div>
+
+  <div class="opt">
+    <div class="head"><h3>Catching up</h3></div>
+    <div class="based">A member who already has the points</div>
+    <div class="phone"><div class="screen">
+      <div class="island"></div>
+      <div class="sky"></div><div class="ridge far"></div><div class="ridge mid"></div><div class="ridge mid2"></div><div class="grass"></div>
+      <div class="cushion" style="bottom:auto;top:250px"></div>
+      <div class="sitter" style="bottom:auto;top:96px;height:166px"><img src="companions/tiger-4.png" alt="Otto as a tiger"></div>
+      <div class="tile" style="position:absolute;left:12px;right:12px;bottom:12px;background:var(--cream);border-radius:26px;padding:16px;z-index:10">
+        <div class="kick" style="text-align:center;font-size:12px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:var(--gold-ink)">2 of 2 · 1,240 lifetime points</div>
+        <div style="display:flex;justify-content:center;gap:12px;align-items:center;margin:8px 0"><img src="companions/redpanda-4.png" alt="" style="width:56px;height:56px;object-fit:contain;opacity:.55"><b class="muted">→</b><img src="companions/tiger-4.png" alt="" style="width:56px;height:56px;object-fit:contain"></div>
+        <div style="text-align:center;font-weight:900;font-size:20px">Otto was reborn as a tiger</div>
+        <p class="sub" style="text-align:center;margin:6px 0 10px">You meditated enough for two forms, so he changed twice. Starts at Steady.</p>
+        <div style="display:flex;justify-content:center;gap:6px;margin-bottom:12px"><i style="width:8px;height:8px;border-radius:50%;background:var(--hair)"></i><i style="width:8px;height:8px;border-radius:50%;background:var(--green)"></i></div>
+        <div class="btn">Meditate together</div>
+      </div>
+    </div></div>
+    <p class="note">On the update, each form he has earned plays in order: red panda, then tiger. The full sequence for the first, the same one again for the next, then this card. They can pick any of them in Otto's forms after.</p>
+  </div>
+
+  <div class="opt">
+    <div class="head"><h3>Otto's forms</h3></div>
+    <div class="based">From Profile, or by tapping Otto's glow card</div>
+    <div class="phone"><div class="screen coll" style="background:var(--meadow)">
+      <div class="island"></div>
+      <div class="top"></div>
+      <div class="title">Otto's forms</div>
+      <div class="lifetime"><b>1,240</b> lifetime points</div>
+      <div class="grid">
+        <div class="cc"><img src="companions/otto-5.png" alt=""><b>Sloth</b><div class="s">Where he started</div></div>
+        <div class="cc sel"><div class="check">✓</div><img src="companions/redpanda-5.png" alt=""><b>Red panda</b><div class="s">Meditating with you</div></div>
+        <div class="cc"><img src="companions/tiger-4.png" alt=""><b>Tiger</b><div class="s">Unlocked</div></div>
+        <div class="cc wide"><img class="sil" src="companions/phoenix-4.png" alt=""><div style="flex:1"><b>Phoenix</b><div class="s">At 2,200 points</div><div class="bar"><b style="width:56%"></b></div></div></div>
+        <div class="cc wide"><img class="sil" src="companions/dragon-4.png" alt=""><div style="flex:1"><b>Dragon</b><div class="s">At 5,500 points</div></div></div>
+      </div>
+    </div></div>
+    <p class="note">Unlocked forms are big cards, any of them a tap away. The rest are silhouettes with the point they arrive at; only the next one shows a bar.</p>
+  </div>
+
+  <div class="opt">
+    <div class="head"><h3>Choosing a form</h3></div>
+    <div class="based">Tap a card in Otto's forms</div>
+    <div class="phone"><div class="screen detail">
+      <div class="island"></div>
+      <div class="sky" style="inset:0 0 50% 0"></div><div class="ridge far" style="bottom:50%"></div>
+      <div class="bigimg"><img src="companions/tiger-4.png" alt="Otto as a tiger"></div>
+      <div class="sheet">
+        <div class="name">Otto as a tiger</div>
+        <div class="sub" style="text-align:center">Unlocked at 800 lifetime points</div>
+        <div class="states">
+          <img src="companions/tiger-1.png" alt=""><img src="companions/tiger-2.png" alt=""><img src="companions/tiger-3.png" alt=""><img class="cur" src="companions/tiger-4.png" alt=""><img src="companions/tiger-5.png" alt=""><img src="companions/tiger-6.png" alt=""><img src="companions/tiger-7.png" alt="">
+        </div>
+        <div class="sub" style="text-align:center">His glow, Steady today. His hat comes too.</div>
+        <div class="btn">Meditate as a tiger</div>
+        <div class="btn quiet sm">Keep the red panda</div>
+      </div>
+    </div></div>
+    <p class="note">One tap changes who sits on the cushion on Home, Ready, the session, the widget and the Watch. Switching back is the same tap, any time.</p>
+  </div>
+
+  <div class="opt">
+    <div class="head"><h3>Widget and Watch</h3></div>
+    <div class="based">Both follow the form you chose</div>
+    <div class="phone" style="background:#2B3A55"><div class="screen" style="background:linear-gradient(180deg,#5E7FB0,#9BB3D6 60%,#C9B7D8)">
+      <div class="island"></div>
+      <div class="statusbar light"><span>9:41</span><span>●●●</span></div>
+      <div style="position:absolute;left:22px;top:66px;width:150px;height:150px;border-radius:26px;overflow:hidden;box-shadow:0 8px 20px rgba(0,0,0,.25)">
+        <div style="position:absolute;inset:0;background:linear-gradient(180deg,#7DBCE6,#BFE2F2 55%,#9CCB74 66%,var(--meadow-deep))"></div>
+        <div style="position:absolute;left:50%;bottom:21%;width:56%;height:10%;margin-left:-28%;border-radius:50%;background:#C76F4E;box-shadow:inset 0 -3px 0 #A9573A"></div>
+        <img src="companions/redpanda-5.png" alt="" style="position:absolute;left:50%;bottom:18%;width:70%;margin-left:-35%">
+        <div style="position:absolute;left:10px;top:8px;font-weight:900;font-size:14px">🔥 12</div>
+      </div>
+      <div style="position:absolute;left:22px;top:222px;width:150px;text-align:center;color:#fff;font-size:11px;font-weight:800">808</div>
+      <div style="position:absolute;right:20px;top:66px;display:grid;gap:14px">
+        <i style="width:60px;height:60px;border-radius:15px;background:rgba(255,255,255,.35)"></i><i style="width:60px;height:60px;border-radius:15px;background:rgba(255,255,255,.35)"></i>
+      </div>
+      <div style="position:absolute;left:50%;top:290px;margin-left:-74px;width:148px;height:180px;border-radius:44px;background:#111;padding:9px;box-shadow:0 10px 22px rgba(0,0,0,.35)">
+        <div style="position:relative;width:100%;height:100%;border-radius:36px;overflow:hidden;background:linear-gradient(180deg,#7DBCE6,#BFE2F2 52%,#9CCB74 64%,var(--meadow-deep))">
+          <div style="position:absolute;left:50%;bottom:36%;width:52%;height:8%;margin-left:-26%;border-radius:50%;background:#C76F4E"></div>
+          <img src="companions/redpanda-5.png" alt="" style="position:absolute;left:50%;bottom:33%;width:62%;margin-left:-31%">
+          <div style="position:absolute;left:14px;right:14px;bottom:10px;background:var(--gold);color:#4A2F06;text-align:center;font-weight:900;font-size:13px;border-radius:99px;padding:5px">Begin</div>
+        </div>
+      </div>
+      <div style="position:absolute;left:0;right:0;top:482px;text-align:center;color:#fff;font-size:12px;font-weight:800">Apple Watch</div>
+    </div></div>
+    <p class="note">Both already draw stills, so following the chosen form is cheap: seven stills per form, keyed by his glow, the same way they draw Otto today.</p>
+  </div>
+
+  <div class="opt">
+    <div class="head"><h3>Profile, the line</h3></div>
+    <div class="based">One card on Profile, opens Otto's forms</div>
+    <div class="phone"><div class="screen prof" style="background:var(--meadow)">
+      <div class="island"></div>
+      <div class="band"></div><div class="face"></div>
+      <div class="card"><b style="font-size:18px">Maya</b><div class="sub">@maya</div>
+        <div style="display:flex;justify-content:space-around;margin-top:10px"><div><div class="num" style="font-size:18px">58</div><div class="sub">sessions</div></div><div><div class="num" style="font-size:18px">20h</div><div class="sub">meditated</div></div><div><div class="num" style="font-size:18px">12</div><div class="sub">day streak</div></div></div>
+      </div>
+      <div class="journey">
+        <div class="row"><span>Otto's forms</span><span class="num">1,240 pts</span></div>
+        <div class="track" style="--p:62%">
+          <div class="d got"><img src="companions/otto-4.png" alt=""></div>
+          <div class="d got"><img src="companions/redpanda-4.png" alt=""></div>
+          <div class="d got"><img src="companions/tiger-4.png" alt=""></div>
+          <div class="d"><img class="sil" src="companions/phoenix-4.png" alt=""></div>
+          <div class="d"><img class="sil" src="companions/dragon-4.png" alt=""></div>
+        </div>
+        <div class="labels"><span>Start</span><span>300</span><span>800</span><span>2,200</span><span>5,500</span></div>
+        <div class="sub" style="margin-top:10px">Lifetime 1,240 · 620 to spend in the Shop</div>
+        <div class="btn sm" style="margin-top:10px">See Otto's forms</div>
+      </div>
+      <div class="tabs"><span>Home</span><span>Block</span><span class="plus">+</span><span>Shop</span><span class="on">Profile</span></div>
+    </div></div>
+    <p class="note">The one place both numbers appear side by side, so lifetime and spendable are legible once and never need explaining again.</p>
+  </div>
+</div>
+
+<h2>Still open for Melvin and Aziz</h2>
+<div class="panel">
+<ol class="qs">
+  <li><b>The app icon.</b> Does it follow the chosen form, or stay the sloth? Following needs alternate icons in the build (one per form), and iOS shows a system alert every time an app changes its icon. Recommended: the icon stays the sloth, since it is what people know 808 by.</li>
+  <li><b>Glow when switching back.</b> Each new form starts at Steady. When you switch back to a form you unlocked earlier, does it show your current glow, or the glow it had when you left it? Recommended: your current glow, because glow is your consistency, not the form's, and one number is easier to understand than five.</li>
+</ol>
+</div>
+
+<details class="panel" style="margin-top:48px">
+<summary style="cursor:pointer;font-weight:900;font-size:20px">Other directions we tried</summary>
+<p class="lede" style="margin-top:12px">The six original options. A, B and C fed the chosen sequence; D, E and F were set aside. Press Replay on each.</p>
 <div class="options">
 
   <!-- A -->
@@ -377,10 +704,10 @@ ol.qs { padding-left: 22px; margin: 10px 0 0 } ol.qs li { margin-bottom: 10px; m
       </div>
       <div class="flash"></div>
       <div class="line line1">Wait. Otto is glowing...</div>
-      <div class="line line2" style="bottom:118px;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.35)">Otto grew into a Red panda!</div>
-      <div class="cta"><div class="btn">Say hi</div></div>
+      <div class="line line2" style="bottom:118px;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.35)">Otto was reborn as a red panda!</div>
+      <div class="cta"><div class="btn">Meditate together</div></div>
     </div></div>
-    <p class="note">Night falls, Otto turns to a white silhouette, it flickers between the two shapes faster and faster, a white flash, and the new companion appears in color. The clearest read of "evolve". Built from two stills, no rig.</p>
+    <p class="note">Night falls, Otto turns to a white silhouette, it flickers between the two shapes faster and faster, a white flash, and the new form appears in color. The clearest read of "evolve". Built from two stills, no rig.</p>
   </div>
 
   <!-- B -->
@@ -398,10 +725,10 @@ ol.qs { padding-left: 22px; margin: 10px 0 0 } ol.qs li { margin-bottom: 10px; m
         <img class="old" src="companions/otto-4.png" alt=""><img class="new" src="companions/redpanda-4.png" alt="Red panda">
       </div>
       <div class="gcard">
-        <div class="kick">500 points</div>
+        <div class="kick">300 lifetime points</div>
         <div class="pair"><img src="companions/otto-4.png" alt=""><span class="arrow">→</span><img src="companions/redpanda-4.png" alt=""></div>
-        <h4>A Red panda joined you</h4>
-        <p>Every minute you meditated got you here. Otto stays in your collection too.</p>
+        <h4>Otto was reborn as a red panda</h4>
+        <p>Every minute you meditated got him here. You can switch back any time.</p>
         <div class="btn">Meditate together</div>
       </div>
     </div></div>
@@ -419,13 +746,13 @@ ol.qs { padding-left: 22px; margin: 10px 0 0 } ol.qs li { margin-bottom: 10px; m
       <div class="path">
         <div class="node n1 done"><img src="companions/otto-4.png" alt="Otto"></div>
         <div class="node n2 target"><img src="companions/redpanda-4.png" alt="Red panda"></div>
-        <div class="node n3"><img class="sil" src="companions/tiger-4.png" alt=""><div class="lock">Unlocks at 1,500</div></div>
-        <div class="node n4"><img class="sil" src="companions/phoenix-4.png" alt=""><div class="lock">Unlocks at 4,000</div></div>
+        <div class="node n3"><img class="sil" src="companions/tiger-4.png" alt=""><div class="lock">Unlocks at 800</div></div>
+        <div class="node n4"><img class="sil" src="companions/phoenix-4.png" alt=""><div class="lock">Unlocks at 2,200</div></div>
         <div class="marker">You</div>
       </div>
       <div class="bottom">
-        <div class="big">New companion!</div>
-        <div class="count"><span class="num" data-count="500">0</span> lifetime points</div>
+        <div class="big">Otto changed form!</div>
+        <div class="count"><span class="num" data-count="300">0</span> lifetime points</div>
         <div class="btn">Continue</div>
       </div>
     </div></div>
@@ -444,7 +771,7 @@ ol.qs { padding-left: 22px; margin: 10px 0 0 } ol.qs li { margin-bottom: 10px; m
         <div class="face back">808</div>
         <div class="face front"><img src="companions/tiger-4.png" alt="Tiger"><div class="ban">Tiger</div></div>
       </div></div>
-      <div class="under"><div class="t">The Tiger joined you</div><div class="s">Companion 3 of 5</div><div class="btn">Choose who meditates</div></div>
+      <div class="under"><div class="t">Otto was reborn as a tiger</div><div class="s">Form 3 of 5</div><div class="btn">Meditate together</div></div>
     </div></div>
     <p class="note">A card drops in, shakes harder three times, flips under light rays. Big anticipation. The risk: it looks like a loot box, and nothing here is random. Shown so the founders can reject it with eyes open.</p>
   </div>
@@ -457,10 +784,10 @@ ol.qs { padding-left: 22px; margin: 10px 0 0 } ol.qs li { margin-bottom: 10px; m
       <div class="island"></div>
       <div class="statusbar light"><span>9:41</span><span>●●●</span></div>
       <div class="medal"><div class="coin"><div class="in"><img src="companions/phoenix-4.png" alt="Phoenix"></div><div class="shine"></div></div></div>
-      <div class="words"><div class="t">Phoenix</div><div class="s">Joined at 4,000 lifetime points</div></div>
+      <div class="words"><div class="t">Phoenix</div><div class="s">Unlocked at 2,200 lifetime points</div></div>
       <div class="cta"><div class="btn">Done</div></div>
     </div></div>
-    <p class="note">The companion sits inside a gold medal that spins in from far away and settles, then a shine sweeps across. Feels like a trophy. Fits the awards shelf, but turns a living companion into an object.</p>
+    <p class="note">Otto sits inside a gold medal that spins in from far away and settles, then a shine sweeps across. Feels like a trophy. Fits the awards shelf, but turns Otto into an object.</p>
   </div>
 
   <!-- F -->
@@ -471,7 +798,7 @@ ol.qs { padding-left: 22px; margin: 10px 0 0 } ol.qs li { margin-bottom: 10px; m
       <div class="island"></div>
       <div class="sky"></div><div class="ridge far"></div><div class="ridge mid"></div><div class="ridge mid2"></div><div class="grass"></div>
       <i class="flower" style="left:12%;top:74%"></i><i class="flower p" style="left:80%;top:72%"></i><i class="flower y" style="left:30%;top:86%"></i>
-      <div class="bubble" style="top:20%"><span class="b1">Something is hatching...</span><span class="b2" style="position:absolute;inset:9px 13px">A Dragon hatched!</span></div>
+      <div class="bubble" style="top:20%"><span class="b1">Something is hatching...</span><span class="b2" style="position:absolute;inset:9px 13px">Otto hatched as a dragon!</span></div>
       <div class="cushion"></div>
       <div class="shellglow"></div>
       <div class="baby"><img src="companions/dragon-4.png" alt="Dragon"></div>
@@ -479,200 +806,74 @@ ol.qs { padding-left: 22px; margin: 10px 0 0 } ol.qs li { margin-bottom: 10px; m
         <div class="half bot"></div><div class="half top"></div>
         <div class="crack"><svg viewBox="0 0 96 124"><polyline points="10,64 22,56 34,66 46,54 58,66 70,55 84,64" fill="none" stroke="#7A5A30" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
       </div>
-      <div class="cta"><div class="btn">Meet your Dragon</div></div>
+      <div class="cta"><div class="btn">Meet the new Otto</div></div>
     </div></div>
-    <p class="note">An egg on the cushion wobbles harder, cracks, the top flies off and the companion pops out. Lovely for the Phoenix and Dragon, odd for a Red panda or Tiger (mammals). Would need an egg per creature or a neutral one.</p>
+    <p class="note">An egg on the cushion wobbles harder, cracks, the top flies off and Otto pops out in his new form. Lovely for the Phoenix and Dragon, odd for a Red panda or Tiger (mammals). Would need an egg per creature or a neutral one.</p>
   </div>
 </div>
-
-<h2>2. Around the moment</h2>
-<p class="lede">Where progress lives, what "almost there" looks like, the collection, and choosing who meditates with you. Numbers here are examples.</p>
-
-<div class="options">
-
-  <!-- Home -->
-  <div class="opt">
-    <div class="head"><h3>Home, progress</h3></div>
-    <div class="based">Under Otto's glow card, one more row</div>
-    <div class="phone"><div class="screen home">
-      <div class="island"></div>
-      <div class="sky"></div><div class="ridge far"></div><div class="ridge mid"></div><div class="ridge mid2"></div><div class="grass"></div>
-      <i class="flower" style="left:12%;top:70%"></i><i class="flower p" style="left:84%;top:69%"></i>
-      <div class="streak"><span>🔥</span>12</div>
-      <div class="greet">Good Morning</div>
-      <div class="bubble" style="top:21%">Ten minutes today would feel nice.</div>
-      <div class="cushion"></div>
-      <div class="sitter"><img src="companions/otto-5.png" alt="Otto"></div>
-      <div class="cards">
-        <div class="tile"><div class="row"><span>Otto's glow</span><span class="num">72%</span></div><div class="bar" style="margin-top:6px"><b style="width:72%"></b></div></div>
-        <div class="tile mini"><img class="sil" src="companions/redpanda-4.png" alt=""><div style="flex:1"><div class="row"><span>Next companion</span><span class="num">340 / 500</span></div><div class="bar" style="margin-top:5px;height:7px"><b style="width:68%"></b></div><div class="sub" style="margin-top:4px">Unlocks at 500 lifetime points</div></div></div>
-      </div>
-      <div class="tabs"><span class="on">Home</span><span>Block</span><span class="plus">+</span><span>Shop</span><span>Profile</span></div>
-    </div></div>
-    <p class="note">Glow and evolution are two rows because they are two rules: glow is today's consistency and can fall, evolution only rises. The silhouette is the teaser. Measured numbers in the light blue.</p>
-  </div>
-
-  <!-- Almost -->
-  <div class="opt">
-    <div class="head"><h3>Almost there</h3></div>
-    <div class="based">The same row, inside the last 10%</div>
-    <div class="phone"><div class="screen home">
-      <div class="island"></div>
-      <div class="sky"></div><div class="ridge far"></div><div class="ridge mid"></div><div class="ridge mid2"></div><div class="grass"></div>
-      <div class="streak"><span>🔥</span>12</div>
-      <div class="greet">Good Evening</div>
-      <div class="bubble" style="top:21%">I think someone's coming to meditate with us.</div>
-      <div class="cushion"></div>
-      <div class="sitter"><img src="companions/otto-5.png" alt="Otto"></div>
-      <div class="cards">
-        <div class="tile"><div class="row"><span>Otto's glow</span><span class="num">72%</span></div><div class="bar" style="margin-top:6px"><b style="width:72%"></b></div></div>
-        <div class="tile mini" style="box-shadow:0 0 0 2px #F7D88A,0 3px 0 var(--hair)"><img src="companions/redpanda-4.png" alt="" style="filter:brightness(0);opacity:.55"><div style="flex:1"><div class="row"><span>Red panda</span><span class="num">40 to go</span></div><div class="bar" style="margin-top:5px;height:7px"><b style="width:92%"></b></div><div class="sub" style="margin-top:4px">One 40 minute session gets you there</div></div></div>
-      </div>
-      <div class="tabs"><span class="on">Home</span><span>Block</span><span class="plus">+</span><span>Shop</span><span>Profile</span></div>
-    </div></div>
-    <p class="note">Otto hints, the silhouette darkens and the row gets a warm edge. The minutes line is plain arithmetic (1 point a minute), never a guess about the person.</p>
-  </div>
-
-  <!-- Reward -->
-  <div class="opt">
-    <div class="head"><h3>Reward screen</h3></div>
-    <div class="based">Where points are added after a session</div>
-    <div class="phone"><div class="screen reward">
-      <div class="island"></div>
-      <div class="scr"></div>
-      <div class="done">Session complete!</div>
-      <div class="cushion" style="bottom:auto;top:262px"></div>
-      <div class="sitter" style="bottom:auto;top:120px;height:150px"><img src="companions/otto-5.png" alt="Otto"></div>
-      <div class="tiles">
-        <div class="tile"><div class="v">40</div><div class="k">minutes</div></div>
-        <div class="tile"><div class="v">13</div><div class="k">day streak</div></div>
-        <div class="tile"><div class="v">+40</div><div class="k">points</div></div>
-      </div>
-      <div style="position:absolute;left:12px;right:12px;top:412px;display:grid;gap:9px">
-        <div class="tile mini"><img src="companions/redpanda-4.png" alt=""><div style="flex:1"><div class="row"><span>Red panda</span><span class="num">500 / 500</span></div><div class="bar" style="margin-top:5px;height:7px"><b style="width:100%"></b></div></div></div>
-        <div class="ribbon">New companion unlocked</div>
-      </div>
-      <div style="position:absolute;left:18px;right:18px;bottom:26px"><div class="btn">Continue</div></div>
-    </div></div>
-    <p class="note">The coins land, then the companion bar fills, then a gold ribbon if it crossed. Continue plays the arrival (option A or B). Gold appears once: the ribbon.</p>
-  </div>
-
-  <!-- Collection -->
-  <div class="opt">
-    <div class="head"><h3>Companions</h3></div>
-    <div class="based">From Profile, or by tapping Otto's glow card</div>
-    <div class="phone"><div class="screen coll" style="background:var(--meadow)">
-      <div class="island"></div>
-      <div class="top"></div>
-      <div class="title">Companions</div>
-      <div class="lifetime"><b>1,240</b> lifetime points</div>
-      <div class="grid">
-        <div class="cc"><img src="companions/otto-5.png" alt=""><b>Otto</b><div class="s">Your first</div></div>
-        <div class="cc sel"><div class="check">✓</div><img src="companions/redpanda-5.png" alt=""><b>Red panda</b><div class="s">Meditating with you</div></div>
-        <div class="cc wide"><img class="sil" src="companions/tiger-4.png" alt=""><div style="flex:1"><b>Tiger</b><div class="s">Unlocks at 1,500 points</div><div class="bar"><b style="width:83%"></b></div></div></div>
-        <div class="cc wide"><img class="sil" src="companions/phoenix-4.png" alt=""><div style="flex:1"><b>Phoenix</b><div class="s">Unlocks at 4,000 points</div></div></div>
-        <div class="cc wide"><img class="sil" src="companions/dragon-4.png" alt=""><div style="flex:1"><b>Dragon</b><div class="s">Unlocks at 10,000 points</div></div></div>
-      </div>
-    </div></div>
-    <p class="note">Unlocked companions are big cards, the rest are silhouettes with the point they arrive at. Only the next one shows a bar. Names are shown, so the line is a reason to keep going, not a mystery box.</p>
-  </div>
-
-  <!-- Detail -->
-  <div class="opt">
-    <div class="head"><h3>Choosing one</h3></div>
-    <div class="based">Tap a card in Companions</div>
-    <div class="phone"><div class="screen detail">
-      <div class="island"></div>
-      <div class="sky" style="inset:0 0 50% 0"></div><div class="ridge far" style="bottom:50%"></div>
-      <div class="bigimg"><img src="companions/redpanda-5.png" alt="Red panda"></div>
-      <div class="sheet">
-        <div class="name">Red panda</div>
-        <div class="sub" style="text-align:center">Joined at 500 lifetime points</div>
-        <div class="states">
-          <img src="companions/redpanda-1.png" alt=""><img src="companions/redpanda-2.png" alt=""><img src="companions/redpanda-3.png" alt=""><img src="companions/redpanda-4.png" alt=""><img class="cur" src="companions/redpanda-5.png" alt=""><img src="companions/redpanda-6.png" alt=""><img src="companions/redpanda-7.png" alt="">
-        </div>
-        <div class="sub" style="text-align:center">Shows your glow, the same as Otto did. Today: Bright.</div>
-        <div class="btn">Meditate with Red panda</div>
-        <div class="btn quiet sm">Keep Otto</div>
-      </div>
-    </div></div>
-    <p class="note">One tap swaps who sits on the cushion on Home, Ready, the sit and the widget. The seven states strip teaches that glow carries over: it belongs to you, the companion just shows it.</p>
-  </div>
-
-  <!-- Profile -->
-  <div class="opt">
-    <div class="head"><h3>Profile, the line</h3></div>
-    <div class="based">One card on Profile, opens Companions</div>
-    <div class="phone"><div class="screen prof" style="background:var(--meadow)">
-      <div class="island"></div>
-      <div class="band"></div><div class="face"></div>
-      <div class="card"><b style="font-size:18px">Maya</b><div class="sub">@maya</div>
-        <div style="display:flex;justify-content:space-around;margin-top:10px"><div><div class="num" style="font-size:18px">58</div><div class="sub">sessions</div></div><div><div class="num" style="font-size:18px">20h</div><div class="sub">meditated</div></div><div><div class="num" style="font-size:18px">12</div><div class="sub">day streak</div></div></div>
-      </div>
-      <div class="journey">
-        <div class="row"><span>Your companions</span><span class="num">1,240 pts</span></div>
-        <div class="track">
-          <div class="d got"><img src="companions/otto-4.png" alt=""></div>
-          <div class="d got"><img src="companions/redpanda-4.png" alt=""></div>
-          <div class="d"><img class="sil" src="companions/tiger-4.png" alt=""></div>
-          <div class="d"><img class="sil" src="companions/phoenix-4.png" alt=""></div>
-          <div class="d"><img class="sil" src="companions/dragon-4.png" alt=""></div>
-        </div>
-        <div class="labels"><span>Start</span><span>500</span><span>1,500</span><span>4,000</span><span>10,000</span></div>
-        <div class="sub" style="margin-top:10px">Lifetime 1,240 · 820 to spend in the Shop</div>
-        <div class="btn sm" style="margin-top:10px">See companions</div>
-      </div>
-      <div class="tabs"><span>Home</span><span>Block</span><span class="plus">+</span><span>Shop</span><span class="on">Profile</span></div>
-    </div></div>
-    <p class="note">The one place both numbers sit side by side, so the lifetime and spendable split is legible once and never has to be explained again.</p>
-  </div>
-</div>
-
-<h2>3. Comparison and recommendation</h2>
 <div class="tablewrap"><table>
   <tr><th>Option</th><th>Based on</th><th>Feel</th><th>Fit with 808</th><th>Cost to build</th></tr>
   <tr class="rec"><td><b>A. The morph</b></td><td>Pokémon evolution</td><td>Suspense, then release</td><td>Strong. Says "evolve" with no words</td><td>Low. SwiftUI, two stills, a silhouette, a flash. No Rive</td></tr>
   <tr class="rec"><td><b>B. The growth card</b></td><td>Finch</td><td>Warm, quiet</td><td>Strongest for tone, weakest for wow</td><td>Low. A crossfade and a card</td></tr>
   <tr><td>C. The path</td><td>Duolingo</td><td>Loud, celebratory</td><td>Good for showing the whole line, loud for a calm app</td><td>Medium. Path layout, confetti, counter</td></tr>
   <tr><td>D. The card flip</td><td>Clash Royale, gacha</td><td>High anticipation</td><td>Weak. Reads as a loot box, and nothing is random</td><td>Medium. 3D flip, rays</td></tr>
-  <tr><td>E. The medal spin</td><td>Apple Fitness</td><td>Trophy, polished</td><td>Medium. Fits awards, makes the companion an object</td><td>Low to medium. 3D spin, shine</td></tr>
+  <tr><td>E. The medal spin</td><td>Apple Fitness</td><td>Trophy, polished</td><td>Medium. Fits awards, makes Otto an object</td><td>Low to medium. 3D spin, shine</td></tr>
   <tr><td>F. The hatch</td><td>Tamagotchi, Neopets</td><td>Cute, nurturing</td><td>Great for Phoenix and Dragon, odd for mammals</td><td>Medium. Egg art per creature or one neutral egg</td></tr>
-</table></div>
-
-<div class="panel sand">
-  <span class="tag rec">Recommendation</span>
-  <p style="margin-top:10px"><b>A then B, in one sequence.</b> The morph plays the moment (about five seconds, at dusk, tap to skip), and it ends on B's card in daylight, which says what happened and that Otto stays. A gives the evolution its weight, B keeps it 808: calm, honest, nothing to chase. Both are SwiftUI over the stills that already exist, so it ships without waiting on Rive rigs for four new creatures. Use C's path as the Profile card rather than as the moment itself. Skip D (loot box read) and F (eggs only suit two of the five).</p>
-  <p><b>Rules to go with it:</b> lifetime points drive evolution; earlier companions stay; glow belongs to the person and carries to whoever is on the cushion; the arrival plays once, after the reward screen, never mid-session.</p>
-</div>
-
-<h2>Open questions for Melvin and Aziz</h2>
-<div class="panel">
-<ol class="qs">
-  <li><b>Thresholds.</b> 500 / 1,500 / 4,000 / 10,000 are examples. The Dragon at about 167 hours is close to two years at 15 minutes a day. Is that the right length for the last one, or should it come sooner?</li>
-  <li><b>Can you switch back?</b> Recommended yes, any time, from Companions. The alternative (the newest always sits) is simpler but takes Otto away.</li>
-  <li><b>Does glow carry over?</b> Recommended yes. Glow is the person's consistency, not the creature's, so a new companion arrives at the same stage. Starting each one fresh would punish reaching it.</li>
-  <li><b>Do hats carry over?</b> Every hat is fitted to Otto's head across 13 looks. Options: hats stay Otto's only; each creature gets its own fitted set (large art cost); or hats unlock per creature over time. Recommended for v1: hats stay with Otto, and the Shop says so on a creature without them.</li>
-  <li><b>Is it still "Otto"?</b> Pokémon copy says "Otto grew into a Red panda", which suggests one character changing. A collection suggests new friends. Pick one so the copy agrees everywhere: Otto is the name of the first companion, and each new one has its own name.</li>
-  <li><b>Existing members.</b> Lifetime points can be rebuilt from stored sessions, so someone with 30 hours already would unlock two at once on update. Play them in order, one after the other, or one combined arrival?</li>
-  <li><b>App icon, widget and Watch.</b> Do they follow the chosen companion, or stay Otto? The widget and Watch draw stills, so following is cheap; the icon would need alternate icons.</li>
-  <li><b>Hats spent before this ships.</b> Lifetime points include spent ones, so nobody loses progress for having shopped. Confirm that is the intent.</li>
-</ol>
-</div>
+<p style="margin-top:14px" class="muted">Set aside: D reads as a loot box when nothing is random; E turns Otto into an object; F's eggs only suit the phoenix and dragon.</p>
+</details>
 
 </div>
-
 <script>
+var timers = {};
+var PAL = ['#4FA34A','#62A3D4','#E3A72F','#FFB3C9','#E8862B','#129496'];
+var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+function clearT(id) { (timers[id] || []).forEach(clearTimeout); timers[id] = [] }
+function later(id, ms, fn) { (timers[id] = timers[id] || []).push(setTimeout(fn, ms)) }
+function burst(el) {
+  var box = el.querySelector('.confetti'); box.innerHTML = '';
+  if (reduce) return;
+  for (var i = 0; i < 90; i++) {
+    var p = document.createElement('i');
+    var round = i % 4 === 0, w = round ? 7 : 6 + Math.random() * 4, h = round ? 7 : 9 + Math.random() * 6;
+    p.style.width = w + 'px'; p.style.height = h + 'px';
+    p.style.borderRadius = round ? '50%' : '2px';
+    p.style.background = PAL[i % PAL.length];
+    box.appendChild(p);
+    var a = -Math.PI / 2 + (Math.random() - .5) * Math.PI * 1.25;
+    var v = 120 + Math.random() * 190;
+    var dx = Math.cos(a) * v, dy = Math.sin(a) * v;
+    var r = (Math.random() - .5) * 1080, fall = 360 + Math.random() * 220;
+    var dur = 2300 + Math.random() * 1300;
+    p.animate([
+      { transform: 'translate(-50%,-50%) translate(0,0) rotate(0) scale(.4)', opacity: 1, easing: 'cubic-bezier(.12,.75,.3,1)' },
+      { transform: 'translate(-50%,-50%) translate(' + dx + 'px,' + dy + 'px) rotate(' + r * .4 + 'deg) scale(1)', opacity: 1, offset: .3, easing: 'cubic-bezier(.45,0,.85,.55)' },
+      { transform: 'translate(-50%,-50%) translate(' + dx * 1.35 + 'px,' + (dy + fall) + 'px) rotate(' + r + 'deg) scale(.9)', opacity: 0 }
+    ], { duration: dur, delay: Math.random() * 90, fill: 'forwards' });
+  }
+}
 function play(id) {
   var el = document.getElementById(id);
   if (!el) return;
+  clearT(id);
   el.classList.remove('play'); void el.offsetWidth; el.classList.add('play');
+  if (id === 'optZ') {
+    el.querySelector('.confetti').innerHTML = '';
+    var steps = document.querySelectorAll('#zSteps li');
+    steps.forEach(function (li) { li.classList.remove('on') });
+    steps.forEach(function (li, k) {
+      later(id, +li.dataset.at * 1000, function () {
+        steps.forEach(function (o) { o.classList.remove('on') }); li.classList.add('on');
+      });
+    });
+    later(id, 7050, function () { burst(el) });
+    later(id, 11500, function () { steps.forEach(function (o) { o.classList.remove('on') }) });
+  }
   if (id === 'optC') {
     var conf = el.querySelector('.confetti'); conf.innerHTML = '';
-    var cols = ['#4FA34A','#62A3D4','#E3A72F','#FFB3C9','#E8862B','#129496'];
     for (var i = 0; i < 44; i++) {
       var p = document.createElement('i');
       p.style.left = (Math.random() * 100) + '%';
-      p.style.background = cols[i % cols.length];
+      p.style.background = PAL[i % PAL.length];
       p.style.animationDelay = (2.6 + Math.random() * 1.4) + 's';
       p.style.animationDuration = (2 + Math.random() * 1.6) + 's';
       conf.appendChild(p);
@@ -680,21 +881,33 @@ function play(id) {
     var n = el.querySelector('[data-count]'), target = +n.dataset.count;
     n.textContent = '0';
     clearInterval(n._t);
-    setTimeout(function () {
+    later(id, 3200, function () {
       var start = performance.now();
       n._t = setInterval(function () {
         var k = Math.min(1, (performance.now() - start) / 900);
         n.textContent = Math.round(target * (1 - Math.pow(1 - k, 3))).toLocaleString();
         if (k >= 1) clearInterval(n._t);
       }, 30);
-    }, 3200);
+    });
   }
 }
+// Tap the chosen sequence to skip to the card.
+document.getElementById('optZ').addEventListener('click', function () {
+  var el = this;
+  if (!el.classList.contains('play')) return;
+  clearT('optZ');
+  if (!el.querySelector('.confetti i')) burst(el);
+  document.querySelectorAll('#zSteps li').forEach(function (o, k, all) { o.classList.toggle('on', k === all.length - 1) });
+  el.getAnimations({ subtree: true }).forEach(function (a) {
+    if (a.effect && a.effect.getTiming && a.effect.getTiming().iterations === Infinity) return;
+    if (a.animationName && a.animationName.indexOf('z') === 0) a.currentTime = 10000 * .95;
+  });
+});
 document.querySelectorAll('.replay').forEach(function (b) { b.addEventListener('click', function () { play(b.dataset.t) }) });
 var io = new IntersectionObserver(function (es) {
   es.forEach(function (e) { if (e.isIntersecting && !e.target._seen) { e.target._seen = 1; play(e.target.id) } });
 }, { threshold: .5 });
-['optA','optB','optC','optD','optE','optF'].forEach(function (id) { var el = document.getElementById(id); if (el) io.observe(el) });
+['optZ','optA','optB','optC','optD','optE','optF'].forEach(function (id) { var el = document.getElementById(id); if (el) io.observe(el) });
 </script>
 </body>
 </html>
