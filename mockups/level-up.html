@@ -1,0 +1,700 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Companion Evolution</title>
+<style>
+:root {
+  --sky-top: #8EC5E8; --sky-low: #D9EEF6;
+  --meadow: #8FBF6A; --meadow-deep: #6FA14E;
+  --sand: #F0E9DC; --cream: #FBF7EE; --paper: #F6EEDF;
+  --ink: #3B2F25; --ink-soft: #6E5F50; --hair: rgba(59,47,37,.12);
+  --green: #4FA34A; --green-lip: #3B7F37;
+  --blue: #62A3D4; --blue-ink: #1F4E70;
+  --gold: #E3A72F; --gold-ink: #8A5A0B;
+  --font: ui-rounded, "SF Pro Rounded", system-ui, -apple-system, sans-serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box }
+body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--font); font-size: 16px; line-height: 1.45; overflow-x: hidden }
+.page { max-width: 1180px; margin: 0 auto; padding: 32px 16px 80px }
+header.hero-band {
+  background: linear-gradient(180deg, var(--sky-top), var(--sky-low) 75%, var(--meadow) 100%);
+  padding: 40px 16px 34px;
+}
+header .inner { max-width: 1180px; margin: 0 auto }
+h1 { font-size: clamp(30px, 5vw, 46px); font-weight: 900; margin: 0 0 8px; letter-spacing: -.01em; text-wrap: balance }
+h2 { font-size: clamp(22px, 3.4vw, 30px); font-weight: 900; margin: 48px 0 6px; text-wrap: balance }
+h3 { font-size: 19px; font-weight: 900; margin: 0 0 4px }
+p { margin: 0 0 10px; max-width: 70ch }
+.lede { color: var(--ink-soft); font-weight: 600; max-width: 66ch }
+.muted { color: var(--ink-soft) }
+.tag { display: inline-block; font-size: 12px; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; padding: 3px 9px; border-radius: 99px; background: rgba(255,255,255,.7); color: var(--ink-soft) }
+.tag.rec { background: var(--green); color: #fff }
+.panel { background: #fff; border-radius: 22px; padding: 20px; box-shadow: 0 3px 0 var(--hair); margin-top: 18px }
+.panel.sand { background: var(--sand) }
+
+/* thresholds */
+.ladder { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin-top: 14px }
+@media (max-width: 760px) { .ladder { grid-template-columns: repeat(2, minmax(0,1fr)) } }
+.rung { background: var(--cream); border-radius: 18px; padding: 12px; text-align: center; box-shadow: 0 2px 0 var(--hair) }
+.rung img { width: 72px; height: 72px; object-fit: contain }
+.rung b { display: block; font-size: 16px }
+.rung .pts { color: var(--blue-ink); font-weight: 900; font-size: 18px }
+.rung .hrs { font-size: 13px; color: var(--ink-soft); font-weight: 700 }
+.ex { font-size: 12px; font-weight: 800; color: var(--gold-ink); background: #FFF3D6; border-radius: 6px; padding: 1px 6px }
+
+/* option grid */
+.options { display: flex; flex-wrap: wrap; gap: 28px 22px; margin-top: 20px; justify-content: center }
+.opt { width: 300px; display: grid; gap: 10px; align-content: start }
+.opt .head { display: flex; justify-content: space-between; align-items: center; gap: 8px }
+.opt .based { font-size: 13px; font-weight: 800; color: var(--ink-soft) }
+.opt .note { font-size: 14px; color: var(--ink-soft) }
+.replay { font: inherit; font-weight: 900; font-size: 13px; border: 0; border-radius: 99px; padding: 7px 13px; background: var(--green); color: #fff; box-shadow: 0 3px 0 var(--green-lip); cursor: pointer; white-space: nowrap }
+.replay:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--green-lip) }
+
+/* phone */
+.phone { width: 300px; height: 640px; border-radius: 42px; padding: 9px; background: #1d1d1f; box-shadow: 0 24px 48px rgba(40,50,30,.28); flex: none }
+.screen { position: relative; width: 100%; height: 100%; border-radius: 34px; overflow: hidden; background: var(--meadow); isolation: isolate }
+.island { position: absolute; top: 10px; left: 50%; width: 86px; height: 24px; margin-left: -43px; border-radius: 14px; background: #000; z-index: 50 }
+.statusbar { position: absolute; top: 13px; left: 24px; right: 24px; display: flex; justify-content: space-between; font-size: 12px; font-weight: 900; z-index: 40 }
+.statusbar.light { color: #fff }
+
+/* valley painting */
+.sky { position: absolute; inset: 0 0 34% 0; background: linear-gradient(180deg, #7DBCE6 0%, #BFE2F2 62%, #E8F4F4 80%) }
+.sky.dusk { background: linear-gradient(180deg, #2E3A6B 0%, #6B5C93 45%, #E59A7A 80%) }
+.sky.night { background: linear-gradient(180deg, #121A3A 0%, #27325E 60%, #4A4A7A 85%) }
+.ridge { position: absolute; border-radius: 50% 50% 0 0 }
+.ridge.far { left: -15%; right: -15%; bottom: 32%; height: 15%; background: #9DB8C9 }
+.ridge.mid { left: -40%; right: 25%; bottom: 31%; height: 12%; background: #8DB07F }
+.ridge.mid2 { left: 35%; right: -35%; bottom: 31%; height: 10%; background: #86AB76 }
+.dusk ~ .ridge.far, .screen.dusky .ridge.far { background: #5D5A86 }
+.screen.dusky .ridge.mid, .screen.dusky .ridge.mid2 { background: #4E6A5A }
+.screen.dusky .grass { background: linear-gradient(180deg, #5E8B57, #446C40) }
+.grass { position: absolute; inset: 66% 0 0 0; background: linear-gradient(180deg, #9CCB74, var(--meadow) 40%, var(--meadow-deep)) }
+.flower { position: absolute; width: 7px; height: 7px; border-radius: 50%; background: #FFF6E8; box-shadow: 0 0 0 2px rgba(255,255,255,.25) }
+.flower.p { background: #FFB3C9 } .flower.y { background: #FFD86B }
+.cushion { position: absolute; left: 50%; bottom: 30%; width: 46%; height: 5.5%; margin-left: -23%; border-radius: 50%; background: #C76F4E; box-shadow: inset 0 -4px 0 #A9573A; z-index: 3 }
+.sitter { position: absolute; left: 50%; bottom: 32%; width: 52%; height: 28%; margin-left: -26%; display: flex; align-items: flex-end; justify-content: center; z-index: 4 }
+.sitter img { max-width: 100%; max-height: 100%; object-fit: contain }
+.bubble { position: absolute; left: 50%; transform: translateX(-50%); width: 80%; background: rgba(240,233,220,.95); border-radius: 18px; padding: 9px 13px; text-align: center; font-weight: 800; font-size: 14px; box-shadow: 0 2px 0 var(--hair); z-index: 10 }
+.bubble::after { content: ""; position: absolute; bottom: -8px; left: 50%; margin-left: -8px; border: 8px solid transparent; border-bottom: 0; border-top-color: rgba(240,233,220,.95) }
+.btn { display: block; text-align: center; font-weight: 900; font-size: 17px; border-radius: 16px; padding: 13px; background: var(--green); color: #fff; box-shadow: 0 4px 0 var(--green-lip) }
+.btn.quiet { background: var(--cream); color: var(--ink); box-shadow: 0 3px 0 var(--hair) }
+.btn.sm { font-size: 14px; padding: 9px; border-radius: 13px }
+.tile { background: var(--sand); border-radius: 18px; padding: 12px 14px; box-shadow: 0 3px 0 var(--hair) }
+.bar { height: 10px; border-radius: 6px; background: rgba(59,47,37,.12); overflow: hidden }
+.bar b { display: block; height: 100%; border-radius: 6px; background: var(--blue) }
+.tabs { position: absolute; left: 10px; right: 10px; bottom: 10px; height: 54px; border-radius: 22px; background: var(--cream); display: flex; justify-content: space-around; align-items: center; font-size: 10.5px; font-weight: 800; color: var(--ink-soft); z-index: 30; box-shadow: 0 2px 0 var(--hair) }
+.tabs .plus { width: 40px; height: 40px; border-radius: 50%; background: var(--green); color: #fff; display: grid; place-items: center; font-size: 26px; font-weight: 900; margin-top: -18px; box-shadow: 0 4px 0 var(--green-lip) }
+.tabs .on { color: var(--ink) }
+.sil { filter: brightness(0); opacity: .28 }
+.num { color: var(--blue-ink); font-weight: 900 }
+
+/* ========= A. Pokemon ========= */
+#optA .sky { transition: none }
+#optA .dim { position: absolute; inset: 0; background: #1A2147; opacity: 0; z-index: 2 }
+#optA .stage { position: absolute; left: 50%; top: 35%; width: 190px; height: 190px; margin-left: -95px; z-index: 6 }
+#optA .stage img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain }
+#optA .morph { position: absolute; inset: 0 }
+#optA .from { opacity: 1 } #optA .to { opacity: 0 }
+#optA .rays { position: absolute; left: 50%; top: 50%; width: 520px; height: 520px; margin: -260px 0 0 -260px; border-radius: 50%; opacity: 0;
+  background: repeating-conic-gradient(rgba(255,240,190,.55) 0 8deg, rgba(255,240,190,0) 8deg 20deg); z-index: 5 }
+#optA .flash { position: absolute; inset: 0; background: #fff; opacity: 0; z-index: 20 }
+#optA .line { position: absolute; left: 18px; right: 18px; bottom: 120px; text-align: center; font-weight: 900; font-size: 19px; color: #fff; z-index: 21; text-shadow: 0 2px 8px rgba(0,0,0,.25) }
+#optA .line2 { opacity: 0; color: var(--ink); text-shadow: none }
+#optA .line1 { opacity: 0 }
+#optA .cta { position: absolute; left: 18px; right: 18px; bottom: 28px; z-index: 21; opacity: 0 }
+#optA .glowA { position: absolute; left: 50%; top: 50%; width: 300px; height: 300px; margin: -150px 0 0 -150px; border-radius: 50%; opacity: 0; z-index: 4;
+  background: radial-gradient(circle, rgba(255,236,170,.95), rgba(255,214,120,.4) 35%, rgba(255,214,120,0) 65%) }
+#optA.play .dim { animation: aDim 7s forwards }
+#optA.play .morph { animation: aSil 7s forwards }
+#optA.play .from { animation: aFrom 7s forwards }
+#optA.play .to { animation: aTo 7s forwards }
+#optA.play .flash { animation: aFlash 7s forwards }
+#optA.play .rays { animation: aRays 7s forwards, spin 12s linear infinite }
+#optA.play .glowA { animation: aGlow 7s forwards }
+#optA.play .line1 { animation: aL1 7s forwards }
+#optA.play .line2 { animation: aL2 7s forwards }
+#optA.play .cta { animation: aCta 7s forwards }
+#optA.play .stage { animation: aPop 7s forwards }
+@keyframes aDim { 0%,8% { opacity: 0 } 16%,70% { opacity: .85 } 76%,100% { opacity: 0 } }
+@keyframes aSil { 0%,12% { filter: none } 20%,72% { filter: brightness(0) invert(1) drop-shadow(0 0 14px #FFE9A8) } 80%,100% { filter: none } }
+@keyframes aFrom { 0%,30% {opacity:1} 32% {opacity:0} 36% {opacity:1} 39% {opacity:0} 42% {opacity:1} 44.5% {opacity:0} 47% {opacity:1} 49% {opacity:0} 51% {opacity:1} 52.5% {opacity:0} 54% {opacity:1} 55% {opacity:0} 56% {opacity:1} 56.8% {opacity:0} 57.6% {opacity:1} 58.3% {opacity:0} 59% {opacity:1} 59.6% {opacity:0} 100% {opacity:0} }
+@keyframes aTo   { 0%,30% {opacity:0} 32% {opacity:1} 36% {opacity:0} 39% {opacity:1} 42% {opacity:0} 44.5% {opacity:1} 47% {opacity:0} 49% {opacity:1} 51% {opacity:0} 52.5% {opacity:1} 54% {opacity:0} 55% {opacity:1} 56% {opacity:0} 56.8% {opacity:1} 57.6% {opacity:0} 58.3% {opacity:1} 59% {opacity:0} 59.6% {opacity:1} 100% {opacity:1} }
+@keyframes aFlash { 0%,66% {opacity:0} 72% {opacity:1} 84%,100% {opacity:0} }
+@keyframes aRays { 0%,72% {opacity:0} 80% {opacity:1} 100% {opacity:.7} }
+@keyframes aGlow { 0%,14% {opacity:0} 22%,70% {opacity:.9} 74% {opacity:0} 82%,100% {opacity:.8} }
+@keyframes aL1 { 0%,10% {opacity:0} 16%,64% {opacity:1} 68%,100% {opacity:0} }
+@keyframes aL2 { 0%,80% {opacity:0; transform: translateY(8px)} 86%,100% {opacity:1; transform: none} }
+@keyframes aCta { 0%,88% {opacity:0} 94%,100% {opacity:1} }
+@keyframes aPop { 0%,74% {transform: scale(1)} 79% {transform: scale(1.14)} 85%,100% {transform: scale(1)} }
+@keyframes spin { to { transform: rotate(360deg) } }
+
+/* ========= B. Finch ========= */
+#optB .sitter img { position: absolute; bottom: 0; left: 0; right: 0; margin: auto; max-height: 100% }
+#optB .old { opacity: 1 } #optB .new { opacity: 0 }
+#optB .spark { position: absolute; width: 8px; height: 8px; border-radius: 50%; background: #FFE9A8; box-shadow: 0 0 10px #FFD86B; opacity: 0; z-index: 8 }
+#optB .gcard { position: absolute; left: 12px; right: 12px; bottom: 12px; z-index: 20; background: var(--cream); border-radius: 24px; padding: 18px 16px 16px; box-shadow: 0 -4px 22px rgba(0,0,0,.12); transform: translateY(110%) }
+#optB .gcard .pair { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 2px 0 8px }
+#optB .gcard .pair img { width: 62px; height: 62px; object-fit: contain }
+#optB .gcard .arrow { font-weight: 900; color: var(--ink-soft) }
+#optB .gcard h4 { margin: 0; font-size: 21px; font-weight: 900; text-align: center }
+#optB .gcard p { text-align: center; font-size: 14px; color: var(--ink-soft); margin: 6px 0 12px }
+#optB .kick { text-align: center; font-size: 12px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; color: var(--gold-ink) }
+#optB.play .old { animation: bOld 6s forwards }
+#optB.play .new { animation: bNew 6s forwards }
+#optB.play .spark { animation: bSpark 6s forwards }
+#optB.play .spark:nth-child(2) { animation-delay: .2s } #optB.play .spark:nth-child(3) { animation-delay: .4s } #optB.play .spark:nth-child(4) { animation-delay: .6s } #optB.play .spark:nth-child(5) { animation-delay: .3s }
+#optB.play .gcard { animation: bCard 6s forwards }
+#optB.play .bubble { animation: bBub 6s forwards }
+@keyframes bOld { 0%,20% {opacity:1; transform: scale(1)} 34% {opacity:0; transform: scale(.92)} 100% {opacity:0} }
+@keyframes bNew { 0%,24% {opacity:0; transform: scale(.9)} 38% {opacity:1; transform: scale(1.04)} 44%,100% {opacity:1; transform: scale(1)} }
+@keyframes bSpark { 0%,14% {opacity:0; transform: translateY(0)} 24% {opacity:1} 44% {opacity:0; transform: translateY(-70px)} 100% {opacity:0} }
+@keyframes bCard { 0%,50% {transform: translateY(110%)} 62%,100% {transform: translateY(0)} }
+@keyframes bBub { 0%,8% {opacity:0} 14%,44% {opacity:1} 50%,100% {opacity:0} }
+
+/* ========= C. Duolingo ========= */
+#optC .screen { background: #fff }
+#optC .confetti i { position: absolute; top: -20px; width: 8px; height: 13px; border-radius: 2px; opacity: 0; z-index: 25 }
+#optC.play .confetti i { animation: fall 2.6s ease-in forwards }
+@keyframes fall { 0% {opacity:1; transform: translateY(0) rotate(0)} 100% {opacity:1; transform: translateY(680px) rotate(540deg)} }
+#optC .path { position: absolute; left: 0; right: 0; top: 70px; height: 360px }
+#optC .node { position: absolute; width: 74px; height: 74px; border-radius: 50%; background: #EEE7DA; box-shadow: 0 5px 0 #D6CDBD; display: grid; place-items: center; overflow: hidden }
+#optC .node img { width: 62px; height: 62px; object-fit: contain }
+#optC .node.done { background: #FFE6A8; box-shadow: 0 5px 0 #E3B54B }
+#optC .node .lock { position: absolute; bottom: -22px; left: -30px; right: -30px; text-align: center; font-size: 11px; font-weight: 800; color: var(--ink-soft) }
+#optC .n1 { left: 113px; top: 0 } #optC .n2 { left: 55px; top: 92px } #optC .n3 { left: 150px; top: 184px } #optC .n4 { left: 70px; top: 276px }
+#optC .n2.target { background: #EEE7DA; box-shadow: 0 5px 0 #D6CDBD }
+#optC.play .n2.target { animation: cLight 6s forwards }
+#optC.play .n2.target img { animation: cReveal 6s forwards }
+@keyframes cLight { 0%,40% {background:#EEE7DA; box-shadow: 0 5px 0 #D6CDBD; transform: scale(1)} 46% {transform: scale(1.18)} 52%,100% {background:#FFE6A8; box-shadow: 0 5px 0 #E3B54B; transform: scale(1)} }
+@keyframes cReveal { 0%,42% {filter: brightness(0); opacity: .28} 50%,100% {filter: none; opacity: 1} }
+#optC .marker { position: absolute; left: 136px; top: -26px; width: 30px; height: 30px; border-radius: 50%; background: var(--green); color: #fff; font-weight: 900; font-size: 13px; display: grid; place-items: center; box-shadow: 0 3px 0 var(--green-lip); z-index: 5 }
+#optC.play .marker { animation: cHop 6s forwards }
+@keyframes cHop { 0%,14% {transform: translate(0,0)} 26% {transform: translate(-30px,20px)} 36%,100% {transform: translate(-58px,66px)} }
+#optC .bottom { position: absolute; left: 18px; right: 18px; bottom: 26px; display: grid; gap: 10px; text-align: center; opacity: 0; z-index: 10 }
+#optC.play .bottom { animation: cIn 6s forwards }
+@keyframes cIn { 0%,50% {opacity:0; transform: translateY(14px)} 60%,100% {opacity:1; transform: none} }
+#optC .big { font-size: 26px; font-weight: 900; color: var(--gold-ink) }
+#optC .count { font-size: 15px; font-weight: 800; color: var(--ink-soft) }
+
+/* ========= D. Card reveal ========= */
+#optD .rays { position: absolute; left: 50%; top: 42%; width: 560px; height: 560px; margin: -280px 0 0 -280px; border-radius: 50%; opacity: 0;
+  background: repeating-conic-gradient(rgba(255,226,150,.55) 0 7deg, rgba(255,226,150,0) 7deg 18deg); z-index: 4 }
+#optD .cardwrap { position: absolute; left: 50%; top: 18%; width: 180px; height: 252px; margin-left: -90px; perspective: 800px; z-index: 6 }
+#optD .card3 { position: relative; width: 100%; height: 100%; transform-style: preserve-3d }
+#optD .face { position: absolute; inset: 0; border-radius: 18px; backface-visibility: hidden; display: grid; place-items: center; box-shadow: 0 10px 24px rgba(0,0,0,.25) }
+#optD .back { background: radial-gradient(circle at 50% 40%, #F7D88A, #D69A2E); border: 5px solid var(--cream); font-size: 54px; font-weight: 900; color: var(--cream) }
+#optD .front { transform: rotateY(180deg); background: linear-gradient(180deg, #BFE2F2, #F0E9DC 70%); border: 5px solid #F7D88A; align-content: end; padding-bottom: 12px }
+#optD .front img { width: 150px; height: 150px; object-fit: contain }
+#optD .front .ban { margin-top: 6px; background: var(--ink); color: var(--cream); font-weight: 900; font-size: 15px; padding: 4px 16px; border-radius: 10px }
+#optD .under { position: absolute; left: 18px; right: 18px; bottom: 26px; text-align: center; display: grid; gap: 10px; opacity: 0; z-index: 8 }
+#optD .under .t { color: #fff; font-weight: 900; font-size: 21px }
+#optD .under .s { color: #F3E7D8; font-weight: 700; font-size: 14px }
+#optD.play .cardwrap { animation: dIn 7s forwards }
+#optD.play .card3 { animation: dFlip 7s forwards }
+#optD.play .rays { animation: dRays 7s forwards, spin 14s linear infinite }
+#optD.play .under { animation: dUnder 7s forwards }
+@keyframes dIn { 0% {transform: translateY(-420px) rotate(-12deg)} 12% {transform: translateY(14px) rotate(3deg)} 16% {transform: translateY(0) rotate(0)}
+  22% {transform: rotate(-3deg)} 24% {transform: rotate(3deg)} 26% {transform: rotate(0)}
+  33% {transform: rotate(-5deg) scale(1.03)} 35% {transform: rotate(5deg) scale(1.03)} 37% {transform: rotate(0) scale(1)}
+  44% {transform: rotate(-8deg) scale(1.06)} 46% {transform: rotate(8deg) scale(1.06)} 48% {transform: rotate(-6deg) scale(1.06)} 50% {transform: rotate(0) scale(1)}
+  100% {transform: none} }
+@keyframes dFlip { 0%,54% {transform: rotateY(0) scale(1)} 64% {transform: rotateY(180deg) scale(1.12)} 70%,100% {transform: rotateY(180deg) scale(1)} }
+@keyframes dRays { 0%,58% {opacity:0} 66%,100% {opacity:1} }
+@keyframes dUnder { 0%,72% {opacity:0; transform: translateY(10px)} 80%,100% {opacity:1; transform: none} }
+
+/* ========= E. Apple Fitness medal ========= */
+#optE .screen { background: #0E0F14 }
+#optE .medal { position: absolute; left: 50%; top: 22%; width: 200px; height: 200px; margin-left: -100px; perspective: 900px; z-index: 5 }
+#optE .coin { position: relative; width: 100%; height: 100%; border-radius: 50%; transform-style: preserve-3d;
+  background: radial-gradient(circle at 35% 30%, #FFF0C2, #E3A72F 55%, #A86E12); box-shadow: inset 0 0 0 7px #F7D88A, inset 0 0 0 12px #C88A1E, 0 0 50px rgba(227,167,47,.35); overflow: hidden }
+#optE .coin .in { position: absolute; inset: 20px; border-radius: 50%; background: radial-gradient(circle at 50% 35%, #D9EEF6, #8EC5E8); display: grid; place-items: end center; overflow: hidden }
+#optE .coin img { width: 140px; height: 140px; object-fit: contain; margin-bottom: -6px }
+#optE .shine { position: absolute; top: -20%; left: -60%; width: 40%; height: 140%; background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,.7), rgba(255,255,255,0)); transform: rotate(20deg); opacity: 0 }
+#optE .words { position: absolute; left: 18px; right: 18px; top: 60%; text-align: center; color: #fff; opacity: 0 }
+#optE .words .t { font-size: 24px; font-weight: 900 }
+#optE .words .s { font-size: 14px; color: #B9B4AA; font-weight: 700; margin-top: 4px }
+#optE .cta { position: absolute; left: 18px; right: 18px; bottom: 26px; opacity: 0 }
+#optE.play .coin { animation: eSpin 5s cubic-bezier(.15,.7,.2,1) forwards }
+#optE.play .shine { animation: eShine 5s forwards }
+#optE.play .words { animation: eWords 5s forwards }
+#optE.play .cta { animation: eWords 5s forwards }
+@keyframes eSpin { 0% {transform: rotateY(-1440deg) scale(.4); opacity: 0} 10% {opacity: 1} 70%,100% {transform: rotateY(0) scale(1); opacity: 1} }
+@keyframes eShine { 0%,72% {opacity:0; left:-60%} 74% {opacity:1} 88%,100% {opacity:0; left: 120%} }
+@keyframes eWords { 0%,66% {opacity:0; transform: translateY(10px)} 78%,100% {opacity:1; transform: none} }
+
+/* ========= F. Egg hatch ========= */
+#optF .egg { position: absolute; left: 50%; bottom: 31.5%; width: 96px; height: 124px; margin-left: -48px; z-index: 6; transform-origin: 50% 100% }
+#optF .half { position: absolute; left: 0; width: 100%; height: 100%; border-radius: 50% 50% 46% 46% / 58% 58% 42% 42%;
+  background: radial-gradient(circle at 38% 30%, #FFFDF6, #F3E3C4 60%, #D9BE8E); }
+#optF .half::before { content: ""; position: absolute; inset: 0; border-radius: inherit;
+  background: radial-gradient(circle at 30% 60%, #E8564F33 0 9px, transparent 10px), radial-gradient(circle at 68% 38%, #12949633 0 7px, transparent 8px), radial-gradient(circle at 60% 76%, #E8862B33 0 8px, transparent 9px) }
+#optF .top { clip-path: polygon(0 0, 100% 0, 100% 46%, 86% 54%, 72% 44%, 58% 55%, 44% 44%, 30% 55%, 15% 45%, 0 53%) }
+#optF .bot { clip-path: polygon(0 53%, 15% 45%, 30% 55%, 44% 44%, 58% 55%, 72% 44%, 86% 54%, 100% 46%, 100% 100%, 0 100%) }
+#optF .crack { position: absolute; inset: 0; opacity: 0 }
+#optF .crack svg { width: 100%; height: 100% }
+#optF .baby { position: absolute; left: 50%; bottom: 32%; width: 150px; height: 160px; margin-left: -75px; display: flex; align-items: flex-end; justify-content: center; opacity: 0; z-index: 5 }
+#optF .baby img { max-width: 100%; max-height: 100%; object-fit: contain }
+#optF .shellglow { position: absolute; left: 50%; bottom: 30%; width: 260px; height: 260px; margin-left: -130px; border-radius: 50%; opacity: 0; z-index: 2;
+  background: radial-gradient(circle, rgba(255,236,170,.9), rgba(255,214,120,0) 62%) }
+#optF.play .egg { animation: fWob 7s forwards }
+#optF.play .crack { animation: fCrack 7s forwards }
+#optF.play .top { animation: fTop 7s forwards }
+#optF.play .bot { animation: fBot 7s forwards }
+#optF.play .baby { animation: fBaby 7s forwards }
+#optF.play .shellglow { animation: fGlow 7s forwards }
+#optF.play .bubble { animation: fBub 7s forwards }
+#optF.play .cta { animation: aCta 7s forwards }
+#optF .cta { position: absolute; left: 18px; right: 18px; bottom: 26px; opacity: 0; z-index: 12 }
+@keyframes fWob { 0%,10% {transform: rotate(0)} 13% {transform: rotate(-6deg)} 16% {transform: rotate(6deg)} 19% {transform: rotate(0)}
+  28% {transform: rotate(-9deg)} 31% {transform: rotate(9deg)} 34% {transform: rotate(-6deg)} 37% {transform: rotate(0)}
+  44% {transform: rotate(-12deg) translateY(-6px)} 47% {transform: rotate(12deg) translateY(-6px)} 50% {transform: rotate(-10deg)} 53% {transform: rotate(0)} 100% {transform: none} }
+@keyframes fCrack { 0%,30% {opacity:0} 34%,60% {opacity:1} 62%,100% {opacity:0} }
+@keyframes fTop { 0%,58% {transform: none; opacity: 1} 70% {transform: translate(-40px,-110px) rotate(-50deg); opacity: 1} 80%,100% {transform: translate(-70px,-60px) rotate(-90deg); opacity: 0} }
+@keyframes fBot { 0%,58% {transform: none; opacity: 1} 74%,100% {transform: translateY(20px) scale(.9); opacity: 0} }
+@keyframes fBaby { 0%,58% {opacity:0; transform: translateY(24px) scale(.7)} 68% {opacity:1; transform: translateY(-14px) scale(1.06)} 76%,100% {opacity:1; transform: none} }
+@keyframes fGlow { 0%,56% {opacity:0} 64%,100% {opacity:1} }
+@keyframes fBub { 0%,4% {opacity:0} 8%,100% {opacity:1} }
+#optF .b1, #optF .b2 { transition: none }
+#optF .b2 { opacity: 0 }
+#optF.play .b1 { animation: fT1 7s forwards }
+#optF.play .b2 { animation: fT2 7s forwards }
+@keyframes fT1 { 0%,62% {opacity:1} 66%,100% {opacity:0} }
+@keyframes fT2 { 0%,66% {opacity:0} 72%,100% {opacity:1} }
+
+/* ========= surrounding UI ========= */
+.home .greet { position: absolute; top: 50px; left: 0; right: 0; text-align: center; font-weight: 900; font-size: 19px }
+.home .streak { position: absolute; top: 44px; left: 18px; font-weight: 900; font-size: 13px; text-align: center; line-height: 1.1 }
+.home .streak span { font-size: 22px; display: block }
+.home .cards { position: absolute; left: 12px; right: 12px; top: 64%; display: grid; gap: 9px; z-index: 12 }
+.mini { display: flex; align-items: center; gap: 10px }
+.mini img { width: 40px; height: 40px; object-fit: contain }
+.mini .t { font-weight: 900; font-size: 14px }
+.mini .s { font-size: 12px; color: var(--ink-soft); font-weight: 700 }
+.row { display: flex; justify-content: space-between; align-items: baseline; font-weight: 900; font-size: 14px; gap: 8px }
+.row .num { font-size: 14px }
+.sub { font-size: 12px; color: var(--ink-soft); font-weight: 700 }
+
+.coll .top { position: absolute; inset: 0 0 auto 0; height: 168px; background: linear-gradient(180deg, #7DBCE6, #BFE2F2 75%, var(--meadow)) }
+.coll .title { position: absolute; top: 48px; left: 0; right: 0; text-align: center; font-weight: 900; font-size: 22px }
+.coll .lifetime { position: absolute; top: 82px; left: 0; right: 0; text-align: center; font-weight: 800; font-size: 13px; color: var(--ink-soft) }
+.coll .lifetime b { color: var(--blue-ink); font-size: 15px }
+.coll .grid { position: absolute; left: 12px; right: 12px; top: 118px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px }
+.cc { background: var(--cream); border-radius: 18px; padding: 10px 8px 9px; text-align: center; box-shadow: 0 3px 0 var(--hair); position: relative }
+.cc img { width: 82px; height: 82px; object-fit: contain }
+.cc b { display: block; font-size: 14px }
+.cc .s { font-size: 11.5px; font-weight: 800; color: var(--ink-soft) }
+.cc.sel { box-shadow: 0 0 0 3px var(--green), 0 3px 0 var(--hair) }
+.cc .check { position: absolute; top: 7px; right: 8px; width: 20px; height: 20px; border-radius: 50%; background: var(--green); color: #fff; font-size: 12px; font-weight: 900; display: grid; place-items: center }
+.cc.wide { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; text-align: left; padding: 8px 12px }
+.cc.wide img { width: 58px; height: 58px }
+.cc .bar { margin-top: 5px; height: 7px }
+
+.detail .bigimg { position: absolute; left: 50%; top: 92px; width: 190px; height: 190px; margin-left: -95px; z-index: 5 }
+.detail .bigimg img { width: 100%; height: 100%; object-fit: contain }
+.detail .sheet { position: absolute; left: 0; right: 0; bottom: 0; top: 47%; background: var(--paper); border-radius: 26px 26px 0 0; padding: 18px 16px; display: grid; gap: 10px; align-content: start; z-index: 8 }
+.detail .name { font-size: 22px; font-weight: 900; text-align: center }
+.detail .states { display: flex; justify-content: space-between; background: var(--sand); border-radius: 14px; padding: 6px }
+.detail .states img { width: 34px; height: 34px; object-fit: contain }
+.detail .states img.cur { background: #fff; border-radius: 10px; box-shadow: 0 0 0 2px var(--blue) }
+
+.reward .scr { position: absolute; inset: 0; background: linear-gradient(180deg, #7DBCE6, #BFE2F2 46%, #9CCB74 60%, var(--meadow-deep)) }
+.reward .done { position: absolute; top: 50px; left: 0; right: 0; text-align: center; font-weight: 900; font-size: 22px }
+.reward .tiles { position: absolute; left: 12px; right: 12px; top: 330px; display: grid; grid-template-columns: repeat(3,1fr); gap: 8px }
+.reward .tiles .tile { text-align: center; padding: 9px 4px }
+.reward .tiles .v { font-size: 20px; font-weight: 900; color: var(--blue-ink) }
+.reward .tiles .k { font-size: 11px; font-weight: 800; color: var(--ink-soft) }
+.ribbon { background: linear-gradient(180deg, #F7D88A, var(--gold)); color: #4A2F06; font-weight: 900; font-size: 14px; text-align: center; padding: 8px; border-radius: 12px; box-shadow: 0 3px 0 #B98420 }
+
+.prof .band { position: absolute; inset: 0 0 auto 0; height: 150px; background: linear-gradient(180deg, #7DBCE6, #BFE2F2 80%, var(--meadow)) }
+.prof .face { position: absolute; top: 100px; left: 50%; width: 84px; height: 84px; margin-left: -42px; border-radius: 50%; background: #E7E3DC; border: 4px solid #fff; display: grid; place-items: end center; overflow: hidden; z-index: 6 }
+.prof .face::after { content: ""; width: 52px; height: 30px; border-radius: 50% 50% 0 0; background: #fff; margin-bottom: -2px }
+.prof .card { position: absolute; left: 12px; right: 12px; top: 150px; background: var(--sand); border-radius: 20px; padding: 42px 14px 14px; text-align: center; box-shadow: 0 3px 0 var(--hair) }
+.prof .journey { position: absolute; left: 12px; right: 12px; top: 300px; background: var(--sand); border-radius: 20px; padding: 14px; box-shadow: 0 3px 0 var(--hair) }
+.track { display: flex; align-items: center; justify-content: space-between; margin: 10px 0 4px; position: relative }
+.track::before { content: ""; position: absolute; left: 18px; right: 18px; top: 50%; height: 4px; background: rgba(59,47,37,.12); border-radius: 2px }
+.track::after { content: ""; position: absolute; left: 18px; width: 30%; top: 50%; height: 4px; background: var(--blue); border-radius: 2px }
+.track .d { position: relative; z-index: 2; width: 42px; height: 42px; border-radius: 50%; background: var(--cream); display: grid; place-items: center; box-shadow: 0 2px 0 var(--hair) }
+.track .d img { width: 34px; height: 34px; object-fit: contain }
+.track .d.got { box-shadow: 0 0 0 2px var(--blue) }
+.labels { display: flex; justify-content: space-between; font-size: 10px; font-weight: 800; color: var(--ink-soft) }
+
+/* table */
+.tablewrap { overflow-x: auto; margin-top: 14px; border-radius: 18px; background: #fff; box-shadow: 0 3px 0 var(--hair) }
+table { border-collapse: collapse; width: 100%; min-width: 720px; font-size: 14.5px }
+th, td { text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--hair); vertical-align: top }
+th { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-soft); background: var(--cream) }
+tr.rec td { background: #EEF6E8 }
+ol.qs { padding-left: 22px; margin: 10px 0 0 } ol.qs li { margin-bottom: 10px; max-width: 78ch }
+@media (prefers-reduced-motion: reduce) { .play *, .play { animation-duration: .01s !important; animation-delay: 0s !important } }
+</style>
+</head>
+<body>
+<header class="hero-band">
+  <div class="inner">
+    <span class="tag">Mockup · 9 Nov 2026 · nothing built</span>
+    <h1>Companions evolve</h1>
+    <p class="lede">Everyone starts with Otto. Points carry you along a line of five companions, each with its own seven glow states. Six ways to play the moment a new one arrives, the screens around it, and a recommendation.</p>
+  </div>
+</header>
+
+<div class="page">
+
+<h2>The rule, recommended</h2>
+<div class="panel">
+  <p><b>Evolution reads lifetime points earned, never the balance.</b> Points are spent on hats, so a balance can go down. If evolution followed the balance, buying a hat would push your next companion further away, and the Shop would feel like a penalty. Lifetime points only ever climb. The Shop and evolution read the same earnings but never compete.</p>
+  <p class="muted">Points stay as they are: 1 per whole minute meditated, plus 10 per week finished with a friend. Hand-logged sessions earn none, so evolution can only be reached by meditating in the app.</p>
+  <div class="ladder">
+    <div class="rung"><img src="companions/otto-4.png" alt="Otto"><b>Otto</b><div class="pts">Start</div><div class="hrs">Everyone</div></div>
+    <div class="rung"><img src="companions/redpanda-4.png" alt="Red panda"><b>Red panda</b><div class="pts">500</div><div class="hrs">about 8 hours meditated</div></div>
+    <div class="rung"><img src="companions/tiger-4.png" alt="Tiger"><b>Tiger</b><div class="pts">1,500</div><div class="hrs">25 hours</div></div>
+    <div class="rung"><img src="companions/phoenix-4.png" alt="Phoenix"><b>Phoenix</b><div class="pts">4,000</div><div class="hrs">about 67 hours</div></div>
+    <div class="rung"><img src="companions/dragon-4.png" alt="Dragon"><b>Dragon</b><div class="pts">10,000</div><div class="hrs">about 167 hours</div></div>
+  </div>
+  <p style="margin-top:14px"><span class="ex">Example thresholds</span> At 15 minutes a day: Red panda in about 5 weeks, Tiger in about 3 months, Phoenix in about 9 months, Dragon in about 22 months. At 30 minutes a day, half that. The gaps widen on purpose so the first arrival comes early and the Dragon means something. For scale, hats cost 20 to 1,000 points today.</p>
+  <p><b>Earlier companions stay.</b> Reaching the Tiger does not take Otto away; it adds the Tiger to your collection and you choose who meditates with you. Recommended over a straight replacement because people get attached to Otto (he is the app icon, the widget and the onboarding), and replacing him would feel like losing something you earned. It also gives the collection screen a reason to exist.</p>
+</div>
+
+<h2>1. The moment a new companion arrives</h2>
+<p class="lede">Six directions, each modeled on an app people know. It plays after the reward screen's Continue, the same slot the award unlock uses today, so it never stacks with points and glow. Press Replay on each.</p>
+
+<div class="options">
+
+  <!-- A -->
+  <div class="opt">
+    <div class="head"><h3>A. The morph</h3><button class="replay" data-t="optA">Replay</button></div>
+    <div class="based">Based on Pokémon's evolution sequence</div>
+    <div class="phone"><div class="screen dusky" id="optA">
+      <div class="island"></div>
+      <div class="sky dusk"></div><div class="ridge far"></div><div class="ridge mid"></div><div class="ridge mid2"></div><div class="grass"></div>
+      <div class="dim"></div>
+      <div class="stage">
+        <div class="rays"></div><div class="glowA"></div>
+        <div class="morph"><img class="from" src="companions/otto-5.png" alt=""><img class="to" src="companions/redpanda-5.png" alt="Red panda"></div>
+      </div>
+      <div class="flash"></div>
+      <div class="line line1">Wait. Otto is glowing...</div>
+      <div class="line line2" style="bottom:118px;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.35)">Otto grew into a Red panda!</div>
+      <div class="cta"><div class="btn">Say hi</div></div>
+    </div></div>
+    <p class="note">Night falls, Otto turns to a white silhouette, it flickers between the two shapes faster and faster, a white flash, and the new companion appears in color. The clearest read of "evolve". Built from two stills, no rig.</p>
+  </div>
+
+  <!-- B -->
+  <div class="opt">
+    <div class="head"><h3>B. The growth card</h3><button class="replay" data-t="optB">Replay</button></div>
+    <div class="based">Based on Finch's "your bird grew up"</div>
+    <div class="phone"><div class="screen" id="optB">
+      <div class="island"></div>
+      <div class="sky"></div><div class="ridge far"></div><div class="ridge mid"></div><div class="ridge mid2"></div><div class="grass"></div>
+      <i class="flower" style="left:12%;top:74%"></i><i class="flower p" style="left:80%;top:72%"></i><i class="flower y" style="left:30%;top:86%"></i><i class="flower" style="left:66%;top:90%"></i>
+      <div class="bubble" style="top:26%">Something feels different today.</div>
+      <div class="cushion"></div>
+      <div class="sitter">
+        <i class="spark" style="left:20%;bottom:30%"></i><i class="spark" style="left:72%;bottom:40%"></i><i class="spark" style="left:46%;bottom:70%"></i><i class="spark" style="left:30%;bottom:58%"></i><i class="spark" style="left:62%;bottom:20%"></i>
+        <img class="old" src="companions/otto-4.png" alt=""><img class="new" src="companions/redpanda-4.png" alt="Red panda">
+      </div>
+      <div class="gcard">
+        <div class="kick">500 points</div>
+        <div class="pair"><img src="companions/otto-4.png" alt=""><span class="arrow">→</span><img src="companions/redpanda-4.png" alt=""></div>
+        <h4>A Red panda joined you</h4>
+        <p>Every minute you meditated got you here. Otto stays in your collection too.</p>
+        <div class="btn">Meditate together</div>
+      </div>
+    </div></div>
+    <p class="note">Daylight, no flash. A soft shimmer, a crossfade on the cushion, then a card that says what happened and what you keep. The calmest option and the closest to how 808 already feels.</p>
+  </div>
+
+  <!-- C -->
+  <div class="opt">
+    <div class="head"><h3>C. The path</h3><button class="replay" data-t="optC">Replay</button></div>
+    <div class="based">Based on Duolingo's level-up and league promotion</div>
+    <div class="phone"><div class="screen" id="optC">
+      <div class="island"></div>
+      <div class="statusbar"><span>9:41</span><span>●●●</span></div>
+      <div class="confetti"></div>
+      <div class="path">
+        <div class="node n1 done"><img src="companions/otto-4.png" alt="Otto"></div>
+        <div class="node n2 target"><img src="companions/redpanda-4.png" alt="Red panda"></div>
+        <div class="node n3"><img class="sil" src="companions/tiger-4.png" alt=""><div class="lock">Unlocks at 1,500</div></div>
+        <div class="node n4"><img class="sil" src="companions/phoenix-4.png" alt=""><div class="lock">Unlocks at 4,000</div></div>
+        <div class="marker">You</div>
+      </div>
+      <div class="bottom">
+        <div class="big">New companion!</div>
+        <div class="count"><span class="num" data-count="500">0</span> lifetime points</div>
+        <div class="btn">Continue</div>
+      </div>
+    </div></div>
+    <p class="note">Confetti, your marker hops along the path, the next node lights gold and the silhouette fills in. Shows where you are on the whole line at once. Loud and gamey, but very legible.</p>
+  </div>
+
+  <!-- D -->
+  <div class="opt">
+    <div class="head"><h3>D. The card flip</h3><button class="replay" data-t="optD">Replay</button></div>
+    <div class="based">Based on Clash Royale and gacha card reveals</div>
+    <div class="phone"><div class="screen dusky" id="optD">
+      <div class="island"></div>
+      <div class="sky dusk"></div><div class="ridge far"></div><div class="ridge mid"></div><div class="ridge mid2"></div><div class="grass"></div>
+      <div class="rays"></div>
+      <div class="cardwrap"><div class="card3">
+        <div class="face back">808</div>
+        <div class="face front"><img src="companions/tiger-4.png" alt="Tiger"><div class="ban">Tiger</div></div>
+      </div></div>
+      <div class="under"><div class="t">The Tiger joined you</div><div class="s">Companion 3 of 5</div><div class="btn">Choose who meditates</div></div>
+    </div></div>
+    <p class="note">A card drops in, shakes harder three times, flips under light rays. Big anticipation. The risk: it looks like a loot box, and nothing here is random. Shown so the founders can reject it with eyes open.</p>
+  </div>
+
+  <!-- E -->
+  <div class="opt">
+    <div class="head"><h3>E. The medal spin</h3><button class="replay" data-t="optE">Replay</button></div>
+    <div class="based">Based on Apple Fitness award reveals</div>
+    <div class="phone"><div class="screen" id="optE">
+      <div class="island"></div>
+      <div class="statusbar light"><span>9:41</span><span>●●●</span></div>
+      <div class="medal"><div class="coin"><div class="in"><img src="companions/phoenix-4.png" alt="Phoenix"></div><div class="shine"></div></div></div>
+      <div class="words"><div class="t">Phoenix</div><div class="s">Joined at 4,000 lifetime points</div></div>
+      <div class="cta"><div class="btn">Done</div></div>
+    </div></div>
+    <p class="note">The companion sits inside a gold medal that spins in from far away and settles, then a shine sweeps across. Feels like a trophy. Fits the awards shelf, but turns a living companion into an object.</p>
+  </div>
+
+  <!-- F -->
+  <div class="opt">
+    <div class="head"><h3>F. The hatch</h3><button class="replay" data-t="optF">Replay</button></div>
+    <div class="based">Based on Tamagotchi and Neopets eggs</div>
+    <div class="phone"><div class="screen" id="optF">
+      <div class="island"></div>
+      <div class="sky"></div><div class="ridge far"></div><div class="ridge mid"></div><div class="ridge mid2"></div><div class="grass"></div>
+      <i class="flower" style="left:12%;top:74%"></i><i class="flower p" style="left:80%;top:72%"></i><i class="flower y" style="left:30%;top:86%"></i>
+      <div class="bubble" style="top:20%"><span class="b1">Something is hatching...</span><span class="b2" style="position:absolute;inset:9px 13px">A Dragon hatched!</span></div>
+      <div class="cushion"></div>
+      <div class="shellglow"></div>
+      <div class="baby"><img src="companions/dragon-4.png" alt="Dragon"></div>
+      <div class="egg">
+        <div class="half bot"></div><div class="half top"></div>
+        <div class="crack"><svg viewBox="0 0 96 124"><polyline points="10,64 22,56 34,66 46,54 58,66 70,55 84,64" fill="none" stroke="#7A5A30" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      </div>
+      <div class="cta"><div class="btn">Meet your Dragon</div></div>
+    </div></div>
+    <p class="note">An egg on the cushion wobbles harder, cracks, the top flies off and the companion pops out. Lovely for the Phoenix and Dragon, odd for a Red panda or Tiger (mammals). Would need an egg per creature or a neutral one.</p>
+  </div>
+</div>
+
+<h2>2. Around the moment</h2>
+<p class="lede">Where progress lives, what "almost there" looks like, the collection, and choosing who meditates with you. Numbers here are examples.</p>
+
+<div class="options">
+
+  <!-- Home -->
+  <div class="opt">
+    <div class="head"><h3>Home, progress</h3></div>
+    <div class="based">Under Otto's glow card, one more row</div>
+    <div class="phone"><div class="screen home">
+      <div class="island"></div>
+      <div class="sky"></div><div class="ridge far"></div><div class="ridge mid"></div><div class="ridge mid2"></div><div class="grass"></div>
+      <i class="flower" style="left:12%;top:70%"></i><i class="flower p" style="left:84%;top:69%"></i>
+      <div class="streak"><span>🔥</span>12</div>
+      <div class="greet">Good Morning</div>
+      <div class="bubble" style="top:21%">Ten minutes today would feel nice.</div>
+      <div class="cushion"></div>
+      <div class="sitter"><img src="companions/otto-5.png" alt="Otto"></div>
+      <div class="cards">
+        <div class="tile"><div class="row"><span>Otto's glow</span><span class="num">72%</span></div><div class="bar" style="margin-top:6px"><b style="width:72%"></b></div></div>
+        <div class="tile mini"><img class="sil" src="companions/redpanda-4.png" alt=""><div style="flex:1"><div class="row"><span>Next companion</span><span class="num">340 / 500</span></div><div class="bar" style="margin-top:5px;height:7px"><b style="width:68%"></b></div><div class="sub" style="margin-top:4px">Unlocks at 500 lifetime points</div></div></div>
+      </div>
+      <div class="tabs"><span class="on">Home</span><span>Block</span><span class="plus">+</span><span>Shop</span><span>Profile</span></div>
+    </div></div>
+    <p class="note">Glow and evolution are two rows because they are two rules: glow is today's consistency and can fall, evolution only rises. The silhouette is the teaser. Measured numbers in the light blue.</p>
+  </div>
+
+  <!-- Almost -->
+  <div class="opt">
+    <div class="head"><h3>Almost there</h3></div>
+    <div class="based">The same row, inside the last 10%</div>
+    <div class="phone"><div class="screen home">
+      <div class="island"></div>
+      <div class="sky"></div><div class="ridge far"></div><div class="ridge mid"></div><div class="ridge mid2"></div><div class="grass"></div>
+      <div class="streak"><span>🔥</span>12</div>
+      <div class="greet">Good Evening</div>
+      <div class="bubble" style="top:21%">I think someone's coming to meditate with us.</div>
+      <div class="cushion"></div>
+      <div class="sitter"><img src="companions/otto-5.png" alt="Otto"></div>
+      <div class="cards">
+        <div class="tile"><div class="row"><span>Otto's glow</span><span class="num">72%</span></div><div class="bar" style="margin-top:6px"><b style="width:72%"></b></div></div>
+        <div class="tile mini" style="box-shadow:0 0 0 2px #F7D88A,0 3px 0 var(--hair)"><img src="companions/redpanda-4.png" alt="" style="filter:brightness(0);opacity:.55"><div style="flex:1"><div class="row"><span>Red panda</span><span class="num">40 to go</span></div><div class="bar" style="margin-top:5px;height:7px"><b style="width:92%"></b></div><div class="sub" style="margin-top:4px">One 40 minute session gets you there</div></div></div>
+      </div>
+      <div class="tabs"><span class="on">Home</span><span>Block</span><span class="plus">+</span><span>Shop</span><span>Profile</span></div>
+    </div></div>
+    <p class="note">Otto hints, the silhouette darkens and the row gets a warm edge. The minutes line is plain arithmetic (1 point a minute), never a guess about the person.</p>
+  </div>
+
+  <!-- Reward -->
+  <div class="opt">
+    <div class="head"><h3>Reward screen</h3></div>
+    <div class="based">Where points are added after a session</div>
+    <div class="phone"><div class="screen reward">
+      <div class="island"></div>
+      <div class="scr"></div>
+      <div class="done">Session complete!</div>
+      <div class="cushion" style="bottom:auto;top:262px"></div>
+      <div class="sitter" style="bottom:auto;top:120px;height:150px"><img src="companions/otto-5.png" alt="Otto"></div>
+      <div class="tiles">
+        <div class="tile"><div class="v">40</div><div class="k">minutes</div></div>
+        <div class="tile"><div class="v">13</div><div class="k">day streak</div></div>
+        <div class="tile"><div class="v">+40</div><div class="k">points</div></div>
+      </div>
+      <div style="position:absolute;left:12px;right:12px;top:412px;display:grid;gap:9px">
+        <div class="tile mini"><img src="companions/redpanda-4.png" alt=""><div style="flex:1"><div class="row"><span>Red panda</span><span class="num">500 / 500</span></div><div class="bar" style="margin-top:5px;height:7px"><b style="width:100%"></b></div></div></div>
+        <div class="ribbon">New companion unlocked</div>
+      </div>
+      <div style="position:absolute;left:18px;right:18px;bottom:26px"><div class="btn">Continue</div></div>
+    </div></div>
+    <p class="note">The coins land, then the companion bar fills, then a gold ribbon if it crossed. Continue plays the arrival (option A or B). Gold appears once: the ribbon.</p>
+  </div>
+
+  <!-- Collection -->
+  <div class="opt">
+    <div class="head"><h3>Companions</h3></div>
+    <div class="based">From Profile, or by tapping Otto's glow card</div>
+    <div class="phone"><div class="screen coll" style="background:var(--meadow)">
+      <div class="island"></div>
+      <div class="top"></div>
+      <div class="title">Companions</div>
+      <div class="lifetime"><b>1,240</b> lifetime points</div>
+      <div class="grid">
+        <div class="cc"><img src="companions/otto-5.png" alt=""><b>Otto</b><div class="s">Your first</div></div>
+        <div class="cc sel"><div class="check">✓</div><img src="companions/redpanda-5.png" alt=""><b>Red panda</b><div class="s">Meditating with you</div></div>
+        <div class="cc wide"><img class="sil" src="companions/tiger-4.png" alt=""><div style="flex:1"><b>Tiger</b><div class="s">Unlocks at 1,500 points</div><div class="bar"><b style="width:83%"></b></div></div></div>
+        <div class="cc wide"><img class="sil" src="companions/phoenix-4.png" alt=""><div style="flex:1"><b>Phoenix</b><div class="s">Unlocks at 4,000 points</div></div></div>
+        <div class="cc wide"><img class="sil" src="companions/dragon-4.png" alt=""><div style="flex:1"><b>Dragon</b><div class="s">Unlocks at 10,000 points</div></div></div>
+      </div>
+    </div></div>
+    <p class="note">Unlocked companions are big cards, the rest are silhouettes with the point they arrive at. Only the next one shows a bar. Names are shown, so the line is a reason to keep going, not a mystery box.</p>
+  </div>
+
+  <!-- Detail -->
+  <div class="opt">
+    <div class="head"><h3>Choosing one</h3></div>
+    <div class="based">Tap a card in Companions</div>
+    <div class="phone"><div class="screen detail">
+      <div class="island"></div>
+      <div class="sky" style="inset:0 0 50% 0"></div><div class="ridge far" style="bottom:50%"></div>
+      <div class="bigimg"><img src="companions/redpanda-5.png" alt="Red panda"></div>
+      <div class="sheet">
+        <div class="name">Red panda</div>
+        <div class="sub" style="text-align:center">Joined at 500 lifetime points</div>
+        <div class="states">
+          <img src="companions/redpanda-1.png" alt=""><img src="companions/redpanda-2.png" alt=""><img src="companions/redpanda-3.png" alt=""><img src="companions/redpanda-4.png" alt=""><img class="cur" src="companions/redpanda-5.png" alt=""><img src="companions/redpanda-6.png" alt=""><img src="companions/redpanda-7.png" alt="">
+        </div>
+        <div class="sub" style="text-align:center">Shows your glow, the same as Otto did. Today: Bright.</div>
+        <div class="btn">Meditate with Red panda</div>
+        <div class="btn quiet sm">Keep Otto</div>
+      </div>
+    </div></div>
+    <p class="note">One tap swaps who sits on the cushion on Home, Ready, the sit and the widget. The seven states strip teaches that glow carries over: it belongs to you, the companion just shows it.</p>
+  </div>
+
+  <!-- Profile -->
+  <div class="opt">
+    <div class="head"><h3>Profile, the line</h3></div>
+    <div class="based">One card on Profile, opens Companions</div>
+    <div class="phone"><div class="screen prof" style="background:var(--meadow)">
+      <div class="island"></div>
+      <div class="band"></div><div class="face"></div>
+      <div class="card"><b style="font-size:18px">Maya</b><div class="sub">@maya</div>
+        <div style="display:flex;justify-content:space-around;margin-top:10px"><div><div class="num" style="font-size:18px">58</div><div class="sub">sessions</div></div><div><div class="num" style="font-size:18px">20h</div><div class="sub">meditated</div></div><div><div class="num" style="font-size:18px">12</div><div class="sub">day streak</div></div></div>
+      </div>
+      <div class="journey">
+        <div class="row"><span>Your companions</span><span class="num">1,240 pts</span></div>
+        <div class="track">
+          <div class="d got"><img src="companions/otto-4.png" alt=""></div>
+          <div class="d got"><img src="companions/redpanda-4.png" alt=""></div>
+          <div class="d"><img class="sil" src="companions/tiger-4.png" alt=""></div>
+          <div class="d"><img class="sil" src="companions/phoenix-4.png" alt=""></div>
+          <div class="d"><img class="sil" src="companions/dragon-4.png" alt=""></div>
+        </div>
+        <div class="labels"><span>Start</span><span>500</span><span>1,500</span><span>4,000</span><span>10,000</span></div>
+        <div class="sub" style="margin-top:10px">Lifetime 1,240 · 820 to spend in the Shop</div>
+        <div class="btn sm" style="margin-top:10px">See companions</div>
+      </div>
+      <div class="tabs"><span>Home</span><span>Block</span><span class="plus">+</span><span>Shop</span><span class="on">Profile</span></div>
+    </div></div>
+    <p class="note">The one place both numbers sit side by side, so the lifetime and spendable split is legible once and never has to be explained again.</p>
+  </div>
+</div>
+
+<h2>3. Comparison and recommendation</h2>
+<div class="tablewrap"><table>
+  <tr><th>Option</th><th>Based on</th><th>Feel</th><th>Fit with 808</th><th>Cost to build</th></tr>
+  <tr class="rec"><td><b>A. The morph</b></td><td>Pokémon evolution</td><td>Suspense, then release</td><td>Strong. Says "evolve" with no words</td><td>Low. SwiftUI, two stills, a silhouette, a flash. No Rive</td></tr>
+  <tr class="rec"><td><b>B. The growth card</b></td><td>Finch</td><td>Warm, quiet</td><td>Strongest for tone, weakest for wow</td><td>Low. A crossfade and a card</td></tr>
+  <tr><td>C. The path</td><td>Duolingo</td><td>Loud, celebratory</td><td>Good for showing the whole line, loud for a calm app</td><td>Medium. Path layout, confetti, counter</td></tr>
+  <tr><td>D. The card flip</td><td>Clash Royale, gacha</td><td>High anticipation</td><td>Weak. Reads as a loot box, and nothing is random</td><td>Medium. 3D flip, rays</td></tr>
+  <tr><td>E. The medal spin</td><td>Apple Fitness</td><td>Trophy, polished</td><td>Medium. Fits awards, makes the companion an object</td><td>Low to medium. 3D spin, shine</td></tr>
+  <tr><td>F. The hatch</td><td>Tamagotchi, Neopets</td><td>Cute, nurturing</td><td>Great for Phoenix and Dragon, odd for mammals</td><td>Medium. Egg art per creature or one neutral egg</td></tr>
+</table></div>
+
+<div class="panel sand">
+  <span class="tag rec">Recommendation</span>
+  <p style="margin-top:10px"><b>A then B, in one sequence.</b> The morph plays the moment (about five seconds, at dusk, tap to skip), and it ends on B's card in daylight, which says what happened and that Otto stays. A gives the evolution its weight, B keeps it 808: calm, honest, nothing to chase. Both are SwiftUI over the stills that already exist, so it ships without waiting on Rive rigs for four new creatures. Use C's path as the Profile card rather than as the moment itself. Skip D (loot box read) and F (eggs only suit two of the five).</p>
+  <p><b>Rules to go with it:</b> lifetime points drive evolution; earlier companions stay; glow belongs to the person and carries to whoever is on the cushion; the arrival plays once, after the reward screen, never mid-session.</p>
+</div>
+
+<h2>Open questions for Melvin and Aziz</h2>
+<div class="panel">
+<ol class="qs">
+  <li><b>Thresholds.</b> 500 / 1,500 / 4,000 / 10,000 are examples. The Dragon at about 167 hours is close to two years at 15 minutes a day. Is that the right length for the last one, or should it come sooner?</li>
+  <li><b>Can you switch back?</b> Recommended yes, any time, from Companions. The alternative (the newest always sits) is simpler but takes Otto away.</li>
+  <li><b>Does glow carry over?</b> Recommended yes. Glow is the person's consistency, not the creature's, so a new companion arrives at the same stage. Starting each one fresh would punish reaching it.</li>
+  <li><b>Do hats carry over?</b> Every hat is fitted to Otto's head across 13 looks. Options: hats stay Otto's only; each creature gets its own fitted set (large art cost); or hats unlock per creature over time. Recommended for v1: hats stay with Otto, and the Shop says so on a creature without them.</li>
+  <li><b>Is it still "Otto"?</b> Pokémon copy says "Otto grew into a Red panda", which suggests one character changing. A collection suggests new friends. Pick one so the copy agrees everywhere: Otto is the name of the first companion, and each new one has its own name.</li>
+  <li><b>Existing members.</b> Lifetime points can be rebuilt from stored sessions, so someone with 30 hours already would unlock two at once on update. Play them in order, one after the other, or one combined arrival?</li>
+  <li><b>App icon, widget and Watch.</b> Do they follow the chosen companion, or stay Otto? The widget and Watch draw stills, so following is cheap; the icon would need alternate icons.</li>
+  <li><b>Hats spent before this ships.</b> Lifetime points include spent ones, so nobody loses progress for having shopped. Confirm that is the intent.</li>
+</ol>
+</div>
+
+</div>
+
+<script>
+function play(id) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.classList.remove('play'); void el.offsetWidth; el.classList.add('play');
+  if (id === 'optC') {
+    var conf = el.querySelector('.confetti'); conf.innerHTML = '';
+    var cols = ['#4FA34A','#62A3D4','#E3A72F','#FFB3C9','#E8862B','#129496'];
+    for (var i = 0; i < 44; i++) {
+      var p = document.createElement('i');
+      p.style.left = (Math.random() * 100) + '%';
+      p.style.background = cols[i % cols.length];
+      p.style.animationDelay = (2.6 + Math.random() * 1.4) + 's';
+      p.style.animationDuration = (2 + Math.random() * 1.6) + 's';
+      conf.appendChild(p);
+    }
+    var n = el.querySelector('[data-count]'), target = +n.dataset.count;
+    n.textContent = '0';
+    clearInterval(n._t);
+    setTimeout(function () {
+      var start = performance.now();
+      n._t = setInterval(function () {
+        var k = Math.min(1, (performance.now() - start) / 900);
+        n.textContent = Math.round(target * (1 - Math.pow(1 - k, 3))).toLocaleString();
+        if (k >= 1) clearInterval(n._t);
+      }, 30);
+    }, 3200);
+  }
+}
+document.querySelectorAll('.replay').forEach(function (b) { b.addEventListener('click', function () { play(b.dataset.t) }) });
+var io = new IntersectionObserver(function (es) {
+  es.forEach(function (e) { if (e.isIntersecting && !e.target._seen) { e.target._seen = 1; play(e.target.id) } });
+}, { threshold: .5 });
+['optA','optB','optC','optD','optE','optF'].forEach(function (id) { var el = document.getElementById(id); if (el) io.observe(el) });
+</script>
+</body>
+</html>

@@ -40,6 +40,17 @@ before merging: they predate the 1.4.1 work.
 
 ## Decided, waiting to be built
 
+- **Companions evolve: Otto, then red panda, tiger, phoenix, dragon**
+  (Melvin, 2026-11-09). Everyone starts as Otto; points unlock the next
+  creature. Each creature keeps its own seven glow states (consistency),
+  separate from evolution. Animated in Rive with their light, like Otto;
+  every hat refitted per creature. In flight: dragon redrawn (less fluffy,
+  more epic), clean defringed cuts (`mockups/companions/master/`), the
+  level-up and collection mockups (`mockups/level-up.html`). Proposed,
+  not decided: evolve on LIFETIME points earned, so spending on a hat
+  never sets anyone back; thresholds. Hats need new renders per creature
+  (Higgsfield credits ran out 2026-11-09).
+
 - **Show their real top apps on the Block pick screen** (decided "next
   build", 2026-10-13). "Your top apps this week", with icons and minutes,
   above "Choose apps" in onboarding and in Home's one-time ask. Apple lets
