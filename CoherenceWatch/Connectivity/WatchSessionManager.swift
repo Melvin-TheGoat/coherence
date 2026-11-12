@@ -74,6 +74,18 @@ final class WatchSessionManager: NSObject, ObservableObject {
         return OttoWidgetSnapshot.stage(level: day.level)
     }
 
+    /// Which of Otto's forms the phone chose, as an asset stem ("Otto",
+    /// "RedPanda"...), from the same snapshot as his glow.
+    func ottoForm() -> String {
+        #if DEBUG
+        if let raw = ProcessInfo.processInfo.environment["PREVIEW_COMPANION"],
+           let form = Companion(rawValue: raw) { return form.key }
+        #endif
+        guard let data = glowSnapshotData,
+              let snapshot = try? JSONDecoder().decode(OttoWidgetSnapshot.self, from: data) else { return "Otto" }
+        return snapshot.formKey
+    }
+
     /// The length chosen on the wrist, in minutes; nil for open. Starts from
     /// the phone's length, then remembers its own once picked here.
     @Published private(set) var lengthMinutes: Int? = WatchSessionManager.storedLength()

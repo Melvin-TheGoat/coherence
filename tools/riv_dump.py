@@ -103,11 +103,16 @@ if __name__ == "__main__":
             elif o["_t"] == "FileAssetContents" and last and "body" in last:
                 open(os.path.join(out, last + ".png"), "wb").write(o["bytes"]); last = None
         print("bodies written to", out); raise SystemExit
-    ab = next(i for i, o in enumerate(objs) if o["_t"] == "Artboard")
+    # The LAST artboard: the companions' files carry an empty one first.
+    ab = [i for i, o in enumerate(objs) if o["_t"] == "Artboard"][-1]
     st = next(i for i in range(ab, len(objs)) if objs[i]["_t"] in ("LinearAnimation", "StateMachine"))
     comps = objs[ab:st]
     assets = [o.get("name") for o in objs if o["_t"] == "ImageAsset"]
-    fig = next(k for k, c in enumerate(comps) if c["_t"] == "Node" and c.get("parentId") == 0)
+    # The figure is the node at (332, 649); the first top-level node in
+    # OttoAura.riv, but not in the companions' rigs (2026-11-12).
+    fig = next((k for k, c in enumerate(comps) if c["_t"] == "Node" and c.get("parentId") == 0
+                and round(c.get("x", 0)) == 332 and round(c.get("y", 0)) == 649),
+               next(k for k, c in enumerate(comps) if c["_t"] == "Node" and c.get("parentId") == 0))
     lift = next(k for k, c in enumerate(comps) if c.get("parentId") == fig and c["_t"] == "Node")
     bob = next(k for k, c in enumerate(comps) if c.get("parentId") == lift and c["_t"] == "Node")
     print(f"figure #{fig} at ({comps[fig].get('x', 0)}, {comps[fig].get('y', 0)}), Lift #{lift}, Bob #{bob}")

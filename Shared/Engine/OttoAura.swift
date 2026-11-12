@@ -66,6 +66,13 @@ enum OttoAura {
         defaults.object(forKey: glowStartKey) as? Date
     }
 
+    /// The last rebirth into a new form (`CompanionBook`), when the glow
+    /// started again at 50. Every caller that passes `glowStart()` as
+    /// `since` passes this as `restart`, or it will disagree with Home.
+    static func glowRestart(defaults: UserDefaults = .standard) -> Date? {
+        CompanionBook.glowRestart(defaults)
+    }
+
     /// Called at every launch; only the first ever call writes. Midnight of
     /// that day, so a session earlier the same day still counts.
     static func markGlowStartIfNeeded(now: Date = Date(),
@@ -228,13 +235,29 @@ enum OttoAura {
     ///   session started inside it, and it belongs to the day it opened.
     /// - Parameter since: when the glow began counting (`glowStart`); sessions
     ///   and windows before it are not counted. Nil counts everything.
+    /// - Parameter restart: the moment Otto was last reborn into a new form
+    ///   (`CompanionBook.glowRestart`), when his glow starts again at 50
+    ///   (Melvin, 2026-11-10: "a new form starts at 50% glow"). Unlike
+    ///   `since`, the walk BEGINS on that day, so days missed after a rebirth
+    ///   cost as they always do. The rebirth's own day is never missed (it
+    ///   was reached by meditating), and only sessions after the moment
+    ///   itself add to it. The streak's rest days are still read from the
+    ///   whole history, so the glow and the streak keep agreeing about a day.
     static func level(from sits: [Sit],
                       notNow: [DateInterval] = [],
                       since: Date? = nil,
+                      restart: Date? = nil,
                       today: Date = Date(),
                       calendar: Calendar = .current) -> Int {
-        let sits = since.map { start in sits.filter { $0.date >= start } } ?? sits
-        let notNow = since.map { start in notNow.filter { $0.start >= start } } ?? notNow
+        var sits = since.map { start in sits.filter { $0.date >= start } } ?? sits
+        var notNow = since.map { start in notNow.filter { $0.start >= start } } ?? notNow
+        // A restart in the future (a clock moved back) restarts nothing yet.
+        let restart = restart.flatMap { $0 <= today ? $0 : nil }
+        let allPractised = Set(minutesByDay(sits, calendar: calendar).keys)
+        if let restart {
+            sits = sits.filter { $0.date >= restart }
+            notNow = notNow.filter { $0.start >= restart }
+        }
         let minutes = minutesByDay(sits, calendar: calendar)
         let practised = Set(minutes.keys)
 
@@ -248,10 +271,11 @@ enum OttoAura {
         // The history starts at the first session, or at the first skipped
         // window if that came earlier: someone who set Otto to hold their
         // apps has started, whether or not they have meditated yet.
-        guard let first = practised.union(skipped.keys).min() else { return startLevel }
+        let restartDay = restart.map { calendar.startOfDay(for: $0) }
+        guard let first = restartDay ?? practised.union(skipped.keys).min() else { return startLevel }
         let todayStart = calendar.startOfDay(for: today)
 
-        let forgiven = forgivenDays(practised: practised, today: today, calendar: calendar)
+        let forgiven = forgivenDays(practised: allPractised, today: today, calendar: calendar)
         var level = Double(startLevel)
         var run = 0          // days missed in a row, the rest day included
         var day = first
@@ -260,6 +284,9 @@ enum OttoAura {
             if let dayMinutes = minutes[day] {
                 run = 0
                 level = min(100, level + Double(gain(minutes: dayMinutes))) - windows
+            } else if day == restartDay {
+                // The day he was reborn: reached by meditating, never missed.
+                level -= windows
             } else if day < todayStart {
                 run += 1
                 if forgiven.contains(day) {
@@ -281,9 +308,11 @@ enum OttoAura {
     static func stage(from sits: [Sit],
                       notNow: [DateInterval] = [],
                       since: Date? = nil,
+                      restart: Date? = nil,
                       today: Date = Date(),
                       calendar: Calendar = .current) -> Stage {
-        Stage(level: level(from: sits, notNow: notNow, since: since, today: today, calendar: calendar))
+        Stage(level: level(from: sits, notNow: notNow, since: since, restart: restart,
+                           today: today, calendar: calendar))
     }
 
     /// The day practice first raised Otto to at least `stage`, replayed from

@@ -217,6 +217,8 @@ enum SessionStore {
         defaults.removeObject(forKey: OnboardingHandoff.key)
         // Friends awards and the weeks finished together (2026-10-27).
         FriendsMemory.forget(defaults)
+        // Otto's forms and their rebirths (2026-11-12): back to Otto.
+        CompanionBook.forget(defaults)
     }
 
     /// How builds before 2026-09-29 deleted an account: stamp `deletedAt` on

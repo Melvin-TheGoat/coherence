@@ -8705,3 +8705,60 @@ settings on every blocker, this is one, but check with him.
   CloudKit schema change.
 - Update `LeftAppNotice`'s copy, `SessionLeftAppView`, the review notes, and
   add analytics for the switch (choice only, nothing biometric).
+
+## OTTO'S FORMS: REBORN AS A RED PANDA, TIGER, PHOENIX, DRAGON (2026-11-12, branch `companions`)
+
+Built from `mockups/level-up.html` and BACKLOG.md "Companions evolve". It is
+always Otto, reborn into a new form; everyone starts as the sloth.
+
+- **Rules, pure and tested (`Shared/Engine/Companion.swift`, `CompanionTests`).**
+  `Companion` (otto, redPanda, tiger, phoenix, dragon) at LIFETIME points 0 /
+  300 / 800 / 2,200 / 5,500 (`OttoPoints.lifetime`: minutes, never a logged
+  session, plus the friends' weekly bonus; spending never counts).
+  `CompanionBook` keeps, per phone in UserDefaults (`companion.*.v1`), the form
+  worn, the rebirths that have played (in order) and when each played. Per
+  device on purpose, like `otto.glowStartedOn.v1`: no CloudKit field to
+  promote for a cosmetic choice, and a new phone plays each rebirth again.
+  Cleared by `forgetPersonOnDevice`.
+- **A new form starts at 50, honestly:** the glow stays derived. A rebirth
+  stores its moment (`CompanionBook.glowRestart`, the latest one), and
+  `OttoAura.level(restart:)` begins its walk on that day at 50: sessions
+  before the moment do not count, the rebirth's own day is never a missed day,
+  later days cost and gain as always, and the streak's rest days are read from
+  the WHOLE history so glow and streak still agree. **Every caller that passes
+  `since: OttoAura.glowStart()` also passes `restart: OttoAura.glowRestart()`**
+  (Home, the reward, the Shop, the widget feed, reminders). Choosing a form in
+  Otto's forms never restarts anything: glow belongs to the practice.
+- **Rebirths play on a quiet Home, first in `QuietHomeHooks`** (before the
+  session page and the rating ask), so never over the reward or an award; a
+  member who already has the points sees each in order, one per quiet Home.
+  `EvolutionView` (Coherence/Otto/CompanionViews.swift): night, white
+  silhouette, flicker, flash, reveal with rays and confetti, then the card
+  ("Otto was reborn as a red panda" / "Starts at Steady" / "Keep meditating
+  and he'll glow."). The rebirth is STORED at the reveal (`onRevealed`), so a
+  kill mid-flicker replays it. Tap skips to the card.
+- **Otto's forms** (`OttoFormsView`) opens from the glow card and the new
+  "Otto's next form" row under it on Home. Only played forms can be chosen.
+- **Rigs:** `OttoAuraRig` takes a `Spec` (Otto's 13 looks, or a form's 7:
+  `Companion<Key>.riv`, artboard/state machine "Companion", Lift 0 x5, -26,
+  -40, no Bob scale, float from stage 6). `OttoAuraFigure(form:)`, nil = the
+  form worn (`CompanionStore.effective`); onboarding passes `.otto`. Stills
+  (`Coherence/Companions.xcassets/Companion<Key><n>`) are the fallback.
+  `tools/riv_dump.py` now reads these files too (it took the first, empty
+  artboard and the wrong figure before).
+- **Hats on forms:** no new art. `CompanionHeads` is the output of
+  `tools/companion_head_measure.swift` (run on the uncommitted 2x masters):
+  each hat's Steady box is carried by brow width and skull, then raised to
+  clear the eyes by what it cleared Otto's. Drawn as: rig, hat back, the
+  form's still redrawn inside the hat box, hat front, then the still again in
+  two side bands so ears, horns and side feathers sit over the brim. The
+  redraws follow the rig's lift and float every frame. Otto's per-look cover
+  masks are NOT used on forms. Tiara worn 1.7x; the glass dome grows about its
+  collar to take in ears/horns/crest; the halo rises above the crest.
+- **Widget and Watch:** the snapshot carries `form` (absent = Otto) and
+  `formKey`; stills `Widget<Key><n>` (401x450) and `Watch<Key><n>` (321x360)
+  from `tools/companion_stills.sh`. Session screens (Ready, the sit) still
+  draw the sloth's session rig: there is no pose art for the forms.
+- Analytics: `companion_unlocked` and `companion_chosen`, property `form`.
+- DEBUG: `PREVIEW_COMPANION=<form>` draws a form everywhere without storing;
+  `PREVIEW_EVOLVE=<form>` replays a rebirth once on a quiet Home, stored nowhere.

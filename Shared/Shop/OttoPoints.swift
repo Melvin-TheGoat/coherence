@@ -51,4 +51,12 @@ enum OttoPoints {
                         catalog: [HatCatalog.Item] = HatCatalog.all, bonus: Int = 0) -> Int {
         max(0, earned(sessions: sessions) + bonus - spent(ownedHatIDs: ownedHatIDs, catalog: catalog))
     }
+
+    /// Every point ever earned, spending ignored: minutes meditated (never a
+    /// hand-logged session) plus each week finished with a friend. What
+    /// Otto's forms follow (`Companion`, Melvin, 2026-11-10), so buying a
+    /// hat never slows his next form.
+    static func lifetime(sessions: [Session], bonus: Int = 0) -> Int {
+        earned(sessions: sessions) + max(0, bonus)
+    }
 }

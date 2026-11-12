@@ -639,7 +639,7 @@ private struct CoinFlight: View {
 }
 
 /// Slow warm rays turning behind him.
-private struct RewardRays: View {
+struct RewardRays: View {
     var body: some View {
         Canvas { ctx, size in
             let c = CGPoint(x: size.width / 2, y: size.height / 2)

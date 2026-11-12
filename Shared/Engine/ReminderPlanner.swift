@@ -79,6 +79,8 @@ struct ReminderInput {
     var sits: [OttoAura.Sit]
     var notNow: [DateInterval] = []
     var glowSince: Date?
+    /// The last rebirth into a new form, when the glow restarted at 50.
+    var glowRestart: Date? = nil
     /// The last time 808 was opened. Coming back counts as being around.
     var lastOpened: Date?
     /// The person's own time.
@@ -267,7 +269,7 @@ enum ReminderPlanner {
             streak = s.current
             restDayUsed = s.restDayUsed
             glow = OttoAura.level(from: input.sits, notNow: input.notNow, since: input.glowSince,
-                                  today: day, calendar: cal)
+                                  restart: input.glowRestart, today: day, calendar: cal)
             self.daysAway = daysAway
             appsHeld = input.appsHeld(fire)
             nextHat = input.nextHat

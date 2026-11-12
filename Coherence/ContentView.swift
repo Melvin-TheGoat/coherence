@@ -35,6 +35,10 @@ struct ContentView: View {
     @ObservedObject private var watchLink = WatchLink.shared
     /// For Otto's nudge toward the home screen widget.
     @ObservedObject private var widgetPresence = WidgetPresence.shared
+    /// Otto's forms (2026-11-12): which he wears, and the rebirths owed.
+    @ObservedObject private var companions = CompanionStore.shared
+    /// PREVIEW_EVOLVE plays once a launch.
+    @State private var evolvePreviewPlayed = false
     @AppStorage(WatchLink.choiceKey) private var sitKindRaw = SitKind.unmeasured.rawValue
     /// "Okay, let's meditate" on one of Otto's screens starts a session the
     /// moment his screen is down, so two covers never overlap. nil: nothing
@@ -151,6 +155,11 @@ struct ContentView: View {
         /// Melvin and Aziz's thank-you, asking for anything to change and a
         /// review (`FoundersNote`, 2026-10-26).
         case foundersNote
+        /// Otto reborn into a new form (`EvolutionView`), on a quiet Home.
+        /// `preview` (DEBUG PREVIEW_EVOLVE) stores nothing.
+        case evolve(Companion, preview: Bool)
+        /// Otto's forms: every form he can take, and choosing one.
+        case forms
 
         var id: String {
             switch self {
@@ -168,6 +177,8 @@ struct ContentView: View {
             case .reward(let r): return "reward-\(r.id)"
             case .pickApps: return "pickApps"
             case .foundersNote: return "foundersNote"
+            case .evolve(let form, _): return "evolve-\(form.rawValue)"
+            case .forms: return "forms"
             }
         }
     }
@@ -294,6 +305,11 @@ struct ContentView: View {
             // this view existed (2026-10-18 review).
             if FriendsPush.pending { openFriendsFromPush() }
         }
+        // A rebirth or a form chosen: the widget and the Watch follow.
+        .onChange(of: companions.chosen) { _, _ in
+            OttoWidgetPublisher.publish(context: context, member: true)
+            ReminderScheduler.replan()
+        }
         .onChange(of: sessions.count) { _, _ in
             refreshAwards(); readDetailsPrompt()
             // A session landed or was deleted: Otto's glow and the streak on
@@ -312,8 +328,15 @@ struct ContentView: View {
                               sessionActive: coordinator.active != nil) { d in
             if sheet == nil { sheet = .discarded(d) } else { pendingSheet = .discarded(d) }
         })
-        .modifier(QuietHomeHooks(quiet: homeIsQuiet, notesDue: notesDueFor, ratingDue: ratingDue,
+        .modifier(QuietHomeHooks(quiet: homeIsQuiet, evolveDue: evolveDue,
+                                 notesDue: notesDueFor, ratingDue: ratingDue,
                                  noteDue: foundersNoteDue, appsEligible: appsAskEligible,
+                                 openEvolve: { form in
+                                     let preview = CompanionStore.previewEvolve == form && !evolvePreviewPlayed
+                                         && !owedForms.contains(form)
+                                     if preview { evolvePreviewPlayed = true }
+                                     present(.evolve(form, preview: preview))
+                                 },
                                  openNotes: { id in
                                      notesDueFor = nil
                                      guard sessions.contains(where: { $0.id == id }) else { return }
@@ -458,6 +481,20 @@ struct ContentView: View {
                 BlockAppsAskView { sheet = nil }
             case .foundersNote:
                 FoundersNoteView { sheet = nil }
+            case .evolve(let form, let preview):
+                EvolutionView(from: preview ? .otto : companions.chosen, fromStage: auraStage, to: form,
+                              lifetime: lifetimePoints,
+                              index: preview ? 1 : companions.playedThisLaunch + 1,
+                              total: preview ? 1 : companions.playedThisLaunch + max(1, owedForms.count),
+                              wearsHat: (OttoAuraFigure.previewHat ?? prefsRows.first?.wornHatIDValue) != nil,
+                              onRevealed: {
+                                  guard !preview else { return }
+                                  companions.announce(form)
+                              },
+                              onMeditate: { pendingSheet = .setup; sheet = nil },
+                              onDone: { sheet = nil })
+            case .forms:
+                OttoFormsView(lifetime: lifetimePoints, stage: auraStage) { sheet = nil }
             case .reward(let reward):
                 SessionRewardView(reward: reward) {
                     holdAwards = false
@@ -682,6 +719,9 @@ struct ContentView: View {
                     VStack(alignment: .leading, spacing: 16) {
                         auraCard
                             .anchorPreference(key: TourTargetKey.self, value: .bounds) { [.glow: $0] }
+                            .contentShape(Rectangle())
+                            .onTapGesture { Tactile.tap(); present(.forms) }
+                        formRow
                         statTiles
                         calendarCard
                         proofSection
@@ -796,7 +836,8 @@ struct ContentView: View {
             // much as the hat does. It narrows too, to pass between the corner
             // circles, which lets it climb to just under the date.
             let hat = OttoAuraFigure.previewHat ?? prefsRows.first?.wornHatIDValue
-            let hatRise = OttoAuraFigure.hatRise(hat, size: 186 * SitLayout.scale(in: size) * 1.17)
+            let hatRise = OttoAuraFigure.hatRise(hat, size: 186 * SitLayout.scale(in: size) * 1.17,
+                                                 form: CompanionStore.shared.effective)
             let bubbleTop = topInset + (hatRise > 0 ? 66 : 132)
             let bubbleWidth = hatRise > 0 ? min(width - 152, 330) : min(width - 56, 330)
             if tourTab == nil {
@@ -964,6 +1005,23 @@ struct ContentView: View {
     /// Otto's stage today, from the same session dates as the streak. It
     /// follows the climbing level during a celebration, so he brightens as
     /// the bar fills rather than a moment later.
+    /// Every point ever earned (`OttoPoints.lifetime`): what Otto's forms follow.
+    private var lifetimePoints: Int {
+        OttoPoints.lifetime(sessions: sessions, bonus: community.togetherBonus)
+    }
+
+    /// Rebirths these points have earned that have not played, in order.
+    private var owedForms: [Companion] {
+        companions.pending(lifetime: lifetimePoints)
+    }
+
+    /// The rebirth to play next on a quiet Home.
+    private var evolveDue: Companion? {
+        if let owed = owedForms.first { return owed }
+        if let preview = CompanionStore.previewEvolve, !evolvePreviewPlayed { return preview }
+        return nil
+    }
+
     private var auraStage: OttoAura.Stage {
         #if DEBUG
         // OTTO_AURA=<0...100> shows a stage on a simulator with no history.
@@ -993,7 +1051,7 @@ struct ContentView: View {
         // never sent anywhere.
         return OttoAura.level(from: sessions.map { OttoAura.Sit(date: $0.startedAt, seconds: $0.durationSec) },
                               notNow: FeatureFlags.block ? block.notNowWindows : [],
-                              since: OttoAura.glowStart())
+                              since: OttoAura.glowStart(), restart: OttoAura.glowRestart())
     }
 
     /// The streak in the top-left corner, Brainrot's flame and number, bare
@@ -1094,6 +1152,72 @@ struct ContentView: View {
         .accessibilityElement(children: .combine)
     }
 
+    /// Under the glow, one more row (`mockups/level-up.html`): how far Otto is
+    /// from his next form. Two rows because they are two rules: the glow is
+    /// today's consistency and can fall, his form only moves forward. Opens
+    /// Otto's forms.
+    private var formRow: some View {
+        let lifetime = lifetimePoints
+        let next = Companion.next(lifetime: lifetime)
+        let left = next.map { $0.threshold - lifetime } ?? 0
+        let previous = next.flatMap { n in Companion.allCases.last { $0.threshold < n.threshold } }?.threshold ?? 0
+        let span = max(1, (next?.threshold ?? 1) - previous)
+        let nearlyThere = next != nil && left * 10 <= span
+        return Button { present(.forms) } label: {
+            HStack(spacing: 14) {
+                Group {
+                    if let next {
+                        Image(next.stillName(stage: OttoAura.Stage.steady.rawValue))
+                            .resizable().renderingMode(.template).scaledToFit()
+                            .foregroundStyle(AppColor.textPrimary.opacity(nearlyThere ? 0.55 : 0.28))
+                    } else {
+                        Image(companions.effective.stillName(stage: auraStage.rawValue))
+                            .resizable().scaledToFit()
+                    }
+                }
+                .frame(width: 46, height: 52)
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(alignment: .firstTextBaseline) {
+                        Text(next == nil ? "Otto's forms" : "Otto's next form")
+                            .font(DisplayFont.display(18, .heavy))
+                            .foregroundStyle(AppColor.textPrimary)
+                        Spacer(minLength: 8)
+                        Text(next == nil ? "All five" : nearlyThere ? "\(left) to go"
+                             : "\(lifetime.formatted()) / \(next!.threshold.formatted())")
+                            .font(DisplayFont.display(16, .heavy))
+                            .foregroundStyle(AppColor.textPrimary)
+                            .monospacedDigit()
+                    }
+                    if let next {
+                        GeometryReader { bar in
+                            ZStack(alignment: .leading) {
+                                Capsule().fill(AppColor.trace)
+                                Capsule().fill(AppColor.auraRing)
+                                    .frame(width: max(10, bar.size.width
+                                        * CGFloat(min(1, Double(lifetime - previous) / Double(max(1, next.threshold - previous))))))
+                            }
+                        }
+                        .frame(height: 8)
+                        Text(nearlyThere ? "One \(left) minute session gets him there"
+                             : "At \(next.threshold.formatted()) lifetime points")
+                            .font(AppFont.caption)
+                            .foregroundStyle(AppColor.textSecondary)
+                    } else {
+                        Text("Every form is his. Choose any of them.")
+                            .font(AppFont.caption)
+                            .foregroundStyle(AppColor.textSecondary)
+                    }
+                }
+            }
+            .card(padding: 16)
+            .overlay(RoundedRectangle(cornerRadius: AppMetrics.cardRadius, style: .continuous)
+                .strokeBorder(nearlyThere ? AppColor.auraRing.opacity(0.7) : .clear, lineWidth: 2))
+        }
+        .buttonStyle(.tactile)
+        .accessibilityLabel(next.map { "Otto's next form, \(lifetime) of \($0.threshold) lifetime points" }
+                            ?? "Otto's forms, all five unlocked")
+    }
+
     /// Brainrot's three tiles, in 808's facts: the best streak (the current
     /// one is in the corner), the sessions, and the time sat.
     private var statTiles: some View {
@@ -1187,9 +1311,9 @@ struct ContentView: View {
         let sits = sessions.map { OttoAura.Sit(date: $0.startedAt, seconds: $0.durationSec) }
         let otherSits = sits.filter { $0.date != landed.startedAt }
         let satDown = Self.beforeMoment(of: landed)
-        let before = OttoAura.level(from: otherSits, notNow: windows, since: OttoAura.glowStart(),
+        let before = OttoAura.level(from: otherSits, notNow: windows, since: OttoAura.glowStart(), restart: OttoAura.glowRestart(),
                                     today: satDown)
-        let after = OttoAura.level(from: sits, notNow: windows, since: OttoAura.glowStart())
+        let after = OttoAura.level(from: sits, notNow: windows, since: OttoAura.glowStart(), restart: OttoAura.glowRestart())
         // Derived from session dates and lengths ONLY, never from anything
         // measured and never from the Not-now windows the glow on screen
         // uses (`sessionOnlyStages`). Once per landed session: `celebrate`
@@ -1304,8 +1428,8 @@ struct ContentView: View {
         guard let landed = sessions.first(where: { $0.id == id }) else { return nil }
         let sits = sessions.map { OttoAura.Sit(date: $0.startedAt, seconds: $0.durationSec) }
         let before = OttoAura.level(from: sits.filter { $0.date != landed.startedAt },
-                                    since: OttoAura.glowStart(), today: Self.beforeMoment(of: landed))
-        let after = OttoAura.level(from: sits, since: OttoAura.glowStart())
+                                    since: OttoAura.glowStart(), restart: OttoAura.glowRestart(), today: Self.beforeMoment(of: landed))
+        let after = OttoAura.level(from: sits, since: OttoAura.glowStart(), restart: OttoAura.glowRestart())
         return (OttoAura.Stage(level: before), OttoAura.Stage(level: after))
     }
 
@@ -1702,10 +1826,14 @@ private struct SessionLandedHooks: ViewModifier {
 /// top of a session, an award or the tour, and never two in the same breath.
 private struct QuietHomeHooks: ViewModifier {
     let quiet: Bool
+    /// A rebirth owed (`CompanionStore.pending`): first of all, so it plays
+    /// straight after the reward screen, the slot an award unlock uses.
+    let evolveDue: Companion?
     let notesDue: UUID?
     let ratingDue: Bool
     let noteDue: Bool
     let appsEligible: Bool
+    let openEvolve: (Companion) -> Void
     let openNotes: (UUID) -> Void
     /// Returns whether Apple's sheet was asked for.
     let askForRating: () -> Bool
@@ -1721,13 +1849,23 @@ private struct QuietHomeHooks: ViewModifier {
     @State private var noteShownAt: Date?
 
     private struct Gate: Equatable {
-        let quiet: Bool; let notesDue: UUID?; let ratingDue: Bool; let noteDue: Bool; let appsEligible: Bool
+        let quiet: Bool; let evolveDue: Companion?; let notesDue: UUID?; let ratingDue: Bool; let noteDue: Bool
+        let appsEligible: Bool
     }
 
     func body(content: Content) -> some View {
-        content.task(id: Gate(quiet: quiet, notesDue: notesDue, ratingDue: ratingDue, noteDue: noteDue,
-                              appsEligible: appsEligible)) {
+        content.task(id: Gate(quiet: quiet, evolveDue: evolveDue, notesDue: notesDue, ratingDue: ratingDue,
+                              noteDue: noteDue, appsEligible: appsEligible)) {
             guard quiet else { return }
+            if let form = evolveDue {
+                // A beat after the reward closes (or after the last rebirth,
+                // when a member catches up on several), so it reads as the
+                // next thing.
+                try? await Task.sleep(for: .milliseconds(700))
+                guard !Task.isCancelled else { return }
+                openEvolve(form)
+                return
+            }
             if let id = notesDue {
                 // A beat after the last celebration closes, so the page
                 // arrives as the next thing rather than as a flicker.

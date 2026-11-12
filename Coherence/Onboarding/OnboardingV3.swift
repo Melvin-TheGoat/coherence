@@ -1904,7 +1904,7 @@ struct AuraDemoScreen: View {
                 .foregroundStyle(AppColor.textSecondary)
                 .padding(.top, 6)
 
-            OttoAuraFigure(stage: stage, size: 200, rig: rig)
+            OttoAuraFigure(stage: stage, size: 200, rig: rig, form: .otto)
                 .frame(height: 210)
                 .padding(.top, 18)
                 .animation(.easeOut(duration: 0.18), value: stage)

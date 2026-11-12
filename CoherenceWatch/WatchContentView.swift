@@ -87,7 +87,7 @@ struct WatchContentView: View {
     /// Watch.
     private var authorizeScreen: some View {
         ZStack {
-            WatchValley(hour: nowHour, stage: manager.ottoStage(), cushion: 0.46)
+            WatchValley(hour: nowHour, stage: manager.ottoStage(), form: manager.ottoForm(), cushion: 0.46)
                 .equatable()
                 .ignoresSafeArea()
             ScrollView {
@@ -130,7 +130,7 @@ struct WatchContentView: View {
     /// Say what to do instead of offering a Begin that half-works.
     private var setupScreen: some View {
         ZStack {
-            WatchValley(hour: nowHour, stage: manager.ottoStage(), cushion: 0.5)
+            WatchValley(hour: nowHour, stage: manager.ottoStage(), form: manager.ottoForm(), cushion: 0.5)
                 .equatable()
                 .ignoresSafeArea()
             VStack(spacing: 4) {
@@ -156,7 +156,7 @@ struct WatchContentView: View {
 
     private var startScreen: some View {
         ZStack {
-            WatchValley(hour: nowHour, stage: manager.ottoStage(), cushion: 0.47)
+            WatchValley(hour: nowHour, stage: manager.ottoStage(), form: manager.ottoForm(), cushion: 0.47)
                 .equatable()
                 .ignoresSafeArea()
             VStack(spacing: 7) {
@@ -203,7 +203,7 @@ struct WatchContentView: View {
     /// phone's countdown. A number, a line, a way out. No haptics.
     private var countdownScreen: some View {
         ZStack {
-            WatchValley(hour: nowHour, stage: manager.ottoStage(), cushion: 0.8, sceneShare: 0.84)
+            WatchValley(hour: nowHour, stage: manager.ottoStage(), form: manager.ottoForm(), cushion: 0.8, sceneShare: 0.84)
                 .equatable()
                 .ignoresSafeArea()
             VStack(spacing: 4) {
@@ -243,7 +243,7 @@ struct WatchContentView: View {
         let shown = planned.map { max(0, $0 - elapsed) } ?? elapsed
 
         return ZStack {
-            WatchValley(hour: hour, stage: manager.ottoStage(), cushion: 0.8, sceneShare: 0.84)
+            WatchValley(hour: hour, stage: manager.ottoStage(), form: manager.ottoForm(), cushion: 0.8, sceneShare: 0.84)
                 .equatable()
                 .ignoresSafeArea()
             VStack(spacing: 4) {
@@ -288,7 +288,7 @@ struct WatchContentView: View {
 
     private var sendingScreen: some View {
         ZStack {
-            WatchValley(hour: nowHour, stage: manager.ottoStage(), cushion: 0.84, sceneShare: 0.84)
+            WatchValley(hour: nowHour, stage: manager.ottoStage(), form: manager.ottoForm(), cushion: 0.84, sceneShare: 0.84)
                 .equatable()
                 .ignoresSafeArea()
             VStack(spacing: 6) {
@@ -303,7 +303,7 @@ struct WatchContentView: View {
 
     private var sentScreen: some View {
         ZStack {
-            WatchValley(hour: nowHour, stage: manager.ottoStage(), cushion: 0.84, sceneShare: 0.84)
+            WatchValley(hour: nowHour, stage: manager.ottoStage(), form: manager.ottoForm(), cushion: 0.84, sceneShare: 0.84)
                 .equatable()
                 .ignoresSafeArea()
             VStack(spacing: 3) {
@@ -339,6 +339,9 @@ struct WatchContentView: View {
 struct WatchValley: View, Equatable {
     let hour: Double
     let stage: Int?
+    /// Which of Otto's forms (`OttoWidgetSnapshot.formKey`): the phone's
+    /// choice, so the wrist matches Home (2026-11-12).
+    var form: String = "Otto"
     let cushion: CGFloat
     /// The scene's height against the screen's: smaller draws Otto smaller.
     var sceneShare: CGFloat = 1.01
@@ -377,7 +380,7 @@ struct WatchValley: View, Equatable {
                     .frame(width: scene.width, height: scene.height)
                     .colorMultiply(Color(white: day.light))
                     if let stage {
-                        Image("WatchOtto\(stage)")
+                        Image("Watch\(form)\(stage)")
                             .resizable()
                             .scaledToFit()
                             .frame(width: canvas * OttoStillCanvas.aspect, height: canvas)

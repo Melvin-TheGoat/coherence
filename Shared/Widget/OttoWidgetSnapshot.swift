@@ -37,6 +37,22 @@ struct OttoWidgetSnapshot: Codable, Equatable {
     /// Today, then the days after it if nobody meditates in between.
     var days: [Day]
     var written: Date
+    /// Which of Otto's forms to draw (`Companion.rawValue`, 2026-11-12). Nil,
+    /// and absent from every snapshot written before the forms, is Otto.
+    var form: String? = nil
+
+    /// The asset stem for the form on the widget and the Watch: "Otto" draws
+    /// `WidgetOtto3` / `WatchOtto3`, "RedPanda" `WidgetRedPanda3`. Kept here
+    /// rather than read off `Companion`, which the widget does not compile.
+    var formKey: String {
+        switch form {
+        case "redPanda": return "RedPanda"
+        case "tiger": return "Tiger"
+        case "phoenix": return "Phoenix"
+        case "dragon": return "Dragon"
+        default: return "Otto"
+        }
+    }
 
     /// The day to show at `date`: the latest one that has begun. Past the
     /// last projected day the last one stands, which is the right Otto for a
@@ -95,7 +111,8 @@ enum OttoWidgetShelf {
     static func write(_ snapshot: OttoWidgetSnapshot, to defaults: UserDefaults? = defaults) -> Bool {
         let old = read(from: defaults)
         // `written` changes every time, so compare everything else.
-        if let old, old.member == snapshot.member, old.days == snapshot.days { return false }
+        if let old, old.member == snapshot.member, old.days == snapshot.days,
+           old.form == snapshot.form { return false }
         guard let data = try? JSONEncoder().encode(snapshot) else { return false }
         defaults?.set(data, forKey: key)
         return true

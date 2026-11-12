@@ -172,6 +172,7 @@ enum ReminderScheduler {
             // state only ever shapes a notification on this phone.
             notNow: FeatureFlags.block ? BlockController.shared.notNowWindows : [],
             glowSince: OttoAura.glowStart(),
+            glowRestart: OttoAura.glowRestart(),
             lastOpened: UserDefaults.standard.object(forKey: lastOpenedKey) as? Date,
             hour: cal.component(.hour, from: time),
             minute: cal.component(.minute, from: time),
