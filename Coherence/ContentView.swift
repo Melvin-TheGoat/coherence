@@ -301,6 +301,11 @@ struct ContentView: View {
         }
         .onAppear {
             refreshAwards()
+            companions.refresh()
+            #if DEBUG
+            // PREVIEW_FORMS=1 opens Otto's forms.
+            if ProcessInfo.processInfo.environment["PREVIEW_FORMS"] != nil { present(.forms) }
+            #endif
             // A goal push tapped from a cold launch: the post went out before
             // this view existed (2026-10-18 review).
             if FriendsPush.pending { openFriendsFromPush() }

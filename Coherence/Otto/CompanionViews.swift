@@ -51,7 +51,7 @@ struct EvolutionView: View {
             let size = geo.size
             let s = SitLayout.scale(in: size)
             let seated = 186 * s * 1.17
-            let rise: CGFloat = cardIn ? size.height * 0.2 : 0
+            let rise: CGFloat = cardIn ? size.height * 0.27 : 0
             let ottoY = size.height * (1 - 0.24) - seated / 2 - rise
             ZStack {
                 ValleyScene(progress: 0, showsFigure: false, clock: true)
@@ -67,6 +67,7 @@ struct EvolutionView: View {
                     .position(x: size.width / 2, y: ottoY)
 
                 figure(seated: seated)
+                    .scaleEffect(cardIn ? 0.86 : 1, anchor: .bottom)
                     .position(x: size.width / 2, y: ottoY)
 
                 if let start = confettiAt {
