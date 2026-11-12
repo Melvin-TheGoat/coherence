@@ -62,7 +62,9 @@ before merging: they predate the 1.4.1 work.
   - Hats carry over to every form.
   - Existing members with the points see each unlock in order.
   - The widget and the Watch follow the chosen form.
-  Still open: the app icon; what the glow does when switching back.
+  - The app icon stays Otto; it never changes with the form (2026-11-12).
+  - Switching forms keeps today's glow: the glow belongs to the practice,
+    not the form (2026-11-12).
 
 - **Show their real top apps on the Block pick screen** (decided "next
   build", 2026-10-13). "Your top apps this week", with icons and minutes,
