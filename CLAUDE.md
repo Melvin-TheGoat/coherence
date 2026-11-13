@@ -8864,19 +8864,22 @@ Block's paywall and the others are unchanged. One switch:
   never scheduled; check the reminder with `808.storekit` at real-time
   renewal (RELEASE_CHECKLIST.md).
 
-## EIGHT ONBOARDING SCREENS CUT; THE INTERVIEW IS TWO QUESTIONS (2026-11-12, Aziz)
+## NINE ONBOARDING SCREENS CUT; THE INTERVIEW IS TWO QUESTIONS (2026-11-12, Aziz)
 
 From the every-screen review (`mockups/onboarding-screens.html`, real
 captures of the whole flow): the goal, what gets in the way, stress, how much
 the mind wanders, a quiet time, habit history, "Tailoring 808 to you" and
 "Your mind profile is" are gone. The interview is the age and how often they
-meditate, and the slider goes straight to the years clip. 27 screens from
-Welcome to the tour, down from 35.
+meditate, and the slider goes straight to the years clip. Then, the same
+day, "Let's personalize 808 for you" went too: with two questions left it
+introduced almost nothing, and its Otto line promised answers about what gets
+in the way, which nothing asks any more. The clutter screen hands straight to
+the age. 26 screens from Welcome to the tour, down from 35.
 
 - **Routed past, never deleted**, the standing rule: `asks()` returns false
   for the six questions, every `Step` case and answer field stays, and a
-  resume record on any of the eight moves on (`firstInterviewStep`, or the
-  years for the two plan screens). All eight are in `onlyPassesThrough`.
+  resume record on any of the nine moves on (`firstInterviewStep`, or the
+  years for the two plan screens). All nine are in `onlyPassesThrough`.
 - **What fell back, so nobody re-derives it:** the years use the research
   average share (47%, Killingsworth & Gilbert), and the small print now says
   so ("Based on your age, a life to 80, and minds wandering 47% of waking

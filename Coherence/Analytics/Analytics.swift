@@ -669,7 +669,7 @@ enum Analytics {
         "ottoGrows":         "05 The more you meditate, the brighter he gets",
         "seeForYourself":    "06 See for yourself (drag Otto's glow)",
         "clutter":           "07 Does your mind feel cluttered?",
-        "questionCount":     "08 Let's personalize 808 for you",
+        "questionCount":     "zz Let's personalize 808 for you (cut)",
         "motivation":        "zz What matters most to you? (one pick) (cut)",
         "obstacles":         "zz What usually gets in the way? (cut)",
         "stress":            "zz How stressed have you been lately? (cut)",

@@ -219,7 +219,9 @@ struct OnboardingView: View {
                  // Cut 2026-11-12 (Aziz, the every-screen review): six
                  // questions, "Tailoring 808 to you" and the mind profile.
                  .motivation, .obstacles, .stress, .wandering, .quietTime,
-                 .habitHistory, .buildingPlan, .mindProfile:
+                 .habitHistory, .buildingPlan, .mindProfile,
+                 // and "Let's personalize 808 for you" with them.
+                 .questionCount:
                 return true
             // Real screens on Block builds, so leaving one belongs in the
             // Back history like any other question. Off Block builds they
@@ -333,7 +335,7 @@ struct OnboardingView: View {
     }
 
     private var flowSteps: [Step] {
-        let opening: [Step] = [.relief, .breath, .meetOtto, .ottoGrows, .seeForYourself, .clutter, .questionCount]
+        let opening: [Step] = [.relief, .breath, .meetOtto, .ottoGrows, .seeForYourself, .clutter]
         let questions: [Step] = answers.shownInterview.compactMap { q in
             Self.interviewPairs.first { $0.1 == q }?.0
         }
@@ -785,10 +787,13 @@ struct OnboardingView: View {
             }
 
         case .clutter:
-            ClutterScreen(level: $clutterLevel) { go(.questionCount) }
+            ClutterScreen(level: $clutterLevel) { go(firstInterviewStep) }
 
+        // Cut 2026-11-12 (Aziz): "Let's personalize 808 for you". With two
+        // questions left, the clutter screen hands straight to the first.
+        // Kept as a case for resume records.
         case .questionCount:
-            QuestionCountScreen { go(firstInterviewStep) }
+            Color.clear.onAppear { go(firstInterviewStep) }
 
         case .baseline:
             FrequencyScreen(frequency: $answers.currentFrequency,
