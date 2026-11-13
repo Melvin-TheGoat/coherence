@@ -45,7 +45,7 @@ final class PicturePromptTests: XCTestCase {
 
     /// Every preset ships with its picture, Otto leads, and no two share an id.
     func test_everyPresetHasItsPicture() {
-        XCTAssertEqual(AvatarPreset.all.count, 24)
+        XCTAssertEqual(AvatarPreset.all.count, 20)
         XCTAssertEqual(AvatarPreset.all.first?.id, "otto")
         // Otto's four forms follow him; the old free red panda is gone, so
         // the red panda is only ever the locked form.

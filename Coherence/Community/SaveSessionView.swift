@@ -106,7 +106,6 @@ struct SaveSessionView: View {
                     // Posting is the default (2026-11-13, mockup section 5a):
                     // the big photo button and who can see it lead the page.
                     if mediaItems.isEmpty { bigPhotoButton } else { mediaSection.whiteCard(radius: 18) }
-                    if FeatureFlags.friends { whoSection.whiteCard(radius: 18) }
                     feelSection.whiteCard(radius: 18)
                     whatSection.whiteCard(radius: 18)
                     if shareWithFriends { friendsNoteSection.whiteCard(radius: 18) }
@@ -365,6 +364,30 @@ struct SaveSessionView: View {
         .accessibilityAddTraits(shareWithFriends == value ? .isSelected : [])
     }
 
+    /// Who can see this, as one small chip beside Post (Melvin,
+    /// 2026-11-13: the two-button bar was far too big). Friends is the
+    /// default; a tap flips it to Only me and back.
+    private var audienceChip: some View {
+        Button {
+            picked = true
+            withAnimation(.easeOut(duration: 0.18)) { shareWithFriends.toggle() }
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: shareWithFriends ? "person.2.fill" : "lock.fill")
+                Text(shareWithFriends ? "Friends" : "Only me")
+            }
+            .font(AppFont.callout.weight(.bold))
+            .foregroundStyle(shareWithFriends ? AppColor.skyDeep : AppColor.meadowInk)
+            .padding(.horizontal, 14)
+            .frame(height: 50)
+            .background(AppColor.backgroundSecondary, in: Capsule())
+            .overlay(Capsule().stroke(ValleyGround.quiet, lineWidth: 1))
+        }
+        .buttonStyle(.tactile)
+        .accessibilityLabel("Who can see this: \(shareWithFriends ? "Friends" : "Only me")")
+        .accessibilityHint("Double tap to switch")
+    }
+
     /// What Friends means, or what stands between this session and sharing.
     @ViewBuilder
     private var whoNote: some View {
@@ -578,16 +601,27 @@ struct SaveSessionView: View {
     // MARK: - The button
 
     private var dock: some View {
-        Button { save() } label: {
-            Text(saving ? "Saving…" : (shareWithFriends && !wasShared ? "Post" : "Save"))
+        VStack(spacing: 8) {
+            if FeatureFlags.friends, shareWithFriends,
+               !(community.phase == .ready && community.hasProfile) {
+                whoNote
+                    .padding(.horizontal, 6)
+                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            }
+            HStack(spacing: 10) {
+                if FeatureFlags.friends { audienceChip }
+                Button { save() } label: {
+                    Text(saving ? "Saving…" : (shareWithFriends && !wasShared ? "Post" : "Save"))
+                }
+                // Sky blue on Friends, because it reaches friends; gold on Only me.
+                .buttonStyle(shareWithFriends ? TogetherStyle.blue : PrimaryButtonStyle())
+                .disabled(!canAct || saving)
+                // Dimmed by colour, not opacity: a translucent button shows the form
+                // scrolling underneath it.
+                .saturation(canAct ? 1 : 0.2)
+                .brightness(canAct ? 0 : -0.25)
+            }
         }
-        // Sky blue on Friends, because it reaches friends; gold on Only me.
-        .buttonStyle(shareWithFriends ? TogetherStyle.blue : PrimaryButtonStyle())
-        .disabled(!canAct || saving)
-        // Dimmed by colour, not opacity: a translucent button shows the form
-        // scrolling underneath it.
-        .saturation(canAct ? 1 : 0.2)
-        .brightness(canAct ? 0 : -0.25)
         .padding(.horizontal, AppMetrics.screenPadding)
         .padding(.top, 26)
         .padding(.bottom, 10)

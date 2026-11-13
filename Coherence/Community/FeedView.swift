@@ -442,6 +442,8 @@ struct PostCard: View {
     @EnvironmentObject private var slam: KudosSlam
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var confirmBlock = false
+    /// The header, title and stats, measured, so the photo can be capped.
+    @State private var aboveHeight: CGFloat = 150
 
     static let inset: CGFloat = 16
 
@@ -449,17 +451,23 @@ struct PostCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            PostHeader(post: post, model: model, onReport: onReport, onBlock: { confirmBlock = true })
-                .padding(.horizontal, Self.inset).padding(.top, Self.inset)
-            Text(post.title.isEmpty ? "Meditation" : post.title)
-                .font(.system(size: 19, weight: .bold, design: .rounded))
-                .foregroundStyle(AppColor.textPrimary)
-                .lineLimit(2)
-                .padding(.horizontal, Self.inset).padding(.top, 12)
-            PostStats(post: post)
-                .padding(.horizontal, Self.inset).padding(.top, 12)
+            VStack(alignment: .leading, spacing: 0) {
+                PostHeader(post: post, model: model, onReport: onReport, onBlock: { confirmBlock = true })
+                    .padding(.horizontal, Self.inset).padding(.top, Self.inset)
+                Text(post.title.isEmpty ? "Meditation" : post.title)
+                    .font(.system(size: 19, weight: .bold, design: .rounded))
+                    .foregroundStyle(AppColor.textPrimary)
+                    .lineLimit(2)
+                    .padding(.horizontal, Self.inset).padding(.top, 12)
+                PostStats(post: post)
+                    .padding(.horizontal, Self.inset).padding(.top, 12)
+            }
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { aboveHeight = $0 }
             if let first = post.media.first {
-                PostPhotoView(item: first, extra: post.media.count - 1)
+                // Never more than twice the words above it (Melvin,
+                // 2026-11-13): a tall selfie made every post enormous.
+                PostPhotoView(item: first, extra: post.media.count - 1,
+                              maxHeight: max(140, aboveHeight * 2))
                     .padding(.horizontal, Self.inset).padding(.top, 14)
             }
             KudosRow(post: post, model: model, context: "feed")
@@ -644,14 +652,20 @@ struct PostPhotoView: View {
     let item: Post.PostMedia
     var extra: Int = 0
     var full = false
+    /// The tallest the photo may be in the feed; it crops to fill instead.
+    var maxHeight: CGFloat? = nil
     @State private var image: UIImage?
+    @State private var width: CGFloat = 0
 
     var body: some View {
         let aspect = CGFloat(item.aspect > 0 ? item.aspect : 0.75)
         let shown = full ? aspect : min(max(aspect, 0.8), 1.6)
+        let natural = width > 0 ? width / shown : nil
         Color(AppColor.trace)
-            .aspectRatio(shown, contentMode: .fit)
             .frame(maxWidth: .infinity)
+            .frame(height: natural.map { min($0, maxHeight ?? .infinity) })
+            .aspectRatio(natural == nil ? shown : nil, contentMode: .fit)
+            .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
             .overlay {
                 if let image { Image(uiImage: image).resizable().scaledToFill() }
             }

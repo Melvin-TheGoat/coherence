@@ -293,7 +293,7 @@ enum DemoCommunity {
         db.user = "_demo_jordan"
         let jordan = CommunityStore(database: db)
         try? await jordan.claimUsername("jordan.k", displayName: "Jordan")
-        await picture(jordan, "frog")
+        await picture(jordan, "waterfall")
         try? await jordan.sendRequest(to: CommunityNames.profile(user: "_demo_me"))
         // Jordan asked but has never sat: the "No sessions yet" case.
 
@@ -308,7 +308,7 @@ enum DemoCommunity {
         db.user = "_demo_sam"
         let sam = CommunityStore(database: db)
         try? await sam.claimUsername("sam_p", displayName: "Sam")
-        await picture(sam, "owl")
+        await picture(sam, "lotus")
 
         db.user = "_demo_me"
         try? await me.sendRequest(to: CommunityNames.profile(user: "_demo_sam"))
@@ -379,7 +379,7 @@ enum DemoCommunity {
         }
         // STORE_SHOTS=1: six more friends, so the list reads as a circle.
         if shots {
-            let pictures = ["_demo_theo": "bonsai", "_demo_ana": "cat", "_demo_dan": "turtle",
+            let pictures = ["_demo_theo": "bonsai", "_demo_ana": "dunes", "_demo_dan": "cairn",
                             "_demo_jonas": "wave", "_demo_mei": "lotus", "_demo_noah": "misty-pines"]
             let more: [(String, String, String, PracticeStats)] = [
                 ("_demo_theo", "theo", "Theo", .init(sessions7d: 7, minutes7d: 118, currentStreak: 21,

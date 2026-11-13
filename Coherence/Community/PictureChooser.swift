@@ -49,10 +49,6 @@ struct AvatarPreset: Identifiable, Hashable {
         .init(id: "singing-bowl", label: "A singing bowl"),
         .init(id: "candle", label: "A candle"),
         .init(id: "matcha", label: "A cup of matcha"),
-        .init(id: "frog", label: "A frog"),
-        .init(id: "turtle", label: "A turtle"),
-        .init(id: "owl", label: "An owl"),
-        .init(id: "cat", label: "A cat"),
     ]
 }
 
