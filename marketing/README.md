@@ -3,7 +3,7 @@
 ## `appstore/`
 
 The eight live iPhone 6.9" screenshots (1320x2868) for the App Store listing, in
-upload order: `01-otto` ... `08-awards`. The next version's ten (with the block screen, the widget and Otto's texts) are in `appstore-new/`, same layout. Real screens captured on the iPhone 17
+upload order: `01-otto` ... `08-awards`. The next version's ten (reshot 2026-11-13: Otto, his next form, the block screen, the Friends feed, the Shop, Otto's forms, his texts, the widget, sounds, the Watch) are in `appstore-new/`, same layout; how they were shot is under "The 2026-11-13 set" below. Real screens captured on the iPhone 17
 Pro Max simulator with a 9:41 status bar, then framed by
 `tools/store_shots.swift`: the valley's daytime sky easing into cream, the far
 ridges behind the phone, SF Pro Rounded captions in the sky's ink, one warm sun
@@ -57,6 +57,30 @@ To regenerate after a UI change (every hook below is DEBUG only):
    A `|` forces a line break in either caption; without one the subhead wraps
    evenly. It refuses a caption carrying an em or en dash, and writes RGB with
    no alpha channel.
+
+### The 2026-11-13 set (`appstore-new/`)
+
+Same base launch as above (`SKIP_ONBOARDING`, `DEMO_NAME=Maya`,
+`DEMO_USERNAME=maya`, `VALLEY_HOUR=9.7`, `PREVIEW_PAID`, `STORE_SHOTS`, plus
+`PREVIEW_NO_AWARDS=1` and `PREVIEW_HISTORY=1` everywhere). Under
+`STORE_SHOTS=1` Otto leads Home with his mood, not the widget or Watch how-to.
+
+- 01 Otto: `OTTO_AURA=100`
+- 02 Next form: `OTTO_AURA=100 PREVIEW_HOME_SCROLL=0.62` (scrolls Home so the
+  "Otto's next form" row sits 62% down)
+- 03 Shield: `PREVIEW_SHIELD_REPLICA=6 PREVIEW_SHIELD_LINE=0` (the stand-in
+  built the way iOS builds the shield, gold palette, "bruh.")
+- 04 Friends feed: `PREVIEW_TAB=friends PREVIEW_FEED_SCROLL=2 PREVIEW_FEED_ANCHOR=0.2`
+- 05 Shop: `PREVIEW_TAB=shop PREVIEW_COMPANION=redPanda PREVIEW_HAT=sunhat`
+- 06 Forms: write `companion.announced.v1 -array redPanda tiger phoenix` and
+  `companion.chosen.v1 redPanda` into the app's defaults first, then
+  `OTTO_AURA=55 PREVIEW_FORMS=1 PREVIEW_LIFETIME=3400`; delete both keys
+  after, or every later shot shows the red panda
+- 07 Texts: `PREVIEW_INTERVENTION=textThread` (the real screen, no close
+  button; `PREVIEW_UNBLOCK_KIND` is the rehearsal and draws an X)
+- 08 Widget: carried over from the 2026-10-13 set
+- 09 Sounds: `PREVIEW_SETUP=sound`
+- 10 Watch: `PREVIEW_RESULTS=1`
 
 Captions must name their subject: a store screenshot is met with no context at
 all, which is the same rule the onboarding screens follow.

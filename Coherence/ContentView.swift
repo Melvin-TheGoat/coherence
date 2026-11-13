@@ -736,6 +736,7 @@ struct ContentView: View {
             // below the guide circle, so Otto sits lower to leave it room,
             // and the cards under him move down with him.
             let sceneHeight = proxy.safeAreaInsets.top + proxy.size.height * 0.80
+            ScrollViewReader { reader in
             ScrollView {
                 VStack(spacing: 0) {
                     homeScene(width: proxy.size.width, height: sceneHeight,
@@ -748,6 +749,7 @@ struct ContentView: View {
                         statTiles
                         // Under the three tiles (Melvin, 2026-11-13).
                         formRow
+                            .id("homeFormRow")
                         calendarCard
                         proofSection
                         #if DEBUG
@@ -774,6 +776,16 @@ struct ContentView: View {
             // pinned half sky and half grass showed a band of sky behind the
             // cards as soon as the page moved.
             .background(Self.meadow.ignoresSafeArea())
+            #if DEBUG
+            // PREVIEW_HOME_SCROLL=<0...1>: scrolls Home so the "Otto's next
+            // form" row sits that far down the screen (store screenshots).
+            .task {
+                guard let y = ProcessInfo.processInfo.environment["PREVIEW_HOME_SCROLL"].flatMap(Double.init) else { return }
+                try? await Task.sleep(for: .seconds(1.5))
+                reader.scrollTo("homeFormRow", anchor: UnitPoint(x: 0.5, y: y))
+            }
+            #endif
+            }
         }
     }
 
@@ -960,13 +972,20 @@ struct ContentView: View {
     /// Otto pointing at the widget, until one is on the home screen. Silent
     /// until WidgetCenter has answered, so he never suggests one already there.
     private var widgetNudge: String? {
-        widgetPresence.sizes?.isEmpty == true ? OttoLines.widgetNudge : nil
+        #if DEBUG
+        // Store screenshots lead with his mood, not a how-to.
+        if StoreShots.on { return nil }
+        #endif
+        return widgetPresence.sizes?.isEmpty == true ? OttoLines.widgetNudge : nil
     }
 
     /// Otto pointing at the Apple Watch, until it is measuring. Said to
     /// everyone, phrased as an offer rather than as something missing:
     /// someone without a Watch hears that 808 can use one (2026-09-30).
     private var watchNudge: String? {
+        #if DEBUG
+        if StoreShots.on { return nil }
+        #endif
         switch watchLink.status {
         case .noWatch:
             return "Got an Apple Watch? Put 808 on it and I'll show how your body settled."
@@ -1036,7 +1055,12 @@ struct ContentView: View {
     /// the bar fills rather than a moment later.
     /// Every point ever earned (`OttoPoints.lifetime`): what Otto's forms follow.
     private var lifetimePoints: Int {
-        OttoPoints.lifetime(sessions: sessions, bonus: community.togetherBonus)
+        #if DEBUG
+        // PREVIEW_LIFETIME=<points>: Otto's forms as a long-time member sees
+        // them (store screenshots; pair with companion.announced.v1).
+        if let n = ProcessInfo.processInfo.environment["PREVIEW_LIFETIME"].flatMap(Int.init) { return n }
+        #endif
+        return OttoPoints.lifetime(sessions: sessions, bonus: community.togetherBonus)
     }
 
     /// Rebirths these points have earned that have not played, in order.

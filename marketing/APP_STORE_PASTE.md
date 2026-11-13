@@ -288,7 +288,7 @@ On Apple Watch, Otto sits in his valley. Set a session's length with the Digital
 ## Screenshots
 
 **Re-shot for 1.1 on 2026-09-29** into `marketing/appstore/` (the eight that are live). **The next version's ten are in `marketing/appstore-new/`** (`01-otto.png`
-... `10-awards.png`, with `65/` beside them), the 6.5 inch copies in `appstore/65/`, the Watch pair in
+... `10-watch.png`, with `65/` beside them and `screenshots-preview.jpg` showing all ten), the 6.5 inch copies of the live eight in `appstore/65/`, the Watch set in
 `appstore/watch/`). Framed by `tools/store_shots.swift` in the valley's
 daytime sky, SF Pro Rounded captions, a drawn generic bezel. Captured on the
 iPhone 17 Pro Max simulator from a Debug build with `STORE_SHOTS=1`, which
@@ -297,20 +297,27 @@ Release has it; how to regenerate is in `marketing/README.md`.
 
 **iPhone 6.9 inch (required). The listing leads with Otto, not Block**
 (Melvin, 2026-09-29: "Youre focusing too much on the blocking aspect, thats
-just one feature"). Upload in this order:
+just one feature"). **Reshot 2026-11-13 (Melvin's lineup)** for the release
+with Otto's forms and the Friends feed: Profile and awards dropped, the next
+form, the forms picker and the feed added. Upload in this order:
 
 | # | File | Screen | Headline | Subhead |
 |---|---|---|---|---|
 | 1 | 01-otto | Home, Otto glowing at 100%, 7-day streak | Meditate consistently with Otto | He glows brighter every day you do |
-| 2 | 02-shield | A held app's block screen ("not the doom scroll"), Otto gold | Otto blocks your apps until you meditate | Open one too soon and he lets you know |
-| 3 | 03-shop | Shop, Otto trying on the Straw Sun Hat | Collect points, buy him hats | Every minute you meditate earns a point |
-| 4 | 04-widget | Home screen with the medium and two small widgets | Otto on your home screen | Your streak and his glow at a glance |
-| 5 | 05-sounds | The plus: the Ready screen's sound list | Meditate your way | Silence, nature, tones, a guided journey or your own audio |
-| 6 | 06-texts | Otto's text thread after Ask Otto | Otto texts you before you scroll | Open a held app and he asks you to meditate first |
-| 7 | 07-profile | Profile: a preset picture, "8 friends", streak, stats, your minutes (retaken 2026-10-19 for 1.4) | Every day adds up | Your streak and your minutes at a glance |
-| 8 | 08-watch | A measured Watch session's results | Wear an Apple Watch for more | Heart rate, stillness and breathing, after each session |
-| 9 | 09-friends | Friends: a weekly goal with Priya, eight friends, every one with a picture (retaken 2026-10-19 for 1.4) | Meditate with friends | See how often your friends meditate each week |
-| 10 | 10-awards | The awards shelf, 30 of 58 | More than fifty awards | For showing up, going longer and trying new ways in |
+| 2 | 02-next-form | Home scrolled to "Otto's next form" under the three tiles (red panda silhouette, 22 to go) | Otto evolves as you meditate | Every minute brings his next form closer |
+| 3 | 03-shield | A held app's block screen ("bruh."), Otto gold palette | Otto blocks your apps until you meditate | Open one too soon and he lets you know |
+| 4 | 04-friends | The Friends feed: Priya's "Evening meditation" with photos, Maya's own post | Meditate with friends | Post your sessions and cheer each other on |
+| 5 | 05-shop | The Shop, the red panda trying on the Straw Sun Hat | Collect points, buy him hats | Every minute you meditate earns a point |
+| 6 | 06-forms | Otto's forms: sloth, red panda (worn), tiger, phoenix, dragon at 5,500 | Five forms of Otto to unlock | A red panda, a tiger, a phoenix and a dragon |
+| 7 | 07-texts | Otto's text thread after Ask Otto | Otto texts you before you scroll | Open a held app and he asks you to meditate first |
+| 8 | 08-widget | Home screen with the medium and two small widgets (unchanged from the 2026-10-13 set) | Otto on your home screen | Your streak and his glow at a glance |
+| 9 | 09-sounds | The plus: the Ready screen's sound list | Meditate your way | Silence, nature, tones, a guided journey or your own audio |
+| 10 | 10-watch | A measured Watch session's results | Wear an Apple Watch for more | Heart rate, stillness and breathing, after each session |
+
+**The 2026-10-13 ten, superseded 2026-11-13, kept for the record:** 01 Otto,
+02 shield, 03 Shop, 04 widget, 05 sounds, 06 texts, 07 Profile ("Every day
+adds up"), 08 Watch, 09 Friends list ("See how often your friends meditate
+each week"), 10 awards ("More than fifty awards").
 
 **Reworked 2026-10-13 (Aziz), in `marketing/appstore-new/`,** for the release after 1.2; `marketing/appstore/` still holds the live eight: the Block-list shot
 (2) became the block screen itself, and the widget (4) and Otto's texts (6)

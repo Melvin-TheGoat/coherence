@@ -163,7 +163,9 @@ struct FriendsHomeView: View {
                 guard !model.feed.isEmpty else { return }
                 try? await Task.sleep(for: .seconds(1))
                 if let n = env["PREVIEW_FEED_SCROLL"].flatMap(Int.init), n < model.feed.count {
-                    reader.scrollTo(model.feed[n].id, anchor: .top)
+                    // PREVIEW_FEED_ANCHOR=<0...1>: where that post's top lands.
+                    let y = env["PREVIEW_FEED_ANCHOR"].flatMap(Double.init) ?? 0
+                    reader.scrollTo(model.feed[n].id, anchor: UnitPoint(x: 0.5, y: y))
                 }
                 if let n = env["PREVIEW_POST"].flatMap(Int.init), n < model.feed.count, openPost == nil {
                     openPost = FeedOpen(id: model.feed[n].id)
