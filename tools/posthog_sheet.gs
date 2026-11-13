@@ -18,6 +18,12 @@
  *   Installs      one row per new install: when, where, phone, how far they got
  *   Updaters      one row per person who updated from 1.0: did they subscribe
  *   Who they are  every onboarding answer: how many gave it, how many subscribed
+ *   Friends       Friends, Meditating together, profile pictures and invite
+ *                 codes: what people opened and tapped, last 30 days and all time
+ *   Instagram     every post and reel on the account, ranked by bio link taps,
+ *                 pulled from Instagram (only once IG_TOKEN is set, step 6)
+ *   Reels         the one tab you type into: a row per Instagram reel, ranked
+ *                 by bio link taps. Made once, never cleared by a refresh.
  *
  * Rebuilt for 1.1 (2026-10-07). Two kinds of people reach the money now, and
  * the sheet used to see only one. A NEW install goes through onboarding and
@@ -54,6 +60,16 @@
  *     The tabs fill in.
  *  5. Pick `installTrigger` and Run once. From now on it refreshes hourly.
  *     A "808" menu also appears in the sheet with a Refresh now item.
+ *  6. Optional, for the Instagram tab. The Instagram account must be a
+ *     professional one (Business or Creator).
+ *     developers.facebook.com → My Apps → Create app → use case "Manage
+ *     messaging & content on Instagram" → finish. In the app: Instagram →
+ *     API setup with Instagram business login → Generate access tokens →
+ *     Add account → log in as 808's Instagram and allow it. If Instagram asks
+ *     for a tester invite, accept it in the Instagram app (Settings → Website
+ *     permissions → Apps and websites → Tester invites), then generate again.
+ *     Copy the token, add Script Property IG_TOKEN = the token, and run
+ *     `refresh`. Read only; the script renews it weekly so it never expires.
  *
  * Internal traffic is excluded: locally built installs (App build 1),
  * TestFlight, sideloaded betas, phones flagged as team devices (seven taps on
@@ -256,6 +272,8 @@ var SCREEN_NAMES = {
   whyItWorks:       "27 How 808 makes meditation stick",
   socialProof:      "29 Made for people like you",
   ascend:           "31 Ready to take control? (hold to ascend)",
+  tryFree:          "31a We want you to try 808 for free (trial eligible)",
+  trialReminder:    "31b I'll remind you the day before it ends (trial eligible)",
   paywall:          "32 Paywall",
   permission:       "33 One nudge at your time (notifications)",
   health:           "33a Health consent (Watch paired)",
@@ -304,10 +322,19 @@ function refreshAll() {
     ['Members', writeMembers],
     ['Apple Watch', writeAppleWatch], ['Installs', writeInstalls],
     ['Updaters', writeUpdaters], ['Who they are', writeWhoTheyAre],
+    ['Friends', writeFriends], ['Instagram', writeInstagram],
   ];
   var failed = [];
+  try { ensureReelsTab(); } catch (e) { failed.push(REELS_TAB + ': ' + e.message); }
   tabs.forEach(function (t) {
+    // Apps Script kills a run at six minutes, and a killed run loses the tab
+    // it was writing: on 2026-10-23 the Friends tab was created and left
+    // empty that way. So no tab starts after five minutes (it waits for the
+    // next hourly run and the stamp names it), and each tab is saved the
+    // moment it is written instead of at the end of the run.
+    if (Date.now() - RUN_STARTED > 300000) { failed.push(t[0] + ': out of time, next run'); return; }
     try { t[1](); } catch (e) { failed.push(t[0] + ': ' + e.message); }
+    SpreadsheetApp.flush();
   });
   removeTabs(OBSOLETE_TABS);
   stamp(failed);
@@ -345,6 +372,237 @@ function removeTabs(names) {
     var s = ss.getSheetByName(n);
     if (s) ss.deleteSheet(s);
   });
+}
+
+/**
+ * Reels: which reel sends people to the bio link (Melvin, 2026-10-15).
+ *
+ * Instagram shows "Bio link taps" on every reel (the reel's Insights, under
+ * Engagement), but its API does not hand that number out for reels: the
+ * metric behind it, profile_activity broken down by BIO_LINK_CLICKED, is
+ * documented for posts and stories only. So the numbers are typed in from
+ * the app, and the sheet does the ranking with one formula that updates as
+ * you type. TikTok and YouTube report link clicks for the whole account, not
+ * per video, so this is Instagram only.
+ *
+ * The tab is made the first time it is missing and never touched again, so
+ * a refresh can never wipe what was typed. Delete the tab to get a fresh one.
+ * Once Instagram is connected (IG_TOKEN) it is not made again, so deleting
+ * it after the Instagram tab takes over sticks.
+ */
+var REELS_TAB = 'Reels';
+
+function ensureReelsTab() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  if (ss.getSheetByName(REELS_TAB)) return;
+  if (PropertiesService.getScriptProperties().getProperty('IG_TOKEN')) return;
+  var sheet = ss.insertSheet(REELS_TAB);
+  var MAX = sheet.getMaxRows();
+
+  // Left, A to E: what you type. Right, G to L: the ranking.
+  sheet.getRange('A1').setValue(
+    "Type one row per reel from its Insights on Instagram: Views, and Bio link taps " +
+    "under Engagement. Update a reel's numbers whenever you check; they keep growing for days.");
+  sheet.getRange('G1').setValue('Ranked by bio link taps (updates as you type)');
+  sheet.getRange('A2:E2').setValues([['Posted', 'Reel', 'Views', 'Bio link taps', 'Link']]);
+  sheet.getRange('G2:L2').setValues([['Rank', 'Reel', 'Posted', 'Bio link taps', 'Views', 'Taps per 1,000 views']]);
+  sheet.getRange('A1:L2').setFontWeight('bold');
+  sheet.setFrozenRows(2);
+
+  sheet.getRange(3, 1, MAX - 2, 1).setNumberFormat('mmm d, yyyy');   // Posted
+  sheet.getRange(3, 2, MAX - 2, 1).setNumberFormat('@');             // Reel
+  sheet.getRange(3, 3, MAX - 2, 2).setNumberFormat('#,##0');         // Views, taps
+  sheet.getRange(3, 5, MAX - 2, 1).setNumberFormat('@');             // Link
+  sheet.getRange(3, 7, MAX - 2, 1).setNumberFormat('0');             // Rank
+  sheet.getRange(3, 9, MAX - 2, 1).setNumberFormat('mmm d, yyyy');   // Posted
+  sheet.getRange(3, 10, MAX - 2, 2).setNumberFormat('#,##0');        // Taps, views
+  sheet.getRange(3, 12, MAX - 2, 1).setNumberFormat('0.0');          // Per 1,000
+
+  // Every row with bio link taps typed, most taps first. Equal taps put the
+  // reel with fewer views first: it got the same clicks from fewer people.
+  // Taps per 1,000 views is the same ranking with reach taken out, so a reel
+  // that converts well but was shown to few people still stands out.
+  sheet.getRange('G3').setFormula(
+    '=IFERROR(LET(s, SORT(FILTER({B3:B, A3:A, D3:D, C3:C}, D3:D<>""), 3, FALSE, 4, TRUE), ' +
+    'HSTACK(SEQUENCE(ROWS(s)), s, MAP(INDEX(s,,3), INDEX(s,,4), ' +
+    'LAMBDA(t, v, IF(N(v)>0, ROUND(N(t)/v*1000, 1), ""))))), "")');
+
+  [110, 240, 80, 110, 220, 24, 50, 240, 110, 110, 80, 160].forEach(function (w, i) {
+    sheet.setColumnWidth(i + 1, w);
+  });
+}
+
+/**
+ * Instagram: every post and reel, ranked by bio link taps, pulled straight
+ * from Instagram (Melvin, 2026-10-15: "all of our reels act as posts, try
+ * pulling from them").
+ *
+ * Meta documents the bio link number (profile_activity broken down by
+ * action_type, the bio_link_clicked row) for posts and stories, not reels.
+ * Instagram itself decides which kind each item is (media_product_type), so
+ * this asks for every item and shows what came back: a number, or
+ * Instagram's own reason in the last column. The first refresh after IG_TOKEN
+ * goes in answers whether 808's reels are covered.
+ *
+ * IG_TOKEN is an Instagram User access token with instagram_business_basic
+ * and instagram_business_manage_insights (SETUP step 6). Read only. It lasts
+ * 60 days, so the script renews it once a week and saves the new one over
+ * the old. With no token this tab is skipped and nothing fails.
+ */
+var IG_HOST = 'https://graph.instagram.com/v23.0';
+var IG_MEDIA_LIMIT = 50;
+
+function writeInstagram() {
+  var token = igToken();
+  if (!token) return;
+  var res = UrlFetchApp.fetch(igUrl('/me/media', {
+    fields: 'id,caption,media_type,media_product_type,timestamp,permalink',
+    limit: IG_MEDIA_LIMIT
+  }, token), { muteHttpExceptions: true });
+  var body = igJSON(res);
+  if (res.getResponseCode() >= 300) {
+    throw new Error('Instagram ' + res.getResponseCode() + ': ' + igReason(body));
+  }
+  var media = body.data || [];
+
+  // Two questions per item, asked separately: Instagram refuses a whole
+  // request if any metric in it does not take the breakdown.
+  var requests = [];
+  media.forEach(function (m) {
+    requests.push({ url: igUrl('/' + m.id + '/insights',
+      { metric: 'profile_activity', breakdown: 'action_type' }, token), muteHttpExceptions: true });
+    requests.push({ url: igUrl('/' + m.id + '/insights',
+      { metric: 'views' }, token), muteHttpExceptions: true });
+  });
+  var answers = [];
+  for (var i = 0; i < requests.length; i += 20) {
+    answers = answers.concat(UrlFetchApp.fetchAll(requests.slice(i, i + 20)));
+  }
+
+  var items = media.map(function (m, i) {
+    var taps = igBioTaps(answers[2 * i]);
+    return { m: m, taps: taps.value, why: taps.why, views: igViews(answers[2 * i + 1]) };
+  });
+  // Most taps first; equal taps put the item with fewer views first (the
+  // same clicks from fewer people). Items with no number sink, newest first.
+  items.sort(function (a, b) {
+    if ((a.taps === null) !== (b.taps === null)) return a.taps === null ? 1 : -1;
+    if (a.taps !== null && b.taps !== a.taps) return b.taps - a.taps;
+    if (a.taps !== null) return (a.views || 0) - (b.views || 0);
+    return igTime(b.m) - igTime(a.m);
+  });
+
+  var rows = [['Rank', 'Posted', 'What it is', 'Kind', 'Views', 'Bio link taps',
+    'Taps per 1,000 views', "Instagram's answer", 'Link']];
+  var rank = 0;
+  items.forEach(function (it) {
+    var m = it.m;
+    rows.push([
+      it.taps === null ? '' : ++rank,
+      Utilities.formatDate(new Date(igTime(m)), TZ, 'MMM d, yyyy'),
+      igCaption(m.caption),
+      igKind(m),
+      it.views === null ? '' : it.views,
+      it.taps === null ? '' : it.taps,
+      it.taps !== null && it.views ? Math.round(it.taps / it.views * 10000) / 10 : '',
+      it.why,
+      m.permalink || ''
+    ]);
+  });
+  if (!items.length) rows.push(['', '', 'Instagram returned no posts for this account.']);
+  rows.push([]);
+  rows.push(['', 'The last ' + IG_MEDIA_LIMIT + " posts and reels, from Instagram's own insights. " +
+    'Bio link taps are taps on the bio link by people who came from that item. ' +
+    'Instagram can be up to 48 hours behind.']);
+  write('Instagram', rows, [50, 110, 260, 110, 80, 110, 150, 320, 260]);
+}
+
+/** The token, renewed once a week (Instagram refuses to renew one under a day old). */
+function igToken() {
+  var props = PropertiesService.getScriptProperties();
+  var token = props.getProperty('IG_TOKEN');
+  if (!token) return null;
+  var renewed = Number(props.getProperty('IG_TOKEN_RENEWED') || 0);
+  if (!renewed) {
+    // A token pasted in today is fresh. Start the weekly clock from here.
+    props.setProperty('IG_TOKEN_RENEWED', String(Date.now()));
+  } else if (Date.now() - renewed > 7 * 86400000) {
+    var res = UrlFetchApp.fetch('https://graph.instagram.com/refresh_access_token' +
+      '?grant_type=ig_refresh_token&access_token=' + encodeURIComponent(token),
+      { muteHttpExceptions: true });
+    var fresh = res.getResponseCode() < 300 ? igJSON(res).access_token : null;
+    if (fresh) {
+      props.setProperty('IG_TOKEN', fresh);
+      props.setProperty('IG_TOKEN_RENEWED', String(Date.now()));
+      token = fresh;
+    }
+    // A failed renewal keeps the old token, which still has weeks left; the
+    // next refresh tries again.
+  }
+  return token;
+}
+
+function igUrl(path, params, token) {
+  var q = Object.keys(params).map(function (k) {
+    return k + '=' + encodeURIComponent(params[k]);
+  });
+  q.push('access_token=' + encodeURIComponent(token));
+  return IG_HOST + path + '?' + q.join('&');
+}
+
+function igJSON(res) {
+  try { return JSON.parse(res.getContentText()); } catch (e) { return {}; }
+}
+
+function igReason(body) {
+  if (body && body.error) {
+    return String(body.error.message || 'Instagram refused').replace(/^\(#\d+\)\s*/, '').slice(0, 160);
+  }
+  return 'No answer from Instagram';
+}
+
+/** {value, why}: the bio_link_clicked count, or null and Instagram's reason. */
+function igBioTaps(res) {
+  var body = igJSON(res);
+  if (res.getResponseCode() >= 300) return { value: null, why: igReason(body) };
+  var metric = (body.data || []).filter(function (d) { return d.name === 'profile_activity'; })[0];
+  // An empty answer means Instagram has no number for it (yet), not zero.
+  if (!metric) return { value: null, why: 'Instagram has no number for this yet' };
+  var total = metric.total_value || {};
+  var results = ((total.breakdowns || [])[0] || {}).results || [];
+  var row = results.filter(function (r) {
+    return String((r.dimension_values || [])[0] || '').toLowerCase() === 'bio_link_clicked';
+  })[0];
+  return { value: row ? Number(row.value) || 0 : 0, why: '' };
+}
+
+function igViews(res) {
+  if (res.getResponseCode() >= 300) return null;
+  var metric = (igJSON(res).data || []).filter(function (d) { return d.name === 'views'; })[0];
+  if (!metric) return null;
+  if (metric.total_value) return Number(metric.total_value.value) || 0;
+  var v = (metric.values || [])[0];
+  return v ? Number(v.value) || 0 : null;
+}
+
+/** Instagram writes "+0000"; Date wants "+00:00". */
+function igTime(m) {
+  return new Date(String(m.timestamp || '').replace(/([+-]\d\d)(\d\d)$/, '$1:$2')).getTime() || 0;
+}
+
+/** Shows how Instagram files each item, since that decides whether it answers. */
+function igKind(m) {
+  if (m.media_product_type === 'REELS') return 'Reel';
+  if (m.media_product_type === 'STORY') return 'Story';
+  var kinds = { VIDEO: 'Post (video)', IMAGE: 'Post (photo)', CAROUSEL_ALBUM: 'Post (carousel)' };
+  return kinds[m.media_type] || ('Post (' + String(m.media_type || '?').toLowerCase() + ')');
+}
+
+/** The caption's first line, short, and never read by Sheets as a formula. */
+function igCaption(caption) {
+  var line = String(caption || '').split('\n')[0].trim();
+  if (line.length > 60) line = line.slice(0, 59) + '…';
+  return /^[=+\-@]/.test(line) ? ' ' + line : (line || '(no caption)');
 }
 
 // ---------------------------------------------------------------------------
@@ -571,7 +829,11 @@ function writeScreens() {
   // the paywall onto the next screen (2026-10-07: a Dublin install turned
   // down every offer and left, and the tab blamed the notifications screen).
   var BRANCH = {
-    health: 'only with an Apple Watch paired'
+    health: 'only with an Apple Watch paired',
+    // The free trial said before the paywall (2026-11-11), only to someone
+    // the App Store will give the free days to.
+    tryFree: 'only to people who can still get the free trial',
+    trialReminder: 'only to people who can still get the free trial'
   };
   // Screens a payer skips. A loss is computed, but never a negative one.
   var PAYERS_SKIP = { paywall: 'Anyone who already pays skips this screen' };
@@ -942,6 +1204,155 @@ function writeAppleWatch() {
   rows.push(['']);
   rows.push(['Note', 'Columns 2 to 5 count people, the rest count sessions. 1.0 asked "Do you have an Apple Watch?"; 1.1 detects a paired Watch instead, so the old Watch gate tab is gone.']);
   write('Apple Watch', rows, [130, 110, 170, 150, 160, 160, 170, 160]);
+}
+
+/**
+ * The events behind the Friends tab, each with the properties it is broken
+ * down by. Every one is a name or a choice (a source, an answer, a preset,
+ * 1 to 7 days); none carries who, a name, a code or a day.
+ */
+var FRIEND_EVENTS = {
+  friends_opened: ['source', 'news'],
+  username_claimed: [], profile_created: [], friend_request_sent: [], friend_accepted: [],
+  goal_start_opened: ['source'], goal_invited: ['target'], goal_invite_answered: ['answer'],
+  goal_opened: ['state'], nudge_sent: ['kind'], goal_meditate_tapped: [], goal_ended: ['kind'],
+  reward_viewed: ['goals'],
+  picture_chosen: ['source', 'placement', 'preset'], picture_prompt_shown: [],
+  picture_prompt_answered: ['answer'],
+  invite_opened: ['source'], invite_shared: [], invite_code_sent: [],
+  invite_code_looked_up: ['outcome', 'source'], invite_code_redeemed: []
+};
+
+/** The 21 picture presets (`AvatarPreset.all`), id → what it shows. */
+var PRESET_NAMES = {
+  'otto': 'Otto', 'mountains': 'Mountains at sunrise', 'moon-lake': 'Moon over a lake',
+  'starry-tree': 'A tree under the stars', 'wave': 'A wave', 'dunes': 'Dunes at sunset',
+  'misty-pines': 'Pines in the mist', 'waterfall': 'A waterfall', 'lotus': 'A lotus',
+  'bonsai': 'A bonsai', 'dandelion': 'A dandelion', 'raked-sand': 'Raked sand',
+  'cairn': 'Stacked stones', 'singing-bowl': 'A singing bowl', 'candle': 'A candle',
+  'matcha': 'A cup of matcha', 'frog': 'A frog', 'red-panda': 'A red panda',
+  'turtle': 'A turtle', 'owl': 'An owl', 'cat': 'A cat'
+};
+
+/**
+ * Rows of the Friends tab: [label, event, key, note]. Key '*' is every
+ * event of that name; 'source:home' is the ones whose source was home. People
+ * cannot be added up across rows (one person can open Friends both ways), so
+ * every row is counted on its own, from one scan that gives each event a
+ * '*' key plus one key per property.
+ */
+var FRIEND_ROWS = [
+  ['MEDITATING TOGETHER (1.4)'],
+  ['Opened the goal flow', 'goal_start_opened', '*', 'Picked a friend and a weekly goal, or started to'],
+  ['   from "Meditate with a friend"', 'goal_start_opened', 'source:friends_row', 'The first row of the friends list, before any goal exists'],
+  ['   from Add, beside Meditating together', 'goal_start_opened', 'source:together_add', 'Already in a goal, starting another'],
+  ['   from a friend’s page', 'goal_start_opened', 'source:friend_page', ''],
+  ['Sent a goal invite', 'goal_invited', '*', 'The invite went out'],
+  ['   1 day a week each', 'goal_invited', 'target:1', ''],
+  ['   2 days', 'goal_invited', 'target:2', ''],
+  ['   3 days', 'goal_invited', 'target:3', ''],
+  ['   4 days (the default)', 'goal_invited', 'target:4', ''],
+  ['   5 days', 'goal_invited', 'target:5', ''],
+  ['   6 days', 'goal_invited', 'target:6', ''],
+  ['   7 days', 'goal_invited', 'target:7', ''],
+  ['Said yes to a goal invite', 'goal_invite_answered', 'answer:yes', 'The goal starts for both'],
+  ['Said not now to a goal invite', 'goal_invite_answered', 'answer:no', ''],
+  ['Opened a goal’s page', 'goal_opened', '*', ''],
+  ['   a running goal', 'goal_opened', 'state:active', ''],
+  ['   my invite, still waiting', 'goal_opened', 'state:waiting_for_them', ''],
+  ['   an invite to me', 'goal_opened', 'state:invite_to_me', ''],
+  ['Nudged a friend', 'nudge_sent', 'kind:nudge', 'Once a day per friend, only after meditating that day'],
+  ['Sent a high five', 'nudge_sent', 'kind:high_five', 'Once both have hit the week'],
+  ['Tapped "Meditate now" on a goal', 'goal_meditate_tapped', '*', 'Wanted to nudge, had not meditated yet'],
+  ['Sessions that counted for a goal', 'reward_viewed', 'counted:yes', 'Times = sessions. "Counted for Ana" on the reward screen'],
+  ['   for 2 or more friends at once', 'reward_viewed', 'counted:many', ''],
+  ['Ended a running goal', 'goal_ended', 'kind:ended', 'The streak ends for both'],
+  ['Took back a goal invite', 'goal_ended', 'kind:invite_cancelled', ''],
+  [''],
+  ['FRIENDS'],
+  ['Opened Friends', 'friends_opened', '*', 'Every way in'],
+  ['   from the circle on Home', 'friends_opened', 'source:home', '1.4 on'],
+  ['   from a goal or nudge notification', 'friends_opened', 'source:push', '1.4 on'],
+  ['   with the unread badge showing', 'friends_opened', 'news:true', 'A request, a goal invite or answer, a nudge'],
+  ['Claimed a username', 'username_claimed', '*', ''],
+  ['Created a profile', 'profile_created', '*', ''],
+  ['Sent a friend request', 'friend_request_sent', '*', ''],
+  ['Accepted a friend request', 'friend_accepted', '*', ''],
+  [''],
+  ['INVITES (1.4)'],
+  ['Opened the invite sheet', 'invite_opened', '*', ''],
+  ['   from the Invite button on Friends', 'invite_opened', 'source:header', ''],
+  ['   from "No friends yet"', 'invite_opened', 'source:no_friends', ''],
+  ['   from Requests', 'invite_opened', 'source:requests', ''],
+  ['Shared the invite (step 1)', 'invite_shared', '*', 'The link went out'],
+  ['Sent the code as its own text (step 2)', 'invite_code_sent', '*', ''],
+  ['Looked up a code', 'invite_code_looked_up', '*', 'Typed or pasted, in onboarding or Friends search'],
+  ['   in onboarding', 'invite_code_looked_up', 'source:onboarding', ''],
+  ['   in Friends search', 'invite_code_looked_up', 'source:search', ''],
+  ['   found the friend', 'invite_code_looked_up', 'outcome:found', ''],
+  ['   no one has that code', 'invite_code_looked_up', 'outcome:unknown', 'A typo, or a code that never existed'],
+  ['   their own code', 'invite_code_looked_up', 'outcome:yours', ''],
+  ['   offline or no iCloud', 'invite_code_looked_up', 'outcome:offline', ''],
+  ['Joined with a code', 'invite_code_redeemed', '*', 'Friends at once with whoever sent it'],
+  [''],
+  ['PROFILE PICTURES (1.4)'],
+  ['Chose a picture', 'picture_chosen', '*', ''],
+  ['   took a selfie', 'picture_chosen', 'source:camera', ''],
+  ['   from Photos', 'picture_chosen', 'source:library', ''],
+  ['   one of 808’s presets', 'picture_chosen', 'source:preset', 'Which ones: below'],
+  ['   in Create or Edit profile', 'picture_chosen', 'placement:profile', ''],
+  ['   from the ask on Friends', 'picture_chosen', 'placement:prompt', ''],
+  ['Shown "Pick a picture" on Friends', 'picture_prompt_shown', '*', 'Asked once of a profile with no picture'],
+  ['   picked one', 'picture_prompt_answered', 'answer:picked', ''],
+  ['   remind me tomorrow', 'picture_prompt_answered', 'answer:tomorrow', ''],
+  ['   not now (never asked again)', 'picture_prompt_answered', 'answer:never', ''],
+  ['   swiped it away (asked again tomorrow)', 'picture_prompt_answered', 'answer:dismissed', '']
+];
+
+function writeFriends() {
+  var names = Object.keys(FRIEND_EVENTS);
+  var branches = names.map(function (ev) {
+    var keys = FRIEND_EVENTS[ev].map(function (p) {
+      return "concat('" + p + ":', ifNull(toString(properties." + p + "), ''))";
+    });
+    // A session counts for a goal when its reward screen said so.
+    if (ev === 'reward_viewed') {
+      keys.push("if(ifNull(toString(properties.goals), '0') IN ('1', '2', '3plus'), 'counted:yes', 'counted:no')");
+      keys.push("if(ifNull(toString(properties.goals), '0') IN ('2', '3plus'), 'counted:many', 'counted:one')");
+    }
+    return "event = '" + ev + "', " + (keys.length ? '[' + keys.join(', ') + ']' : "['-']");
+  });
+  var sql =
+    "SELECT event, arrayJoin(arrayConcat(['*'], multiIf(" + branches.join(', ') +
+    ", ['-']))) AS detail, " +
+    "uniqExactIf(person_id, timestamp > now() - INTERVAL 30 DAY) AS people30, " +
+    "countIf(timestamp > now() - INTERVAL 30 DAY) AS times30, " +
+    "uniqExact(person_id) AS people_all, count() AS times_all " +
+    "FROM events WHERE event IN ('" + names.join("', '") + "') " +
+    "AND timestamp > now() - INTERVAL 3650 DAY AND " + notInternal() + " " +
+    "GROUP BY event, detail LIMIT 1000";
+  var res = query(sql);
+  var got = {};
+  res.results.forEach(function (r) { got[r[0] + '|' + r[1]] = r; });
+
+  var rows = [['What', 'People (30 days)', 'Times (30 days)', 'People (all time)',
+               'Times (all time)', 'What it means']];
+  FRIEND_ROWS.forEach(function (spec) {
+    if (spec.length === 1) { rows.push([spec[0]]); return; }
+    var r = got[spec[1] + '|' + spec[2]];
+    rows.push([spec[0], r ? r[2] : 0, r ? r[3] : 0, r ? r[4] : 0, r ? r[5] : 0, spec[3]]);
+  });
+  // The presets people picked, most picked first. Only presets anyone chose.
+  var presets = res.results.filter(function (r) {
+    return r[0] === 'picture_chosen' && r[1].indexOf('preset:') === 0 && r[1] !== 'preset:';
+  }).sort(function (a, b) { return b[5] - a[5]; });
+  presets.forEach(function (r) {
+    var id = r[1].slice('preset:'.length);
+    rows.push(['   preset: ' + (PRESET_NAMES[id] || id), r[2], r[3], r[4], r[5], '']);
+  });
+  rows.push(['']);
+  rows.push(['Note', 'People are counted on each row by itself, so the indented rows need not add up to the row above (one person can open Friends both ways). Everything marked 1.4 starts with 1.4 and reads zero before it. Opening Friends before 1.4 carried no source, so it counts on "Opened Friends" only.']);
+  write('Friends', rows, [300, 120, 120, 130, 130, 420]);
 }
 
 /** iPhone model codes → names, for the Installs tab. Unknown codes print as-is. */

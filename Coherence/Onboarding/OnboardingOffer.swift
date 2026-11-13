@@ -345,6 +345,14 @@ struct PaywallScreen: View {
     /// free, so an update meets them here, and the first thing to say is that
     /// nothing they did is gone (Melvin, 2026-09-29).
     var memberNotice: Bool = false
+    /// The free-trial plan onboarding leads with (Aziz, 2026-11-11), or nil.
+    /// When set, the paywall opens on the trial plans, Yearly and Monthly
+    /// only, with the timeline above them, and "No, I don't want to pay"
+    /// skips the trial rung, since the trial is already on the screen.
+    var leadPlan: SubscriptionPlan? = nil
+    /// The lead plan is preselected once, on the first appearance, so a
+    /// choice made since (half price, from the ladder) is never undone.
+    @State private var leadApplied = false
     /// Under the onboarding's one progress bar, the words start below it.
     @Environment(\.onboardingFlowBar) private var underFlowBar
     @State private var trackedView = false
@@ -574,6 +582,9 @@ struct PaywallScreen: View {
     /// its product would give free days to.
     private func available(_ rung: DownsellRung) -> Bool {
         guard selling, DownsellRung.ladder.contains(rung) else { return false }
+        // The free trial is already on the paywall (onboarding's lead):
+        // offering it again as a concession would be offering nothing.
+        if rung == .trial && leadPlan != nil { return false }
         let exists = store.product(for: rung.plan) != nil || Self.demoSelling
         // "Try it free first" over a charge is the lie.
         return exists && (rung != .trial || store.freeTrialDays(for: .monthTrial) != nil)
@@ -676,7 +687,12 @@ struct PaywallScreen: View {
     /// selling WITHOUT it, it hides rather than show a dollar fallback
     /// beside live prices and a button that could not buy it.
     private var cardsShown: [SubscriptionPlan] {
-        SubscriptionPlan.cards(selecting: plan)
+        // Onboarding's free-trial lead: Yearly first, Monthly beside it, and
+        // no Lifetime, which has no trial and would sit oddly among them.
+        if leadPlan != nil, plan == .yearTrial || plan == .monthTrial {
+            return [SubscriptionPlan.yearTrial, .monthTrial].filter { $0 != .yearTrial || yearTrialOnSale }
+        }
+        return SubscriptionPlan.cards(selecting: plan)
             .map { $0 == .yearTrial && !yearTrialOnSale ? .yearly : $0 }
             .filter { $0 != .lifetime || lifetimeOnSale }
     }
@@ -826,6 +842,12 @@ struct PaywallScreen: View {
             // Lifetime is offered again (2026-09-29), but only while its
             // product is on sale; a plan that lands on a card not shown
             // falls back to monthly.
+            // Onboarding's free-trial lead opens on the trial plan, once, and
+            // never over a plan chosen since (half price, from the ladder).
+            if let leadPlan, !leadApplied {
+                leadApplied = true
+                if [.monthly, .yearly, .lifetime].contains(plan) { plan = leadPlan }
+            }
             if plan == .lifetime && !lifetimeOnSale { plan = .monthly }
             if plan == .yearTrial && !yearTrialOnSale { plan = .monthTrial }
             // A transient fetch failure should not be a permanent state:
@@ -941,9 +963,21 @@ struct PaywallScreen: View {
     /// The plans, the button and everything Apple requires beside them
     /// (price, renewal, Restore, Privacy Policy, Terms of Use: 3.1.1, 3.1.2).
     private func panel(compact: Bool, bottomInset: CGFloat) -> some View {
-        VStack(spacing: compact ? 9 : 12) {
+        // The timeline adds three rows, so the panel around it packs a little
+        // tighter (the spacing and the cards' padding, never the type), or
+        // Otto was dropped for the scroll on an iPhone 17 Pro.
+        let timeline = selling ? trialLength : nil
+        let tight = compact || timeline != nil
+        return VStack(spacing: tight ? 9 : 12) {
+            // When this plan starts with free days: today, Otto's reminder,
+            // the day it ends (the mockup's C1, 2026-11-11), before the
+            // plans ask which.
+            if let days = timeline {
+                TrialTimeline(days: days, compact: compact)
+                    .padding(.bottom, 2)
+            }
             ForEach(cardsShown) { p in
-                planCard(p, compact: compact)
+                planCard(p, compact: tight)
             }
 
             OnboardingCTA(title: selling ? Self.buyButtonTitle(for: plan, trialDays: trialLength) : notSellingButton,

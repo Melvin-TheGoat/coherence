@@ -8279,3 +8279,53 @@ Designed in the "808 Invite Codes" canvas (9 screens), then built. Replaces
   two-phone check (`CLOUDKIT_SETUP.md`, "Invite codes";
   RELEASE_CHECKLIST.md). `PREVIEW_GOAL_SCREEN=invitecode|entercode|
   invitedfriends` (DEBUG) opens each screen.
+
+## ONBOARDING LEADS WITH THE FREE TRIAL, 7 DAYS (2026-11-11, Aziz)
+
+After Sweatmates, which says "free" three times before its paywall. Picked
+from `mockups/free-trial-v2.html` (A3, B2, C1) with his changes, drawn as
+`mockups/free-trial-v3.html` before any Swift. **Reverses Melvin's
+2026-09-29 "the trial only after a no" for onboarding only**; the launch lock,
+Block's paywall and the others are unchanged. One switch:
+`Monetization.trialLeadIn`.
+
+- **Two screens after "Let's go!"** (`OnboardingTrialIntro.swift`, `Step`
+  cases `tryFree` and `trialReminder`, last in the enum, analytics "31a" and
+  "31b"): "We want you to try 808 Meditate for free" ("free" green, through
+  `IntroScreen`'s new `titleAccent`), a till receipt reading "808 Meditate
+  FREE / Due today $0.00", Otto saying "My treat.", "✓ No payment due now" on
+  a cream pill (white type alone was lost in the white flowers), "Try it for
+  $0.00"; then "I'll remind you the day before it ends" with the very
+  notification Otto will send, at its real day and time, "Promise.", the same
+  pill, "Continue for FREE", which asks for notification permission and moves
+  on whatever the answer. `$0.00` is the trial product's own currency
+  (`Store.zeroPrice`).
+- **Only for someone the App Store will give the free days to**
+  (`OnboardingView.trialLead`: the yearly trial plan if on sale, else the
+  monthly, and its eligibility). Anyone else goes from ascend straight to the
+  paywall as before, with Lifetime and no trial. Release also needs the plans
+  loaded. Never promise a trial the purchase sheet would not give.
+- **The onboarding paywall opens on the trial plans** (`leadPlan`): Yearly
+  first, Monthly beside it, NO Lifetime (it has no trial), and the timeline
+  above them (`TrialTimeline`: today, Otto's reminder, the day it ends;
+  shown on any paywall whenever the chosen plan starts with free days). The
+  title stays "Keep Otto glowing." and the trial stays in the subtitle (3.1.2).
+  "No, I don't want to pay" skips the trial rung (already on screen) and goes
+  to half price, whose title then opens "No worries."
+- **The reminder is real** (`TrialEndNotice`, `Shared/Engine/TrialReminder`):
+  scheduled from StoreKit, not from the paywall. `Store.refreshEntitlement`
+  finds a current entitlement whose transaction is a free-trial
+  introductory offer and hands its expiration date over, so it follows a
+  purchase made elsewhere and disappears once the trial converts. **It fires
+  at 10 AM on the day before the trial's last day, and a day earlier whenever
+  that is under 26 hours before the end**, because Apple only stops a renewal
+  cancelled 24 hours ahead: a reminder 20 hours out is true and useless.
+  Never at night, never late. Words: "Your free trial ends tomorrow. Want to
+  keep meditating together?" ("on Wednesday" when it had to come a day early).
+  `TrialReminderTests` pins all of it.
+- **The 7 days live in App Store Connect**: the free trial on
+  `monthlytrial` and `yearlytrial` becomes 1 week. Until it does, every line
+  says 3. `monthly50` stays 3 days. `808.storekit` already says 1 week.
+- A sandbox trial is minutes long, so its reminder is already past and is
+  never scheduled; check the reminder with `808.storekit` at real-time
+  renewal (RELEASE_CHECKLIST.md).

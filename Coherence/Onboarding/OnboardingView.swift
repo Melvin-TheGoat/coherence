@@ -172,6 +172,12 @@ struct OnboardingView: View {
         /// Added 2026-10-18: "You and Aziz are friends", after the profile,
         /// for someone who joined with an invite code. Last, for the reason above.
         case invitedFriends
+        /// Added 2026-11-11: the free trial said twice before the paywall
+        /// (`OnboardingTrialIntro.swift`), "We want you to try 808 Meditate
+        /// for free" and "I'll remind you the day before it ends", for
+        /// someone the App Store will give the free days to. Last, for the
+        /// reason above.
+        case tryFree, trialReminder
 
         /// Progress rail: only the interview shows one. Once we're reflecting
         /// back and selling, a progress bar just tells them how much sales
@@ -314,8 +320,9 @@ struct OnboardingView: View {
         }
         let rest: [Step] = [.buildingPlan, .mindProfile, .lifeNumber, .goodNews, .lifeMoments,
                             .neuroBrain, .neuroPick, .neuroPlan, .whyItWorks, .socialProof,
-                            .ascend, .paywall]
-        return opening + questions + rest
+                            .ascend]
+        let offer: [Step] = trialLead != nil ? [.tryFree, .trialReminder, .paywall] : [.paywall]
+        return opening + questions + rest + offer
     }
 
     /// Where the bar stands on this step, or nil where it does not show.
@@ -330,6 +337,25 @@ struct OnboardingView: View {
         // The paywall does not draw over the bar: it is full there, and the
         // offer is a different place from the questions.
         return OnboardingFlowBar.fraction(position: i + 1, of: steps.count)
+    }
+
+    /// The free trial onboarding leads with (`Monetization.trialLeadIn`,
+    /// Aziz, 2026-11-11): the yearly trial plan where it is on sale, else the
+    /// monthly, and its length. Nil when this person would not get the free
+    /// days (they used their trial, or the plans have not loaded in a Release
+    /// build), and then the flow goes straight from the ascend screen to the
+    /// paywall as before, so no screen promises a trial the purchase sheet
+    /// would not give.
+    private var trialLead: (plan: SubscriptionPlan, days: Int)? {
+        guard Monetization.trialLeadIn, Self.paywallInsideOnboarding else { return nil }
+        #if !DEBUG
+        guard store.state == .ready else { return nil }
+        #endif
+        for p in [SubscriptionPlan.yearTrial, .monthTrial]
+        where store.state != .ready || store.product(for: p) != nil {
+            if let days = store.freeTrialDays(for: p) { return (p, days) }
+        }
+        return nil
     }
 
     /// The one bar, in exactly the same place, length and colour on every
@@ -536,7 +562,8 @@ struct OnboardingView: View {
                                     : (step == .meetOtto || step == .ottoGrows || step == .questionCount
                                        || step == .didYouKnow || step == .baseline
                                        || step == .buildingPlan || step == .mindProfile
-                                       || step == .blockApps) ? .steady : nil,
+                                       || step == .blockApps
+                                       || step == .tryFree || step == .trialReminder) ? .steady : nil,
                              look: step == .seeForYourself ? OttoAura.look(level: Int(glowDemo.rounded()))
                                    : step == .clutter ? OttoAura.look(level: Int(clutterLevel.rounded())) : nil,
                              jiggle: ottoPokes,
@@ -806,7 +833,24 @@ struct OnboardingView: View {
             // Brainrot's order). The old questions after it are being redone
             // and are skipped; the reminder and Block's setup follow the
             // paywall instead of preceding it.
-            AscendScreen { go(.paywall) }
+            AscendScreen { go(trialLead != nil ? .tryFree : .paywall) }
+
+        // The free trial said twice before the price (Aziz, 2026-11-11). A
+        // resume record on one for somebody who no longer gets the free days
+        // goes on to the paywall.
+        case .tryFree:
+            if let lead = trialLead {
+                TryFreeScreen(zero: store.zeroPrice(for: lead.plan) ?? "$0.00") { go(.trialReminder) }
+            } else {
+                Color.clear.onAppear { go(.paywall) }
+            }
+
+        case .trialReminder:
+            if let lead = trialLead {
+                TrialReminderScreen(days: lead.days) { go(.paywall) }
+            } else {
+                Color.clear.onAppear { go(.paywall) }
+            }
 
         case .wandering:
             WanderingScreen(share: $answers.mindWandering, count: interviewCount) {
@@ -1045,7 +1089,7 @@ struct OnboardingView: View {
                 // on to sign-in; so does a store that could not load its
                 // plans, since nobody is locked out by a failure. Declining
                 // every offer comes back here: there is no free tier.
-                PaywallScreen(placement: "onboarding", plan: $plan) { _ in go(.permission) }
+                PaywallScreen(placement: "onboarding", leadPlan: trialLead?.plan, plan: $plan) { _ in go(.permission) }
                     // Its own paper, not the shared valley: its small print,
                     // legal links and "Not right now" are grey type that
                     // vanished into the ridge (2026-09-23).

@@ -28,6 +28,16 @@ put a 3-day free trial on Monthly and Yearly and cut the ladder to one rung.
 That misread Melvin's "same as before, 3 day offer" and held for a few hours;
 every trial line below is corrected.
 
+**2026-11-11 (Aziz): onboarding now LEADS with the free trial, 7 days.**
+Two screens after "Let's go!" ("We want you to try 808 Meditate for free",
+"I'll remind you the day before it ends"), then a paywall selling
+`yearlytrial` and `monthlytrial` with a timeline; "No, I don't want to pay"
+goes straight to half price. The subscription block and the review notes
+below are updated for it. Needs App Store Connect to match: the free trial on
+`monthlytrial` and `yearlytrial` becomes **1 week** (`monthly50` stays 3
+days); `monthly` and `yearly` still carry none (`RELEASE_CHECKLIST.md`, "OPEN
+for the build that leads onboarding with the free trial").
+
 **This file is the ONE source for the description, promotional text, What's
 New and the review notes.** `APP_STORE.md` points here rather than carrying
 copies, because copies drift and the drifted one is the one that gets pasted.
@@ -170,7 +180,7 @@ SUBSCRIPTION INFORMATION
 808 Membership Monthly: $7.99 per month.
 808 Membership Yearly: $29.99 per year.
 808 Membership Lifetime: $99.99, a single payment that never renews.
-If you decline the plans above, the app may offer Monthly or Yearly with a 3 day free trial, then $7.99 per month or $29.99 per year, and after that Monthly, half price: a 3 day free trial, then $3.99 per month.
+New members are offered Monthly or Yearly with a 7 day free trial, then $7.99 per month or $29.99 per year. If they decline, the app may offer Monthly, half price: a 3 day free trial, then $3.99 per month.
 A free trial is available once per Apple Account across 808's subscriptions. Payment is charged to your Apple Account when you confirm the purchase, or when a free trial ends. Subscriptions renew automatically unless cancelled at least 24 hours before the end of the current period or free trial, and your account is charged for the renewal within the 24 hours before the period ends. Manage or cancel any time in your App Store account settings. Any unused part of a free trial ends when you buy a subscription.
 Restore, on the paywall or in Settings, brings a purchase back on a new device.
 
@@ -322,9 +332,9 @@ Count again after any edit.
 
 SUBSCRIPTION
 Nothing past the paywall opens without buying or restoring. The in-app purchases are attached to this version; use a sandbox account with no active 808 subscription.
-To reach the paywall, go through onboarding. On "Ready to take control?", press and hold the round button for about three seconds until Otto rises and "Let's go!" appears, then tap Continue. The paywall is next.
-It sells Monthly ($7.99), Yearly ($29.99) and Lifetime ($99.99, one payment), with no free trial, plus Restore, Privacy Policy and Terms of Use. "No, I don't want to pay" then offers, one at a time: a 3 day free trial on Monthly or Yearly (then $7.99 a month or $29.99 a year), then Monthly, half price ($3.99 a month after a 3 day free trial). Choosing either returns to the paywall with those plans, where the purchase happens.
-An account that already had a free trial skips the trial offer.
+To reach the paywall, go through onboarding. On "Ready to take control?", press and hold the round button for about three seconds until Otto rises and "Let's go!" appears, then tap Continue. Two screens follow; "Continue for FREE" asks for notifications (either answer continues). Then the paywall.
+It sells Monthly or Yearly with a 7 day free trial (then $7.99 a month or $29.99 a year), plus Restore, Privacy Policy and Terms of Use. "No, I don't want to pay" offers Monthly, half price ($3.99 a month after a 3 day free trial); choosing it returns to the paywall, where the purchase happens.
+An account that already had a free trial skips them and sees Monthly, Yearly and Lifetime ($99.99, once), no trial.
 "Plans aren't loading" means the sandbox returned no products.
 People updating from 1.0 without a subscription meet the paywall at launch, with an Account link (Manage subscription, Redeem a code, Restore, Sign out, Delete account). Subscribers and Lifetime owners keep full access.
 

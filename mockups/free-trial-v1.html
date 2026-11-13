@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Free trial lead-in</title>
+<style>
+  @font-face { font-family: Nunito; src: url(../website/fonts/nunito-var.woff2) format("woff2"); font-weight: 200 1000; }
+  :root {
+    --ink: #2B2117; --ink-soft: #6B5A4A; --sand: #EFE9DC; --cream: #FDF8F1;
+    --green: #5AB950; --green-shade: #418E3A; --sky-top: #8EC3EA; --sky-low: #DDEFF8;
+    --meadow: #7DB466; --meadow-deep: #5E9A4F; --page: #E9E4DA;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--page); font-family: Nunito, ui-rounded, system-ui, sans-serif; color: var(--ink); padding: 40px 32px 60px; }
+  h1.page { font-size: 26px; font-weight: 900; margin-bottom: 4px; }
+  p.lede { color: var(--ink-soft); font-size: 15px; margin-bottom: 28px; max-width: 980px; line-height: 1.45; }
+  .row { display: flex; gap: 28px; align-items: flex-start; flex-wrap: wrap; }
+  .label { font-size: 13px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-soft); margin: 0 0 10px 4px; }
+  .phone { width: 390px; height: 844px; border-radius: 52px; overflow: hidden; position: relative; background: var(--sky-top);
+    box-shadow: 0 0 0 10px #111, 0 30px 60px rgba(0,0,0,.25); display: flex; flex-direction: column; }
+
+  /* The valley, as onboarding draws it: sky, two ridges, the meadow. */
+  .valley { position: absolute; inset: 0; background: linear-gradient(var(--sky-top), var(--sky-low) 62%); }
+  .valley::before, .valley::after { content: ""; position: absolute; left: -20%; right: -20%; border-radius: 50%; }
+  .valley::before { bottom: 21%; height: 26%; background: #A9C9D6; }
+  .valley::after { bottom: -28%; height: 52%; background: radial-gradient(ellipse at 50% 0%, var(--meadow) 0 55%, var(--meadow-deep) 100%); }
+  .flowers { position: absolute; left: 0; right: 0; bottom: 0; height: 24%;
+    background-image: radial-gradient(#fff 2.2px, transparent 3px), radial-gradient(#ffd677 2.2px, transparent 3px), radial-gradient(#f6a8b4 2px, transparent 3px);
+    background-size: 46px 38px, 58px 44px, 70px 52px; background-position: 6px 10px, 24px 26px, 40px 4px; opacity: .85; }
+  .content { position: relative; z-index: 2; flex: 1; display: flex; flex-direction: column; padding: 58px 26px 34px; }
+  .status { position: absolute; top: 14px; left: 34px; right: 30px; display: flex; justify-content: space-between; font: 700 15px system-ui; z-index: 3; }
+  .back { position: absolute; top: 56px; left: 22px; z-index: 3; font: 400 30px system-ui; color: var(--ink); opacity: .65; }
+  .progress { position: absolute; top: 72px; left: 78px; right: 26px; height: 12px; border-radius: 6px; background: rgba(255,255,255,.65); z-index: 3; }
+  .progress i { display: block; height: 100%; border-radius: 6px; background: var(--green); }
+
+  h2 { font-size: 33px; line-height: 1.12; font-weight: 1000; text-align: center; letter-spacing: -.02em; margin-top: 56px; }
+  h2 .free { color: var(--green-shade); }
+  .sub { text-align: center; font-size: 17px; color: var(--ink-soft); font-weight: 700; margin-top: 12px; line-height: 1.35; }
+  .spacer { flex: 1; }
+  .nopay { text-align: center; font-weight: 800; font-size: 17px; margin-bottom: 12px; }
+  .nopay::before { content: "✓"; color: var(--green-shade); font-weight: 1000; margin-right: 8px; }
+  .cta { display: block; width: 100%; border: 0; border-radius: 20px; padding: 19px 0; font: 1000 21px Nunito, sans-serif; color: #fff;
+    background: var(--green); box-shadow: 0 5px 0 var(--green-shade); }
+  .fine { text-align: center; font-size: 13px; color: var(--ink); opacity: .8; margin-top: 12px; line-height: 1.4; font-weight: 700; }
+  .links { display: flex; justify-content: center; gap: 16px; font-size: 12px; font-weight: 800; color: var(--ink-soft); margin-top: 8px; }
+
+  /* Screen A: Otto, a week apart. */
+  .pair { display: flex; gap: 10px; margin: 34px auto 0; background: rgba(255,255,255,.85); border-radius: 28px; padding: 14px; width: 100%; }
+  .pair figure { flex: 1; background: linear-gradient(#cfe6f5, #eef6fb); border-radius: 18px; position: relative; height: 250px; display: flex; align-items: flex-end; justify-content: center; overflow: hidden; }
+  .pair figure.after { background: radial-gradient(circle at 50% 60%, #fff3c4, #f8e1a3 45%, #eef6fb 75%); }
+  .pair img { width: 92%; display: block; margin-bottom: 6px; }
+  .chip { position: absolute; top: 10px; left: 10px; font-size: 13px; font-weight: 1000; padding: 5px 11px; border-radius: 99px; background: #fff; }
+  .after .chip { background: var(--green); color: #fff; }
+  .caption { text-align: center; font-size: 14px; font-weight: 800; color: var(--ink-soft); margin-top: 10px; }
+
+  /* Screen B: the reminder, which doubles as the notification ask. */
+  .bell { width: 230px; height: 230px; border-radius: 50%; background: #fff; margin: 46px auto 0; position: relative; display: grid; place-items: center; box-shadow: 0 12px 40px rgba(43,33,23,.12); }
+  .bell svg { width: 104px; height: 104px; }
+  .badge { position: absolute; top: 12px; right: 4px; width: 64px; height: 64px; border-radius: 50%; background: var(--green); color: #fff; display: grid; place-items: center; font-size: 30px; font-weight: 1000; border: 6px solid #fff; }
+  .otto-peek { position: absolute; bottom: -18px; left: -64px; width: 120px; }
+  .note { margin: 34px auto 0; background: rgba(255,255,255,.88); border-radius: 22px; padding: 14px 16px; display: flex; gap: 12px; align-items: center; width: 100%; box-shadow: 0 8px 24px rgba(43,33,23,.10); }
+  .note img { width: 42px; height: 42px; border-radius: 10px; }
+  .note b { display: block; font-size: 15px; }
+  .note span { font-size: 14px; color: var(--ink-soft); font-weight: 700; }
+
+  /* Screen C: the timeline paywall. */
+  .sheet { position: relative; z-index: 2; margin-top: auto; background: var(--cream); border-radius: 30px 30px 0 0; padding: 20px 22px 26px; box-shadow: 0 -10px 30px rgba(43,33,23,.12); }
+  .timeline { margin: 26px 0 0; position: relative; padding-left: 4px; }
+  .timeline::before { content: ""; position: absolute; left: 25px; top: 24px; bottom: 30px; width: 8px; border-radius: 4px; background: linear-gradient(var(--green), #b9dfb3); }
+  .step { display: flex; gap: 14px; margin-bottom: 16px; position: relative; }
+  .dot { width: 50px; height: 50px; flex: none; border-radius: 50%; background: var(--green); display: grid; place-items: center; font-size: 22px; box-shadow: 0 0 0 4px rgba(255,255,255,.85); }
+  .dot.soft { background: #fff; border: 4px solid var(--green); }
+  .step b { display: block; font-size: 17px; font-weight: 1000; }
+  .step span { font-size: 14px; color: var(--ink-soft); font-weight: 700; line-height: 1.3; }
+  .plans { display: flex; flex-direction: column; gap: 10px; }
+  .plan { border: 2.5px solid #e2d9c8; border-radius: 18px; padding: 12px 14px; display: flex; align-items: center; justify-content: space-between; background: #fff; }
+  .plan.on { border-color: var(--green); box-shadow: 0 0 0 3px rgba(90,185,80,.18); }
+  .plan .name { font-size: 15px; font-weight: 900; }
+  .plan .price { font-size: 24px; font-weight: 1000; letter-spacing: -.01em; }
+  .plan .per { font-size: 13px; color: var(--ink-soft); font-weight: 800; }
+  .plan .trial { font-size: 12px; font-weight: 1000; color: var(--green-shade); background: #e6f5e3; padding: 4px 9px; border-radius: 99px; margin-top: 4px; display: inline-block; }
+  .tag { font-size: 11px; font-weight: 1000; background: var(--ink); color: #fff; padding: 3px 8px; border-radius: 99px; margin-left: 6px; vertical-align: 2px; }
+  .decline { position: absolute; top: 58px; right: 24px; z-index: 3; font-size: 13px; font-weight: 800; color: var(--ink-soft); }
+
+  /* Notes. */
+  .notes { width: 360px; background: #fff; border-radius: 24px; padding: 22px 22px 8px; box-shadow: 0 10px 30px rgba(0,0,0,.08); }
+  .notes h3 { font-size: 18px; font-weight: 1000; margin-bottom: 10px; }
+  .notes li { font-size: 14px; line-height: 1.45; margin: 0 0 12px 18px; }
+  .notes li b { font-weight: 900; }
+  .flag { color: #b5451b; }
+</style>
+</head>
+<body>
+<h1 class="page">Free trial lead-in, after "Let's go!" and before the paywall</h1>
+<p class="lede">Sweatmates' shape in 808's own look: three screens that say free, then a paywall that shows the timeline. It sells the trial products that already exist (3 days free, then $29.99 a year or $7.99 a month), so no price or product changes. The trial length shown is read from App Store Connect, never typed.</p>
+
+<div class="row">
+
+  <!-- A -->
+  <div>
+    <div class="label">A · Try it free</div>
+    <div class="phone">
+      <div class="valley"></div><div class="flowers"></div>
+      <div class="status"><span>9:41</span><span>●●● ◔</span></div>
+      <div class="progress"><i style="width:88%"></i></div>
+      <div class="back">‹</div>
+      <div class="content">
+        <h2>We want you to try<br>808 for <span class="free">free</span></h2>
+        <div class="pair">
+          <figure><span class="chip">Day 1</span><img src="../website/img/otto/ottoaura3.png" alt=""></figure>
+          <figure class="after"><span class="chip">A week in</span><img src="../website/img/otto/ottoaura6.png" alt=""></figure>
+        </div>
+        <div class="caption">Otto glows brighter every day you meditate.</div>
+        <div class="spacer"></div>
+        <div class="nopay">No payment due now</div>
+        <button class="cta">Try it for $0.00</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- B -->
+  <div>
+    <div class="label">B · The reminder (asks for notifications)</div>
+    <div class="phone">
+      <div class="valley"></div><div class="flowers"></div>
+      <div class="status"><span>9:41</span><span>●●● ◔</span></div>
+      <div class="progress"><i style="width:93%"></i></div>
+      <div class="back">‹</div>
+      <div class="content">
+        <h2>We'll remind you before<br>your trial ends</h2>
+        <div class="bell">
+          <svg viewBox="0 0 24 24" fill="#c9ccd3"><path d="M12 2.5a1.6 1.6 0 0 1 1.6 1.6v.6A6.5 6.5 0 0 1 18.5 11v4.2l1.7 2.2c.4.5 0 1.1-.6 1.1H4.4c-.6 0-1-.6-.6-1.1l1.7-2.2V11a6.5 6.5 0 0 1 4.9-6.3v-.6A1.6 1.6 0 0 1 12 2.5Zm-2.4 17.6h4.8a2.4 2.4 0 0 1-4.8 0Z"/></svg>
+          <div class="badge">1</div>
+          <img class="otto-peek" src="../website/img/otto/ottowave.png" alt="">
+        </div>
+        <div class="note">
+          <img src="../Shared/Assets.xcassets/AppIcon.appiconset/AppIcon1024.png" alt="">
+          <div><b>808 Meditate</b><span>Otto: your free trial ends tomorrow. Keep going?</span></div>
+        </div>
+        <div class="spacer"></div>
+        <div class="nopay">No payment due now</div>
+        <button class="cta">Remind me</button>
+        <div class="fine">Then iOS asks to allow notifications.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- C -->
+  <div>
+    <div class="label">C · The paywall, as a timeline</div>
+    <div class="phone">
+      <div class="valley"></div><div class="flowers"></div>
+      <div class="status"><span>9:41</span><span>●●● ◔</span></div>
+      <div class="back">‹</div>
+      <div class="decline">No, I don't want to pay</div>
+      <div class="content" style="padding-bottom:0">
+        <h2 style="font-size:31px;margin-top:52px">Build the habit,<br><span class="free">free</span> for 3 days</h2>
+        <div class="timeline">
+          <div class="step"><div class="dot">🔓</div><div><b>Today</b><span>Otto, Block, every sound and the guided journey open up.</span></div></div>
+          <div class="step"><div class="dot soft">🔔</div><div><b>Nov 13</b><span>A reminder that your trial ends tomorrow.</span></div></div>
+          <div class="step"><div class="dot soft">👑</div><div><b>Nov 14</b><span>Your membership starts. Cancel before then and you pay nothing.</span></div></div>
+        </div>
+      </div>
+      <div class="sheet">
+        <div class="plans">
+          <div class="plan on"><div><div class="name">Yearly <span class="tag">Best value</span></div><span class="trial">3 days free</span></div><div style="text-align:right"><div class="price">$29.99/yr</div><div class="per">$2.50 a month</div></div></div>
+          <div class="plan"><div><div class="name">Monthly</div><span class="trial">3 days free</span></div><div style="text-align:right"><div class="price">$7.99/mo</div></div></div>
+        </div>
+        <button class="cta" style="margin-top:14px">Start 3 days free</button>
+        <div class="fine">3 days free, then $29.99 a year. Renews automatically; cancel anytime in Settings.</div>
+        <div class="links"><span>Restore</span><span>Terms of Use</span><span>Privacy Policy</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notes -->
+  <div class="notes">
+    <h3>What has to be true before this ships</h3>
+    <ol>
+      <li class="flag"><b>It reverses Melvin's call.</b> On 2026-09-29 he made the trial an upsell nobody sees until they decline ("we want them to not know it exists"). This leads with it. Both of you need to agree.</li>
+      <li><b>No price or product change.</b> It sells the existing trial products (<code>yearlytrial</code>, <code>monthlytrial</code>). The ladder's first rung (the trial) becomes redundant, so "No, I don't want to pay" goes straight to half price.</li>
+      <li><b>App Review 3.1.2.</b> The billed amount stays the most prominent price: $29.99/yr is the biggest price on C, "3 days free" is a chip, and the renewal line sits under the button at a readable size. Sweatmates' last screen (giant FREE, price in grey small print) is the pattern that gets rejected.</li>
+      <li><b>The reminder has to be real.</b> 808 sends none today. Build a local notification for the day before the trial ends. Screen B asks for notifications, which moves the existing reminder permission screen earlier. If someone declines, C drops the reminder row rather than promising it.</li>
+      <li><b>Lifetime</b> has no trial, so it leaves this paywall; it stays available from the downsell or Settings.</li>
+      <li><b>Sweatmates' partner screen</b> has an honest 808 version only if you turn on Apple Family Sharing for the subscription in App Store Connect ("one membership covers your family"). Not drawn; that one is a product decision.</li>
+      <li>Otto's Day 1 / A week in pair uses his real glow stages, which is how the app actually works. Dates on C are computed from today.</li>
+    </ol>
+  </div>
+</div>
+</body>
+</html>

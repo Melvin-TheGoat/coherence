@@ -138,6 +138,13 @@ final class Store: ObservableObject {
         return days
     }
 
+    /// Nothing, in the currency `plan` is sold in ("$0.00", "0,00 €"), for
+    /// the screens that say what today costs before the paywall. Nil before
+    /// the plans load.
+    func zeroPrice(for plan: SubscriptionPlan) -> String? {
+        product(for: plan)?.priceFormatStyle.format(0)
+    }
+
     /// Whether any screen may offer the free trial: 808 offers one at all
     /// (`Monetization.freeTrial`), and this person is still eligible (or the
     /// plans have not loaded, when eligibility is unknown).
@@ -388,10 +395,16 @@ final class Store: ObservableObject {
     private func refreshEntitlement() async {
         var active = false
         var owned: [String] = []
+        // The end of a free trial in progress, for Otto's reminder the day
+        // before (`TrialEndNotice`, promised in onboarding, 2026-11-11).
+        var trialEnd: Date?
         for await result in Transaction.currentEntitlements {
             guard case .verified(let transaction) = result else { continue }
             guard ProductID.all.contains(transaction.productID) else { continue }
             if transaction.revocationDate != nil { continue }
+            if let end = TrialEndNotice.trialEnd(of: transaction) {
+                trialEnd = max(trialEnd ?? end, end)
+            }
             // No expiry check here (Melvin, 2026-09-29). `currentEntitlements`
             // already leaves out expired subscriptions, and it deliberately
             // INCLUDES one in its Billing Grace Period, whose expiration date
@@ -403,6 +416,7 @@ final class Store: ObservableObject {
         if entitled && !active { Analytics.track(.entitlementLost) }
         entitled = active
         entitlementKnown = true
+        TrialEndNotice.sync(trialEnd: trialEnd)
         // Whether this install pays, and for which plan, on the anonymous
         // PostHog person (the SDK drops a repeat of the same values).
         Analytics.setPersonProperties(["is_subscriber": active,
