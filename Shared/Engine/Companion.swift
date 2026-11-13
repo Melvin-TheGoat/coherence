@@ -70,6 +70,35 @@ enum Companion: String, CaseIterable, Codable, Identifiable, Comparable {
     var order: Int { Self.allCases.firstIndex(of: self) ?? 0 }
     static func < (a: Companion, b: Companion) -> Bool { a.order < b.order }
 
+    /// The profile-picture preset this form unlocks (Melvin, 2026-11-12):
+    /// `avatar-form-redpanda.jpg` and so on. Otto has none of his own here;
+    /// his picture (`otto`) is free to everyone. Ids carry a `form-` prefix so
+    /// they never collide with the free `red-panda` preset 1.4 offered (removed 2026-11-12).
+    var pictureID: String? { self == .otto ? nil : "form-\(key.lowercased())" }
+
+    /// The form whose picture this preset is, if it is one.
+    static func forPicture(_ presetID: String) -> Companion? {
+        allCases.first { $0.pictureID == presetID }
+    }
+
+    /// A form's picture is locked until its rebirth has played on this phone
+    /// (`CompanionBook.announced`), the same moment it joins Otto's forms.
+    /// Every other preset is never locked.
+    static func pictureLocked(_ presetID: String, announced: [Companion]) -> Bool {
+        guard let form = forPicture(presetID) else { return false }
+        return !announced.contains(form)
+    }
+
+    /// What a locked picture says when tapped:
+    /// "Unlocks when Otto becomes a red panda · 300 points".
+    var pictureUnlockNote: String {
+        let f = NumberFormatter()
+        f.numberStyle = .decimal
+        f.locale = Locale(identifier: "en_US")
+        let points = f.string(from: NSNumber(value: threshold)) ?? "\(threshold)"
+        return "Unlocks when Otto becomes \(withArticle) · \(points) points"
+    }
+
     /// Every form these lifetime points have reached, Otto first.
     static func reached(lifetime: Int) -> [Companion] {
         allCases.filter { $0.threshold <= lifetime }

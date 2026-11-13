@@ -258,7 +258,7 @@ enum DemoCommunity {
                                         displayName: env["DEMO_NAME"] ?? "Aziz")
             // My own picture only in store screenshots: everywhere else test
             // mode leaves it empty, so Friends' picture prompt can be reviewed.
-            if StoreShots.on { await picture(me, "red-panda") }
+            if StoreShots.on { await picture(me, "form-redpanda") }
         }
 
         // STORE_SHOTS=1: no founder's name in a store screenshot.

@@ -210,4 +210,33 @@ final class CompanionTests: XCTestCase {
         XCTAssertEqual(Companion.dragon.stillName(stage: 0), "CompanionDragon1")
         XCTAssertEqual(Companion.redPanda.withArticle, "a red panda")
     }
+
+    /// The four forms' profile pictures are locked until each rebirth has
+    /// played; every other preset never is.
+    func test_formPicturesUnlockWithTheirRebirth() {
+        XCTAssertNil(Companion.otto.pictureID)
+        XCTAssertEqual(Companion.allCases.compactMap(\.pictureID),
+                       ["form-redpanda", "form-tiger", "form-phoenix", "form-dragon"])
+        XCTAssertEqual(Companion.forPicture("form-tiger"), .tiger)
+        XCTAssertNil(Companion.forPicture("otto"))
+        XCTAssertNil(Companion.forPicture("mountains"))
+
+        for id in ["form-redpanda", "form-tiger", "form-phoenix", "form-dragon"] {
+            XCTAssertTrue(Companion.pictureLocked(id, announced: []), id)
+        }
+        XCTAssertFalse(Companion.pictureLocked("otto", announced: []))
+        XCTAssertFalse(Companion.pictureLocked("mountains", announced: []))
+
+        // Points alone do not unlock it: only the rebirth having played.
+        let after = [Companion.redPanda]
+        XCTAssertFalse(Companion.pictureLocked("form-redpanda", announced: after))
+        XCTAssertTrue(Companion.pictureLocked("form-tiger", announced: after))
+        XCTAssertFalse(Companion.pictureLocked("form-dragon", announced: Companion.allCases))
+    }
+
+    func test_lockedPictureNoteNamesTheFormAndItsThreshold() {
+        XCTAssertEqual(Companion.redPanda.pictureUnlockNote, "Unlocks when Otto becomes a red panda · 300 points")
+        XCTAssertEqual(Companion.phoenix.pictureUnlockNote, "Unlocks when Otto becomes a phoenix · 2,200 points")
+        XCTAssertEqual(Companion.dragon.pictureUnlockNote, "Unlocks when Otto becomes a dragon · 5,500 points")
+    }
 }

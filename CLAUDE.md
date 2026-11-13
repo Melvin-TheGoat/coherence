@@ -8760,5 +8760,14 @@ always Otto, reborn into a new form; everyone starts as the sloth.
   from `tools/companion_stills.sh`. Session screens (Ready, the sit) still
   draw the sloth's session rig: there is no pose art for the forms.
 - Analytics: `companion_unlocked` and `companion_chosen`, property `form`.
+- **Each form is a profile picture, locked until its rebirth has played**
+  (Melvin, 2026-11-12): presets `form-redpanda`, `form-tiger`,
+  `form-phoenix`, `form-dragon` right after Otto in `AvatarPreset.all`,
+  dimmed with a lock badge; a tap shows "Unlocks when Otto becomes a red
+  panda · 300 points" (`Companion.pictureLocked`, `pictureUnlockNote`). The
+  old free `red-panda` preset is DELETED (anyone who picked it keeps the
+  uploaded image). The prompt's first four skip locked ones.
+  `PREVIEW_GOAL_SCREEN=chooser` (with `PREVIEW_FRIENDS=1 PREVIEW_TAB=friends`)
+  opens the chooser; `PREVIEW_CHOOSER_NOTE=<form>` shows a lock note.
 - DEBUG: `PREVIEW_COMPANION=<form>` draws a form everywhere without storing;
   `PREVIEW_EVOLVE=<form>` replays a rebirth once on a quiet Home, stored nowhere.
