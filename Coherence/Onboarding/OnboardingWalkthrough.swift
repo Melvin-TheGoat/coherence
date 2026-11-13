@@ -105,7 +105,7 @@ struct TourStop: Equatable {
         }
         var stops = [
             TourStop(tab: .home, targets: [.glow],
-                     line: "I glow brighter every day you meditate. Earn points and I evolve.",
+                     line: "I glow brighter every day you meditate, and I evolve as you earn points.",
                      stand: .top),
             corner,
         ]
