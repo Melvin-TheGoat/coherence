@@ -451,6 +451,9 @@ struct IntroScreen<Figure: View>: View {
     var progressFrom: Double? = nil
     let title: String
     var titleSize: CGFloat = 34
+    /// One word of the title drawn in the onboarding's green ("free", on the
+    /// free-trial screen, 2026-11-11).
+    var titleAccent: String? = nil
     /// What Otto says, typed into his bubble. Nil for a page that is the
     /// title alone.
     let subtitle: String?
@@ -460,6 +463,9 @@ struct IntroScreen<Figure: View>: View {
     var standing: Bool = true
     /// Something between Otto and the button (the "See for yourself" bar).
     var footer: AnyView? = nil
+    /// Something in the sky under the title, arriving with it (the free
+    /// trial's receipt and Otto's notification, 2026-11-11).
+    var belowTitle: AnyView? = nil
     /// The questions' bar. Off for a screen after the interview (Block's
     /// "Which apps steal your time?"), which shows Back in its place.
     var showsProgress: Bool = true
@@ -557,7 +563,7 @@ struct IntroScreen<Figure: View>: View {
                 // The words sit in the sky, over the ridge and well clear of
                 // his head.
                 VStack(spacing: 12) {
-                    Text(title)
+                    Text(titleText)
                         .font(.system(size: titleSize, weight: .heavy, design: .rounded))
                         .foregroundStyle(AppColor.textPrimary)
                         .multilineTextAlignment(.center)
@@ -566,6 +572,12 @@ struct IntroScreen<Figure: View>: View {
                         // A new page of the same screen cross-fades its words.
                         .id(title)
                         .transition(.opacity)
+                    if let belowTitle {
+                        belowTitle
+                            .padding(.top, 6)
+                            .opacity(shown ? 1 : 0)
+                            .offset(y: shown ? 0 : 10)
+                    }
                 }
                 .animation(.easeInOut(duration: 0.3), value: title)
                 .padding(.horizontal, AppMetrics.screenPadding + 4)
@@ -610,6 +622,15 @@ struct IntroScreen<Figure: View>: View {
         .task(id: subtitle) {
             if shown { await retype() } else { await play() }
         }
+    }
+
+    /// The title, with `titleAccent` in green where it appears.
+    private var titleText: AttributedString {
+        var text = AttributedString(title)
+        if let titleAccent, let range = text.range(of: titleAccent, options: .backwards) {
+            text[range].foregroundColor = OnboardingGreen.shade
+        }
+        return text
     }
 
     private func retype() async {

@@ -35,6 +35,16 @@ put a 3-day free trial on Monthly and Yearly and cut the ladder to one rung.
 That misread Melvin's "same as before, 3 day offer" and held for a few hours;
 every trial line below is corrected.
 
+**2026-11-11 (Aziz): onboarding now LEADS with the free trial, 7 days.**
+Two screens after "Let's go!" ("We want you to try 808 Meditate for free",
+"I'll remind you the day before it ends"), then a paywall selling
+`yearlytrial` and `monthlytrial` with a timeline; "No, I don't want to pay"
+raises the half-price banner from the paywall rebuild. The subscription block
+and the review notes below are updated for it. Needs App Store Connect to
+match: the free trial on all three trial products is **1 week**; `monthly`
+and `yearly` still carry none (`RELEASE_CHECKLIST.md`, "OPEN for the build
+that leads onboarding with the free trial").
+
 **This file is the ONE source for the description, promotional text, What's
 New and the review notes.** `APP_STORE.md` points here rather than carrying
 copies, because copies drift and the drifted one is the one that gets pasted.
@@ -176,7 +186,7 @@ The Watch readings are grounded in peer reviewed research on wrist worn motion s
 SUBSCRIPTION INFORMATION
 808 Membership Yearly: $29.99 per year.
 808 Membership Monthly: $7.99 per month.
-If you decline the plans above, the app may offer Monthly, half price: a 7 day free trial, then $3.99 per month.
+New members are offered Yearly or Monthly with a 7 day free trial, then $29.99 per year or $7.99 per month. If you decline the plans above, the app may offer Monthly, half price: a 7 day free trial, then $3.99 per month.
 A free trial is available once per Apple Account across 808's subscriptions. Payment is charged to your Apple Account when you confirm the purchase, or when a free trial ends. Subscriptions renew automatically unless cancelled at least 24 hours before the end of the current period or free trial, and your account is charged for the renewal within the 24 hours before the period ends. Manage or cancel any time in your App Store account settings. Any unused part of a free trial ends when you buy a subscription.
 Restore, on the paywall or in Settings, brings a purchase back on a new device.
 
@@ -354,16 +364,16 @@ against the code 2026-09-30 in a third review pass; the Block sentence
 reworded 2026-10-13 for the required app pick; Friends gained invite codes,
 weekly goals and nudges 2026-10-18; Block's one minute, the rest of the
 day, and "Not now" for 5, 10 or 30 corrected 2026-10-27; goals from a
-minute 2026-10-27, 3,966 counted with line breaks twice). Count again after any edit.
+minute 2026-10-27; the free-trial screens 2026-11-12, 3,971 counted with line breaks twice). Count again after any edit.
 
 ```
 808 is a meditation app for iPhone with an optional Apple Watch app. No part of this review needs an Apple Watch.
 
 SUBSCRIPTION
-Nothing past the paywall opens without buying or restoring. The in-app purchases are attached to this version; use a sandbox account with no active 808 subscription.
-To reach the paywall, go through onboarding. On "Ready to take control?", press and hold the round button for about three seconds until Otto rises and "Let's go!" appears, then tap Continue. The paywall is next.
-It sells Yearly ($29.99, preselected) and Monthly ($7.99), with no free trial, plus Restore, Privacy Policy and Terms of Use. Tapping "No, I don't want to pay", or cancelling the purchase sheet, raises a banner offering Monthly, half price ($3.99 a month after a 7 day free trial) with its renewal terms and Terms and Privacy links. "Claim half price" opens the purchase sheet; "No thanks" closes it.
-An account that already had a free trial is offered the half price from the first month.
+Nothing past the paywall opens without buying or restoring. In-app purchases are attached; use a sandbox account with no active 808 subscription.
+In onboarding, on "Ready to take control?", hold the round button about three seconds until "Let's go!" appears, then tap Continue. Two screens follow; "Continue for FREE" asks for notifications; any answer works. Then the paywall.
+It sells Yearly ($29.99, preselected) and Monthly ($7.99), each with a 7 day free trial, plus Restore, Privacy Policy and Terms of Use. "No, I don't want to pay", or cancelling the purchase sheet, raises a banner: Monthly, half price ($3.99 a month after a 7 day free trial), with its renewal terms and legal links. "Claim half price" opens the purchase sheet; "No thanks" closes it.
+An account that already had a trial skips those screens and sees no trials; half price charges from the first month.
 "Plans aren't loading" means the sandbox returned no products.
 People updating from 1.0 without a subscription meet the paywall at launch, with an Account link (Manage subscription, Redeem a code, Restore, Sign out, Delete account). Subscribers and Lifetime owners keep full access.
 
@@ -382,7 +392,7 @@ POINTS AND THE SHOP
 Each whole minute meditated earns one point, spent in the Shop tab on hats for Otto. Recorded sessions earn none and never open Block's apps. Points cannot be bought and have no cash value.
 
 FRIENDS
-Opens from the circle at the top right of Home; needs iCloud. No posts, comments or typed messages. A profile shows a name, @username, optional photo, practice summary and friends, visible to anyone who looks up the username. It is optional and requires agreeing to the community rules.
+Opens from the circle at the top right of Home; needs iCloud. No posts, comments or typed messages. A profile shows a name, @username, optional photo, practice summary and friends, visible to anyone who looks up the username. Optional; it requires agreeing to the community rules.
 Friends are added by @username or invite code. Two friends can share a weekly goal (days a week, from sessions of a minute or more) and nudge each other once a day.
 Other people's profiles carry Report and Block (... menu); reports reach our inbox at once, and a reported profile or photo is removed within 24 hours. Seeing another person takes a second device on another iCloud account.
 Delete account (Profile tab, gear icon, or the launch paywall's Account link) removes the Friends profile, username, invite code, goals and connections.

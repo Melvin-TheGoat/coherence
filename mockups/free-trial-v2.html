@@ -1,0 +1,481 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Free trial lead-in</title>
+<style>
+  /* SF Pro Rounded, the app's own face, when this Mac has it; Nunito otherwise. */
+  @font-face { font-family: AppRounded; src: local("SF Pro Rounded"), local("SFProRounded-Regular"), url(file:///System/Library/Fonts/SFNSRounded.ttf); font-weight: 100 1000; }
+  @font-face { font-family: Nunito; src: url(free-trial/nunito-var.woff2) format("woff2"); font-weight: 200 1000; }
+  :root {
+    --ink: #413024; --grey: #605F5B; --chev: #6F5D4F; --track: #ECE7E2;
+    --green: #5AB950; --green-shade: #418E3A; --wash: #DEF2D9; --card: #F6F6F6;
+    --sky-deep: #3E86C0; --page: #E8E3D9; --red: #FF3B30;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--page); font-family: AppRounded, Nunito, system-ui, sans-serif; color: var(--ink);
+    max-width: 1400px; padding: 48px 48px 64px; -webkit-font-smoothing: antialiased; }
+
+  /* The page around the phones. */
+  header h1 { font-size: 34px; font-weight: 900; letter-spacing: -.02em; }
+  header p { font-size: 17px; color: #6B5A4A; margin-top: 8px; max-width: 1100px; line-height: 1.45; font-weight: 600; }
+  .flow { display: flex; gap: 10px; align-items: center; margin: 22px 0 8px; flex-wrap: wrap; }
+  .flow span { background: #fff; border-radius: 99px; padding: 7px 14px; font-size: 14px; font-weight: 800; color: #6B5A4A; }
+  .flow span.new { background: var(--green); color: #fff; }
+  .flow b { color: #A99987; font-weight: 900; }
+  section { margin-top: 54px; }
+  section h2 { font-size: 26px; font-weight: 900; letter-spacing: -.01em; }
+  section > p { font-size: 16px; color: #6B5A4A; margin: 6px 0 22px; max-width: 1100px; line-height: 1.45; font-weight: 600; }
+  .row { display: flex; gap: 48px 36px; flex-wrap: wrap; }
+  .opt { width: 402px; flex: none; }
+  .opt .tag { font-size: 14px; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; color: #8B7A68; margin: 0 0 12px 6px; }
+  .opt .tag em { font-style: normal; color: var(--ink); letter-spacing: 0; text-transform: none; font-size: 17px; margin-left: 6px; }
+  .opt .why { font-size: 15px; line-height: 1.45; color: #5B4B3C; margin: 18px 6px 0; font-weight: 600; }
+  .opt .why b { color: var(--ink); font-weight: 900; }
+  .notes { margin-top: 60px; background: #fff; border-radius: 28px; padding: 30px 34px; display: grid; grid-template-columns: 1fr 1fr; gap: 26px 44px; }
+  .notes h3 { font-size: 18px; font-weight: 900; margin-bottom: 8px; }
+  .notes p, .notes li { font-size: 15px; line-height: 1.5; color: #4E3F32; font-weight: 600; }
+  .notes ul { padding-left: 20px; }
+  .notes li { margin-bottom: 4px; }
+
+  /* The phone: 402 x 874, an iPhone 17 Pro in points. */
+  .phone { width: 402px; height: 874px; border-radius: 58px; overflow: hidden; position: relative; background: #fff;
+    box-shadow: 0 0 0 9px #1A1A1A, 0 0 0 10px #444, 0 34px 60px rgba(43,33,23,.28); }
+  .phone.valley { background: url(free-trial/base-valley.png) 0 0 / 402px 874px no-repeat; }
+  .phone.pay { background: url(free-trial/base-paywall.png) 0 0 / 402px 874px no-repeat; }
+  .phone > * { position: absolute; }
+  .home-ind { left: 134px; width: 134px; bottom: 9px; height: 5px; border-radius: 3px; background: #111; opacity: .85; }
+
+  /* Status bar, drawn only on the white pages (the captures carry their own). */
+  .sb-time { left: 52px; top: 20px; font: 600 17px AppRounded, system-ui; color: #000; letter-spacing: -.2px; }
+  .island { left: 138px; top: 12px; width: 126px; height: 37px; border-radius: 19px; background: #000; }
+  .sb-icons { right: 34px; top: 23px; width: 78px; height: 14px; }
+
+  .chev { left: 20px; top: 85px; width: 22px; height: 22px; }
+  .bar { left: 78px; right: 24px; top: 88px; height: 13px; border-radius: 7px; background: var(--track); overflow: hidden; }
+  .bar i { display: block; height: 100%; border-radius: 7px; background: var(--green); box-shadow: inset 0 3px 0 rgba(255,255,255,.32); }
+  .cloud { width: 177px; height: 91px; }
+
+  .title { left: 26px; right: 26px; top: 122px; text-align: center; font-size: 30px; line-height: 1.12; font-weight: 800; letter-spacing: -.4px; color: var(--ink); }
+  .sub { left: 34px; right: 34px; text-align: center; font-size: 17px; line-height: 1.32; color: var(--grey); font-weight: 500; }
+  .tiny { left: 30px; right: 30px; text-align: center; font-size: 12.5px; line-height: 1.38; color: #7A7974; font-weight: 500; }
+
+  /* Otto's bubble, laid exactly over the capture's own. */
+  .bubble { left: 50%; transform: translateX(-50%); bottom: 474px; min-width: 206px; min-height: 63px; padding: 0 22px;
+    display: flex; align-items: center; justify-content: center; white-space: nowrap;
+    background: #fff; border-radius: 22px; font-size: 17px; font-weight: 600; color: #1C1C1F; box-shadow: 0 2px 10px rgba(0,0,0,.05); }
+  .bubble::after { content: ""; position: absolute; left: 50%; bottom: -9px; margin-left: -10px; border: 10px solid transparent; border-top-color: #fff; border-bottom: 0; }
+
+  /* The green button: on the valley the capture already has it, so only the words go on. */
+  .cta-words { left: 20px; width: 362px; top: 773px; height: 53px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; color: #fff; }
+  .cta { left: 20px; right: 20px; height: 53px; border-radius: 17px; background: var(--green); box-shadow: 0 5px 0 var(--green-shade);
+    display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; color: #fff; }
+  .nopay { left: 0; right: 0; text-align: center; font-size: 16px; font-weight: 800; }
+  .nopay::before { content: "✓"; font-weight: 1000; margin-right: 7px; }
+  .on-meadow { color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.45), 0 0 10px rgba(0,0,0,.18); }
+  .on-white { color: var(--ink); }
+  .on-white::before { color: var(--green-shade); }
+
+  /* A: Today and day 3 */
+  .pair { left: 22px; right: 22px; top: 254px; height: 380px; display: flex; gap: 12px; }
+  .pair figure { flex: 1; border-radius: 24px; position: relative; display: flex; align-items: flex-end; justify-content: center; overflow: hidden;
+    background: linear-gradient(#BFDDEF, #E4F1F8); }
+  .pair figure.later { background: radial-gradient(circle at 50% 62%, #FFF2C8 0, #F9E3A6 34%, #DDEEF7 72%); }
+  .pair img { width: 150%; margin-bottom: -16px; flex: none; }
+  .pair .chip { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: 13.5px; font-weight: 900; padding: 5px 12px; border-radius: 99px; background: #fff; color: var(--ink); }
+  .pair .later .chip { background: var(--green); color: #fff; }
+  .pair .glow { position: absolute; bottom: 12px; left: 0; right: 0; text-align: center; font-size: 13px; font-weight: 800; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.35); }
+  .arrow { left: 186px; top: 430px; width: 30px; height: 30px; border-radius: 50%; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.12);
+    display: grid; place-items: center; font-size: 17px; font-weight: 900; color: var(--green-shade); z-index: 2; }
+
+  /* A: the receipt */
+  .receipt { left: 62px; right: 62px; top: 205px; background: #FFFDF8; padding: 14px 18px 20px; font-family: ui-monospace, "SF Mono", Menlo, monospace; color: #3B342D;
+    box-shadow: 0 6px 18px rgba(43,33,23,.12);
+    -webkit-mask: linear-gradient(#000 0 0) top / 100% calc(100% - 8px) no-repeat, conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom / 14px 8px repeat-x; }
+  .receipt .head { text-align: center; font-size: 12px; letter-spacing: .14em; color: #8B8174; margin-bottom: 9px; }
+  .receipt .ln { display: flex; justify-content: space-between; font-size: 14px; padding: 3px 0; }
+  .receipt .tot { border-top: 1.5px dashed #CFC6B8; margin-top: 7px; padding-top: 8px; font-weight: 800; font-size: 16px; }
+
+  /* B: the icon with a badge */
+  .appicon { left: 124px; top: 340px; width: 154px; height: 154px; border-radius: 36px; overflow: hidden; box-shadow: 0 14px 34px rgba(43,33,23,.18); }
+  .appicon img { width: 100%; height: 100%; display: block; }
+  .badge { left: 248px; top: 318px; width: 58px; height: 58px; border-radius: 50%; background: var(--red); border: 5px solid #fff; color: #fff;
+    display: grid; place-items: center; font-size: 27px; font-weight: 700; box-shadow: 0 4px 12px rgba(255,59,48,.35); }
+
+  /* B: Otto's notification, as iOS draws it */
+  .notif { left: 14px; right: 14px; top: 212px; border-radius: 24px; padding: 12px 14px; display: flex; gap: 11px; align-items: center;
+    background: rgba(250,250,252,.80); backdrop-filter: blur(22px); box-shadow: 0 8px 24px rgba(30,60,90,.16); }
+  .notif img { width: 38px; height: 38px; border-radius: 9px; flex: none; }
+  .notif .t { font: 600 15px -apple-system, system-ui; color: #111; display: flex; justify-content: space-between; }
+  .notif .t span { font-weight: 400; color: #8A8A8E; font-size: 13px; }
+  .notif .b { font: 400 15px/1.28 -apple-system, system-ui; color: #111; margin-top: 1px; }
+
+  /* B: the four days */
+  .cal { left: 18px; right: 18px; top: 210px; background: #fff; border-radius: 24px; padding: 14px 10px 13px; display: flex; box-shadow: 0 6px 18px rgba(30,60,90,.10); }
+  .cal div { flex: 1; text-align: center; }
+  .cal .wd { font-size: 12px; font-weight: 800; letter-spacing: .06em; color: #9A9690; }
+  .cal .d { width: 40px; height: 40px; border-radius: 50%; margin: 5px auto 6px; display: grid; place-items: center; font-size: 19px; font-weight: 800; color: var(--ink); }
+  .cal .today .d { background: var(--green); color: #fff; }
+  .cal .free .d { background: var(--wash); color: var(--green-shade); }
+  .cal .ring .d { background: #DCEBF7; color: var(--sky-deep); }
+  .cal .start .d { border: 2px solid #E2DDD5; }
+  .cal .l { font-size: 12px; line-height: 1.22; font-weight: 700; color: #6B6862; padding: 0 2px; }
+  .cal .today .l, .cal .free .l { color: var(--green-shade); }
+  .cal .ring .l { color: var(--sky-deep); }
+
+  /* C: the sheet, as the paywall draws it */
+  .sheet { left: 0; right: 0; top: 349px; bottom: 0; background: #fff; border-radius: 30px 30px 0 0; box-shadow: 0 -4px 16px rgba(0,0,0,.10); padding: 18px 20px 0; }
+  .sheet > * { position: relative; }
+  .plan { display: flex; align-items: center; gap: 13px; background: var(--card); border-radius: 18px; padding: 13px 16px; margin-bottom: 10px; position: relative; }
+  .plan.on { background: var(--wash); box-shadow: inset 0 0 0 2.5px var(--green); }
+  .plan .radio { width: 22px; height: 22px; border-radius: 50%; border: 2px solid rgba(96,95,91,.35); flex: none; }
+  .plan.on .radio { border-color: var(--green-shade); background: radial-gradient(var(--green) 0 6.5px, transparent 7px); }
+  .plan .nm { font-size: 17px; font-weight: 800; color: var(--ink); }
+  .plan .note { font-size: 13px; font-weight: 700; color: var(--green-shade); margin-top: 2px; }
+  .plan .px { margin-left: auto; text-align: right; }
+  .plan .px b { display: block; font-size: 19px; font-weight: 800; color: var(--ink); }
+  .plan .px span { font-size: 12px; color: var(--grey); font-weight: 500; }
+  .plan .best { position: absolute; top: -9px; left: 48px; background: var(--green); color: #fff; font-size: 11px; font-weight: 800; padding: 3px 9px; border-radius: 99px; }
+  .plan .free { display: inline-block; vertical-align: 2px; margin-left: 7px; font-size: 11px; font-weight: 800; color: var(--green-shade); background: #fff; border: 1.5px solid #BFE3B9; padding: 1px 7px; border-radius: 99px; }
+  .sheet .buy { height: 53px; border-radius: 17px; background: var(--green); box-shadow: 0 5px 0 var(--green-shade); display: flex; align-items: center; justify-content: center;
+    font-size: 18px; font-weight: 700; color: #fff; margin-top: 4px; }
+  .sheet .agree { text-align: center; font-size: 11.5px; color: #5E5D59; margin-top: 13px; font-weight: 500; }
+  .sheet .agree b { font-weight: 700; color: #3F3E3B; }
+  .sheet .fine { text-align: center; font-size: 11.5px; line-height: 1.38; color: #5E5D59; margin-top: 6px; font-weight: 500; }
+  .sheet .links { display: flex; justify-content: center; gap: 24px; font-size: 12.5px; font-weight: 700; color: #3F3E3B; margin-top: 9px; }
+  .sheet .nope { text-align: center; font-size: 12.5px; font-weight: 600; color: #5E5D59; margin-top: 9px; }
+
+  .tl { margin: 2px 0 14px; }
+  .tl .step { display: flex; gap: 12px; position: relative; padding-bottom: 11px; }
+  .tl .step:not(:last-child)::after { content: ""; position: absolute; left: 14px; top: 30px; bottom: 0; width: 2.5px; border-radius: 2px; background: #E6E1DA; }
+  .tl .step.done::after { background: linear-gradient(var(--green), #BFE3B9); }
+  .tl .ic { width: 30px; height: 30px; border-radius: 50%; flex: none; display: grid; place-items: center; }
+  .tl .ic svg { width: 16px; height: 16px; }
+  .tl .when { font-size: 15px; font-weight: 800; color: var(--ink); line-height: 1.2; }
+  .tl .what { font-size: 13px; color: var(--grey); font-weight: 500; line-height: 1.3; }
+  .tl1 { background: var(--green); } .tl2 { background: #DCEBF7; } .tl3 { background: #F1ECE4; }
+
+  .oneline { display: flex; justify-content: center; gap: 6px; align-items: center; font-size: 12.5px; font-weight: 700; color: var(--grey); margin-top: 12px; }
+  .oneline .g { color: var(--green-shade); }
+  .oneline .s { color: var(--sky-deep); }
+  .oneline i { color: #C9C3BA; font-style: normal; }
+
+  .big { background: var(--wash); box-shadow: inset 0 0 0 2.5px var(--green); border-radius: 20px; padding: 16px 16px 4px; position: relative; margin-top: 4px; }
+  .big .hd { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px; }
+  .big .hd .nm { font-size: 18px; font-weight: 800; }
+  .big .hd .nm small { display: block; font-size: 13px; font-weight: 700; color: var(--green-shade); margin-top: 2px; }
+  .big .hd b { font-size: 22px; font-weight: 800; }
+  .big .hd span { display: block; text-align: right; font-size: 12px; color: var(--grey); font-weight: 500; }
+  .big .best { position: absolute; top: -9px; left: 16px; background: var(--green); color: #fff; font-size: 11px; font-weight: 800; padding: 3px 9px; border-radius: 99px; }
+  .big .tl { margin: 0; }
+  .big .tl .step:not(:last-child)::after { background: rgba(65,142,58,.22); }
+  .big .tl .tl3 { background: #fff; }
+  .other { text-align: center; font-size: 14px; font-weight: 800; color: var(--green-shade); margin: 12px 0 2px; }
+  @media (max-width: 900px) {
+    body { padding: 28px 16px 48px; }
+    .notes { grid-template-columns: 1fr; padding: 24px 22px; }
+    .row { justify-content: center; }
+  }
+  @media (max-width: 460px) {
+    .opt { width: 100%; }
+    .opt .tag, .opt .why { margin-left: 0; margin-right: 0; }
+  }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <linearGradient id="cl" x1="0" y1="0" x2="0" y2="1"><stop offset=".45" stop-color="#fff"/><stop offset="1" stop-color="#E9F1F7"/></linearGradient>
+    <symbol id="cloud" viewBox="0 0 120 62"><g fill="#fff"><ellipse cx="33" cy="39" rx="26" ry="17"/><ellipse cx="62" cy="30" rx="31" ry="22"/><ellipse cx="91" cy="41" rx="23" ry="15"/><rect x="10" y="38" width="100" height="18" rx="9"/></g></symbol>
+    <symbol id="chev" viewBox="0 0 22 22"><path d="M14 4 L7 11 L14 18" fill="none" stroke="#6F5D4F" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="sbicons" viewBox="0 0 78 14">
+      <g fill="#000"><circle cx="2" cy="10" r="1.6" opacity=".3"/><circle cx="7" cy="10" r="1.6" opacity=".3"/><circle cx="12" cy="10" r="1.6" opacity=".3"/><circle cx="17" cy="10" r="1.6" opacity=".3"/>
+      <path d="M35 12.6 l2.4-2.6 a3.6 3.6 0 0 0-4.8 0 z M28.4 6.6 l1.7 1.8 a7 7 0 0 1 9.8 0 l1.7-1.8 a9.6 9.6 0 0 0-13.2 0z M25.6 3.8 l1.7 1.8 a11 11 0 0 1 15.4 0 l1.7-1.8 a13.4 13.4 0 0 0-18.8 0z"/>
+      <rect x="51" y="1" width="23" height="12" rx="3.6" fill="none" stroke="#000" stroke-width="1.1" opacity=".45"/><rect x="53" y="3" width="19" height="8" rx="2"/><rect x="75.2" y="5" width="1.8" height="4" rx=".9" opacity=".45"/></g>
+    </symbol>
+    <symbol id="i-open" viewBox="0 0 16 16"><path d="M4.5 7V5.2a3.5 3.5 0 0 1 6.8-1.2" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round"/><rect x="2.6" y="7" width="10.8" height="7.4" rx="2" fill="#fff"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 16 16"><path d="M8 1.6a4.3 4.3 0 0 0-4.3 4.3v2.6L2.3 11.2h11.4L12.3 8.5V5.9A4.3 4.3 0 0 0 8 1.6z" fill="#3E86C0"/><path d="M6.2 12.6a1.9 1.9 0 0 0 3.6 0z" fill="#3E86C0"/></symbol>
+    <symbol id="i-star" viewBox="0 0 16 16"><path d="M8 1.5l1.9 4 4.3.5-3.2 3 .9 4.3L8 11.1l-3.9 2.2.9-4.3-3.2-3 4.3-.5z" fill="#B59E7E"/></symbol>
+  </defs>
+</svg>
+
+<header>
+  <h1>Free trial lead-in: mockups</h1>
+  <p>Sweatmates says "free" three times before its paywall. This is that run for 808: two short screens after Otto reaches Nirvana, then the paywall with the trial on it. Three options for each screen, drawn over captures of the real app. Pick one per screen (or mix), and I'll build it.</p>
+  <div class="flow">
+    <span>Ready to take control? (hold, Otto ascends)</span><b>→</b>
+    <span class="new">A · Try it free</span><b>→</b>
+    <span class="new">B · We'll remind you</span><b>→</b>
+    <span class="new">C · Paywall with the trial</span><b>→</b>
+    <span>Reminders</span><b>→</b><span>Block setup</span><b>→</b><span>Sign in</span>
+  </div>
+</header>
+
+<!-- ====================================================== A -->
+<section>
+  <h2>A · Try it free</h2>
+  <p>The first "free". It sells nothing and starts no purchase; it only says the first days cost nothing, so the paywall after it reads as a formality.</p>
+  <div class="row">
+
+    <div class="opt">
+      <div class="tag">A1<em>Otto says it</em></div>
+      <div class="phone valley">
+        <svg class="cloud" style="left:170px;top:46px;width:168px;height:87px"><use href="#cloud"/></svg><svg class="cloud" style="left:268px;top:150px;width:212px;height:110px"><use href="#cloud"/></svg>
+        
+        <svg class="chev"><use href="#chev"/></svg>
+        <div class="bar"><i style="width:93%"></i></div>
+        <div class="title">We want you to try<br>808 for free</div>
+        <div class="bubble">No payment due now.</div>
+        <div class="cta-words">Try it for $0.00</div>
+        <div class="home-ind"></div>
+      </div>
+      <div class="why"><b>Closest to Sweatmates.</b> One sentence in the sky, the reassurance in Otto's mouth, and the button says what today costs.</div>
+    </div>
+
+    <div class="opt">
+      <div class="tag">A2<em>Today, and day 3</em></div>
+      <div class="phone">
+        <div class="sb-time">8:39</div><div class="island"></div><svg class="sb-icons"><use href="#sbicons"/></svg>
+        <svg class="chev"><use href="#chev"/></svg>
+        <div class="bar"><i style="width:93%"></i></div>
+        <div class="title">Try 808 free<br>for 3 days</div>
+        <div class="sub" style="top:206px">Meditate each day and watch Otto brighten.</div>
+        <div class="pair">
+          <figure><span class="chip">Today · Steady</span><img src="free-trial/ottoaura4.png"></figure>
+          <figure class="later"><span class="chip">Day 3 · Bright</span><img src="free-trial/ottoaura5.png"></figure>
+        </div>
+        <div class="arrow">›</div>
+        <div class="nopay on-white" style="top:732px">No payment due now</div>
+        <div class="cta" style="top:773px">Try it free</div>
+        <div class="home-ind"></div>
+      </div>
+      <div class="why"><b>Shows what the 3 days buy.</b> A white page like "In 1 week". Real stages: a new member is Steady, and 10 minutes a day for three days lands him at Bright.</div>
+    </div>
+
+    <div class="opt">
+      <div class="tag">A3<em>Otto's treat</em></div>
+      <div class="phone valley">
+        <svg class="cloud" style="left:176px;top:44px;width:160px;height:83px"><use href="#cloud"/></svg>
+        
+        <svg class="chev"><use href="#chev"/></svg>
+        <div class="bar"><i style="width:93%"></i></div>
+        <div class="title" style="top:120px">Your first 3 days<br>are on Otto</div>
+        <div class="receipt">
+          <div class="head">808 · RECEIPT</div>
+          <div class="ln"><span>3 days of 808</span><span>$0.00</span></div>
+          <div class="ln tot"><span>Due today</span><span>$0.00</span></div>
+        </div>
+        <div class="bubble">My treat.</div>
+        <div class="cta-words">Continue</div>
+        <div class="home-ind"></div>
+      </div>
+      <div class="why"><b>The same promise in Otto's voice.</b> He's buying. The receipt makes "$0.00 today" a thing you can see instead of a claim.</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ====================================================== B -->
+<section>
+  <h2>B · We'll remind you</h2>
+  <p>The second "free", and the one that actually removes the fear: nobody gets charged by surprise. Whatever this screen promises, the reminder has to exist, so building it means scheduling a real notification for the day before the trial ends.</p>
+  <div class="row">
+
+    <div class="opt">
+      <div class="tag">B1<em>The badge</em></div>
+      <div class="phone">
+        <div class="sb-time">8:39</div><div class="island"></div><svg class="sb-icons"><use href="#sbicons"/></svg>
+        <svg class="chev"><use href="#chev"/></svg>
+        <div class="bar"><i style="width:96%"></i></div>
+        <div class="title">We'll remind you before your free trial ends</div>
+        <div class="appicon"><img src="free-trial/appicon.png"></div>
+        <div class="badge">1</div>
+        <div class="sub" style="top:526px">One notification from Otto,<br>the day before.</div>
+        <div class="nopay on-white" style="top:732px">No payment due now</div>
+        <div class="cta" style="top:773px">Continue for free</div>
+        <div class="home-ind"></div>
+      </div>
+      <div class="why"><b>Sweatmates' bell, drawn as 808's own icon.</b> The red badge reads as "a notification is coming" before a word is read.</div>
+    </div>
+
+    <div class="opt">
+      <div class="tag">B2<em>Otto's text</em></div>
+      <div class="phone valley">
+        <svg class="cloud" style="left:172px;top:46px;width:166px;height:86px"><use href="#cloud"/></svg>
+        <svg class="chev"><use href="#chev"/></svg>
+        <div class="bar"><i style="width:96%"></i></div>
+        <div class="title">I'll remind you the<br>day before it ends</div>
+        <div class="notif">
+          <img src="free-trial/appicon.png">
+          <div style="flex:1">
+            <div class="t">Otto <span>Fri 9:00 AM</span></div>
+            <div class="b">Your free trial ends tomorrow. Want to keep meditating together?</div>
+          </div>
+        </div>
+        <div class="bubble">Promise.</div>
+        <div class="cta-words">Remind me</div>
+        <div class="home-ind"></div>
+      </div>
+      <div class="why"><b>Shows the actual notification.</b> "Remind me" opens iOS's notification prompt right here, a moment when allowing it is obviously in the reader's interest.</div>
+    </div>
+
+    <div class="opt">
+      <div class="tag">B3<em>The four days</em></div>
+      <div class="phone valley">
+        <svg class="cloud" style="left:176px;top:46px;width:160px;height:83px"><use href="#cloud"/></svg><svg class="cloud" style="left:290px;top:150px;width:200px;height:103px"><use href="#cloud"/></svg>
+        
+        <svg class="chev"><use href="#chev"/></svg>
+        <div class="bar"><i style="width:96%"></i></div>
+        <div class="title">How your 3 free<br>days work</div>
+        <div class="cal">
+          <div class="today"><div class="wd">WED</div><div class="d">11</div><div class="l">Today,<br>free</div></div>
+          <div class="free"><div class="wd">THU</div><div class="d">12</div><div class="l">Free</div></div>
+          <div class="ring"><div class="wd">FRI</div><div class="d">13</div><div class="l">Otto<br>reminds you</div></div>
+          <div class="start"><div class="wd">SAT</div><div class="d">14</div><div class="l">Membership<br>starts</div></div>
+        </div>
+        <div class="bubble">I'll ping you Friday.</div>
+        <div class="cta-words">Continue for free</div>
+        <div class="home-ind"></div>
+      </div>
+      <div class="why"><b>The most concrete.</b> Real dates, worked out from the day they install, so "3 days" stops being abstract.</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ====================================================== C -->
+<section>
+  <h2>C · The paywall, with the trial on it</h2>
+  <p>The third "free". The title stays "Keep Otto glowing." on purpose: App Review wants the price to be the biggest number and the trial smaller beside it, which is why the trial lives in the subtitle and the cards, never the headline. Monthly and Yearly only, both with the 3 free days; Lifetime has no trial and would sit oddly here.</p>
+  <div class="row">
+
+    <div class="opt">
+      <div class="tag">C1<em>Timeline, then plans</em></div>
+      <div class="phone pay">
+        <svg class="cloud" style="left:250px;top:46px;width:212px;height:110px"><use href="#cloud"/></svg><svg class="cloud" style="left:-52px;top:262px;width:129px;height:67px"><use href="#cloud"/></svg>
+        
+        <div class="bar" style="left:78px"><i style="width:100%"></i></div>
+        <div class="title" style="top:118px">Keep Otto glowing.</div>
+        <div class="sub" style="top:160px">3 days free, then $29.99 per year.</div>
+        <div class="tiny" style="top:190px">808 Membership: full access to Block, timed and guided sessions, sounds, Otto's glow and hats, streaks and awards, Friends, and Apple Watch readings.</div>
+        <div class="sheet">
+          <div class="tl">
+            <div class="step done"><div class="ic tl1"><svg><use href="#i-open"/></svg></div><div><div class="when">Today</div><div class="what">Everything in 808, free.</div></div></div>
+            <div class="step"><div class="ic tl2"><svg><use href="#i-bell"/></svg></div><div><div class="when">Fri, Nov 13</div><div class="what">Otto reminds you the trial ends tomorrow.</div></div></div>
+            <div class="step"><div class="ic tl3"><svg><use href="#i-star"/></svg></div><div><div class="when">Sat, Nov 14</div><div class="what">Membership starts, unless you cancel.</div></div></div>
+          </div>
+          <div class="plan on"><span class="best">Best value</span><div class="radio"></div><div><div class="nm">Yearly</div><div class="note">$2.50 a month</div></div><div class="px"><b>$29.99</b><span>per year after the trial</span></div></div>
+          <div class="plan"><div class="radio"></div><div><div class="nm">Monthly</div><div class="note">About $1.84 a week</div></div><div class="px"><b>$7.99</b><span>per month after the trial</span></div></div>
+          <div class="buy">Start my free trial</div>
+          <div class="fine">3 days free, then $29.99 per year. Renews automatically until you cancel. Cancel at least 24 hours before the trial ends to pay nothing, in the Settings app.</div>
+          <div class="links"><span>Restore</span><span>Privacy Policy</span><span>Terms of Use</span></div>
+          <div class="nope">No, I don't want to pay</div>
+        </div>
+        <div class="home-ind"></div>
+      </div>
+      <div class="why"><b>Sweatmates' paywall.</b> The timeline answers "when do I pay" before the plans ask "which". It follows the plan you tap.</div>
+    </div>
+
+    <div class="opt">
+      <div class="tag">C2<em>Today's paywall, plus free</em></div>
+      <div class="phone pay">
+        <svg class="cloud" style="left:250px;top:46px;width:212px;height:110px"><use href="#cloud"/></svg><svg class="cloud" style="left:-52px;top:262px;width:129px;height:67px"><use href="#cloud"/></svg>
+        
+        <div class="bar" style="left:78px"><i style="width:100%"></i></div>
+        <div class="title" style="top:118px">Keep Otto glowing.</div>
+        <div class="sub" style="top:160px">3 days free, then $29.99 per year.</div>
+        <div class="tiny" style="top:190px">808 Membership: full access to Block, timed and guided sessions, sounds, Otto's glow and hats, streaks and awards, Friends, and Apple Watch readings.</div>
+        <div class="sheet" style="padding-top:22px">
+          <div class="plan on" style="padding:16px"><span class="best">Best value</span><div class="radio"></div><div><div class="nm">Yearly<span class="free">3 days free</span></div><div class="note">$2.50 a month</div></div><div class="px"><b>$29.99</b><span>per year after the trial</span></div></div>
+          <div class="plan" style="padding:16px"><div class="radio"></div><div><div class="nm">Monthly<span class="free">3 days free</span></div><div class="note">About $1.84 a week</div></div><div class="px"><b>$7.99</b><span>per month after the trial</span></div></div>
+          <div class="buy" style="margin-top:8px">Start my free trial</div>
+          <div class="oneline"><span class="g">Free today</span><i>·</i><span class="s">Reminder Fri</span><i>·</i><span>First charge Sat, Nov 14</span></div>
+          <div class="agree" style="margin-top:14px">By continuing you agree to the <b>Terms of Use</b> and <b>Privacy Policy</b>.</div>
+          <div class="fine">3 days free, then $29.99 per year. Renews automatically until you cancel. Cancel at least 24 hours before the trial ends to pay nothing, in the Settings app under your name, then Subscriptions.</div>
+          <div class="links"><span>Restore</span><span>Privacy Policy</span><span>Terms of Use</span></div>
+          <div class="nope">No, I don't want to pay</div>
+        </div>
+        <div class="home-ind"></div>
+      </div>
+      <div class="why"><b>The smallest change.</b> The paywall people see today, with a "3 days free" tag on each plan and the dates in one line under the button.</div>
+    </div>
+
+    <div class="opt">
+      <div class="tag">C3<em>One plan, the whole story</em></div>
+      <div class="phone pay">
+        <svg class="cloud" style="left:250px;top:46px;width:212px;height:110px"><use href="#cloud"/></svg><svg class="cloud" style="left:-52px;top:262px;width:129px;height:67px"><use href="#cloud"/></svg>
+        
+        <div class="bar" style="left:78px"><i style="width:100%"></i></div>
+        <div class="title" style="top:118px">Keep Otto glowing.</div>
+        <div class="sub" style="top:160px">3 days free, then $29.99 per year.</div>
+        <div class="tiny" style="top:190px">808 Membership: full access to Block, timed and guided sessions, sounds, Otto's glow and hats, streaks and awards, Friends, and Apple Watch readings.</div>
+        <div class="sheet" style="padding-top:24px">
+          <div class="big">
+            <span class="best">Best value</span>
+            <div class="hd"><div class="nm">Yearly<small>$2.50 a month</small></div><div><b>$29.99</b><span>per year after the trial</span></div></div>
+            <div class="tl">
+              <div class="step done"><div class="ic tl1"><svg><use href="#i-open"/></svg></div><div><div class="when">Today</div><div class="what">Everything in 808, free.</div></div></div>
+              <div class="step"><div class="ic tl2"><svg><use href="#i-bell"/></svg></div><div><div class="when">Fri, Nov 13</div><div class="what">Otto reminds you the trial ends tomorrow.</div></div></div>
+              <div class="step"><div class="ic tl3"><svg><use href="#i-star"/></svg></div><div><div class="when">Sat, Nov 14</div><div class="what">Yearly starts, unless you cancel.</div></div></div>
+            </div>
+          </div>
+          <div class="other">Monthly instead: $7.99 per month</div>
+          <div class="buy" style="margin-top:12px">Start my free trial</div>
+          <div class="fine" style="margin-top:12px">3 days free, then $29.99 per year. Renews automatically until you cancel. Cancel at least 24 hours before the trial ends to pay nothing, in the Settings app.</div>
+          <div class="links"><span>Restore</span><span>Privacy Policy</span><span>Terms of Use</span></div>
+          <div class="nope">No, I don't want to pay</div>
+        </div>
+        <div class="home-ind"></div>
+      </div>
+      <div class="why"><b>Fewest decisions.</b> One plan carries the timeline; Monthly is a tap away and swaps into the card.</div>
+    </div>
+
+  </div>
+</section>
+
+<div class="notes">
+  <div>
+    <h3>This changes a decision</h3>
+    <p>Since Sept 29 the trial is hidden until someone says no (Melvin's call): the paywall sells Monthly and Yearly with no trial, and the free days only appear on the first rung of the ladder. Every option here puts the trial up front instead. Worth a word with Melvin before I build.</p>
+  </div>
+  <div>
+    <h3>What stays the same</h3>
+    <ul>
+      <li>Prices and products: $7.99 and $29.99, the 3-day trial plans that already exist.</li>
+      <li>The trial length is read from App Store Connect, so "3 days" changes everywhere if that does.</li>
+      <li>"No, I don't want to pay" still leads to the half-price rung.</li>
+    </ul>
+  </div>
+  <div>
+    <h3>What building it takes</h3>
+    <ul>
+      <li>The reminder itself: one notification, the day before the trial ends. Today nothing in the app sends it.</li>
+      <li>B2 asks for notifications here. iOS only asks once, so the reminders screen after the paywall would change to match.</li>
+      <li>Dates are worked out from the day of install. The mockups show Nov 11, today.</li>
+    </ul>
+  </div>
+  <div>
+    <h3>App Review</h3>
+    <ul>
+      <li>A and B start no purchase, so "free" and "$0.00" can lead there. The paywall keeps the price as the biggest number.</li>
+      <li>The timeline's "unless you cancel" is the same promise the footnote under the button already makes.</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+  // Phones keep their real 402-point layout and shrink as one piece when the
+  // window is narrower than a phone, so the mockup reads in a small pane.
+  function fitPhones() {
+    document.querySelectorAll('.opt').forEach(function (opt) {
+      var z = Math.min(1, (opt.clientWidth - 20) / 402);
+      opt.querySelector('.phone').style.zoom = z;
+    });
+  }
+  addEventListener('resize', fitPhones);
+  fitPhones();
+</script>
+</body>
+</html>

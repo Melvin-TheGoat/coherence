@@ -36,6 +36,20 @@ enum Monetization {
     /// screen never mentions (the 3.1.2 mismatch) and the upsell is gone.
     static let freeTrial = false
 
+    /// Onboarding leads with the free trial (Aziz, 2026-11-11, after
+    /// Sweatmates, which says "free" three times before its paywall). Two
+    /// screens after Otto ascends, "We want you to try 808 Meditate for free"
+    /// and "I'll remind you the day before it ends", then the paywall opens on
+    /// the trial plans (`...yearlytrial` preselected, `...monthlytrial`
+    /// beside it, no Lifetime) with a timeline of today, the reminder and the
+    /// day it ends. **This reverses the 2026-09-29 call above for onboarding
+    /// only**: the launch lock and Block's paywall still sell without one,
+    /// and `monthly` / `yearly` still carry no introductory offer. Shown only
+    /// to someone StoreKit will give the free days to, so a person who used
+    /// their trial is never promised one. The length is the trial products'
+    /// introductory offer in App Store Connect (7 days from 2026-11-11).
+    static let trialLeadIn = true
+
     /// The founders' side-by-side beta: the same app under a bundle ID ending
     /// in ".dev" (`tools/beta_install.sh`), which owns no products in App
     /// Store Connect, so its plans can never load. Failing closed would lock

@@ -1121,6 +1121,37 @@ effects, the Watch redesign, and onboarding answers reported to analytics
 - [ ] The what's-new screens for free 1.0 members
       (`mockups/whats-new-v1.html`) are NOT in 1.3 unless Melvin says so.
 
+## OPEN for the build that leads onboarding with the free trial (added 2026-11-11)
+
+Two screens after "Let's go!" ("We want you to try 808 Meditate for free",
+"I'll remind you the day before it ends"), then the onboarding paywall opens
+on `yearlytrial` and `monthlytrial` with a timeline, and Otto's reminder is
+scheduled the day before the trial ends (`Monetization.trialLeadIn`,
+`TrialEndNotice`). Mockup: `mockups/free-trial-v3.html`.
+
+- [ ] **Melvin agrees.** It reverses his 2026-09-29 call (the trial only after
+      a "no") for onboarding. The launch lock and Block's paywall are unchanged.
+- [ ] **App Store Connect: the free trial on `monthlytrial` and `yearlytrial`
+      is 1 week.** The paywall rebuild's checklist above already asks for it
+      (it called the two products dormant; this build sells them again). The
+      app reads the length from there, so every line says 7 once it changes.
+      `monthly` and `yearly` still carry NO introductory offer.
+- [ ] The paste sheet's subscription block and review notes are already
+      rewritten for this, on top of the paywall rebuild's half-price banner
+      (`marketing/APP_STORE_PASTE.md`, 2026-11-12). Paste them with this
+      build, not before; the notes are 3,971 of 4,000 counting line breaks
+      twice, so recount after any edit.
+- [ ] **The reminder, on a phone.** A sandbox trial is minutes long, so its
+      reminder (the morning before the last day) is already past and is
+      correctly never scheduled. Check it with the `808.storekit` file and
+      its renewal rate set to real time: buy the yearly trial, then confirm a
+      pending notification "trial-ends" for the morning before day 7.
+- [ ] Analytics: two new screens, "31a" and "31b". `tools/posthog_sheet.gs`
+      already names them and counts them as branch screens (only people who
+      can still get the trial see them); paste the file into Apps Script with
+      `LC_ALL=en_US.UTF-8 pbcopy < tools/posthog_sheet.gs` and run `refresh`.
+      The file also carries the unfinished Friends, Instagram and Reels tabs.
+
 ## OPEN for the build that ships invite codes (added 2026-10-18)
 
 "Invite a friend" under Requests, a new code for every invite (AZIZ-K7QX4), and joining

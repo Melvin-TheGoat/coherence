@@ -386,6 +386,7 @@ enum Analytics {
         if userInfo["block"] != nil { return nil }
         if userInfo[SessionEndNotice.userInfoKey] != nil { return "session_end" }
         if userInfo[LeftAppNotice.userInfoKey] != nil { return "come_back" }
+        if identifier == TrialEndNotice.id { return "trial_end" }
         if identifier == NotificationScheduler.reminderID
             || identifier.hasPrefix(ReminderScheduler.idPrefix) { return "reminder" }
         return nil
@@ -669,6 +670,8 @@ enum Analytics {
         "socialProof":       "29 Made for people like you (rating ask)",
         "thisWeek":          "zz In 1 week, 808 will help you (cut)",
         "ascend":            "31 Ready to take control? (hold to ascend)",
+        "tryFree":           "31a We want you to try 808 for free (trial eligible)",
+        "trialReminder":     "31b I'll remind you the day before it ends (trial eligible)",
         "paywall":           "32 Paywall",
         "permission":        "33 One nudge at your time (notifications)",
         "health":            "33a Health consent (Watch paired)",

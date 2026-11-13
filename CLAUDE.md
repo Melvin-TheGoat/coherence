@@ -2324,6 +2324,109 @@ is LEFT, so people who stop halfway count.
   1.3 users arrive. Build PostHog tiles only once data exists, and ask
   Melvin first, as with any PostHog change.
 
+## WHO STILL PAYS, AND A DROP-OFF THAT SURVIVES AN UPDATE (2026-11-06, Aziz)
+
+Two additions to `tools/posthog_sheet.gs`. Paste it into Apps Script and run
+`refresh` for either to appear.
+
+- **The `Members` tab**: every buyer, the plan, whether a trial started,
+  whether they got past the 3 days, and whether they are still on, with a
+  summary at the top split into trials, subscriptions bought outright, and
+  Lifetime.
+- **`PostHog CANNOT see a cancellation, and the tab must never pretend it
+  can.`** Apple tells the app nothing. `Store.refreshEntitlement` reads
+  StoreKit's on-device record on every launch, writes the `is_subscriber` and
+  `plan` person properties and fires `entitlement_lost` when an entitlement
+  that was there has gone. So somebody who cancels and opens 808 again reads
+  "Lapsed", and somebody who cancels and walks away sends nothing while their
+  person record goes on saying they pay. Those read **"Unknown, never came
+  back"**, never "Still paying". Do not simplify that bucket away: it is the
+  difference between a number and a guess. **App Store Connect's Subscriptions
+  report is the only truth for money.**
+- **A trial is the sharp case.** `is_subscriber: true` written on day 1 of a
+  3-day trial says only that the trial is running. It is evidence of
+  conversion only once written AFTER the window closed, which is why the tab
+  carries "Last opened 808" beside the status. `plan` keeps the trial
+  product's own raw value (`monthTrial`), and a renewal does not change the
+  product id, so `plan` never says whether a trial converted.
+- **Screens drop-off is computed on the versions a PAIR of screens share.**
+  Aziz: "one of the screens says 87% drop off, and it's only because like 30
+  people saw the screen, but it's because we made an update." The science
+  screens (26a to 26c) and the invite screen landed 2026-10-18, the day 1.4
+  was stamped, while most of a 30-day window was still on 1.2 and 1.3, so
+  `1 - 26/200` printed as 87% churn that never happened. Each pair is now
+  compared on the newer of their two floors, and the tab prints an "Arrived
+  in" column plus a note naming what the comparison was against.
+- **The version a screen arrived in is READ FROM THE DATA**, as the oldest
+  `$app_version` that ever sent that step with more than one person behind it
+  (the "more than one" shrugs off a stray resume record, which would
+  otherwise date a new screen to 1.1 and undo the fix). **Do not replace this
+  with a hand-maintained map of screen to version**: `SCREEN_NAMES` already
+  has to be edited by hand when onboarding changes, and a second list that
+  must agree with it would silently rot and bring the phantom drop back.
+- `verAtLeast` compares versions numerically, so "1.10" counts as newer than
+  "1.9" rather than older. Use it for any version comparison in that file.
+- Verified by running the file under JavaScriptCore (`osascript -l
+  JavaScript`) with `query`, `write` and `people` stubbed and fabricated
+  rows, including Aziz's exact 87% case and one buyer per outcome. **There is
+  no node on either Mac**; that is the way to check this file without a
+  PostHog key, which lives only in Script Properties.
+
+### Apple's side of it: `tools/apple_subscriptions.py` and the Apple tab
+
+Aziz, same day: "if u cant get that data from posthog try getting it from
+apple i want everything in that sheet." So the sheet gets an **Apple** tab
+with App Store Connect's own active, renewed and cancelled counts.
+
+- **PUSHED in, not pulled, and the reason is hard.** The App Store Connect
+  API signs every request with an **ES256 JWT, and Apps Script can only do
+  HMAC**; there is no ECDSA in it. So the signing happens in Python on a Mac
+  and the result is POSTed to a `doPost` web app in the same Apps Script
+  project (the pattern `nowatch-waitlist.gs` and `community-reports.gs`
+  already use). Do not go looking for a way to call Apple from Apps Script:
+  the only routes are a pure-JS ECDSA or signing through Cloud KMS, both far
+  more work than a local script.
+- **`doPost` fails closed.** No `SHEET_SECRET` in Script Properties refuses
+  everything rather than accepting everything, since the deployment has to be
+  readable by "Anyone" for the Mac to reach it.
+- **Apple's reports are AGGREGATE. They cannot be joined to the Members
+  tab.** The Subscriber report's "Subscriber ID" is Apple's own anonymous id,
+  not ours, and there is no per-person status anywhere in Sales and Trends.
+  Read Apple for how many and Members for who. Per-person truth would need
+  the App Store **Server** API, which needs a transaction id the app
+  deliberately does not send (the "no identity" rule), so it is not a small
+  change.
+- **Daily only, version 1_3**, for all three reports (Subscription,
+  Subscription Event, Subscriber), confirmed against Apple's availability
+  table 2026-11-06: no weekly or monthly roll-up exists, available the next
+  day by about 8am Pacific, kept one year. A month of history is a month of
+  requests, which is why the script caches each day under
+  `~/.cache/808-apple` and only caches a 404 once the day is more than two
+  days old.
+- **An empty Apple tab is probably Apple, not a bug.** Privacy thresholds
+  bite at 808's size: the Subscription report fills Customer Price only above
+  three subscriptions, and the Detailed subtypes return no rows below about
+  five devices. The tab and `--probe` both say this rather than reading as a
+  failure.
+- **Active counts are a STATE and are never summed across days.** Only the
+  newest day's snapshot is used; adding thirty days of them would multiply
+  the subscriber base by thirty. Locked by a test.
+- **Every column is read by HEADER NAME, never by position.** Apple has
+  reordered these reports before, and a positional parser files the wrong
+  number under the right label, which is worse than failing.
+- Two JWT details that fail with an opaque 401: the signature must be the
+  **raw r||s pair, 64 bytes**, not the DER sequence `cryptography` returns,
+  and `exp` may be at most **20 minutes** out (Apple rejects longer rather
+  than clamping).
+- Dependencies via `uv run --with cryptography`, so there is no venv to keep.
+  System Python here is 3.9 with no `cryptography` and no `pyjwt`.
+- Verified without Apple credentials: a throwaway P-256 key signs a token
+  that verifies against its own public key, and synthetic reports in Apple's
+  shape exercise the parser and the tab. **The live HTTP call is the one
+  thing still unproven**, and needs `ASC_ISSUER_ID`, `ASC_KEY_ID`,
+  `ASC_KEY_PATH` and `ASC_VENDOR_NUMBER`. Creating the key needs Account
+  Holder or Admin, so it may be Melvin's to make.
+
 ## RELEASE_CHECKLIST.md GATES EVERY SUBMISSION (2026-09-14)
 
 Aziz: "before we push, make sure you tell us to check if these are done."
@@ -8705,3 +8808,58 @@ settings on every blocker, this is one, but check with him.
   CloudKit schema change.
 - Update `LeftAppNotice`'s copy, `SessionLeftAppView`, the review notes, and
   add analytics for the switch (choice only, nothing biometric).
+
+## ONBOARDING LEADS WITH THE FREE TRIAL, 7 DAYS (2026-11-11, Aziz)
+
+After Sweatmates, which says "free" three times before its paywall. Picked
+from `mockups/free-trial-v2.html` (A3, B2, C1) with his changes, drawn as
+`mockups/free-trial-v3.html` before any Swift. **Reverses Melvin's
+2026-09-29 "the trial only after a no" for onboarding only**; the launch lock,
+Block's paywall and the others are unchanged. One switch:
+`Monetization.trialLeadIn`.
+
+- **Two screens after "Let's go!"** (`OnboardingTrialIntro.swift`, `Step`
+  cases `tryFree` and `trialReminder`, last in the enum, analytics "31a" and
+  "31b"): "We want you to try 808 Meditate for free" ("free" green, through
+  `IntroScreen`'s new `titleAccent`), a till receipt reading "808 Meditate
+  FREE / Due today $0.00", Otto saying "My treat.", "✓ No payment due now" on
+  a cream pill (white type alone was lost in the white flowers), "Try it for
+  $0.00"; then "I'll remind you the day before it ends" with the very
+  notification Otto will send, at its real day and time, "Promise.", the same
+  pill, "Continue for FREE", which asks for notification permission and moves
+  on whatever the answer. `$0.00` is the trial product's own currency
+  (`Store.zeroPrice`).
+- **Only for someone the App Store will give the free days to**
+  (`OnboardingView.trialLead`: the yearly trial plan if on sale, else the
+  monthly, and its eligibility). Anyone else goes from ascend straight to the
+  paywall as before, Yearly and Monthly with no trial. Release also needs the
+  plans loaded. Never promise a trial the purchase sheet would not give.
+- **The onboarding paywall opens on the trial plans** (`leadPlan`): Yearly
+  trial first and preselected, the Monthly trial beside it (the paywall
+  rebuild's own `SubscriptionPlan.cards` order), and the timeline above them (`TrialTimeline`: today, Otto's reminder, the day it ends;
+  shown on any paywall whenever the chosen plan starts with free days). The
+  title stays "Keep Otto glowing." and the trial stays in the subtitle (3.1.2).
+  "No, I don't want to pay" raises the rebuild's half-price banner, as on
+  every paywall.
+- **The reminder is real** (`TrialEndNotice`, `Shared/Engine/TrialReminder`):
+  scheduled from StoreKit, not from the paywall. `Store.refreshEntitlement`
+  finds a current entitlement whose transaction is a free-trial
+  introductory offer and hands its expiration date over, so it follows a
+  purchase made elsewhere and disappears once the trial converts. **It fires
+  at 10 AM on the day before the trial's last day, and a day earlier whenever
+  that is under 26 hours before the end**, because Apple only stops a renewal
+  cancelled 24 hours ahead: a reminder 20 hours out is true and useless.
+  Never at night, never late. Words: "Your free trial ends tomorrow. Want to
+  keep meditating together?" ("on Wednesday" when it had to come a day early).
+  `TrialReminderTests` pins all of it.
+- **The 7 days live in App Store Connect**: the free trial on
+  `monthlytrial` and `yearlytrial` (and `monthly50`, per the paywall rebuild)
+  is 1 week. Until it changes, every line says 3. `808.storekit` already says
+  1 week.
+- **Built on a base three weeks older than Melvin's paywall rebuild and
+  merged onto it on 2026-11-12**: the rebuild's cards, banner and Yearly
+  preselection won wherever the two touched; this work only adds the lead
+  plan, the two screens, the timeline and the reminder.
+- A sandbox trial is minutes long, so its reminder is already past and is
+  never scheduled; check the reminder with `808.storekit` at real-time
+  renewal (RELEASE_CHECKLIST.md).

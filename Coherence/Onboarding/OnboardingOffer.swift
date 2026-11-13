@@ -348,6 +348,13 @@ struct PaywallScreen: View {
     /// free, so an update meets them here, and the first thing to say is that
     /// nothing they did is gone (Melvin, 2026-09-29).
     var memberNotice: Bool = false
+    /// The free-trial plan onboarding leads with (Aziz, 2026-11-11), or nil.
+    /// When set, the paywall opens on the trial plans (Yearly's, then
+    /// Monthly's) with the timeline above them.
+    var leadPlan: SubscriptionPlan? = nil
+    /// The lead plan is preselected once, on the first appearance, so a
+    /// choice made since (half price, from the banner) is never undone.
+    @State private var leadApplied = false
     /// Under the onboarding's one progress bar, the words start below it.
     @Environment(\.onboardingFlowBar) private var underFlowBar
     @State private var trackedView = false
@@ -783,6 +790,12 @@ struct PaywallScreen: View {
         .sensoryFeedback(.success, trigger: started)
         .onAppear {
             holdsAccountData = Self.deviceHoldsAccountData(in: context)
+            // Onboarding's free-trial lead opens on the trial plan, once, and
+            // never over a plan chosen since (half price, from the banner).
+            if let leadPlan, !leadApplied {
+                leadApplied = true
+                if [.monthly, .yearly, .lifetime].contains(plan) { plan = leadPlan }
+            }
             // Lifetime is offered again (2026-09-29), but only while its
             // product is on sale; a plan that lands on a card not shown
             // falls back to monthly.
@@ -900,9 +913,21 @@ struct PaywallScreen: View {
     /// The plans, the button and everything Apple requires beside them
     /// (price, renewal, Restore, Privacy Policy, Terms of Use: 3.1.1, 3.1.2).
     private func panel(compact: Bool, bottomInset: CGFloat) -> some View {
-        VStack(spacing: compact ? 9 : 12) {
+        // The timeline adds three rows, so the panel around it packs a little
+        // tighter (the spacing and the cards' padding, never the type), or
+        // Otto was dropped for the scroll on an iPhone 17 Pro.
+        let timeline = selling ? trialLength : nil
+        let tight = compact || timeline != nil
+        return VStack(spacing: tight ? 9 : 12) {
+            // When this plan starts with free days: today, Otto's reminder,
+            // the day it ends (the mockup's C1, 2026-11-11), before the
+            // plans ask which.
+            if let days = timeline {
+                TrialTimeline(days: days, compact: compact)
+                    .padding(.bottom, 2)
+            }
             ForEach(cardsShown) { p in
-                planCard(p, compact: compact)
+                planCard(p, compact: tight)
             }
 
             OnboardingCTA(title: selling ? Self.buyButtonTitle(for: plan, trialDays: trialLength) : notSellingButton,
