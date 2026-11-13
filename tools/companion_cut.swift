@@ -12,6 +12,12 @@
 //   boxes.txt      "<name> x y w h" in CANVAS units (664x744), plus
 //                  "figure-<i> x y w h" (the body's alpha box)
 // The rig places each image by its box and scales it by 100/density percent.
+//
+// BOXES_FROM=<dir> (2026-11-13): take every box from <dir>/<name>-<i>.png (the
+// masters the rig was built from) and the pixels from <masterDir>. Used to
+// re-cut cleaned art (tools/paper_check.swift) into images of exactly the
+// rig's sizes and places, so it can be swapped in with tools/riv_images.py
+// without moving anything a hat or a rig number was measured against.
 import Foundation
 import CoreGraphics
 import ImageIO
@@ -47,8 +53,18 @@ for i in 1...7 {
     c.interpolationQuality = .high
     c.draw(load("\(master)/\(name)-\(i).png"), in: CGRect(x: 0, y: 0, width: W, height: H))
     let px = c.data!.bindMemory(to: UInt8.self, capacity: W * H * 4)  // row 0 = TOP
+    var boxPx = px
+    var boxCtx: CGContext? = nil   // keeps boxPx's memory alive for this stage
+    if let from = ProcessInfo.processInfo.environment["BOXES_FROM"] {
+        let b = ctx(W, H)
+        b.interpolationQuality = .high
+        b.draw(load("\(from)/\(name)-\(i).png"), in: CGRect(x: 0, y: 0, width: W, height: H))
+        boxCtx = b
+        boxPx = b.data!.bindMemory(to: UInt8.self, capacity: W * H * 4)
+    }
+    _ = boxCtx
     var x0 = W, y0 = H, x1 = -1, y1 = -1
-    for y in 0..<H { for x in 0..<W where px[(y * W + x) * 4 + 3] > 6 {
+    for y in 0..<H { for x in 0..<W where boxPx[(y * W + x) * 4 + 3] > 6 {
         x0 = min(x0, x); x1 = max(x1, x); y0 = min(y0, y); y1 = max(y1, y) } }
     x0 = max(0, x0 - 2); y0 = max(0, y0 - 2); x1 = min(W - 1, x1 + 2); y1 = min(H - 1, y1 + 2)
     let full = c.makeImage()!
