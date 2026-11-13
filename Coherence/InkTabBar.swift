@@ -25,13 +25,18 @@ struct InkTabBar: View {
 
     var body: some View {
         HStack(alignment: .center, spacing: 0) {
+            // Home · Friends · + · Block · Profile (Melvin, 2026-11-13,
+            // `mockups/friends-v3.html`): Friends sits next to Home, the second
+            // thing you check. With the Shop in the bar, the 2026-09-27 order.
             item(.home, art: "ink-home", label: "Home", wash: (0, false), tour: nil)
-            item(.block, art: "ink-block", label: "Block", wash: (180, true), tour: .block)
-            plus
-            if FeatureFlags.shop {
+            if FeatureFlags.shopHasTab {
+                item(.block, art: "ink-block", label: "Block", wash: (180, true), tour: .block)
+                plus
                 item(.store, art: "ink-store", label: "Shop", wash: (180, false), tour: .store)
             } else {
                 item(.friends, art: "ink-friends", label: "Friends", wash: (180, false), tour: .friends)
+                plus
+                item(.block, art: "ink-block", label: "Block", wash: (180, true), tour: .block)
             }
             item(.profile, art: "ink-profile", label: "Profile", wash: (0, true), tour: .profile)
         }

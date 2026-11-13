@@ -954,19 +954,19 @@ final class FriendsOptionalTests: XCTestCase {
         XCTAssertNil(db.records[meID], "nothing about how often I meditate was published")
     }
 
-    /// Opening Friends asks for friends, requests and blocks, never the
-    /// removed feed: in a container missing the Post type or its index that
-    /// query failed and the whole tab read as broken.
-    func test_openingFriendsNeverQueriesPostsOrReactions() async throws {
-        let recording = TypeRecordingDatabase(inner: MemoryCommunityDatabase(user: "_me"))
-        let model = CommunityModel(store: CommunityStore(database: recording))
+    /// The feed is back (2026-11-13) but loads on its own path: in a
+    /// container missing the Post or Reaction type or an index, that query
+    /// fails, and Friends must still open with its lists.
+    func test_aBrokenFeedNeverBreaksTheFriendsList() async throws {
+        let refusing = FeedRefusingDatabase(inner: MemoryCommunityDatabase(user: "_me"))
+        let model = CommunityModel(store: CommunityStore(database: refusing))
         await model.load()
         _ = await model.claim("aziz", displayName: "Aziz")
         await model.refresh()
         XCTAssertEqual(model.phase, .ready)
-        XCTAssertFalse(recording.types.isEmpty, "the lists were loaded")
-        XCTAssertFalse(recording.types.contains(CommunityType.post))
-        XCTAssertFalse(recording.types.contains(CommunityType.reaction))
+        XCTAssertNil(model.errorText, "no alert for the feed")
+        XCTAssertTrue(model.feedFailed)
+        XCTAssertTrue(model.feed.isEmpty)
     }
 
     /// Remove photo on Edit profile takes the published photo down, not just
@@ -1030,4 +1030,20 @@ final class BlockPrivacyModelTests: XCTestCase {
         await fresh.loadPerson(otherID)
         XCTAssertEqual(fresh.person(otherID)?.practice.totalSessions, 41, "unblocking brings them back in full")
     }
+}
+
+/// Refuses every Post and Reaction query, the way a Production container
+/// missing their indexes does.
+private final class FeedRefusingDatabase: CommunityDatabase {
+    let inner: MemoryCommunityDatabase
+    init(inner: MemoryCommunityDatabase) { self.inner = inner }
+    func currentUserRecordName() async throws -> String { try await inner.currentUserRecordName() }
+    func save(_ record: CKRecord) async throws -> CKRecord { try await inner.save(record) }
+    func create(_ record: CKRecord) async throws -> CKRecord { try await inner.create(record) }
+    func fetch(_ recordName: String) async throws -> CKRecord? { try await inner.fetch(recordName) }
+    func query(_ query: CommunityQuery) async throws -> [CKRecord] {
+        if [CommunityType.post, CommunityType.reaction].contains(query.type) { throw CKError(.invalidArguments) }
+        return try await inner.query(query)
+    }
+    func delete(_ recordName: String) async throws { try await inner.delete(recordName) }
 }

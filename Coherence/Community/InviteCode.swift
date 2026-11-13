@@ -71,7 +71,9 @@ enum InviteCode {
     /// The first message the share sheet sends. The code then goes again as
     /// a text of its own (`InviteCodeSheet`), so it can be copied in one tap.
     static func message(for code: String) -> String {
-        "Meditate with me on 808 🧘 Use my invite code \(display(code)) when you join and we'll be friends right away.\n"
+        // The free month in the first line people read (Melvin, 2026-11-13,
+        // `mockups/friends-v3.html` screen 7).
+        "Meditate with me on 808. Use my code for a free month: \(display(code))\n"
             + link.absoluteString
     }
 }

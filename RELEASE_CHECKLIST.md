@@ -1032,6 +1032,59 @@ From branch `posthog-1.4-screens`. Two things:
 - [ ] **Review notes recounted after the merge**: under 4,000 counting line
       breaks twice (`marketing/APP_STORE_PASTE.md`).
 - [ ] New archive (this is on `block`, after 1.4).
+## OPEN for the build that ships the Friends feed (2026-11-13, branch `friends-feed`)
+
+Built from `mockups/friends-v3.html`: the tab bar is Home · Friends · + ·
+Block · Profile, the Shop is Home's top-right circle, Friends is a Strava
+style feed (photo optional, Time · Streak · Sound, "✓ Timed in 808" or
+"Logged", kudos by double tap), posting is the default after a session, and a
+friend's invite code opens a paywall with a free month. Reverses the
+2026-09-27 cut. Never run on real iCloud yet. It started from branch
+`social-feed` (2026-10-23), whose tab swap and session-page sharing it reuses.
+
+- [ ] **CloudKit, Development to Production** (`CLOUDKIT_SETUP.md`, "Shared
+      sessions" and "The feed, 2026-11-13"): record types `Post` and
+      `Reaction` with their fields, including the new `Post.logged` (Int64)
+      and `Reaction.emoji` (String) and the four `media*` fields; QUERYABLE
+      `Post.author`, SORTABLE `Post.practicedAt`, QUERYABLE `Reaction.post`
+      and `Reaction.author`. Indexes are never created lazily: without them
+      the feed is empty on every real install. Then the two-phone check.
+- [ ] **Two-phone test:** A posts with a photo from the session page (Friends
+      preset), B sees it in the feed, double taps (the slam lands, the count
+      ticks), picks ✨ from the +, opens the full post, reports it (the email
+      arrives) and blocks A (A's posts leave B's feed). A deletes the post;
+      A switches a post to Only me; a hand-logged session posts with the
+      Logged chip and still counts for no goal and opens no Block window.
+- [ ] **Privacy policy approved by the founders**, then `python3
+      tools/legal_pages.py` and **deploy the website before release**
+      (`deploy-website`): posts with photos visible to friends, on-device
+      screening, reports, kudos, deletion.
+- [ ] **App Privacy label:** Photos or Videos and Other User Content, App
+      Functionality, linked (already declared for profile pictures; confirm
+      both still listed now that posts carry them).
+- [ ] **A written moderation procedure** (who reads the report email, how
+      fast, how a post and an account are removed in the CloudKit Console),
+      kept where both founders can find it. Guideline 1.2 asks for timely
+      action on reports.
+- [ ] **NCMEC:** a written procedure for reporting apparent child sexual
+      abuse material found in a post to the NCMEC CyberTipline (US law,
+      18 U.S.C. 2258A, for any provider that learns of it), including
+      preserving the record and NOT deleting it before reporting. Register
+      with the CyberTipline before release. Founders' and counsel's call.
+- [ ] **Sensitive Content Analysis** stays in the entitlements (it is) and
+      the screening works on a phone with Sensitive Content Warning on.
+- [ ] **The invited friend's free month:** create
+      `com.lockout.meditate808.monthlyinvite` in App Store Connect in the
+      SAME subscription group as Monthly and Yearly, priced as Monthly, with a
+      **1-month free introductory offer**, display name "Monthly (friend's
+      invite)". Attach it to the version. Apple gives one introductory offer
+      per Apple ID per group, so someone who already had a trial is not
+      eligible and the app shows them the normal paywall (`InviteOffer`).
+      Until the product exists, invited people see the normal paywall.
+- [ ] **Review notes and What's New:** Friends is a feed of friends'
+      sessions with photos, kudos only (no comments), Report post and Block
+      under the ⋯ on a post. No score or heart rate is ever on a post.
+- [ ] **Store screenshots:** retake the Friends screenshot with the feed.
 
 ## OPEN for 1.4 (2026-10-18): Meditating together, invite codes, profile pictures
 

@@ -21,13 +21,18 @@ struct MeadowTabBar: View {
 
     var body: some View {
         HStack(alignment: .bottom, spacing: 0) {
+            // Home · Friends · + · Block · Profile (Melvin, 2026-11-13,
+            // `mockups/friends-v3.html`): Friends sits next to Home, the second
+            // thing you check. With the Shop in the bar, the 2026-09-27 order.
             item(.home, art: "tab-home", label: "Home", tour: nil)
-            item(.block, art: "tab-block", label: "Block", tour: .block)
-            begin
-            if FeatureFlags.shop {
+            if FeatureFlags.shopHasTab {
+                item(.block, art: "tab-block", label: "Block", tour: .block)
+                begin
                 item(.store, art: "tab-store", label: "Shop", tour: .store)
             } else {
                 item(.friends, art: "tab-friends", label: "Friends", tour: .friends)
+                begin
+                item(.block, art: "tab-block", label: "Block", tour: .block)
             }
             item(.profile, art: "tab-profile", label: "Profile", tour: .profile)
         }

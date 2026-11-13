@@ -36,6 +36,11 @@ enum SubscriptionPlan: String, CaseIterable, Identifiable {
     /// trial on the monthly alone would steer everyone who takes it away from
     /// the best value. Rung 2 is `monthHalf`, $3.99 every month after a trial.
     case monthTrial, monthHalf, yearTrial
+    /// A friend's invite (Melvin, 2026-11-13): Monthly with a ONE-MONTH free
+    /// introductory offer, its own product in the same group, sold only on
+    /// the paywall someone sees after joining with an invite code
+    /// (`InvitePaywallScreen`). Never on the ordinary paywall's cards.
+    case monthInvite
 
     var id: String { rawValue }
 
@@ -80,6 +85,7 @@ enum SubscriptionPlan: String, CaseIterable, Identifiable {
         // trial" as the title of a card that renews at $7.99 read as if the
         // card itself were free; the trial is stated on the cadence line.
         case .monthTrial: return "Monthly"
+        case .monthInvite: return "Monthly"
         case .monthHalf: return "Monthly, half price"
         case .yearTrial: return "Yearly"
         }
@@ -92,6 +98,7 @@ enum SubscriptionPlan: String, CaseIterable, Identifiable {
         case .lifetime: return "$99.99"
         case .yearHalf: return "$14.99"
         case .monthTrial: return "$7.99"
+        case .monthInvite: return "$7.99"
         case .monthHalf: return "$3.99"
         case .yearTrial: return "$29.99"
         }
@@ -131,7 +138,7 @@ enum SubscriptionPlan: String, CaseIterable, Identifiable {
         // The year's real price, which this is genuinely half of, so the
         // strikethrough is a true reference price and not a fake one.
         case .yearHalf: return "$29.99"
-        case .monthTrial: return nil
+        case .monthTrial, .monthInvite: return nil
         // The month's real price, which this plan is genuinely half of,
         // every month (2026-09-27), so the strikethrough stays a true
         // reference price.
@@ -178,7 +185,7 @@ enum SubscriptionPlan: String, CaseIterable, Identifiable {
     /// (`Store.freeTrialDays(for:)`), never this.
     var designedWithTrial: Bool {
         switch self {
-        case .monthTrial, .monthHalf, .yearTrial: return true
+        case .monthTrial, .monthHalf, .yearTrial, .monthInvite: return true
         case .monthly, .yearly: return Monetization.freeTrial
         case .lifetime, .yearHalf: return false
         }
@@ -190,7 +197,7 @@ enum SubscriptionPlan: String, CaseIterable, Identifiable {
     /// trial the purchase sheet will not give.
     func cadence(withTrial trial: Bool) -> String {
         switch self {
-        case .monthly, .monthTrial, .monthHalf:
+        case .monthly, .monthTrial, .monthHalf, .monthInvite:
             return trial ? "per month after the trial" : "per month"
         case .yearly, .yearTrial:
             return trial ? "per year after the trial" : "per year"
@@ -208,6 +215,7 @@ enum SubscriptionPlan: String, CaseIterable, Identifiable {
         // everywhere the number appears (3.1.2, and plain honesty).
         case .yearHalf: return "first year, then $29.99 a year"
         case .monthTrial: return "per month after the trial"
+        case .monthInvite: return "per month after the free month"
         case .monthHalf: return "per month after the trial"
         case .yearTrial: return "per year after the trial"
         }
@@ -238,7 +246,7 @@ enum SubscriptionPlan: String, CaseIterable, Identifiable {
         case .lifetime: return "About a year of monthly, then never again"
         // $14.99 over 12 months, the same arithmetic as the year above it.
         case .yearHalf: return "$1.25 a month for the first year"
-        case .monthTrial: return "Nothing to pay today"
+        case .monthTrial, .monthInvite: return "Nothing to pay today"
         case .monthHalf: return "Half the monthly price, every month"
         // $29.99 over 12 months, the same arithmetic as Yearly.
         case .yearTrial: return "$2.50 a month"
@@ -567,7 +575,7 @@ struct PaywallScreen: View {
     /// own purchase would start with.
     private func trialLength(for p: SubscriptionPlan) -> Int? {
         switch p {
-        case .monthTrial, .monthHalf, .yearTrial: return store.freeTrialDays(for: p)
+        case .monthTrial, .monthHalf, .yearTrial, .monthInvite: return store.freeTrialDays(for: p)
         case .lifetime, .yearHalf: return nil
         case .monthly, .yearly: return offerTrial ? store.freeTrialDays(for: p) : nil
         }

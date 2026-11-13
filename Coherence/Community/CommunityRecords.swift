@@ -409,6 +409,10 @@ struct Post: Identifiable, Equatable {
     var title: String
     /// The sound played ("Rain", "Silence"), where Strava shows a location.
     var sound: String?
+    /// Typed in with Record one rather than timed in 808 (2026-11-13): the
+    /// card's chip reads "Logged" instead of "Timed in 808". A logged session
+    /// still never counts for goals or Block; this only says what it is.
+    var logged: Bool
 
     /// The only fields a post may carry. Locked by test; if you find yourself
     /// adding one, read the rule at the top of this file first. **`score` is
@@ -420,15 +424,16 @@ struct Post: Identifiable, Equatable {
     /// Asset List, two more Lists for the kind and the aspect ratio.
     static let fields = ["author", "minutes", "streak", "technique", "caption",
                          "media", "mediaPosters", "mediaKinds", "mediaAspects",
-                         "practicedAt", "createdAt", "title", "sound"]
+                         "practicedAt", "createdAt", "title", "sound", "logged"]
 
     init(id: String = UUID().uuidString, author: String, minutes: Int, streak: Int,
          technique: String? = nil, caption: String = "", media: [PostMedia] = [],
-         practicedAt: Date, createdAt: Date = Date(), title: String = "", sound: String? = nil) {
+         practicedAt: Date, createdAt: Date = Date(), title: String = "", sound: String? = nil,
+         logged: Bool = false) {
         self.id = id; self.author = author; self.minutes = minutes
         self.streak = streak; self.technique = technique; self.caption = caption
         self.media = media; self.practicedAt = practicedAt; self.createdAt = createdAt
-        self.title = title; self.sound = sound
+        self.title = title; self.sound = sound; self.logged = logged
     }
 
     init?(record: CKRecord) {
@@ -456,7 +461,8 @@ struct Post: Identifiable, Equatable {
                   practicedAt: record["practicedAt"] as? Date ?? Date(),
                   createdAt: record["createdAt"] as? Date ?? Date(),
                   title: record["title"] as? String ?? "",
-                  sound: record["sound"] as? String)
+                  sound: record["sound"] as? String,
+                  logged: (record["logged"] as? Int ?? 0) != 0)
     }
 
     /// Every field but the media ones, which `CommunityStore.post(_:)` writes
@@ -473,30 +479,53 @@ struct Post: Identifiable, Equatable {
         record["caption"] = caption
         record["practicedAt"] = practicedAt
         record["createdAt"] = createdAt
+        record["logged"] = logged ? 1 : 0
+    }
+}
+
+/// The four kudos a friend can give (2026-11-13, `mockups/friends-v3.html`).
+/// A fixed list on purpose: any emoji, or free text, would be a second
+/// channel the content filter cannot read, and a fixed choice is the only
+/// kind analytics may record.
+enum Kudos {
+    static let choices = ["🙏", "✨", "🔥", "🧘"]
+    /// What a double tap gives.
+    static let standard = "🙏"
+    /// Anything outside the list (an older build's reaction, which carried
+    /// no emoji) reads as the standard one.
+    static func sanitized(_ raw: String?) -> String {
+        guard let raw, choices.contains(raw) else { return standard }
+        return raw
     }
 }
 
 struct Reaction: Identifiable, Equatable {
     let post: String
     let author: String
+    /// Which of the four kudos (`Kudos.choices`). One per person per post:
+    /// the record name is per pair, so a second pick replaces the first.
+    var emoji: String
     var createdAt: Date
 
     var id: String { CommunityNames.reaction(post: post, by: author) }
 
-    init(post: String, author: String, createdAt: Date = Date()) {
-        self.post = post; self.author = author; self.createdAt = createdAt
+    init(post: String, author: String, emoji: String = Kudos.standard, createdAt: Date = Date()) {
+        self.post = post; self.author = author
+        self.emoji = Kudos.sanitized(emoji); self.createdAt = createdAt
     }
 
     init?(record: CKRecord) {
         guard record.recordType == CommunityType.reaction,
               let post = (record["post"] as? CKRecord.Reference)?.recordID.recordName,
               let author = (record["author"] as? CKRecord.Reference)?.recordID.recordName else { return nil }
-        self.init(post: post, author: author, createdAt: record["createdAt"] as? Date ?? Date())
+        self.init(post: post, author: author, emoji: Kudos.sanitized(record["emoji"] as? String),
+                  createdAt: record["createdAt"] as? Date ?? Date())
     }
 
     func apply(to record: CKRecord) {
         record["post"] = CommunityRecordValue.reference(post).ckValue
         record["author"] = CommunityRecordValue.reference(author).ckValue
+        record["emoji"] = emoji
         record["createdAt"] = createdAt
     }
 }

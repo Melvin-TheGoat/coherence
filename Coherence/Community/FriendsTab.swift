@@ -32,6 +32,8 @@ struct FriendsTab: View {
 
     private var user: User? { users.first }
     @Environment(\.tabBarClearance) private var tabBarClearance
+    /// Kudos' slam, drawn over the whole stack (`KudosSlamLayer`).
+    @StateObject private var slam = KudosSlam()
 
     var body: some View {
         NavigationStack {
@@ -107,6 +109,8 @@ struct FriendsTab: View {
                 if let onClose { CloseCapsule(action: onClose) }
             }
         }
+        .environmentObject(slam)
+        .overlay { KudosSlamLayer(slam: slam) }
         .task {
             // The tour passing through is not somebody opening Friends, and
             // counting it would put every new install in the number.
@@ -376,7 +380,7 @@ struct UnavailableCard: View {
 /// The reward, stated once, on the claim screen and when there is nobody
 /// here yet. The mechanics live in feature 4 (the grant); the copy is here so
 /// the promise and the code ship in the same build.
-private struct InviteRewardNote: View {
+struct InviteRewardNote: View {
     /// While 808 is premium only, every member already sees every result, so
     /// banked sessions of evidence would be a reward with nothing in it
     /// (Melvin, 2026-09-29). The award is what a friend brings then.
@@ -414,7 +418,7 @@ private struct InviteRewardNote: View {
 /// "Remind me tomorrow" and "Not now" (never again). Waits a moment after
 /// Friends opens so it arrives as the next thing rather than with the page,
 /// and never while the tour passes or another sheet is up.
-private struct PicturePromptHook: ViewModifier {
+struct PicturePromptHook: ViewModifier {
     @ObservedObject var model: CommunityModel
     let blocked: Bool
     @Environment(\.tourTab) private var tourTab
@@ -467,11 +471,12 @@ private struct PicturePromptHook: ViewModifier {
     }
 }
 
-struct FriendsHomeView: View {
+/// Everyone you are friends with, and search, one tap from the feed's
+/// header ("N friends"). The feed took the tab's first screen (Melvin,
+/// 2026-11-13, `mockups/friends-v3.html` section 3: search moves behind the
+/// header), so this is where finding someone and the full list live.
+struct FriendsDirectoryView: View {
     @ObservedObject var model: CommunityModel
-    let myDisplayName: String
-    /// The screen is a sheet with a close button in the top-left corner.
-    var roomForClose = false
 
     @State private var query = ""
     @State private var result: Profile?
@@ -495,68 +500,44 @@ struct FriendsHomeView: View {
 
     var body: some View {
         GeometryReader { proxy in
-            let top = proxy.safeAreaInsets.top
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
-                    band(top: top)
+                    FriendsSky(height: proxy.safeAreaInsets.top + 56) { EmptyView() }
                     VStack(alignment: .leading, spacing: 14) {
-                        #if DEBUG
-                        if model.testMode && !StoreShots.on { testModePill }
-                        #endif
                         searchField
                         if searched { searchResult }
-                        // Meditating together (2026-10-14): the goals, with a
-                        // blue Add that is always there once one exists.
-                        if !model.togetherGoals.isEmpty {
-                            TogetherSection(model: model) { startGoal("together_add") }
-                        }
-                        GrassHeading(title: "Friends")
+                        GrassHeading(title: model.friends.isEmpty ? "Friends"
+                                     : "\(model.friends.count) friend\(model.friends.count == 1 ? "" : "s")")
                         friendsSection
-                        // The bar is a safe-area inset so the scroll clears it
-                        // on its own; this only clears the half of the plus
-                        // that rises above it.
-                        Color.clear.frame(height: 24)
                     }
                     .padding(.horizontal, AppMetrics.screenPadding)
                     .padding(.top, 14)
+                    .padding(.bottom, 24)
                 }
             }
             .scrollIndicators(.hidden)
             .ignoresSafeArea(edges: .top)
             .modifier(NoTopEdgeHaze())
-            .modifier(StatusBarScrim(height: top, threshold: 100))
             .refreshable { await model.refresh() }
         }
         .background(ValleyGround.meadow.ignoresSafeArea())
-        // The band carries the title, so this page has no bar at all; the
-        // pages pushed from it bring their own back button.
-        .toolbar(.hidden, for: .navigationBar)
-        .navigationDestination(for: String.self) { id in
-            PersonView(id: id, model: model)
-        }
-        .navigationDestination(for: FriendsRoute.self) { route in
-            switch route {
-            case .requests: RequestsView(model: model)
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(.hidden, for: .navigationBar)
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                Text("Your friends")
+                    .font(DisplayFont.display(19, .heavy))
+                    .onValley()
             }
         }
-        .navigationDestination(for: GoalRoute.self) { route in
-            switch route {
-            case .goal(let id): GoalDetailView(model: model, goalID: id)
-            case .invite(let id): GoalInviteDetailView(model: model, goalID: id)
-            }
-        }
+        // No navigationDestination here: the feed's, further up the same
+        // stack, routes profile ids.
         .sheet(isPresented: $startingGoal) { GoalStartFlow(model: model) }
-        // A profile with no picture is asked, once or again tomorrow, to pick
-        // one (2026-10-19). Its sheet hangs off its own view, not this one,
-        // which already presents the goal flow.
-        .modifier(PicturePromptHook(model: model, blocked: startingGoal))
-        // Opening Friends reads the news: the badge on Home's circle clears.
-        .onAppear { model.markNewsSeen() }
-        .onChange(of: model.unseenCount) { _, n in if n > 0 { model.markNewsSeen() } }
     }
 
-    /// Every mutual friend, with how often they meditate — the thing that
-    /// replaced the feed. Tapping one opens their page.
+    /// Every mutual friend, with how often they meditate. Tapping one opens
+    /// their page.
     @ViewBuilder
     private var friendsSection: some View {
         if model.friends.isEmpty {
@@ -586,114 +567,6 @@ struct FriendsHomeView: View {
             }
             .padding(.horizontal, 14)
             .whiteCard()
-        }
-    }
-
-    /// The title, your handle, Invite and Requests in the sky.
-    ///
-    /// **No row of friends' faces on the meadow any more** (Melvin,
-    /// 2026-09-25: "the profile photos at the top are weird looking, get rid
-    /// of them, and raise everything else up"). The band is only as tall as
-    /// its words need, so the search and the friends list sit about 100pt
-    /// higher. A friend's page is still a tap on their name below, or on
-    /// your followers and following in Profile; Invite, which was the last
-    /// face in that row, is a pill beside Requests.
-    private func band(top: CGFloat) -> some View {
-        // Cut at 62% of the scene: sky and hills, down to the near green
-        // ridge, which runs straight into the page's own meadow.
-        FriendsSky(height: top + 116, sceneHeight: (top + 116) / 0.62) {
-            VStack(spacing: 0) {
-                HStack(alignment: .top) {
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text("Friends")
-                            .font(DisplayFont.display(30, .heavy))
-                            .onValley()
-                        if let handle = model.profile.map({ "@" + $0.username }), handle.count > 1 {
-                            Text(handle)
-                                .font(AppFont.caption.weight(.semibold))
-                                .onValley(soft: true)
-                                .lineLimit(1)
-                                .truncationMode(.tail)
-                        }
-                    }
-                    // Clear of the close button, when this is a sheet from Home.
-                    .padding(.leading, roomForClose ? 44 : 0)
-                    // A long handle gives way before the pills do: it was the
-                    // handle's width that pushed "Requests" onto two lines
-                    // (Melvin, 2026-09-27, the last "s" alone underneath).
-                    .layoutPriority(-1)
-                    Spacer(minLength: 8)
-                    // Requests, and right under it the way to bring someone
-                    // new (Aziz, 2026-10-18).
-                    VStack(alignment: .trailing, spacing: 8) {
-                        requestsButton
-                        InviteCodeButton(model: model, source: "header")
-                    }
-                    .padding(.top, 6)
-                }
-                .padding(.horizontal, AppMetrics.screenPadding)
-                .padding(.top, top + 10)
-                Spacer(minLength: 0)
-            }
-        }
-    }
-
-    #if DEBUG
-    private var testModePill: some View {
-        HStack(spacing: 8) {
-            Text("Test mode: a fake database on this device")
-                .font(AppFont.caption.weight(.semibold))
-                .foregroundStyle(ValleyGround.inkSoft)
-            Spacer(minLength: 0)
-            Button("Turn off") { Task { await model.setTestMode(false) } }
-                .buttonStyle(.tactile)
-                .font(AppFont.caption.weight(.bold))
-                .foregroundStyle(AppColor.skyDeep)
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 9)
-        .background(AppColor.backgroundPrimary.opacity(0.94), in: Capsule())
-    }
-    #endif
-
-    /// Requests as a BUTTON.
-    ///
-    /// A waiting request used to be grey caption text floating above a search
-    /// field, which made it the most missable thing in the product: this is the
-    /// only screen in 808 where another person is waiting on the reader. It is
-    /// gold when somebody is, the one gold thing in the sky, and a cream pill
-    /// when nobody is, so the colour itself carries the news.
-    ///
-    /// Pushed by VALUE, like the profiles inside it (2026-10-01). A
-    /// destination-closure link here put Requests outside the stack's path,
-    /// so tapping a person in it appended them to the path UNDER Requests:
-    /// the page slid in, Requests came straight back on top, and Back
-    /// revealed the profile. Every link in this stack goes by value.
-    private var requestsButton: some View {
-        NavigationLink(value: FriendsRoute.requests) {
-            // Goal invites wait on the same page, so they count here too: it
-            // said "1 request" over a page holding two (2026-10-18 review).
-            let count = model.incoming.count + model.goalInvites.count
-            let waiting = count > 0
-            Text(waiting
-                 ? "\(count) request\(count == 1 ? "" : "s")"
-                 : "Requests")
-                .font(.system(size: 13, weight: .bold, design: .rounded))
-                .lineLimit(1)
-                .fixedSize()
-                .foregroundStyle(waiting ? AppColor.textOnAccent : ValleyGround.ink)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 8)
-                .background {
-                    if waiting {
-                        Capsule().fill(AppColor.accentGold)
-                            .shadow(color: AppColor.accentGoldShade, radius: 0, y: 3)
-                    } else {
-                        Capsule().fill(AppColor.backgroundPrimary.opacity(0.94))
-                            .shadow(color: .black.opacity(0.12), radius: 5, y: 2)
-                    }
-                }
-                .padding(.bottom, 3)
         }
     }
 
@@ -827,7 +700,7 @@ struct FriendsHomeView: View {
     }
 }
 
-private struct EmptyFriends: View {
+struct EmptyFriends: View {
     @ObservedObject var model: CommunityModel
     let username: String
 
@@ -1063,6 +936,8 @@ func practiceLine(_ published: PracticeStats) -> String {
 /// destination closure, so they share the stack's path with the profile ids.
 enum FriendsRoute: Hashable {
     case requests
+    /// Everyone you are friends with, and search (behind "N friends").
+    case directory
 }
 
 struct RequestsView: View {
@@ -1525,9 +1400,15 @@ struct ReportSheet: View {
     @State private var sent: Bool?
     @State private var sending = false
 
-    /// About a profile, since there are no posts to report any more (Melvin,
-    /// 2026-09-29: "Not a meditation" was a reason for a post).
-    private let reasons = ["Pretending to be someone else", "Harassment or hate", "Nudity or violence", "Spam", "Something else"]
+    /// A post has its own reasons again (the feed, 2026-11-13).
+    private var reasons: [String] {
+        switch target {
+        case .post: return ["Nudity or sexual content", "Violence or something dangerous", "Harassment or hate",
+                            "Not a meditation", "Spam", "Something else"]
+        case .profile: return ["Pretending to be someone else", "Harassment or hate", "Nudity or violence",
+                               "Spam", "Something else"]
+        }
+    }
 
     var body: some View {
         NavigationStack {

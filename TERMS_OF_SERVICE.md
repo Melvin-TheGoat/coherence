@@ -1,6 +1,6 @@
 # Terms of Service
 
-**Last updated: September 29, 2026**
+**Last updated: November 13, 2026**
 
 These Terms of Service ("Terms") are a legal agreement between you and
 **Lock Out Inc. ("we," "us")** governing your use of the **808 Meditate**
@@ -139,16 +139,22 @@ who has added you. You keep ownership of what you
 add. You give us permission to store it, show it to other people using 808,
 and remove it, for as long as you keep it in the app.
 
-**By adding a profile photo you confirm** that it is yours to use, that any
-person in it is you, and that it does not infringe anyone's rights.
+**Posts.** You can post a session for your friends to see, with a title, a
+note and photos. Your friends can give it kudos and can report it.
 
-**There is no tolerance for objectionable content.** Do not use a username,
-name or photo that is unlawful, hateful, harassing, threatening, sexually
+**By adding a profile photo, or a photo to a post, you confirm** that it is
+yours to use, that any person in it agreed to be in it, and that it does not
+infringe anyone's rights.
+
+**There is no tolerance for objectionable content.** Do not post, or use as a
+username, name or photo, anything that is unlawful, hateful, harassing, threatening, sexually
 explicit, violent, or that shows or targets another person without their
 consent, and do not impersonate anyone or spam other users.
 
-**How this is enforced.** Usernames and names are filtered before they are
-accepted. Every person can be reported from the app, and you can block
+**How this is enforced.** Usernames, names and the words on a post are
+filtered before they are accepted, and every photo on a post is checked on
+your iPhone before it is uploaded. Every person and every post can be reported
+from the app, and you can block
 someone. A block is private and one-sided: the person you block is not told,
 their friend requests never reach you, and you stop seeing them anywhere in
 Friends. Because profiles are public, they may still see your profile. We

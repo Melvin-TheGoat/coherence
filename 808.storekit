@@ -170,6 +170,31 @@
             "subscriptionPeriod" : "P1W",
             "internalID" : "808200005"
           }
+        },
+        {
+          "adHocOffers" : [],
+          "codeOffers" : [],
+          "displayPrice" : "7.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "808000008",
+          "localizations" : [
+            {
+              "description" : "808, billed monthly after a free month from a friend's invite.",
+              "displayName" : "Monthly (friend's invite)",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.lockout.meditate808.monthlyinvite",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Monthly, invited (free month)",
+          "subscriptionGroupID" : "808100001",
+          "type" : "RecurringSubscription",
+          "introductoryOffer" : {
+            "paymentMode" : "free",
+            "subscriptionPeriod" : "P1M",
+            "internalID" : "808200008"
+          }
         }
       ]
     }

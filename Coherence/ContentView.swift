@@ -149,6 +149,9 @@ struct ContentView: View {
         case reward(SessionReward)
         /// Friends, from its circle on Home, when the Store has its tab.
         case friends
+        /// The Shop, from its circle on Home, when Friends has the tab
+        /// (Melvin, 2026-10-23: "switch friends and store").
+        case store
         /// Otto's one-time ask to pick an app for him to hold (2026-10-13),
         /// for members with nothing held (`BlockAppsPrompt`).
         case pickApps
@@ -174,6 +177,7 @@ struct ContentView: View {
             case .intervention(let kind): return "intervention-\(kind.rawValue)"
             case .blockPaywall: return "blockPaywall"
             case .friends: return "friends"
+            case .store: return "store"
             case .reward(let r): return "reward-\(r.id)"
             case .pickApps: return "pickApps"
             case .foundersNote: return "foundersNote"
@@ -282,6 +286,7 @@ struct ContentView: View {
                     detailsToast(id).environment(\.tileDim, Self.tileDim)
                 }
                 MainTabBar(selection: tabSelection) { sheet = .setup }
+                    .environment(\.friendsUnread, FeatureFlags.friendsCircle ? 0 : community.unseenCount)
                     .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { tabBarHeight = $0 }
             }
             .animation(.easeOut(duration: 0.25), value: coordinator.receivingFromWatch)
@@ -482,6 +487,8 @@ struct ContentView: View {
             case .friends:
                 FriendsTab(onClose: { sheet = nil },
                            openedFrom: friendsOpening.source, hadNews: friendsOpening.news)
+            case .store:
+                ShopTab(onClose: { sheet = nil })
             case .pickApps:
                 BlockAppsAskView { sheet = nil }
             case .foundersNote:
@@ -648,6 +655,15 @@ struct ContentView: View {
             if ProcessInfo.processInfo.environment["PREVIEW_SAVE"] == "1", sheet == nil {
                 sheet = .save(DemoData.seedResults(in: context))
             }
+            // PREVIEW_SAVE=new: a session that was never saved, as the page
+            // opens after a real one (Friends preset, the big photo button).
+            if ProcessInfo.processInfo.environment["PREVIEW_SAVE"] == "new", sheet == nil {
+                let id = DemoData.seedResults(in: context)
+                if let r = SessionStore.reflection(for: id, in: context) { context.delete(r) }
+                for p in SessionStore.photos(for: id, in: context) { SessionStore.removePhotoItem(id: p.id, in: context) }
+                try? context.save()
+                sheet = .save(id)
+            }
             // PREVIEW_SESSION=1 opens a demo session's own page (`SessionView`,
             // 2026-09-27), the way Home's Recent rows and Profile's week log do.
             if ProcessInfo.processInfo.environment["PREVIEW_SESSION"] == "1", sheet == nil {
@@ -686,11 +702,14 @@ struct ContentView: View {
                 switch which {
                 case "block": tab = FeatureFlags.block ? .block : .guide
                 case "guide": tab = .guide
-                // With the Shop in the bar, Friends is the cover its Home
-                // circle opens, so the preview opens that too.
+                // Whichever of Friends and the Shop is the Home circle opens
+                // as its cover, so the preview opens that too.
                 case "friends", "search":
-                    if FeatureFlags.shop { if sheet == nil { sheet = .friends } } else { tab = .friends }
-                case "store", "shop": tab = FeatureFlags.shop ? .store : .home
+                    if FeatureFlags.friendsCircle { if sheet == nil { sheet = .friends } } else { tab = .friends }
+                case "store", "shop":
+                    if FeatureFlags.shopHasTab { tab = .store }
+                    else if FeatureFlags.shopCircle { if sheet == nil { sheet = .store } }
+                    else { tab = .home }
                 case "profile": tab = .profile
                 default: tab = .home
                 }
@@ -805,14 +824,18 @@ struct ContentView: View {
                 .padding(.leading, AppMetrics.screenPadding)
                 .padding(.top, topInset + 2)
 
-            // Top right: Friends, once the Store has its tab (Melvin,
-            // 2026-09-27: "make friends a button"; moved from the left,
-            // Aziz, 2026-09-29), and under it the guide (Melvin, 2026-09-21:
-            // the Guide leaves the tab bar for Block).
+            // Top right: whichever of Friends and the Shop has no tab (Friends
+            // 2026-09-27 to 10-23, "make friends a button"; moved from the
+            // left, Aziz, 2026-09-29; the Shop since Melvin's swap,
+            // 2026-10-23), and under it the guide (Melvin, 2026-09-21: the
+            // Guide leaves the tab bar for Block).
             VStack(spacing: 10) {
-                if FeatureFlags.friends && FeatureFlags.shop {
+                if FeatureFlags.friendsCircle {
                     friendsBadge
                         .anchorPreference(key: TourTargetKey.self, value: .bounds) { [.friendsCircle: $0] }
+                } else if FeatureFlags.shopCircle {
+                    shopBadge
+                        .anchorPreference(key: TourTargetKey.self, value: .bounds) { [.shopCircle: $0] }
                 }
                 guideBadge
                     .anchorPreference(key: TourTargetKey.self, value: .bounds) { [.guide: $0] }
@@ -1116,6 +1139,19 @@ struct ContentView: View {
         .accessibilityLabel(community.unseenCount > 0 ? "Friends, \(community.unseenCount) new" : "Friends")
     }
 
+    /// The Shop, in a circle, top right, once Friends has the tab back: the
+    /// bag from the tab bar.
+    private var shopBadge: some View {
+        Button { sheet = .store } label: {
+            SitArt(name: "sloth-store", size: 40)
+                .frame(width: 54, height: 54)
+                .background(TileFill(shape: Circle(), opacity: 0.9))
+                .shadow(color: .black.opacity(0.10), radius: 5, y: 2)
+        }
+        .buttonStyle(.tactile)
+        .accessibilityLabel("Shop")
+    }
+
     /// How bright Otto is, as a percentage, and the bar that fills as the
     /// practice keeps up.
     ///
@@ -1373,6 +1409,8 @@ struct ContentView: View {
     private func openFriendsFromPush() {
         FriendsPush.pending = false
         guard FeatureFlags.friends else { return }
+        // Friends is a tab: switch to it. Anything open stays open over it.
+        guard FeatureFlags.friendsCircle else { tab = .friends; return }
         if case .friends? = sheet { return }
         if case .friends? = pendingSheet { return }
         friendsOpening = ("push", true)
@@ -1468,6 +1506,10 @@ struct ContentView: View {
     }
 
     private func refreshAwards() {
+        #if DEBUG
+        // PREVIEW_NO_AWARDS=1: no unlock screens over a screen under review.
+        if ProcessInfo.processInfo.environment["PREVIEW_NO_AWARDS"] == "1" { return }
+        #endif
         let earned = AwardEngine.evaluate(
             sessions: AwardFacts.build(sessions: sessions, stats: allStats,
                                        reflections: reflections, photos: photos),

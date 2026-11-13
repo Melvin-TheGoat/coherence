@@ -55,6 +55,9 @@ before merging: they predate the 1.4.1 work.
   month (an Apple trial product); no cap on invites; the inviter's award is
   to be decided. The old feed was cut on 2026-09-27 (`88409487`) because
   photo moderation was a hassle; the founders now accept that work.
+  **Built 2026-11-13 on branch `friends-feed`, not merged** (CLAUDE.md, "THE
+  FRIENDS FEED IS BACK"). Still the founders': the inviter's award, video on
+  posts (photos only for now), and the release items in RELEASE_CHECKLIST.md.
 
 - **Companions evolve: Otto, then red panda, tiger, phoenix, dragon**
   (Melvin, 2026-11-09). Everyone starts as Otto; points unlock the next

@@ -165,17 +165,6 @@ final class CommunityResetTests: XCTestCase {
         } catch {}
     }
 
-    /// The one-time post cleanup finishes too, instead of retrying at every
-    /// launch against a type that cannot be queried.
-    func test_postCleanupFinishesWhenThePostTypeCannotBeQueried() async throws {
-        UserDefaults.standard.removeObject(forKey: CommunityModel.postsClearedKey)
-        defer { UserDefaults.standard.removeObject(forKey: CommunityModel.postsClearedKey) }
-        let model = CommunityModel(store: CommunityStore(database: RefusingQueryDatabase(
-            inner: MemoryCommunityDatabase(user: "_me"), refusing: [CommunityType.post],
-            error: CKError(.invalidArguments))))
-        await model.clearMyPostsIfNeeded()
-        XCTAssertTrue(UserDefaults.standard.bool(forKey: CommunityModel.postsClearedKey))
-    }
 }
 
 /// Everything works except deleting, so a deletion can be left unfinished
