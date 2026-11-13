@@ -361,7 +361,9 @@ struct MeetOttoScreen: View {
                     title: title,
                     titleSize: page == .meet ? 31 : 34,
                     // He says it himself (Aziz, 2026-09-23).
-                    subtitle: page == .meet ? "I'm doing alright." : nil,
+                    subtitle: page == .meet ? "I'm doing alright."
+                        // The evolutions, named early (Melvin, 2026-11-13).
+                        : page == .grows ? "Keep going and I'll even evolve into new forms." : nil,
                     cta: "Continue",
                     standing: false,
                     footer: page == .see ? AnyView(GlowScrubber(level: $level)) : nil,
