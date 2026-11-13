@@ -745,8 +745,9 @@ struct ContentView: View {
                             .anchorPreference(key: TourTargetKey.self, value: .bounds) { [.glow: $0] }
                             .contentShape(Rectangle())
                             .onTapGesture { Tactile.tap(); present(.forms) }
-                        formRow
                         statTiles
+                        // Under the three tiles (Melvin, 2026-11-13).
+                        formRow
                         calendarCard
                         proofSection
                         #if DEBUG
