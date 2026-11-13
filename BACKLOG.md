@@ -40,6 +40,22 @@ before merging: they predate the 1.4.1 work.
 
 ## Decided, waiting to be built
 
+- **Friends feed is back, Strava style, with photos** (Melvin, 2026-11-13,
+  from `mockups/friends-v3.html`). Tabs become Home · Friends · ＋ · Block ·
+  Profile; the Shop is a circle on Home where Friends was. Posts are style A
+  (Strava): name, avatar with a small Otto badge (form + glow ring), time
+  ago, bold title, Time · Streak · Sound, optional photo or selfie, kudos.
+  No score, no heart rate (5.1.3). No leaderboard. The "Your turn" strip
+  stays. Posting is the DEFAULT after a session (Friends preset, Only me one
+  tap away). Hand-typed sessions can be posted with a "Logged" chip
+  (timed ones "Timed in 808"); they stay off goals and Block. Kudos by
+  DOUBLE TAP with a big emoji that slams down onto the post. Photos are
+  screened on-device (Sensitive Content Analysis), with Report, Block and
+  removal (1.2) and the NCMEC reporting duty. Invited friends get a free
+  month (an Apple trial product); no cap on invites; the inviter's award is
+  to be decided. The old feed was cut on 2026-09-27 (`88409487`) because
+  photo moderation was a hassle; the founders now accept that work.
+
 - **Companions evolve: Otto, then red panda, tiger, phoenix, dragon**
   (Melvin, 2026-11-09). Everyone starts as Otto; points unlock the next
   creature. Each creature keeps its own seven glow states (consistency),
