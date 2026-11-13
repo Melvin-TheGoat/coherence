@@ -113,6 +113,13 @@ struct ValleyScene: View {
     /// over with no jump.
     var ottoLift: CGFloat = 0
 
+    /// The Hat lab's overrides for the aura figure (DEBUG review): which
+    /// form, which hat ("none" for bare), and stills instead of the rig.
+    /// Nil and false leave him exactly as Home draws him.
+    var auraForm: Companion? = nil
+    var auraHat: String? = nil
+    var auraStills: Bool = false
+
     /// The rig, so he actually breathes while you do.
     ///
     /// `@StateObject` rather than a fresh `OttoRig` per body: the Rive view
@@ -271,7 +278,7 @@ struct ValleyScene: View {
                     EmptyView()
                 } else if let aura {
                     OttoAuraFigure(stage: aura, look: auraLook, size: tall, rig: rig, jiggle: jiggle,
-                                   snap: auraSnap)
+                                   snap: auraSnap, hatID: auraHat, form: auraForm, stillsOnly: auraStills)
                 } else {
                     OttoRiveView(size: tall, pose: pose, rig: rig)
                 }

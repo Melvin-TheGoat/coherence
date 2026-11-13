@@ -9029,3 +9029,29 @@ sharing (`SharingDefault`, "Who can see this?") was taken whole.
   `PREVIEW_POST=<n>`, `PREVIEW_SAVE=new` (a never-saved session's page),
   `PREVIEW_INVITE_PAYWALL=Aziz` with `ONBOARDING_STEP=37`, and
   `PREVIEW_NO_AWARDS=1` keeps unlock screens off a screenshot.
+
+## HAT FRINGES OUT, AND THE HAT LAB (2026-11-13, Melvin)
+
+- **Every hat carried the white paper in its soft edge.** `hat_extract`
+  keeps the edge's alpha ramp but left the edge pixels' colour as the page:
+  the wizard hat's outer pixels read (216,235,255) at alpha 39 to 137 round
+  a navy of (64,80,123), a thin pale line over the sky. `tools/hat_defringe.swift`
+  keeps every alpha and gives each edge pixel within 3 px of transparency the
+  colour of the solid hat just inside it when lighter by more than 18
+  levels. Run on every layer (whole, `-front`, `-back`, `-under`, `-over`);
+  `--report` measures (edge pixels lighter than the solid hat by more than
+  40: 55,509 before, 0 after). The halo takes `--skip-pale` (its hole was
+  cut through the pale glow it was painted with, so the rim blends into its
+  gold). Not the astronaut (glass lifted off black, no paper) and not the
+  covers (alpha only). **Any new hat cut goes through it.**
+- **The Hat lab** (`Coherence/Shop/HatLab.swift`, DEBUG): Settings >
+  Testing (debug) > Hat lab, or `PREVIEW_HAT_LAB=1`. Grid: a hat (or all,
+  or none) by a form (or all), every look or stage as a small `ValleyScene`
+  rendered at a phone's size and cropped round him, so a cell is Home's
+  code path. Shuffle: one Home-sized valley, random form, stage and hat per
+  tap or every 1.5 s. Real rigs by default; "Stills" for lighter grids (Otto
+  then shows his seven stages). Hooks: `PREVIEW_HAT_LAB_HAT=<id|none|all>`,
+  `PREVIEW_HAT_LAB_FORM=<otto|redPanda|tiger|phoenix|dragon|all>`,
+  `PREVIEW_HAT_LAB_MODE=shuffle`, `PREVIEW_HAT_LAB_COLS`, `PREVIEW_HAT_LAB_STILLS=1`.
+  `OttoAuraFigure` gained `stillsOnly` and takes `hatID: "none"` for bare;
+  `ValleyScene` gained `auraForm`, `auraHat`, `auraStills` (nil/false = Home).

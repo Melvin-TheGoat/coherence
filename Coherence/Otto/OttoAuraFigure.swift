@@ -43,6 +43,9 @@ struct OttoAuraFigure: View {
     /// wears (`CompanionStore`); onboarding passes `.otto`, since everyone
     /// starts as him.
     var form: Companion? = nil
+    /// Draw the still drawings even when the rig loads (the Hat lab's grid,
+    /// DEBUG, where dozens of rigs at once would be heavy).
+    var stillsOnly: Bool = false
 
     @ObservedObject private var companions = CompanionStore.shared
     private var shownForm: Companion { form ?? companions.effective }
@@ -53,8 +56,10 @@ struct OttoAuraFigure: View {
     /// file is owned elsewhere and should not need editing for the shop to
     /// show up on it. Home is exactly the case `hatID` is nil for.
     @Query(sort: \Preferences.createdAt) private var shopPrefsRows: [Preferences]
+    /// `hatID` "none" draws him bare whatever is worn (the Hat lab).
     private var effectiveHatID: String? {
-        Self.previewHat ?? hatID ?? shopPrefsRows.first?.wornHatIDValue
+        let id = Self.previewHat ?? hatID ?? shopPrefsRows.first?.wornHatIDValue
+        return id == "none" ? nil : id
     }
 
     /// PREVIEW_HAT=<id> (DEBUG) puts a hat on him anywhere, to check its fit.
@@ -97,6 +102,8 @@ struct OttoAuraFigure: View {
     /// The animated seven (`OttoAura.riv`). Nil until that file ships, and
     /// whenever it will not load; the stills below stand in either way.
     @StateObject private var aura = OttoAuraRigHolder(form: CompanionStore.shared.effective)
+    /// The rig, unless this figure draws the stills only.
+    private var liveRig: OttoAuraRig? { stillsOnly ? nil : aura.rig }
 
     /// The shared canvas, from `mockups/otto-v4/canvas.json`: 664 x 744, his
     /// body's bottom at 87.2% of the height, and Steady's body 82% of it.
@@ -122,14 +129,14 @@ struct OttoAuraFigure: View {
             .ottoJiggle(jiggle)
             // The rig floats him itself; only the stills need lifting here.
             // The hat, inside this same ZStack, rides along for free.
-            .offset(y: aura.rig == nil && stage.floats ? -size * (bob ? 0.085 : 0.05) : 0)
+            .offset(y: liveRig == nil && stage.floats ? -size * (bob ? 0.085 : 0.05) : 0)
             .frame(width: size, height: size, alignment: .bottom)
             // The stills' lift only. With the rig this spring eased the
             // rig's frame from wide to tall as the look crossed 9, which is
             // big both ways halfway through, so he swelled for half a second
             // on every pass (Melvin, 2026-09-29: "he does a little pop ...
             // anytime you scroll it happens").
-            .animation(aura.rig == nil ? .spring(duration: 0.5, bounce: 0.2) : nil, value: stage)
+            .animation(liveRig == nil ? .spring(duration: 0.5, bounce: 0.2) : nil, value: stage)
             .onAppear { setBob(); aura.use(shownForm) }
             .onChange(of: stage) { _, _ in setBob() }
             .onChange(of: shownForm) { _, new in aura.use(new) }
@@ -183,7 +190,7 @@ struct OttoAuraFigure: View {
         ZStack(alignment: .top) {
             drawing
             if let id = effectiveHatID {
-                if let rig = aura.rig {
+                if let rig = liveRig {
                     TimelineView(.animation) { _ in
                         let p = rig.pose()
                         formHat(id: id, canvas: canvas, dy: CGFloat(p.lift + p.bob))
@@ -348,7 +355,7 @@ struct OttoAuraFigure: View {
                                           @ViewBuilder content: @escaping () -> Content) -> some View {
         let look = look ?? stage.look
         let unit = canvas / 744
-        if let rig = aura.rig {
+        if let rig = liveRig {
             TimelineView(.animation) { _ in
                 let box = Self.hatBox(id, look: look, pose: rig.pose())
                 content()
@@ -383,7 +390,7 @@ struct OttoAuraFigure: View {
     /// The rig when it loaded, else the still for this stage. Both are the
     /// same 664 x 744 canvas, so they frame identically.
     @ViewBuilder private var drawing: some View {
-        if let rig = aura.rig {
+        if let rig = liveRig {
             GeometryReader { geo in
                 // The rig can only draw inside its own view, and `.contain`
                 // fills that view's LIMITING side with the artboard, so only

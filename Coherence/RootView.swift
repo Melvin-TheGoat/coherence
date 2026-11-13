@@ -143,7 +143,9 @@ struct RootView: View {
     var body: some View {
         Group {
             #if DEBUG
-            if let hat = ProcessInfo.processInfo.environment["PREVIEW_HAT_GALLERY"] {
+            if ProcessInfo.processInfo.environment["PREVIEW_HAT_LAB"] != nil {
+                HatLab(closable: false)
+            } else if let hat = ProcessInfo.processInfo.environment["PREVIEW_HAT_GALLERY"] {
                 HatGallery(firstID: hat)
             } else if ProcessInfo.processInfo.environment["PREVIEW_HAT_REEL"] != nil {
                 HatReel()

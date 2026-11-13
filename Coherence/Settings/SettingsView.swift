@@ -641,6 +641,7 @@ private struct SettingsForm: View {
     // MARK: Testing (developer only, compiled out of Release)
 
     @AppStorage(DebugOtto.stageKey) private var debugOttoStage = 0
+    @State private var showHatLab = false
 
     /// Two things a phone that has finished onboarding cannot otherwise do:
     /// go through onboarding again, and see Otto in a state its own history
@@ -664,6 +665,17 @@ private struct SettingsForm: View {
                     .pickerStyle(.menu)
                     .tint(AppColor.accentGoldText)
                 }
+                divider
+                Button {
+                    showHatLab = true
+                } label: {
+                    Text("Hat lab: every form, stage and hat")
+                        .font(AppFont.callout.weight(.semibold))
+                        .foregroundStyle(AppColor.accentGoldText)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .buttonStyle(.tactile)
+                .fullScreenCover(isPresented: $showHatLab) { HatLab() }
                 divider
                 Button {
                     // The same reset sign-out does, without signing out:
