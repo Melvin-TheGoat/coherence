@@ -137,9 +137,9 @@ struct OttoAuraFigure: View {
             // on every pass (Melvin, 2026-09-29: "he does a little pop ...
             // anytime you scroll it happens").
             .animation(liveRig == nil ? .spring(duration: 0.5, bounce: 0.2) : nil, value: stage)
-            .onAppear { setBob(); aura.use(shownForm) }
+            .onAppear { setBob(); aura.use(shownForm, stage: rigLook, snap: snap) }
             .onChange(of: stage) { _, _ in setBob() }
-            .onChange(of: shownForm) { _, new in aura.use(new) }
+            .onChange(of: shownForm) { _, new in aura.use(new, stage: new == .otto ? (look ?? stage.look) : stage.rawValue, snap: snap) }
             .accessibilityElement()
             .accessibilityLabel("Otto\(shownForm == .otto ? "" : ", as \(shownForm.withArticle)"), "
                                 + "\(Self.mood(stage))\(effectiveHatID != nil ? ", wearing a hat" : "")")
@@ -222,7 +222,10 @@ struct OttoAuraFigure: View {
             }
             if CompanionHeads.earsOverBrim(id) {
                 formStill(still, canvas: canvas, dy: dy,
-                          clip: CompanionHeads.earBands(form: shownForm, stage: s).map { $0.offsetBy(dx: 0, dy: dy) })
+                          clip: CompanionHeads.earBands(form: shownForm, stage: s, hat: id,
+                                                         box: CompanionHeads.hatBox(id, form: shownForm, stage: s)).map { $0.offsetBy(dx: 0, dy: dy) },
+                          round: CompanionHeads.earRound(form: shownForm, stage: s),
+                          feather: CompanionHeads.earFeather)
             }
         }
         .frame(width: canvas * Self.canvasAspect, height: canvas, alignment: .topLeading)
@@ -236,7 +239,13 @@ struct OttoAuraFigure: View {
 
     /// The form's still, lifted by `dy` canvas units, showing only inside
     /// `clip` (canvas units, already lifted).
-    private func formStill(_ name: String, canvas: CGFloat, dy: CGFloat, clip: [CGRect]) -> some View {
+    /// `round` (canvas units) rounds each band's INNER bottom corner, the one
+    /// beside the face where the ear meets the brim, and `feather` softens
+    /// the mask's edge: cut square, an ear redrawn over a brim ended in a hard
+    /// right angle and read as pasted on rather than coming out from under
+    /// the hat (Melvin, 2026-11-13).
+    private func formStill(_ name: String, canvas: CGFloat, dy: CGFloat, clip: [CGRect],
+                           round: CGFloat = 0, feather: CGFloat = 0) -> some View {
         let unit = canvas / 744
         return Image(name)
             .resizable()
@@ -245,11 +254,19 @@ struct OttoAuraFigure: View {
             .mask(alignment: .topLeading) {
                 Path { path in
                     for r in clip {
-                        path.addRect(CGRect(x: r.minX * unit, y: r.minY * unit,
-                                            width: r.width * unit, height: r.height * unit))
+                        let rect = CGRect(x: r.minX * unit, y: r.minY * unit,
+                                          width: r.width * unit, height: r.height * unit)
+                        let k = min(round * unit, rect.width / 2, rect.height / 2)
+                        guard k > 0 else { path.addRect(rect); continue }
+                        // The left band's inner side is its right edge.
+                        let left = r.minX <= 0
+                        path.addRoundedRect(in: rect, cornerRadii: RectangleCornerRadii(
+                            topLeading: 0, bottomLeading: left ? 0 : k,
+                            bottomTrailing: left ? k : 0, topTrailing: 0))
                     }
                 }
                 .frame(width: canvas * Self.canvasAspect, height: canvas, alignment: .topLeading)
+                .blur(radius: feather * unit)
             }
     }
 

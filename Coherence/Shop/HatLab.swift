@@ -20,7 +20,7 @@ import SwiftUI
 /// For screenshots: `PREVIEW_HAT_LAB_HAT=<id|none|all>`,
 /// `PREVIEW_HAT_LAB_FORM=<otto|redPanda|tiger|phoenix|dragon|all>`,
 /// `PREVIEW_HAT_LAB_MODE=shuffle`, `PREVIEW_HAT_LAB_COLS=<n>` and
-/// `PREVIEW_HAT_LAB_STILLS=1`.
+/// `PREVIEW_HAT_LAB_STILLS=1` and `PREVIEW_HAT_LAB_STAGES=<n,n,...>`.
 struct HatLab: View {
     enum Mode: String { case grid, shuffle }
 
@@ -33,6 +33,8 @@ struct HatLab: View {
     @State private var form: String
     @State private var stills: Bool
     @State private var columns: Int
+    /// `PREVIEW_HAT_LAB_STAGES=1,2,6` shows only those stages (looks for Otto).
+    private let onlySteps: Set<Int>?
     var closable = true
 
     init(closable: Bool = true) {
@@ -42,6 +44,8 @@ struct HatLab: View {
         _form = State(initialValue: env["PREVIEW_HAT_LAB_FORM"] ?? Self.allHats)
         _stills = State(initialValue: env["PREVIEW_HAT_LAB_STILLS"] == "1")
         _columns = State(initialValue: Int(env["PREVIEW_HAT_LAB_COLS"] ?? "") ?? 4)
+        let only = (env["PREVIEW_HAT_LAB_STAGES"] ?? "").split(separator: ",").compactMap { Int($0) }
+        onlySteps = only.isEmpty ? nil : Set(only)
         self.closable = closable
     }
 
@@ -141,8 +145,9 @@ struct HatLab: View {
     /// Otto's thirteen looks (his seven stages when drawing stills), a form's
     /// seven stages.
     private func steps(for form: Companion) -> [Int] {
-        if form == .otto { return stills ? [1, 3, 5, 7, 9, 11, 13] : Array(1...13) }
-        return Array(1...7)
+        let all = form == .otto ? (stills ? [1, 3, 5, 7, 9, 11, 13] : Array(1...13)) : Array(1...7)
+        guard let onlySteps else { return all }
+        return all.filter { onlySteps.contains($0) }
     }
 
     static func name(_ form: Companion) -> String {

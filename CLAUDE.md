@@ -9055,3 +9055,46 @@ sharing (`SharingDefault`, "Who can see this?") was taken whole.
   `PREVIEW_HAT_LAB_MODE=shuffle`, `PREVIEW_HAT_LAB_COLS`, `PREVIEW_HAT_LAB_STILLS=1`.
   `OttoAuraFigure` gained `stillsOnly` and takes `hatID: "none"` for bare;
   `ValleyScene` gained `auraForm`, `auraHat`, `auraStills` (nil/false = Home).
+- **Hats on the forms, second pass (2026-11-13).** Four fixes from the lab:
+  - **Most of "the brim sits over the eyes at stages 1 and 2" was a rig
+    bug, not placement.** A figure showing a form other than the one worn
+    (the Hat lab, Otto's forms) built Otto's rig first, swapped to the
+    form's rig in `onAppear`, and the rig view's own `onAppear` had already
+    told the OLD rig the stage: every new form rig sat at its resting
+    Steady while the hat and the head redraw followed the real stage.
+    `OttoAuraRigHolder.use(_:stage:snap:)` now hands the stage to the new
+    rig. **Hat lab sheets made before this were of a Steady rig under every
+    stage's hat.**
+  - **A brim is never closer to the eyes than at the form's Steady**
+    (`CompanionHeads.hatBox`, every hat but the halo, tiara and dome).
+    `Head.eye` is the top of the eye, or of the dark patch round it on the
+    red panda and phoenix, read by hand off the masters with a ruler: the
+    tool's `eyeTop` is the pupil on an open eye and the lid line on a closed
+    one, so it moved about the face. Only raises; stages 1 to 2 measured
+    deeper than Steady, so in practice it lifts a few bright stages (the
+    phoenix at Radiant most, ~29 units).
+  - **The phoenix's side feathers are redrawn over the brim only below
+    where the brim begins** (`earBands(hat:box:)`, `brimTop` per hat), so
+    the crest stays under the top hat's and wizard hat's crowns.
+  - **The tiara is seated on the phoenix and dragon** at 0.8 of the brow,
+    its band 0.17 brow above the eye (0.29 at stages 1 to 2, a foreshortened
+    forehead), instead of hung from a "skull" that is the crest's or horns'
+    spread. **The astronaut dome is one width per form on the red panda
+    (460) and tiger (430)**, the narrowest that holds head and ears at
+    stages 2 to 7 (`domeWidth`), placed by each stage's collar. **The halo
+    on the phoenix and dragon sits at the crest tip / between the horn
+    tips** (topCentral +4 / -4), not 10 above.
+  - **Ears come out from under the brim with a rounded cut.** The side
+    bands that redraw ears and horns over a brim were plain rectangles, so
+    an ear ended in a hard right angle at the hat (Melvin). Each band's
+    inner bottom corner is now rounded to 0.16 of the brow and the mask
+    feathered 3 units (`earRound`, `earFeather`, `formStill(round:feather:)`).
+  - **The float: redraw and rig move together.** Checked by drawing the
+    form's still, colour-inverted at 50%, over the whole rig while it floats
+    (aligned = flat grey): the head redraw tracks `rig.pose()` within about
+    a pixel through full 5 s cycles at stages 6 and 7 on all four forms. The
+    ears "flipping" in front of and behind the crown did not reproduce after
+    the rig-swap fix (recorded at tiger 7 with the cap); the likeliest cause
+    was that bug, a Steady rig under a stage-7 hat. Not seen on Home itself:
+    re-check there on a phone.
+  - `PREVIEW_HAT_LAB_STAGES=1,2,6` shows only those stages.

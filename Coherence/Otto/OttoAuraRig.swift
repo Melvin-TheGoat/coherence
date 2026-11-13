@@ -301,9 +301,16 @@ final class OttoAuraRigHolder: ObservableObject {
         rig = OttoAuraRig.make(.of(form))
     }
 
-    func use(_ next: Companion) {
+    /// Swap to `next`'s rig, already told which drawing and whether to snap.
+    /// The rig view's own `onAppear` can run on the OLD rig before the swap
+    /// lands, so a figure showing a form other than the one worn (the Hat
+    /// lab, Otto's forms) left every new rig at its resting Steady.
+    func use(_ next: Companion, stage: Int, snap: Bool) {
         guard next != form else { return }
         form = next
-        rig = OttoAuraRig.make(.of(next))
+        let made = OttoAuraRig.make(.of(next))
+        made?.snap = snap
+        made?.stage = stage
+        rig = made
     }
 }
