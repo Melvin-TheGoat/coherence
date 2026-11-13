@@ -1441,8 +1441,18 @@ extension OnboardingAnswers {
     public func asks(_ step: InterviewStep) -> Bool {
         switch step {
         // Everyone. These work regardless of history.
-        case .baseline, .motivation, .obstacles, .quietTime, .habitHistory, .age, .stress, .wandering, .referral:
+        case .baseline, .age, .referral:
             return true
+
+        // CUT 2026-11-12 (Aziz, from the every-screen review): the goal,
+        // what gets in the way, stress, how much the mind wanders, a quiet
+        // time and habit history. The interview is now age and how often
+        // they meditate. Every answer field stays so resume records decode;
+        // what read them falls back: the years use the research average
+        // share, the science pick preselects calm, the reminder screen
+        // opens on its own default time.
+        case .motivation, .obstacles, .stress, .wandering, .quietTime, .habitHistory:
+            return false
 
         // CUT 2026-10-17 (Aziz): "Which one sounds most like you?". Nothing
         // read the answer, and the first questions are where people leave.

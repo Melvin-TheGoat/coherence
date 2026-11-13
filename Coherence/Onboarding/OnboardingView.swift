@@ -215,7 +215,11 @@ struct OnboardingView: View {
                  // question, Did you know, the two "N years" repeats,
                  // "attention hacked", the research logos and "In 1 week".
                  .role, .didYouKnow, .lifePause, .lifeDots, .attentionHacked,
-                 .research, .thisWeek:
+                 .research, .thisWeek,
+                 // Cut 2026-11-12 (Aziz, the every-screen review): six
+                 // questions, "Tailoring 808 to you" and the mind profile.
+                 .motivation, .obstacles, .stress, .wandering, .quietTime,
+                 .habitHistory, .buildingPlan, .mindProfile:
                 return true
             // Real screens on Block builds, so leaving one belongs in the
             // Back history like any other question. Off Block builds they
@@ -318,7 +322,7 @@ struct OnboardingView: View {
         let questions: [Step] = answers.shownInterview.compactMap { q in
             Self.interviewPairs.first { $0.1 == q }?.0
         }
-        let rest: [Step] = [.buildingPlan, .mindProfile, .lifeNumber, .goodNews, .lifeMoments,
+        let rest: [Step] = [.lifeNumber, .goodNews, .lifeMoments,
                             .neuroBrain, .neuroPick, .neuroPlan, .whyItWorks, .socialProof,
                             .ascend]
         let offer: [Step] = trialLead != nil ? [.tryFree, .trialReminder, .paywall] : [.paywall]
@@ -619,11 +623,14 @@ struct OnboardingView: View {
             // profile's Otto has faded in on top of it: a video view does not
             // fade out when removed, it vanishes, and the cushion sat empty for
             // a beat (found in a 30 fps recording).
-            if step == .baseline || step == .buildingPlan || step == .mindProfile {
+            // Since 2026-11-12 the slider hands straight to the years clip,
+            // so he stays mounted under it until it has slid over him.
+            if step == .baseline || step == .buildingPlan || step == .mindProfile || step == .lifeNumber {
                 SeatedClipLayer(clip: .thinking, drop: DidYouKnowScreen.ottoDrop)
-                    .opacity(step == .mindProfile ? 0 : 1)
-                    .animation(step == .mindProfile ? .linear(duration: 0.15).delay(0.45) : .default,
-                               value: step == .mindProfile)
+                    .opacity(step == .mindProfile || step == .lifeNumber ? 0 : 1)
+                    .animation(step == .mindProfile || step == .lifeNumber
+                               ? .linear(duration: 0.15).delay(0.45) : .default,
+                               value: step == .mindProfile || step == .lifeNumber)
                     .transition(.opacity)
                     // Explicit order above the valley: a view animating OUT of
                     // a ZStack without a zIndex is drawn behind its siblings,
@@ -768,15 +775,13 @@ struct OnboardingView: View {
 
         case .baseline:
             FrequencyScreen(frequency: $answers.currentFrequency,
-                            count: interviewCount) { go(.buildingPlan) }
+                            count: interviewCount) { go(.lifeNumber) }
 
-        // After the new questions for now; it belongs at the END of the
-        // interview once Aziz's redo of the old questions lands.
-        case .buildingPlan:
-            BuildingPlanScreen { go(.mindProfile) }
-
-        case .mindProfile:
-            MindProfileScreen(answers: answers) { go(.lifeNumber) }
+        // Cut 2026-11-12 (Aziz): "Tailoring 808 to you" and "Your mind
+        // profile is". Kept as cases for resume records, which move on to
+        // the years.
+        case .buildingPlan, .mindProfile:
+            Color.clear.onAppear { go(.lifeNumber) }
 
         case .lifeNumber:
             LifeNumberScreen(answers: answers) { go(.goodNews) }
@@ -852,47 +857,22 @@ struct OnboardingView: View {
                 Color.clear.onAppear { go(.paywall) }
             }
 
-        case .wandering:
-            WanderingScreen(share: $answers.mindWandering, count: interviewCount) {
-                go(nextAfter(.wandering))
-            }
-
         // Cut 2026-09-27 (a user left onboarding on it); a resume record
-        // that lands here moves on to the question after wandering.
+        // that lands here moves on to the first question still asked.
         case .recovery:
-            Color.clear.onAppear { go(nextAfter(.wandering)) }
+            Color.clear.onAppear { go(firstInterviewStep) }
 
-        case .motivation:
-            MotivationScreen(selected: $answers.motivations,
-                             otherText: $answers.motivationOther,
-                             count: interviewCount) { go(nextAfter(.motivation)) }
-
-        case .obstacles:
-            ObstaclesScreen(selected: Binding(get: { answers.obstacles ?? [] },
-                                              set: { answers.obstacles = $0 }),
-                            count: interviewCount) { go(nextAfter(.obstacles)) }
+        // Cut 2026-11-12 (Aziz): the six questions before the age. The model
+        // no longer asks them (`asks`); a resume record on one moves on to
+        // the first question that is still asked.
+        case .motivation, .obstacles, .stress, .wandering, .quietTime, .habitHistory:
+            Color.clear.onAppear { go(firstInterviewStep) }
 
         // Cut 2026-10-17 (Aziz): nothing read the answer. The model no longer
         // asks it (`asks(.role)`); a resume record here moves on from the
-        // question before it.
+        // question before it, which is now the first question still asked.
         case .role:
-            Color.clear.onAppear { go(nextAfter(.wandering)) }
-
-        case .quietTime:
-            QuietTimeScreen(quietTime: Binding(get: { answers.quietTime },
-                                               set: { pick in
-                                                   answers.quietTime = pick
-                                                   // The answer IS the reminder time
-                                                   // the reminder screen opens on.
-                                                   if let date = pick?.reminderDate() {
-                                                       answers.reminderTime = date
-                                                   }
-                                               }),
-                            count: interviewCount) { go(nextAfter(.quietTime)) }
-
-        case .habitHistory:
-            HabitHistoryScreen(history: $answers.habitHistory,
-                               count: interviewCount) { go(nextAfter(.habitHistory)) }
+            Color.clear.onAppear { go(firstInterviewStep) }
 
         case .age:
             CornerQuestionScreen(title: "How old are you?",
@@ -909,24 +889,12 @@ struct OnboardingView: View {
         case .didYouKnow:
             Color.clear.onAppear { go(nextAfter(.age)) }
 
-        // The stress question and the aura slider are one screen (Melvin,
-        // 2026-09-22): the answer is drawn on Otto as it is dragged.
-        case .stress:
-            CornerQuestionScreen(title: "How stressed have you been lately?",
-                                 options: StressLevel.allCases, single: true, label: \.label, icon: \.icon,
-                                 selected: Binding(get: { answers.stressLevel.flatMap(StressLevel.init(rawValue:)).map { [$0] } ?? [] },
-                                                   set: { pick in
-                                                       answers.stressLevel = pick.first?.rawValue
-                                                       if let level = pick.first { answers.stress = level.stress }
-                                                   }),
-                                 count: interviewCount) { go(nextAfter(.stress)) }
-
         // Cut 2026-09-15 (doingNothing) and 2026-09-19 (aloneWithThoughts,
         // Melvin). The Step cases stay so resume records and ONBOARDING_STEP
-        // indices hold; anyone landing here moves on from the stress screen,
-        // which is the last question still asked before this point.
+        // indices hold; anyone landing here moves on to the first question
+        // still asked (the stress screen they followed was cut 2026-11-12).
         case .aloneWithThoughts, .doingNothing:
-            Color.clear.onAppear { go(nextAfter(.stress)) }
+            Color.clear.onAppear { go(firstInterviewStep) }
 
         // The old questions after the frequency slider: no screen asks them
         // while the interview is redone (the flow goes from the slider to

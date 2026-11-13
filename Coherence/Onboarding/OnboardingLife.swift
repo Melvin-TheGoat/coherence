@@ -141,6 +141,9 @@ struct LifeNumberScreen: View {
     @State private var landed = false
 
     private var years: Int? { MindWander.years(answers) }
+    /// The share of waking hours the number assumes: the research average,
+    /// or an older resume record's own answer to the cut wandering question.
+    private var sharePercent: Int { Int((MindWander.share(answers) * 100).rounded()) }
     private var target: Int { years ?? MindWander.daysPerYear(answers) }
     private var unit: String {
         years == nil ? (target == 1 ? "day" : "days") : (target == 1 ? "year" : "years")
@@ -197,8 +200,10 @@ struct LifeNumberScreen: View {
         }
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 10) {
-                Text(years == nil ? "Based on your answer and 16 waking hours a day."
-                                  : "Based on your answers, 16 waking hours a day and a life to 80.")
+                // Since 2026-11-12 nothing asks how much the mind wanders, so
+                // the share is the research average and the line says so.
+                Text(years == nil ? "Based on minds wandering \(sharePercent)% of 16 waking hours a day."
+                                  : "Based on your age, a life to 80, and minds wandering \(sharePercent)% of waking hours.")
                     .font(.system(size: 12, weight: .semibold, design: .rounded))
                     .foregroundStyle(AppColor.textPrimary.opacity(0.85))
                     .lineLimit(1)

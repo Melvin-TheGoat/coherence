@@ -58,7 +58,8 @@ final class OnboardingBranchTests: XCTestCase {
 
     /// Whatever the path, the screens that carry the product must always run.
     func test_everyPathKeepsTheLoadBearingScreens() {
-        let required: [InterviewStep] = [.baseline, .motivation, .stress, .referral]
+        // Since 2026-11-12 the goal and stress questions are cut too.
+        let required: [InterviewStep] = [.baseline, .age, .referral]
         for frequency in CurrentFrequency.allCases {
             var a = OnboardingAnswers()
             a.currentFrequency = frequency
@@ -185,9 +186,10 @@ final class OnboardingBranchTests: XCTestCase {
     /// Counting the model's whole list (referral onwards, which no screen
     /// asks today) left the bar stuck short of full on the last question.
     /// The flow shows everything up to the frequency slider and nothing after.
+    /// Since 2026-11-12 (Aziz) that is two questions: the six before the age
+    /// were cut from the every-screen review.
     func test_shownInterviewEndsOnTheLastQuestionAsked() {
-        let asked: [InterviewStep] = [.motivation, .obstacles, .stress, .wandering,
-                                      .quietTime, .habitHistory, .age, .baseline]
+        let asked: [InterviewStep] = [.age, .baseline]
         for frequency in CurrentFrequency.allCases.map(Optional.some) + [nil] {
             var a = OnboardingAnswers()
             a.currentFrequency = frequency

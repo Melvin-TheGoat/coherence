@@ -1121,6 +1121,22 @@ effects, the Watch redesign, and onboarding answers reported to analytics
 - [ ] The what's-new screens for free 1.0 members
       (`mockups/whats-new-v1.html`) are NOT in 1.3 unless Melvin says so.
 
+## OPEN for the build that cuts eight onboarding screens (added 2026-11-12)
+
+Aziz, from the every-screen review (`mockups/onboarding-screens.html`):
+the goal, what gets in the way, stress, how much the mind wanders, a quiet
+time, habit history, "Tailoring 808 to you" and "Your mind profile is". The
+interview is now the age and how often they meditate; the slider goes
+straight to the years clip.
+
+- [ ] **Melvin knows.** The goal and obstacle answers fed Otto's reminder
+      topics and the "Who they are" tab; from this build they arrive empty.
+- [ ] **Analytics sheet, when this ships (not before):** in
+      `tools/posthog_sheet.gs` `SCREEN_NAMES`, rename the eight to
+      "zz ... (cut)" as `Analytics.swift` already does, then paste
+      it into Apps Script and run `refresh`. Renaming earlier would label
+      screens the live version still shows as cut.
+
 ## OPEN for the build that leads onboarding with the free trial (added 2026-11-11)
 
 Two screens after "Let's go!" ("We want you to try 808 Meditate for free",

@@ -8863,3 +8863,30 @@ Block's paywall and the others are unchanged. One switch:
 - A sandbox trial is minutes long, so its reminder is already past and is
   never scheduled; check the reminder with `808.storekit` at real-time
   renewal (RELEASE_CHECKLIST.md).
+
+## EIGHT ONBOARDING SCREENS CUT; THE INTERVIEW IS TWO QUESTIONS (2026-11-12, Aziz)
+
+From the every-screen review (`mockups/onboarding-screens.html`, real
+captures of the whole flow): the goal, what gets in the way, stress, how much
+the mind wanders, a quiet time, habit history, "Tailoring 808 to you" and
+"Your mind profile is" are gone. The interview is the age and how often they
+meditate, and the slider goes straight to the years clip. 27 screens from
+Welcome to the tour, down from 35.
+
+- **Routed past, never deleted**, the standing rule: `asks()` returns false
+  for the six questions, every `Step` case and answer field stays, and a
+  resume record on any of the eight moves on (`firstInterviewStep`, or the
+  years for the two plan screens). All eight are in `onlyPassesThrough`.
+- **What fell back, so nobody re-derives it:** the years use the research
+  average share (47%, Killingsworth & Gilbert), and the small print now says
+  so ("Based on your age, a life to 80, and minds wandering 47% of waking
+  hours.") instead of "Based on your answers"; the science pick preselects
+  calm; the reminder screen opens on its own default time; Otto's reminder
+  topics get no goals or obstacles; the "Who they are" tab sees those
+  answers empty.
+- **The thinking Otto stays mounted under the years clip** until it has slid
+  over him, the same trick the mind profile used: a video view removed with
+  the step vanishes on the spot and left the cushion empty mid-slide.
+- Analytics names in `Analytics.swift` are "zz ... (cut)", the form `AnalyticsScreenNamesTests` requires;
+  `tools/posthog_sheet.gs` is deliberately NOT renamed until this ships
+  (RELEASE_CHECKLIST.md).

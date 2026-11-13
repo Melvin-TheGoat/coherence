@@ -194,7 +194,9 @@ final class OnboardingModelTests: XCTestCase {
             XCTAssertEqual(date.map { cal.component(.hour, from: $0) }, hour, "\(time)")
             XCTAssertEqual(date.map { cal.component(.minute, from: $0) }, minute, "\(time)")
         }
-        XCTAssertTrue(OnboardingAnswers().asks(.quietTime))
+        // The question was cut 2026-11-12 (Aziz); the mapping stays for
+        // resume records that already hold an answer.
+        XCTAssertFalse(OnboardingAnswers().asks(.quietTime))
     }
 
 }
