@@ -1,0 +1,360 @@
+<title>Guide Rewrite Review</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
+:root {
+  --bg: #F6F1E7; --card: #FFFDF8; --ink: #2E2A24; --soft: #6E665A; --line: #E3DACB;
+  --old: #FBEDE7; --oldink: #8A4B36; --new: #E8F3EA; --newink: #2F6B3D; --accent: #3F7FB0;
+  --tag: #EFE8DA;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #1B1A17; --card: #26241F; --ink: #EDE7DC; --soft: #A69D8E; --line: #3A362F;
+  --old: #3A2722; --oldink: #E7A58E; --new: #1F3324; --newink: #9FD3AA; --accent: #8EC0E6; --tag: #322F28;
+} }
+:root[data-theme="dark"] {
+  --bg: #1B1A17; --card: #26241F; --ink: #EDE7DC; --soft: #A69D8E; --line: #3A362F;
+  --old: #3A2722; --oldink: #E7A58E; --new: #1F3324; --newink: #9FD3AA; --accent: #8EC0E6; --tag: #322F28;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: 'Nunito', system-ui, sans-serif; line-height: 1.55; }
+.wrap { max-width: 1100px; margin: 0 auto; padding-top: 28px; padding-bottom: 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1 { font-size: 30px; margin: 0 0 6px; letter-spacing: -0.02em; }
+h2 { font-size: 23px; margin: 48px 0 10px; padding-top: 12px; border-top: 2px solid var(--line); }
+h3 { font-size: 20px; margin: 0 0 2px; }
+h4 { margin: 22px 0 6px; font-size: 16px; }
+p { margin: 0 0 10px; }
+.lede { color: var(--soft); max-width: 70ch; }
+nav.toc { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0 0; }
+nav.toc a { background: var(--card); border: 1px solid var(--line); color: var(--ink); text-decoration: none; padding: 5px 11px; border-radius: 999px; font-size: 14px; }
+.method { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 18px; margin: 18px 0; }
+.level { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--accent); margin-left: 6px; }
+.mid { color: var(--soft); font-size: 13px; margin-bottom: 12px; }
+code { background: var(--tag); padding: 1px 5px; border-radius: 5px; font-size: 0.9em; }
+.field { margin-top: 14px; }
+.flabel { font-weight: 800; font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--soft); margin-bottom: 6px; }
+.same { font-weight: 600; text-transform: none; letter-spacing: 0; background: var(--tag); padding: 1px 7px; border-radius: 999px; margin-left: 4px; }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 720px) { .pair { grid-template-columns: 1fr; } }
+.col { border-radius: 12px; padding: 10px 12px; font-size: 15px; min-width: 0; overflow-wrap: anywhere; }
+.col.old { background: var(--old); }
+.col.new { background: var(--new); }
+.ctag { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 4px; }
+.old .ctag { color: var(--oldink); } .new .ctag { color: var(--newink); }
+.col ol { margin: 0; padding-left: 20px; } .col li { margin-bottom: 6px; }
+.empty, .muted { color: var(--soft); }
+table { width: 100%; border-collapse: collapse; font-size: 14px; margin: 10px 0; background: var(--card); border-radius: 12px; overflow: hidden; }
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; }
+th, td { text-align: left; vertical-align: top; padding: 9px 10px; border-bottom: 1px solid var(--line); }
+th { background: var(--tag); font-size: 12px; text-transform: uppercase; letter-spacing: .05em; }
+.draft { background: var(--card); border: 1px solid var(--line); border-left: 5px solid var(--accent); border-radius: 14px; padding: 16px 18px; margin: 18px 0; }
+.draft ol { padding-left: 20px; } .draft li { margin-bottom: 6px; }
+.rank { display: inline-block; background: var(--accent); color: var(--card); font-weight: 800; border-radius: 999px; width: 26px; height: 26px; text-align: center; line-height: 26px; margin-right: 6px; font-size: 14px; }
+.note { background: var(--tag); border-radius: 12px; padding: 12px 14px; font-size: 14px; }
+.refs li { font-size: 14px; margin-bottom: 6px; overflow-wrap: anywhere; }
+a { color: var(--accent); }
+</style>
+<div class="wrap">
+<h1>The meditation guide, rewritten</h1>
+<p class="lede">Every user-facing line in the in-app guide (<code>Shared/Guide/MeditationMethod.swift</code>), before and after, then the research on which techniques the guide is missing, with drafts of the six worth adding. Branch <code>guide-rewrite</code>. Ids, levels, order and the honesty tiers are unchanged, and so are step counts except Energy Centers, where two steps became one; titles are unchanged too, since they are names people already log sessions under.</p>
+<nav class="toc">
+<a href="#rewrite">Rewrite</a><a href="#m-firstTime">First time meditating</a><a href="#m-countdown">Counting Down From Ten</a><a href="#m-bodyScan">Body Scan</a><a href="#m-blueSky">Blue Sky</a><a href="#m-dualAwareness">Dual Awareness</a><a href="#m-energyCenters">Blessing the Energy Centers</a><a href="#m-reconditioning">Reconditioning the Body to a New Mind</a><a href="#m-manifestation">Manifestation</a><a href="#research">Research</a><a href="#drafts">New entries</a><a href="#refs">Sources</a>
+</nav>
+<h2 id="rewrite">Part 1. The rewrite, method by method</h2>
+<p class="lede">What changed, in short: shorter sentences in plain second person; jargon gone ("parasympathetic", "induction", "on-ramp", "consolidates"); the energy centers practice now says where the centers are, since a beginner had no way to find "the first energy center"; mystical lines are attributed to their teacher instead of stated as fact; the one claim that read as a finding without one ("this helps embed the intention into your subconscious") is now labeled as the tradition's idea, beside the real memory finding it borrows from; and two citations got sources the reader can recognize (MBSR's origin, Zaccaro 2018).</p>
+<section class="method" id="m-firstTime">
+<h3>First time meditating <span class="level">beginner</span></h3>
+<p class="mid">id <code>firstTime</code>, unchanged</p>
+<div class="field"><div class="flabel">One line </div>
+<div class="pair"><div class="col old"><div class="ctag">Before</div><p>Start here. What it is, and what to actually do.</p></div>
+<div class="col new"><div class="ctag">After</div><p>Start here. What meditation is, and what to actually do.</p></div></div></div>
+<div class="field"><div class="flabel">Intro </div>
+<div class="pair"><div class="col old"><div class="ctag">Before</div><p>The goal of meditation is to train the mind to be more focused, present, and self aware.</p><p>We do this by creating the conditions for the mind to reach stillness. Just as we cannot pull a flower out of a seed, we cannot force the mind to be still. What we can do is create the conditions: Give a seed a pot, soil, water, and sunlight, and it will naturally grow on its own. Meditation works the same way. If you create the right conditions, the mind will naturally come to a stillness on its own. Here are the conditions.</p></div>
+<div class="col new"><div class="ctag">After</div><p>Meditation trains your mind to be more focused, more present, and more aware of what it is doing.</p><p>You can&#x27;t force a mind to be quiet, the same way you can&#x27;t pull a flower out of a seed. But give a seed soil, water and sunlight, and it grows on its own. Meditation works the same way. Set up the right conditions and your mind settles by itself. Here they are.</p></div></div></div>
+<div class="field"><div class="flabel">Steps </div>
+<div class="pair"><div class="col old"><div class="ctag">Before</div><ol><li>Set aside some time, 10 to 20 minutes is great. Make sure you are undisturbed.</li><li>Sit comfortably with a straight back on a well supported surface.</li><li>Focus on an anchor. It can be anything, but the most common is the breath. Slowly breathe in through the nose, then steadily out through the mouth. Put all of your attention on the air rising through the nostrils on the way in, and releasing on the way out. Hold that focus.</li><li>Optional: try a pattern. Box breathing is 4 seconds in, 4 hold, 4 out, 4 hold, repeat. Or 4-7-8, which is 4 in, 7 hold, 8 out. Both are ways into a calmer, parasympathetic state. There is no pressure to use one, and if a hold ever makes you light-headed, skip it and simply breathe out longer than you breathe in. Breathing deeply and naturally works too if that is what relaxes you.</li><li>Optional: some people find it helps to picture a bright, rising energy filling the body on the inhale, and a soft, grounding energy leaving on the exhale. In Chinese tradition this is yin, the passive release, and yang, the active expansion.</li><li>When you inevitably notice your mind has wandered off, calmly bring your attention back to the breath. Remember: the wandering is expected, what matters is that you return, gently and without judgement.</li></ol></div>
+<div class="col new"><div class="ctag">After</div><ol><li>Set aside 10 to 20 minutes somewhere you won&#x27;t be interrupted.</li><li>Sit comfortably with your back straight, on something that supports you well. A chair is fine.</li><li>Pick an anchor to rest your attention on. Most people use the breath. Breathe in slowly through your nose and out steadily through your mouth. Feel the air come in and feel it leave, and keep your attention right there.</li><li>Optional: try a breathing pattern. Box breathing is in for 4 seconds, hold for 4, out for 4, hold for 4, and repeat. Or try 4-7-8: in for 4, hold for 7, out for 8. Both slow your breathing down, which helps your body relax. You don&#x27;t need either one. If a hold ever makes you light-headed, skip it and just make each breath out a little longer than the breath in. Easy, natural breathing works too.</li><li>Optional: some people like to picture a bright, rising energy filling them as they breathe in, and a soft, settling energy leaving as they breathe out. In Chinese tradition these are yang, the active side, and yin, the restful side.</li><li>Your mind will wander. Everyone&#x27;s does. When you notice, gently bring your attention back to the breath. Noticing and coming back is the practice, so there&#x27;s no need to be hard on yourself for drifting.</li></ol></div></div></div>
+
+<div class="field"><div class="flabel">What it is for </div>
+<div class="pair"><div class="col old"><div class="ctag">Before</div><p>That is it. The rest is practice.</p><p>Meditation is the practice of training your mind. Done regularly it helps you observe your thoughts without judgement, leading to lower stress, better emotional control, and a stronger sense of being present.</p></div>
+<div class="col new"><div class="ctag">After</div><p>That&#x27;s it. The rest is practice.</p><p>Every time you notice a thought and come back, you get a little better at watching your thoughts instead of getting carried off by them. Done regularly, many people find that shows up as less stress, steadier moods, and more time spent in the moment they&#x27;re actually in.</p></div></div></div>
+
+</section><section class="method" id="m-countdown">
+<h3>Counting Down From Ten <span class="level">beginner</span></h3>
+<p class="mid">id <code>countdown</code>, unchanged</p>
+<div class="field"><div class="flabel">One line </div>
+<div class="pair"><div class="col old"><div class="ctag">Before</div><p>Ten slow numbers, sinking deeper on each.</p></div>
+<div class="col new"><div class="ctag">After</div><p>Ten slow numbers, a little deeper with each.</p></div></div></div>
+
+<div class="field"><div class="flabel">Steps </div>
+<div class="pair"><div class="col old"><div class="ctag">Before</div><ol><li>Close your eyes and count down from ten.</li><li>With each number, imagine yourself sinking deeper.</li><li>Let each one take a full breath. There is no rush.</li><li>At one, stay there.</li></ol></div>
+<div class="col new"><div class="ctag">After</div><ol><li>Close your eyes and count down slowly from ten.</li><li>With each number, let yourself sink a little deeper, like walking down a staircase one step at a time.</li><li>Give each number a full breath. There&#x27;s no rush.</li><li>When you reach one, stay there and rest.</li></ol></div></div></div>
+
+<div class="field"><div class="flabel">What it is for </div>
+<div class="pair"><div class="col old"><div class="ctag">Before</div><p>A simple way into a relaxed state, and a good on-ramp before any of the others. This is a standard induction. It works for a lot of people, and it costs nothing to try.</p></div>
+<div class="col new"><div class="ctag">After</div><p>An easy way to relax, and a good way to start before any of the other practices. Counting down is a common way to begin in hypnosis and guided relaxation. It works for a lot of people, and it only takes a minute to try.</p></div></div></div>
+
+</section><section class="method" id="m-bodyScan">
+<h3>Body Scan <span class="level">beginner</span></h3>
+<p class="mid">id <code>bodyScan</code>, unchanged</p>
+<div class="field"><div class="flabel">One line </div>
+<div class="pair"><div class="col old"><div class="ctag">Before</div><p>Release the body one part at a time.</p></div>
+<div class="col new"><div class="ctag">After</div><p>Relax your body one part at a time.</p></div></div></div>
+
+<div class="field"><div class="flabel">Steps </div>
+<div class="pair"><div class="col old"><div class="ctag">Before</div><ol><li>Start at the top of your head.</li><li>Walk your attention down: skull, eyebrows, eyes, nose, tongue, cheeks, jaw.</li><li>Neck, shoulders, biceps, triceps, elbows, forearms, hands.</li><li>Chest, abdomen, lower abdomen.</li><li>Hips, thighs, knees, calves, ankles, feet. Every toe, even the little one.</li><li>Just noticing a part is often enough to release it.</li></ol></div>
+<div class="col new"><div class="ctag">After</div><ol><li>Start at the top of your head.</li><li>Slowly move your attention down your face: forehead, eyebrows, eyes, nose, cheeks, jaw, tongue.</li><li>Then your neck and shoulders, and down your arms to your elbows, forearms and hands.</li><li>Your chest, your belly, your lower belly.</li><li>Your hips, thighs, knees, calves, ankles and feet. Every toe, even the little one.</li><li>You don&#x27;t have to make anything relax. Noticing a spot is often enough for it to soften on its own.</li></ol></div></div></div>
+
+<div class="field"><div class="flabel">What it is for </div>
+<div class="pair"><div class="col old"><div class="ctag">Before</div><p>Good for stress and good before sleep. It is also the on-ramp to the manifestation practice: a relaxed body settles first, and that is the state the rest is done from.</p><p>The body scan is a core part of the eight-week mindfulness course that produced measurable increases in gray matter density in one widely cited study (Holzel 2011).</p></div>
+<div class="col new"><div class="ctag">After</div><p>Good for stress, and good before sleep. It&#x27;s also a good way to start the Manifestation practice, which works best from a relaxed body.</p><p>The body scan is a core part of Mindfulness-Based Stress Reduction, the eight-week course in which one widely cited study found increases in gray matter density (Hölzel 2011).</p></div></div></div>
+<div class="field"><div class="flabel">Origin </div>
+<div class="pair"><div class="col old"><div class="ctag">Before</div><p>Clinical mindfulness practice (MBSR)</p></div>
+<div class="col new"><div class="ctag">After</div><p>Mindfulness-Based Stress Reduction (MBSR), the course Jon Kabat-Zinn started at the University of Massachusetts Medical School in 1979.</p></div></div></div>
+</section><section class="method" id="m-blueSky">
+<h3>Blue Sky <span class="level">intermediate</span></h3>
+<p class="mid">id <code>blueSky</code>, unchanged</p>
+<div class="field"><div class="flabel">One line </div>
+<div class="pair"><div class="col old"><div class="ctag">Before</div><p>Watch your thoughts pass like clouds.</p></div>
+<div class="col new"><div class="ctag">After</div><p>Watch your thoughts drift by like clouds.</p></div></div></div>
+
+<div class="field"><div class="flabel">Steps </div>
+<div class="pair"><div class="col old"><div class="ctag">Before</div><ol><li>Picture yourself lying on a field of grass, looking up at an open sky.</li><li>Thoughts and emotions will come. That is not a failure, it is the point.</li><li>Picture every thought as a cloud. Some are light and pretty, some are dark and stormy. Either way they are far away, and you are down here on the field.</li><li>Sometimes you will notice you have been pulled up into the clouds. When you notice, simply come back to the field.</li><li>Come back calmly and without judgement. As long as you are returning, you are doing it correctly.</li></ol></div>
+<div class="col new"><div class="ctag">After</div><ol><li>Picture yourself lying in a grassy field, looking up at an open sky.</li><li>Thoughts and feelings will come. That&#x27;s fine. They&#x27;re what you&#x27;re practicing with.</li><li>Let each thought be a cloud. Some are light and pretty, some are dark and stormy. Either way they&#x27;re up there, far away, and you&#x27;re down here on the grass.</li><li>Every so often you&#x27;ll realize you&#x27;ve been pulled up into a cloud. When you notice, come back down to the field.</li><li>Come back calmly, without scolding yourself. As long as you keep coming back, you&#x27;re doing it right.</li></ol></div></div></div>
+
+<div class="field"><div class="flabel">What it is for </div>
+<div class="pair"><div class="col old"><div class="ctag">Before</div><p>Understand that the returning IS the practice. You are not training to have no thoughts, you are training to separate yourself from them.</p><p>What this teaches is that you are not your thoughts, you are the observer of your thoughts. Whatever your alarm bells may be, you can step back from them whenever you&#x27;d like.</p><p>Come up with your own version if you like. The same idea works as cars passing on a highway, ships crossing the ocean, fish moving through a pond. Anything that means something to you. Or just do blue sky.</p></div>
+<div class="col new"><div class="ctag">After</div><p>Coming back is the practice. You aren&#x27;t trying to stop thinking. You&#x27;re learning to step back from your thoughts.</p><p>Over time this shows you that you are not your thoughts. You&#x27;re the one noticing them. Whatever tends to set off your alarm bells, you can step back and watch it pass.</p><p>Make your own version if you like: cars going by on a highway, ships crossing the ocean, fish swimming through a pond. Pick whatever means something to you, or stay with the sky.</p></div></div></div>
+
+</section><section class="method" id="m-dualAwareness">
+<h3>Dual Awareness <span class="level">intermediate</span></h3>
+<p class="mid">id <code>dualAwareness</code>, unchanged</p>
+<div class="field"><div class="flabel">One line </div>
+<div class="pair"><div class="col old"><div class="ctag">Before</div><p>Hold the breath and the whole room at once.</p></div>
+<div class="col new"><div class="ctag">After</div><p>Rest on your breath while taking in the whole room.</p></div></div></div>
+
+<div class="field"><div class="flabel">Steps </div>
+<div class="pair"><div class="col old"><div class="ctag">Before</div><ol><li>Settle on the breath the way you would in any practice. Attention on the sensations where the air moves.</li><li>Now, without taking your attention off the breath, notice what else is there. Sounds in the room. The weight of your body on the seat. Light through your eyelids. Air on your skin.</li><li>Keep the breath in the foreground and everything else in the background, both at the same time. You are not switching between them, and you are not trying to name what you notice.</li><li>You will keep collapsing into one or the other. Sometimes you narrow down until only the breath exists. Sometimes you drift out and lose the breath entirely. Both are normal. Widen or return, gently.</li><li>In time a third thing shows up: you start being able to tell what your mind is doing while it is doing it. That is the part worth having.</li></ol></div>
+<div class="col new"><div class="ctag">After</div><ol><li>Settle on your breath as you would in any practice, with your attention on the feeling of the air moving.</li><li>Without leaving the breath, start to notice what else is there. Sounds in the room. The weight of your body on the seat. Light through your eyelids. Air on your skin.</li><li>Keep the breath in front and everything else in the background, both at once. You&#x27;re not switching back and forth, and you don&#x27;t need to name anything.</li><li>You&#x27;ll keep losing the balance. Sometimes you&#x27;ll narrow in until only the breath is left. Sometimes you&#x27;ll drift out and lose the breath completely. Both are normal. Gently widen out, or come back.</li><li>With time you&#x27;ll start to notice what your mind is doing while it&#x27;s doing it. That&#x27;s the skill this practice builds.</li></ol></div></div></div>
+
+<div class="field"><div class="flabel">What it is for </div>
+<div class="pair"><div class="col old"><div class="ctag">Before</div><p>Attention and awareness are not the same thing. Attention picks one small part of experience and studies it. Awareness is open and holds the whole context around it. Most practice trains only the first, and attention on its own goes narrow and dull.</p><p>Holding both is what makes the difference. With awareness open you catch a distraction while it is arriving rather than ten minutes after it took you, and this is the skill that carries out of the session and into an ordinary day.</p></div>
+<div class="col new"><div class="ctag">After</div><p>Attention and awareness are two different things. Attention zooms in on one thing. Awareness is wide and takes in everything around it. Practicing with attention alone can leave you narrow and a little dull.</p><p>Holding both changes that. With awareness open, you catch a distraction as it arrives instead of ten minutes after it carried you off. It&#x27;s also a skill that comes with you out of the session and into an ordinary day.</p></div></div></div>
+<div class="field"><div class="flabel">Origin </div>
+<div class="pair"><div class="col old"><div class="ctag">Before</div><p>Culadasa (John Yates), The Mind Illuminated. Practice tradition, not peer-reviewed evidence.</p></div>
+<div class="col new"><div class="ctag">After</div><p>Culadasa (John Yates), The Mind Illuminated. A meditation teacher&#x27;s book, not peer-reviewed evidence.</p></div></div></div>
+</section><section class="method" id="m-energyCenters">
+<h3>Blessing the Energy Centers <span class="level">intermediate</span></h3>
+<p class="mid">id <code>energyCenters</code>, unchanged</p>
+<div class="field"><div class="flabel">One line </div>
+<div class="pair"><div class="col old"><div class="ctag">Before</div><p>Move through each center and bless it.</p></div>
+<div class="col new"><div class="ctag">After</div><p>Move up through each center and bless it.</p></div></div></div>
+
+<div class="field"><div class="flabel">Steps </div>
+<div class="pair"><div class="col old"><div class="ctag">Before</div><ol><li>Place your attention in the first energy center.</li><li>Open your awareness to the space around it.</li><li>Once you can sense that space, bless the center.</li><li>Connect to an elevated emotion there: love, gratitude, joy.</li><li>Move through all seven centers in the body the same way.</li><li>The eighth sits about sixteen inches above your head. Bless that one with gratitude, because gratitude is the state of already having received.</li></ol></div>
+<div class="col new"><div class="ctag">After</div><ol><li>In this practice there are seven energy centers running up the body: the base of the spine, the lower belly, the upper belly, the heart, the throat, the middle of the head, and the top of the head.</li><li>Start with the first. Rest your attention there, then let your awareness open to the space around it.</li><li>Once you can feel that space, bless it: fill it with a good feeling, like love, gratitude or joy.</li><li>Move up to the next center and do the same, all the way to the top of your head.</li><li>The eighth center is said to sit about sixteen inches above your head. Bless that one with gratitude. Dispenza describes gratitude as the feeling of having already received.</li></ol></div></div></div>
+
+<div class="field"><div class="flabel">What it is for </div>
+<div class="pair"><div class="col old"><div class="ctag">Before</div><p>A structured way to move attention and feeling through the body rather than sitting in one place.</p></div>
+<div class="col new"><div class="ctag">After</div><p>A structured way to move your attention, and a good feeling, up through your body instead of resting in one spot.</p></div></div></div>
+<div class="field"><div class="flabel">Origin </div>
+<div class="pair"><div class="col old"><div class="ctag">Before</div><p>Joe Dispenza, Becoming Supernatural. Practice tradition, not peer-reviewed evidence.</p></div>
+<div class="col new"><div class="ctag">After</div><p>Joe Dispenza, Becoming Supernatural. A practice tradition, not peer-reviewed evidence.</p></div></div></div>
+</section><section class="method" id="m-reconditioning">
+<h3>Reconditioning the Body to a New Mind <span class="level">advanced</span></h3>
+<p class="mid">id <code>reconditioning</code>, unchanged</p>
+<div class="field"><div class="flabel">One line </div>
+<div class="pair"><div class="col old"><div class="ctag">Before</div><p>Start with the feeling, let the vision follow.</p></div>
+<div class="col new"><div class="ctag">After</div><p>Start with the feeling, and let the picture follow.</p></div></div></div>
+
+<div class="field"><div class="flabel">Steps </div>
+<div class="pair"><div class="col old"><div class="ctag">Before</div><ol><li>Close your eyes and bring your attention off the outside world and onto the space of your chest.</li><li>Breathe slower and deeper.</li><li>Bring something to mind, real or imagined, to jumpstart the feeling.</li><li>If a big future vision feels too far away, start small. Being thankful for a simple comfort, or a glass of water. Let it expand from there.</li><li>Radiate that appreciation and let the body accept it is already living in that reality.</li><li>Carry it into your day rather than letting it drop the moment you open your eyes.</li></ol></div>
+<div class="col new"><div class="ctag">After</div><ol><li>Close your eyes. Let go of the room around you and bring your attention to the space in your chest.</li><li>Slow your breathing down and let each breath go a little deeper.</li><li>Bring something to mind, real or imagined, that sparks a good feeling.</li><li>If a big dream for the future feels too far away, start small. Feel thankful for something simple, like a warm bed or a glass of water, and let the feeling grow from there.</li><li>Stay in that feeling, as if the life you want is already yours.</li><li>When you open your eyes, try to carry the feeling into your day instead of dropping it.</li></ol></div></div></div>
+
+<div class="field"><div class="flabel">What it is for </div>
+<div class="pair"><div class="col old"><div class="ctag">Before</div><p>The emotion comes first here and the vision follows it, which is the reverse of the manifestation practice. Worth having both, because most people find one of the two much easier than the other.</p><p>Slow, deep breathing shifts you toward the parasympathetic side, which is well studied on its own.</p></div>
+<div class="col new"><div class="ctag">After</div><p>Here the feeling comes first and the picture follows, the opposite of the Manifestation practice. It&#x27;s worth having both, since most people find one much easier than the other.</p><p>The slow breathing part is well studied on its own: breathing slowly helps the body relax (Zaccaro 2018).</p></div></div></div>
+<div class="field"><div class="flabel">Origin </div>
+<div class="pair"><div class="col old"><div class="ctag">Before</div><p>Joe Dispenza. Practice tradition, not peer-reviewed evidence.</p></div>
+<div class="col new"><div class="ctag">After</div><p>Joe Dispenza. A practice tradition, not peer-reviewed evidence.</p></div></div></div>
+</section><section class="method" id="m-manifestation">
+<h3>Manifestation <span class="level">advanced</span></h3>
+<p class="mid">id <code>manifestation</code>, unchanged</p>
+<div class="field"><div class="flabel">One line </div>
+<div class="pair"><div class="col old"><div class="ctag">Before</div><p>Plant an intention while the body is settled.</p></div>
+<div class="col new"><div class="ctag">After</div><p>Plant an intention while your body is relaxed.</p></div></div></div>
+
+<div class="field"><div class="flabel">Steps </div>
+<div class="pair"><div class="col old"><div class="ctag">Before</div><ol><li>Relax the body completely. You can use breathing techniques, the body scan, counting down from ten, or whatever combination you choose.</li><li>Bring intentions you prepared ahead of time. This one does not work improvised.</li><li>Deeply feel the elevated emotions around your intentions, such as love, gratitude, and joy. To help you do this, you can perform one or both of the two techniques below.</li><li>Fully feel these emotions until you are satisfied.</li><li>Let it go and return to the present.</li></ol></div>
+<div class="col new"><div class="ctag">After</div><ol><li>Relax your body completely. Use slow breathing, the body scan, counting down from ten, or any mix of them.</li><li>Bring an intention you chose before you started. It&#x27;s hard to come up with one while you&#x27;re settling in.</li><li>Feel the good feelings that go with it, like love, gratitude and joy. One or both of the two ways in below can help.</li><li>Stay with those feelings until they feel complete.</li><li>Then let it go and come back to the present.</li></ol></div></div></div>
+<div class="field"><div class="flabel">Two ways in </div>
+<div class="pair"><div class="col old"><div class="ctag">Before</div><p><strong>Inner conversation</strong> <span class="muted">(Neville Goddard)</span></p><p>Imagine telling someone who genuinely wants you to win. A close friend, a family member, anyone who would be truly happy for you.</p><p>Tell them, in the present tense, that you have done it. Hear them react. Hear them freak out, hear them say they are proud of you.</p><p>Feel what you would feel. Not what you will feel one day. What you feel now, because it is done.</p><p><strong>Mental movie</strong></p><p>Imagine an ordinary day in the life where it is already accomplished.</p><p>You wake up. Everything you set out to do is done. You look around and feel relaxed, grateful, in love with your life.</p><p>Play it like a film and let it run.</p></div>
+<div class="col new"><div class="ctag">After</div><p><strong>Inner conversation</strong> <span class="muted">(Neville Goddard)</span></p><p>Imagine telling someone who really wants you to win. A close friend, someone in your family, anyone who would be truly happy for you.</p><p>Tell them, in the present tense, that it has happened. Hear how they react. Hear them get excited, and hear them say they&#x27;re proud of you.</p><p>Feel what you would feel. Not someday. Right now, because it&#x27;s already done.</p><p><strong>Mental movie</strong></p><p>Imagine an ordinary day in a life where it has already happened.</p><p>You wake up. What you set out to do is done. You look around and feel relaxed, grateful, and in love with your life.</p><p>Play it like a film and let it run.</p></div></div></div>
+<div class="field"><div class="flabel">What it is for </div>
+<div class="pair"><div class="col old"><div class="ctag">Before</div><p>Emotional intensity at the time of an experience affects how strongly it consolidates. This helps embed the intention into your subconscious.</p></div>
+<div class="col new"><div class="ctag">After</div><p>Memory research finds that moments with strong feeling attached are remembered more strongly (McGaugh 2004). This practice puts that to use by pairing what you want with a strong, good feeling. The idea that this plants it in your subconscious comes from the practice&#x27;s teachers, not from research.</p></div></div></div>
+<div class="field"><div class="flabel">Origin </div>
+<div class="pair"><div class="col old"><div class="ctag">Before</div><p>&quot;Manifestation: embedding intentions into your subconscious.&quot; Doty JR (2024), Mind Magic. A trade book, not a study.</p></div>
+<div class="col new"><div class="ctag">After</div><p>&quot;Manifestation: embedding intentions into your subconscious.&quot; James Doty, Mind Magic (2024). A popular book, not a study.</p></div></div></div>
+</section>
+<h2 id="research">Part 2. What the guide is missing</h2>
+<p class="lede">I checked the big techniques people look for against the eight methods already in the guide. One honest limit first: I could not measure search volume (Google Trends needs a browser session and I found no trustworthy public keyword numbers), so "how widely practiced" below rests on the one solid survey I found and on how prominent each practice is in its own tradition, not on search counts. The survey: in the 2012 US National Health Interview Survey, the three meditation styles adults reported were spiritual (3.1% in the past year), mindfulness (1.9%) and mantra (1.6%) (Burke 2017).</p>
+
+<div class="tablewrap"><table>
+<tr><th>Technique</th><th>In the guide today?</th><th>Fits 808?</th><th>Verdict</th></tr>
+<tr><td>Loving-kindness (metta)</td><td>No. Nothing in the guide is about warmth toward other people.</td><td>Yes. Silent, seated, any length.</td><td><strong>Add, #1.</strong> One of the oldest and best-known practices, with the most research of anything missing (Hofmann 2011; Fredrickson 2008).</td></tr>
+<tr><td>Transcendental Meditation (TM)</td><td>No, and it can't be.</td><td>The technique, no. "Transcendental Meditation" and "TM" are trademarks of the Maharishi organizations, and TM is only taught in person by its certified teachers, who give each student a mantra for a fee (about $980 in the US per the TM site's own course page).</td><td><strong>Add the general practice it belongs to, as "Mantra Meditation", #2.</strong> Never use the TM name in the app, keywords or listing. See the note under the draft.</td></tr>
+<tr><td>Mantra / japa</td><td>No.</td><td>Yes, silent and seated; beads optional.</td><td>Covered by the Mantra draft (japa is a step).</td></tr>
+<tr><td>Vipassana, Goenka style (body sweeping)</td><td>Partly: the Body Scan is a cousin.</td><td>Poorly. Goenka's centers teach it only in 10-day silent residential courses, free and donation-funded, and ask that it be learned there.</td><td>Don't copy it. Point to the noting style of insight practice instead.</td></tr>
+<tr><td>Vipassana, Mahasi style (noting)</td><td>No.</td><td>Yes. Silent, seated or lying down.</td><td><strong>Add as "Noting", #3.</strong> This is the insight meditation most Western teachers learned.</td></tr>
+<tr><td>Breath counting</td><td>Partly: First time meditating uses the breath as an anchor, but never counts.</td><td>Yes, the simplest fit there is.</td><td><strong>Add, #4.</strong> Also one of the few practices validated as a measure of attention (Levinson 2014).</td></tr>
+<tr><td>Anapanasati (mindfulness of breathing)</td><td>Largely, through First time meditating.</td><td>Yes.</td><td>Covered. Breath Counting is its classic first stage.</td></tr>
+<tr><td>Yoga nidra / NSDR</td><td>No.</td><td>Yes, but it is traditionally spoken aloud to you, lying down, eyes closed, so reading steps mid-session is awkward.</td><td><strong>Add, #5,</strong> and later consider it as a guided audio track, the way the guided journey is.</td></tr>
+<tr><td>Zen zazen / shikantaza</td><td>Partly: Blue Sky and Dual Awareness are open-awareness practices.</td><td>Yes. Silent, seated.</td><td><strong>Add as "Just Sitting", #6,</strong> the natural next step after Dual Awareness.</td></tr>
+<tr><td>Walking meditation (kinhin, Thich Nhat Hanh)</td><td>No.</td><td>Mixed. The phone timer is fine, but a Watch-measured walk would score low on stillness, which reads as a bad session when it was a good one.</td><td>Hold until the score knows a session was a walk.</td></tr>
+<tr><td>Open monitoring</td><td>Yes: Blue Sky and Dual Awareness.</td><td>Yes.</td><td>Covered.</td></tr>
+<tr><td>Visualization</td><td>Yes: Manifestation (mental movie) and Reconditioning.</td><td>Yes.</td><td>Covered.</td></tr>
+<tr><td>Box breathing, 4-7-8</td><td>Yes, inside First time meditating, and loggable as "Breath work".</td><td>Yes.</td><td>Covered. If a breathing pattern is ever added, cyclic sighing (two inhales through the nose, one long exhale) did best of three five-minute practices in Balban 2023, and is worth a line in the First time steps.</td></tr>
+<tr><td>Gratitude</td><td>Yes, as the core of Energy Centers and Reconditioning.</td><td>Yes.</td><td>Covered.</td></tr>
+<tr><td>Body scan</td><td>Yes.</td><td>Yes.</td><td>Covered.</td></tr>
+</table></div>
+
+<div class="note"><strong>On naming TM.</strong> My recommendation is to leave it out entirely: the mantra entry stands on its own, and Benson's secular version is the honest root for it. If you do want a line for people who search for TM, something like "Transcendental Meditation is one well-known mantra technique. It's taught only by its own certified teachers, and this isn't it." is the factual form, but run it past the attorney first, because the name is a registered mark and the organization defends it. Never put TM in the App Store keywords.</div>
+
+<h2 id="drafts">The six drafts, ranked</h2>
+<p class="lede">Same shape as the shipped methods. Not added to the Swift code. When approved, each goes into <code>MeditationMethod.all</code> inside its level block, because <code>test_roadmapClimbsInDifficulty</code> requires the list to climb (beginner, then intermediate, then advanced). Suggested symbols are SF Symbols.</p>
+
+<div class="draft">
+<h3><span class="rank">1</span>Loving-Kindness <span class="level">beginner</span></h3>
+<p class="mid">id <code>lovingKindness</code>, symbol <code>heart.fill</code></p>
+<p><strong>One line:</strong> Wish yourself and others well, one person at a time.</p>
+<h4>Steps</h4>
+<ol>
+<li>Sit comfortably, close your eyes, and take a few slow breaths.</li>
+<li>Start with yourself. Silently repeat a few simple wishes: May I be safe. May I be happy. May I be healthy. May I live with ease.</li>
+<li>If starting with yourself feels hard, start with the next step instead and come back to yourself at the end.</li>
+<li>Picture someone easy to love, like a close friend or a pet, and offer them the same wishes: May you be safe. May you be happy.</li>
+<li>Then someone neutral, like a person you see at the store. When you're ready, someone you find difficult.</li>
+<li>Finish by widening it to everyone: May all beings be safe and happy.</li>
+<li>If a wish feels empty, that's fine. Keep saying it kindly. The feeling often follows the words.</li>
+</ol>
+<h4>What it is for</h4>
+<p>A practice for warmth, toward other people and toward yourself. In a study of working adults, people who practiced loving-kindness felt more positive emotions day to day over the following weeks (Fredrickson 2008). Reviews of the research call it promising and still early (Hofmann 2011).</p>
+<h4>Origin</h4>
+<p>Metta, from early Buddhist teaching. Sharon Salzberg's book Lovingkindness (1995) brought it to many Western students.</p>
+</div>
+
+<div class="draft">
+<h3><span class="rank">2</span>Mantra Meditation <span class="level">beginner</span></h3>
+<p class="mid">id <code>mantra</code>, symbol <code>quote.bubble.fill</code></p>
+<p><strong>One line:</strong> Repeat one calm word and let it carry you.</p>
+<h4>Steps</h4>
+<ol>
+<li>Choose a word or short phrase that feels calm to you. It can be a word with meaning, like peace or one, or a traditional sound like om. Use the same one each time.</li>
+<li>Sit comfortably, close your eyes, and breathe easily through your nose.</li>
+<li>Repeat the word silently. Many people say it once on each breath out.</li>
+<li>When thoughts come, don't fight them. Notice, and go back to the word.</li>
+<li>Let the word get softer and quieter if it wants to. You don't need to say it clearly.</li>
+<li>Optional: hold a string of beads and move one bead for each repetition. This is called japa, and a full string usually has 108 beads.</li>
+</ol>
+<h4>What it is for</h4>
+<p>A word gives a busy mind one simple thing to hold, and many people find that easier than following the breath. In the 1970s the Harvard cardiologist Herbert Benson described how repeating a simple word like one brings on what he called the relaxation response. A review of mantra research found small to moderate benefits for stress and anxiety, from studies that were mostly of low quality (Lynch 2018).</p>
+<h4>Origin</h4>
+<p>Mantra practice runs through Hindu, Buddhist and many other traditions. The secular version comes from Herbert Benson's book The Relaxation Response (1975).</p>
+</div>
+
+<div class="draft">
+<h3><span class="rank">3</span>Noting <span class="level">intermediate</span></h3>
+<p class="mid">id <code>noting</code>, symbol <code>tag.fill</code></p>
+<p><strong>One line:</strong> Give what you notice a soft label, then let it go.</p>
+<h4>Steps</h4>
+<ol>
+<li>Sit or lie down and rest your attention on your belly. Feel it rise as you breathe in and fall as you breathe out.</li>
+<li>Silently label each movement: rising, falling. Say it softly in your head, not out loud.</li>
+<li>When something pulls you away, label that too. Thinking. Hearing. Itching. Planning. Then go back to rising, falling.</li>
+<li>Keep the labels short and light. A label is a quick tap on the shoulder, not a description.</li>
+<li>If you want to move, note the wish first, wanting to move, then note each part of the movement as you make it.</li>
+<li>Over time, drop the words if they get in the way and simply notice.</li>
+</ol>
+<h4>What it is for</h4>
+<p>Noting makes every distraction part of the practice: each one gets named, and in this tradition naming it once or twice is often enough to loosen its grip. It gives you a close look at what your mind is doing from moment to moment, which is what insight meditation is about.</p>
+<h4>Origin</h4>
+<p>Insight meditation (vipassana) as taught by Mahasi Sayadaw of Burma, whose Manual of Insight Meditation dates from 1945. A practice tradition, not peer-reviewed evidence.</p>
+</div>
+
+<div class="draft">
+<h3><span class="rank">4</span>Breath Counting <span class="level">beginner</span></h3>
+<p class="mid">id <code>breathCounting</code>, symbol <code>number.circle.fill</code></p>
+<p><strong>One line:</strong> Count ten breaths, then start again at one.</p>
+<h4>Steps</h4>
+<ol>
+<li>Sit comfortably and breathe naturally. There's no need to change your breathing.</li>
+<li>Each time you breathe out, silently count: one, two, three, up to ten.</li>
+<li>At ten, start again at one.</li>
+<li>If you lose count, or find yourself at fifteen, no problem. Start again at one.</li>
+<li>Keep your attention on the feeling of breathing. The numbers just help you keep your place.</li>
+</ol>
+<h4>What it is for</h4>
+<p>Counting gives you an easy way to tell when your mind has wandered: you lose the count. In one set of studies, people who counted more accurately reported less mind wandering, and four weeks of counting practice reduced mind wandering more than the comparison training did (Levinson 2014).</p>
+<h4>Origin</h4>
+<p>Counting is the first stage of breath meditation in the Buddhist commentary the Visuddhimagga, and a common first practice in Zen.</p>
+</div>
+
+<div class="draft">
+<h3><span class="rank">5</span>Yoga Nidra <span class="level">beginner</span></h3>
+<p class="mid">id <code>yogaNidra</code>, symbol <code>bed.double.fill</code></p>
+<p><strong>One line:</strong> Lie down and rest deeply without falling asleep.</p>
+<h4>Steps</h4>
+<ol>
+<li>Lie on your back with your arms by your sides, palms up. Use a pillow or a blanket so you're comfortable.</li>
+<li>Choose a short intention, one sentence in the present tense, like I am calm. Say it to yourself three times.</li>
+<li>Move your attention slowly around your body, naming each part as you go: right thumb, each finger, palm, wrist, up the arm. Then the left side, then your back, the front of your body, and your face.</li>
+<li>Notice your breath without changing it. If you feel yourself drifting off, count your breaths backward from twenty.</li>
+<li>Notice pairs of feelings, one after the other: heavy, then light. Warm, then cool.</li>
+<li>Before you finish, say your intention again. Then slowly move your fingers and toes and open your eyes.</li>
+</ol>
+<h4>What it is for</h4>
+<p>Deep rest while you stay awake. Good as an afternoon reset or to wind down before bed. It's close to the Body Scan, done lying down and more slowly. Andrew Huberman popularized it under the name non-sleep deep rest, or NSDR.</p>
+<h4>Origin</h4>
+<p>Swami Satyananda Saraswati of the Bihar School of Yoga, whose book Yoga Nidra was first published in 1976.</p>
+<p class="muted">Not in the app copy on purpose: the often-quoted dopamine finding (Kjaer 2002) was eight yoga teachers in one PET study, too small to state as a finding.</p>
+</div>
+
+<div class="draft">
+<h3><span class="rank">6</span>Just Sitting <span class="level">advanced</span></h3>
+<p class="mid">id <code>justSitting</code>, symbol <code>circle</code></p>
+<p><strong>One line:</strong> Sit with nothing to do and nothing to hold.</p>
+<h4>Steps</h4>
+<ol>
+<li>Sit upright and balanced, not leaning forward, back or to either side. Rest your hands in your lap.</li>
+<li>Keep your eyes half open, resting on the floor a few feet in front of you.</li>
+<li>Let your breath be natural. Don't count it or follow it.</li>
+<li>Don't hold onto anything. Sounds, thoughts and feelings come and go on their own. You don't chase them and you don't push them away.</li>
+<li>When you notice you've been lost in a thought, simply come back to sitting.</li>
+</ol>
+<h4>What it is for</h4>
+<p>There's no goal here, and that's the point. The other practices in the guide give your mind a job. This one gives it none, which makes it a good next step once Blue Sky and Dual Awareness feel familiar.</p>
+<h4>Origin</h4>
+<p>Shikantaza, the Soto Zen practice of just sitting, described by the Zen teacher Dogen in his Fukanzazengi around 1227.</p>
+</div>
+
+<h2 id="refs">Sources for Part 2</h2>
+<ul class="refs">
+<li>Burke A, et al. (2017). Prevalence and patterns of use of mantra, mindfulness and spiritual meditation among adults in the United States. BMC Complementary and Alternative Medicine 17:316. <a href="https://pubmed.ncbi.nlm.nih.gov/28619092/">PubMed</a></li>
+<li>Hofmann SG, Grossman P, Hinton DE (2011). Loving-kindness and compassion meditation: potential for psychological interventions. Clinical Psychology Review 31(7):1126–1132. doi:10.1016/j.cpr.2011.07.003. <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC3176989">PMC</a></li>
+<li>Fredrickson BL, Cohn MA, Coffey KA, Pek J, Finkel SM (2008). Open hearts build lives. Journal of Personality and Social Psychology 95(5):1045–1062. doi:10.1037/a0013262. <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC3156028/">PMC</a></li>
+<li>Lynch J, et al. (2018). Mantra meditation for mental health in the general population: a systematic review. European Journal of Integrative Medicine 23:101–108. doi:10.1016/j.eujim.2018.09.010. <a href="https://pure.ul.ie/en/publications/mantra-meditation-for-mental-health-in-the-general-population-a-s/">University of Limerick</a></li>
+<li>Benson H, Klipper MZ (1975). The Relaxation Response. <a href="https://en.wikipedia.org/wiki/The_Relaxation_Response">Overview</a>; steps as reproduced by <a href="https://www.brighamandwomensfaulkner.org/assets/faulkner/headache-center/documents/relaxation-response.pdf">Brigham and Women's</a></li>
+<li>Levinson DB, Stoll EL, Kindy SD, Merry HL, Davidson RJ (2014). A mind you can count on: validating breath counting as a behavioral measure of mindfulness. Frontiers in Psychology 5:1202. doi:10.3389/fpsyg.2014.01202. <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC4208398">PMC</a></li>
+<li>Balban MY, et al. (2023). Brief structured respiration practices enhance mood and reduce physiological arousal. Cell Reports Medicine. doi:10.1016/j.xcrm.2022.100895. <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC9873947">PMC</a></li>
+<li>Kjaer TW, et al. (2002). Increased dopamine tone during meditation-induced change of consciousness. Cognitive Brain Research 13(2):255–259. <a href="https://pubmed.ncbi.nlm.nih.gov/11958969/">PubMed</a></li>
+<li>Mahasi Sayadaw, noting instructions (rising, falling; labeling distractions). <a href="https://www.buddhanet.net/vmed_2.htm">BuddhaNet translation</a>, <a href="https://www.lionsroar.com/in-translation-endless-moments-of-insight-2/">Lion's Roar</a></li>
+<li>Vipassana as taught by S.N. Goenka: 10-day residential courses, donation basis, noble silence. <a href="https://mahi.dhamma.org/about-vipassana/faqs">dhamma.org FAQ</a></li>
+<li>Transcendental Meditation: trademark notice (<a href="https://davidlynchfoundation.org.uk/legal.html">David Lynch Foundation UK legal page</a>), personal mantra from a certified teacher (<a href="https://www.webmd.com/balance/transcendental-meditation-benefits-technique">WebMD</a>), course fee (<a href="https://throwaway-awp-3519-global.tm.community/course-fee">TM course fee page</a>; the fee varies by income and country, treat as approximate).</li>
+<li>Non-sleep deep rest as Huberman's term for yoga nidra and related practices. <a href="https://www.sleepfoundation.org/meditation-for-sleep/what-is-non-sleep-deep-rest">Sleep Foundation</a></li>
+<li>Satyananda Saraswati, Yoga Nidra (Bihar School of Yoga, 1976). <a href="https://www.abebooks.co.uk/book-search/title/yoga-nidra/author/swami-satyananda/">Edition listing</a></li>
+<li>Dogen, Fukanzazengi (Universally Recommended Instructions for Zazen). <a href="https://web.stanford.edu/~funn/zazen_instructions/Fukanzazengi.pdf">Bielefeldt translation, Stanford</a></li>
+<li>Thich Nhat Hanh on walking meditation. <a href="https://web.plumvillage.app/item/walking-meditation-4">Plum Village</a>; kinhin in Soto Zen. <a href="https://lionsroar.com/step-into-awareness/">Lion's Roar</a></li>
+</ul>
+<p class="muted">Rewrite citations already in the app: Hölzel 2011 (gray matter, the eight-week MBSR course), McGaugh 2004 (emotion and memory consolidation, Annual Review of Neuroscience 27:1–28), Zaccaro 2018 (slow breathing, SCIENCE.md ref 6).</p>
+
+</div>
