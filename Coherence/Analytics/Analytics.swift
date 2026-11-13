@@ -174,7 +174,19 @@ enum Analytics {
         case inviteShared
         case inviteCodeRedeemed              // joined Friends with someone's invite code (2026-10-18)
         case userBlocked
-        case contentReported(kind: String)   // "profile" (posts are gone)
+        case contentReported(kind: String)   // "profile" or "post"
+        // The feed (2026-11-13). Choices only: never a title, a photo, a
+        // name, minutes or anything measured.
+        /// A session went to friends. `hasPhoto`: it carried a picture.
+        /// `logged`: it was typed in with Record one.
+        case postCreated(hasPhoto: Bool, logged: Bool)
+        /// Kudos on a friend's post. `emoji` is one of four fixed choices;
+        /// `via`: "double_tap" or "picker".
+        case kudosGiven(emoji: String, via: String)
+        /// A post was reported (the reason stays in the Report record).
+        case postReported
+        /// The paywall a friend's invite code opened ("Aziz gave you a month").
+        case invitePaywallViewed
         case inviteRewarded                  // a brought friend sat; the grant landed
         case profileCreated(photo: Bool)
         case friendsIntroShown               // the one-time prompt for pre-Friends users
@@ -285,6 +297,10 @@ enum Analytics {
             case .inviteCodeRedeemed: "invite_code_redeemed"
             case .userBlocked: "user_blocked"
             case .contentReported: "content_reported"
+            case .postCreated: "post_created"
+            case .kudosGiven: "kudos_given"
+            case .postReported: "post_reported"
+            case .invitePaywallViewed: "invite_paywall_viewed"
             case .inviteRewarded: "invite_rewarded"
             case .profileCreated: "profile_created"
             case .friendsIntroShown: "friends_intro_shown"
@@ -349,6 +365,8 @@ enum Analytics {
             case .widgetOpened(let size), .widgetAdded(let size), .widgetRemoved(let size): ["size": size]
             case .awardUnlocked(let id): ["id": id]
             case .contentReported(let kind): ["kind": kind]
+            case .postCreated(let hasPhoto, let logged): ["has_photo": hasPhoto, "logged": logged]
+            case .kudosGiven(let emoji, let via): ["emoji": emoji, "via": via]
             case .profileCreated(let photo): ["photo": photo ? "yes" : "no"]
             case .friendsOpened(let source, let news): ["source": source, "news": news]
             case .goalStartOpened(let source): ["source": source]

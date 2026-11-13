@@ -313,6 +313,21 @@ struct OnboardingView: View {
     /// paywall (Aziz, 2026-10-17). The questions are THIS person's, so the
     /// bar never counts one they are not asked. Screens after the paywall
     /// (reminders, Block's setup, sign-in, the tour) show no bar.
+    /// Who invited this person, when their free month can be sold
+    /// (`InviteOffer`, 2026-11-13). nil sends them to today's paywall.
+    private var invitePaywall: PendingInvite? {
+        #if DEBUG
+        // PREVIEW_INVITE_PAYWALL=Aziz shows the screen with no code entered
+        // and no product in the store, for review.
+        if let name = ProcessInfo.processInfo.environment["PREVIEW_INVITE_PAYWALL"] {
+            return PendingInvite(code: "AZIZK7QX4", inviter: "_demo", name: name, username: name.lowercased())
+        }
+        #endif
+        return InviteOffer.inviter(pending: PendingInvite.saved, joined: community.joinedInviter,
+                                   productLoaded: store.product(for: .monthInvite) != nil,
+                                   freeDays: store.freeTrialDays(for: .monthInvite))
+    }
+
     private var flowSteps: [Step] {
         let opening: [Step] = [.relief, .breath, .meetOtto, .ottoGrows, .seeForYourself, .clutter, .questionCount]
         let questions: [Step] = answers.shownInterview.compactMap { q in
@@ -348,6 +363,8 @@ struct OnboardingView: View {
     /// would not give.
     private var trialLead: (plan: SubscriptionPlan, days: Int)? {
         guard Monetization.trialLeadIn, Self.paywallInsideOnboarding else { return nil }
+        // A friend's invite replaces the trial screens with its own paywall.
+        guard invitePaywall == nil else { return nil }
         #if !DEBUG
         guard store.state == .ready else { return nil }
         #endif
@@ -1084,7 +1101,10 @@ struct OnboardingView: View {
             Color.clear.onAppear { finish() }
 
         case .paywall:
-            if Self.paywallInsideOnboarding {
+            if Self.paywallInsideOnboarding, let inviter = invitePaywall {
+                InvitePaywallScreen(inviter: inviter) { _ in go(.permission) }
+                    .environment(\.onboardingSharedGround, false)
+            } else if Self.paywallInsideOnboarding {
                 // Premium only (`Monetization`). A purchase or a restore moves
                 // on to sign-in; so does a store that could not load its
                 // plans, since nobody is locked out by a failure. Declining

@@ -180,7 +180,7 @@ struct InviteCodeSheet: View {
 
     private var footnote: String {
         switch step {
-        case .invite: return "Each invite gets its own code."
+        case .invite: return "Your friend gets a month free. Each invite gets its own code."
         case .code: return "It goes as its own text, so your friend can copy it in one tap."
         case .sent: return "Invite sent. The next one gets a new code."
         }

@@ -109,6 +109,13 @@ struct TourStop: Equatable {
                      stand: .top),
             corner,
         ]
+        // In the bar's order: Friends before Block once Friends has the tab
+        // (2026-11-13, Home · Friends · + · Block · Profile).
+        if friends && !shopHasTab {
+            stops.append(TourStop(tab: .friends, targets: [.friends],
+                                  line: "See your friends' sessions here, and double tap one to give kudos.",
+                                  stand: .bottom))
+        }
         if block {
             stops.append(TourStop(tab: .block, targets: [.block],
                                   line: "This is Block, where I hold the apps you pick until you've meditated.",
@@ -119,13 +126,6 @@ struct TourStop: Equatable {
             // the tab (Melvin, 2026-09-27).
             stops.append(TourStop(tab: .store, targets: [.store],
                                   line: "Every minute you meditate earns points to spend on hats for me.",
-                                  stand: .bottom))
-        } else if friends {
-            stops.append(TourStop(tab: .friends, targets: [.friends],
-                                  // Friends see how often each other meditates;
-                                  // there is nothing to cheer on since posting
-                                  // was removed (Melvin, 2026-09-29).
-                                  line: "Bring your friends here, and see how often each of you meditates.",
                                   stand: .bottom))
         }
         stops.append(TourStop(tab: .profile, targets: [.profile],

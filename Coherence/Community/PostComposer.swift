@@ -220,11 +220,12 @@ enum PostMediaPrep {
         let thumbnail: Data?
         let video: Data?
 
-        init?(_ item: SessionPhoto) {
+        /// `includingVideo: false` posts a kept video as its still.
+        init?(_ item: SessionPhoto, includingVideo: Bool = true) {
             guard let jpeg = item.jpeg else { return nil }
             self.jpeg = jpeg
             thumbnail = item.thumbnail
-            video = item.video
+            video = includingVideo ? item.video : nil
         }
     }
 

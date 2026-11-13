@@ -54,8 +54,12 @@ final class Store: ObservableObject {
         /// The yearly plan with the free trial, beside `monthTrial` on the
         /// paywall once the trial rung is taken (Melvin, 2026-09-29).
         static let yearTrial = "com.lockout.meditate808.yearlytrial"
+        /// The invited friend's free month (2026-11-13): Monthly's price, a
+        /// one-month free introductory offer. NOT in `core`: until it exists
+        /// in App Store Connect the invite paywall falls back to the normal one.
+        static let monthInvite = "com.lockout.meditate808.monthlyinvite"
 
-        static let all = [monthly, yearly, lifetime, yearHalf, monthTrial, monthHalf, yearTrial]
+        static let all = [monthly, yearly, lifetime, yearHalf, monthTrial, monthHalf, yearTrial, monthInvite]
         /// What must load for the store to count as selling: the two
         /// subscriptions every paywall shows (Aziz, 2026-09-26). The rungs
         /// are NOT in it:
@@ -77,6 +81,7 @@ final class Store: ObservableObject {
             case .monthTrial: return monthTrial
             case .monthHalf: return monthHalf
             case .yearTrial: return yearTrial
+            case .monthInvite: return monthInvite
             }
         }
     }

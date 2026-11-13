@@ -132,11 +132,6 @@ struct CoherenceApp: App {
                 // retries here until it does. See
                 // CommunityModel.retryPendingDeletion.
                 .task { await CommunityModel.retryPendingDeletion() }
-                // Posting was removed 2026-09-27: this takes down whatever
-                // this person had already shared, once, retrying on a later
-                // launch if it can't reach iCloud. See
-                // CommunityModel.clearMyPostsIfNeeded.
-                .task { await community.clearMyPostsIfNeeded() }
                 .onChange(of: scenePhase) { _, phase in
                     if phase == .active, store.state != .ready {
                         Task { await store.load() }

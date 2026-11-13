@@ -864,6 +864,8 @@ actor CommunityStore {
         var sessionID: String? = nil
         var title: String = ""
         var sound: String? = nil
+        /// Typed in with Record one (the card's Logged chip).
+        var logged: Bool = false
     }
 
     static func postID(forSession sessionID: String) -> String { "post-" + sessionID }
@@ -903,7 +905,7 @@ actor CommunityStore {
                         practicedAt: draft.practicedAt,
                         createdAt: existing?["createdAt"] as? Date ?? Date(),
                         title: String(draft.title.trimmingCharacters(in: .whitespacesAndNewlines).prefix(Self.titleLimit)),
-                        sound: draft.sound)
+                        sound: draft.sound, logged: draft.logged)
         let record = existing ?? CKRecord(recordType: CommunityType.post, recordID: CKRecord.ID(recordName: id))
         post.apply(to: record)
         // An update with no media (an edit that only changes the caption,
@@ -931,17 +933,6 @@ actor CommunityStore {
         try await db.delete(id)
     }
 
-    /// Deletes every post I've authored, and nothing else Friends knows about
-    /// me (my profile, my friends, my reactions all stay). Used once, the day
-    /// posting was removed from the app (Melvin, 2026-09-27: "get rid of the
-    /// feed, no more posting with photos/videos") to take down what people
-    /// had already shared — `CommunityModel.clearMyPostsIfNeeded` calls it.
-    /// Reuses the same query-then-delete `deleteEverythingOfMine` already
-    /// does for posts, rather than a second implementation of it.
-    func deleteMyPosts() async throws {
-        try await deleteMine(CommunityType.post, field: "author", retired: true)
-    }
-
     /// Friends' posts and mine, most recently practiced first.
     func feed(limit: Int = 50) async throws -> [Post] {
         let mine = try await me()
@@ -961,6 +952,10 @@ actor CommunityStore {
     }
 
     private func posts(by authors: [String], limit: Int) async throws -> [Post] {
+        // Never a post from someone I blocked, whatever else let it through
+        // (an edge written before the block, a cached friends list).
+        let blocked = try await myBlockedSet()
+        let authors = authors.filter { !blocked.contains($0) }
         guard !authors.isEmpty else { return [] }
         var query = CommunityQuery(type: CommunityType.post,
                                    filters: [.isIn("author", authors.map { .reference($0) })])
@@ -977,9 +972,10 @@ actor CommunityStore {
 
     // MARK: - Reactions
 
-    func react(to postID: String) async throws {
+    /// Gives kudos, or changes which one: one record per person per post.
+    func react(to postID: String, emoji: String = Kudos.standard) async throws {
         let mine = try await me()
-        let reaction = Reaction(post: postID, author: mine)
+        let reaction = Reaction(post: postID, author: mine, emoji: emoji)
         let record = CKRecord(recordType: CommunityType.reaction, recordID: CKRecord.ID(recordName: reaction.id))
         reaction.apply(to: record)
         _ = try await db.save(record)
@@ -990,20 +986,21 @@ actor CommunityStore {
         try await db.delete(CommunityNames.reaction(post: postID, by: mine))
     }
 
-    /// Reactor profile names for many posts in one query, keyed by post id.
-    func reactions(for postIDs: [String]) async throws -> [String: [String]] {
+    /// Every kudos on many posts in one query, keyed by post id, oldest
+    /// first, minus anyone I blocked.
+    func reactions(for postIDs: [String]) async throws -> [String: [Reaction]] {
         guard !postIDs.isEmpty else { return [:] }
         _ = try await me()
         let records = try await db.query(CommunityQuery(type: CommunityType.reaction,
                                                         filters: [.isIn("post", postIDs.map { .reference($0) })],
                                                         limit: 1000))
         let blocked = try await myBlockedSet()
-        var out: [String: [String]] = [:]
+        var out: [String: [Reaction]] = [:]
         for r in records.filter({ authored($0, by: "author") }).compactMap(Reaction.init(record:))
         where !blocked.contains(r.author) {
-            out[r.post, default: []].append(r.author)
+            out[r.post, default: []].append(r)
         }
-        return out.mapValues { $0.sorted() }
+        return out.mapValues { $0.sorted { ($0.createdAt, $0.author) < ($1.createdAt, $1.author) } }
     }
 
     /// Who reacted to a post, as profile record names, minus anyone I blocked.

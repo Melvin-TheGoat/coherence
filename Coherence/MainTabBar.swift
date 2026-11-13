@@ -92,20 +92,22 @@ struct MainTabBar: View {
 
     private var classic: some View {
         HStack(alignment: .top, spacing: 0) {
+            // Home · Friends · + · Block · Profile (Melvin, 2026-11-13,
+            // `mockups/friends-v3.html`): Friends sits next to Home, the second
+            // thing you check. With the Shop in the bar, the 2026-09-27 order.
             item(.home, icon: "house", label: "Home")
-            if FeatureFlags.block {
-                // Block replaces the Guide tab (Melvin, 2026-09-21).
-                item(.block, icon: "hand.raised", label: "Block", tour: .block)
-            } else {
-                item(.guide, icon: "book.closed", label: "Guide")
-            }
-            plus
             if FeatureFlags.shopHasTab {
+                blockOrGuide
+                plus
                 item(.store, icon: "bag", label: "Shop", tour: .store)
-            } else if FeatureFlags.friends {
-                item(.friends, icon: "person.2", label: "Friends", tour: .friends)
             } else {
-                item(.friends, icon: "magnifyingglass", label: "Search")
+                if FeatureFlags.friends {
+                    item(.friends, icon: "person.2", label: "Friends", tour: .friends)
+                } else {
+                    item(.friends, icon: "magnifyingglass", label: "Search")
+                }
+                plus
+                blockOrGuide
             }
             item(.profile, icon: "person.crop.circle", label: "Profile", tour: .profile)
         }
@@ -130,6 +132,15 @@ struct MainTabBar: View {
         // icons, it was the inset under the labels. Brainrot's labels sit
         // about 39pt off the bottom edge; ours sat 55pt off it.
         .padding(.bottom, -Self.intoInset)
+    }
+
+    /// Block replaces the Guide tab (Melvin, 2026-09-21).
+    @ViewBuilder private var blockOrGuide: some View {
+        if FeatureFlags.block {
+            item(.block, icon: "hand.raised", label: "Block", tour: .block)
+        } else {
+            item(.guide, icon: "book.closed", label: "Guide")
+        }
     }
 
     /// How far the bar sits down into the bottom safe area.

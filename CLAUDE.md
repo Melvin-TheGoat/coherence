@@ -8863,3 +8863,73 @@ Block's paywall and the others are unchanged. One switch:
 - A sandbox trial is minutes long, so its reminder is already past and is
   never scheduled; check the reminder with `808.storekit` at real-time
   renewal (RELEASE_CHECKLIST.md).
+
+## THE FRIENDS FEED IS BACK, STRAVA STYLE (2026-11-13, Melvin, branch `friends-feed`, not merged)
+
+Built from `mockups/friends-v3.html` (style A, sections 4 and 4b, the post
+detail, 5a, 6 and 7). Reverses the 2026-09-27 cut ("FRIENDS POSTS CARRY NO
+SCORE" and "THE STORE TAKES FRIENDS' TAB" above are superseded where they
+differ). It reuses branch `social-feed` (2026-10-23): its tab swap was
+cherry-picked (`FeatureFlags.friendsTab`, `shopCircle`) and its session page
+sharing (`SharingDefault`, "Who can see this?") was taken whole.
+
+- **Tabs: Home · Friends · + · Block · Profile** in every `TestTabBar` style
+  (the 2026-09-27 order comes back only if `friendsTab` is false). The Shop is
+  Home's top-right circle (`sloth-store`), a cover with a close button. The
+  tour visits Friends before Block, in the bar's order.
+- **The feed** (`Coherence/Community/FeedView.swift`): the valley band
+  (title, @handle, "N friends" which opens `FriendsDirectoryView` with search
+  and the list, Requests, Invite), the "Aziz meditated. Your turn." strip
+  (`YourTurn`, a running goal whose partner went today when I have not), the
+  goals, then posts grouped by day (`FeedDays`). A card is avatar with a small
+  Otto badge (`FeedBadge`, from the PUBLISHED practice stats: the companion
+  model is not on `block`), name, time, the chip (`PostChip`: "✓ Timed in
+  808" or "Logged"), bold title, Time · Streak · Sound, the first photo, and
+  kudos. **Never a score, heart rate or anything measured. No leaderboard.**
+  A single tap opens `PostDetailView` (every photo, all kudos and who gave
+  which, ⋯: Report post / Block, or Edit / Delete on mine).
+- **Kudos** (`Reaction.emoji`, one of `Kudos.choices` 🙏 ✨ 🔥 🧘, one per
+  person per post, a second pick replaces it). **Double tap gives one with
+  the slam** (`KudosSlam`, `KudosSlamLayer` over the whole Friends stack,
+  `SlamFrame` a pure function of time: pops in huge, hangs, slams onto the
+  row, squashes, burst and ring, heavy haptic at impact, and the model is
+  told AT impact so the count ticks as it lands). Reduce Motion gives it at
+  once. Rows register their global frame per "post|context".
+- **Posting is the default** (`SaveSessionView`): the big "Add a photo or
+  selfie" button and Library lead the page, "Who can see this?" is preset to
+  Friends for a session never saved before (Only me one tap), and the button
+  reads **Post** in sky blue (Save, gold, on Only me). Words are filtered,
+  every photo is screened on the phone (Sensitive Content Analysis) before the
+  background upload. **Photos only on posts for now**: a kept video posts as
+  its still (`PostMediaPrep.Source(_:includingVideo: false)`), for the public
+  database's quota. A hand-logged session posts with `Post.logged` (the Logged
+  chip) and still never counts for goals or Block.
+- **Moderation:** `CommunityStore.posts` drops anyone I blocked, reactions
+  from blocked people are not counted, Report post has its own reasons, and
+  account deletion already removes posts and reactions. `clearMyPostsIfNeeded`
+  is DELETED (it would wipe new posts on a fresh install).
+- **The feed loads on its own path** (`CommunityModel.refreshFeed`,
+  `feedFailed`): a missing Post or Reaction index never breaks the friends
+  list (`test_aBrokenFeedNeverBreaksTheFriendsList`).
+- **A friend's invite gives a free month:** `SubscriptionPlan.monthInvite`,
+  product `com.lockout.meditate808.monthlyinvite` (monthly price, 1-month
+  free intro offer; in `808.storekit`, NOT in `ProductID.core`). Someone who
+  entered a code in onboarding sees `InvitePaywallScreen` ("Aziz gave you a
+  month of 808") instead of the trial lead-in screens, only when
+  `InviteOffer.inviter` says the product is loaded and their free month is
+  eligible; otherwise the normal paywall. The invite text is "Meditate with me
+  on 808. Use my code for a free month: CODE" plus the link.
+- **Analytics:** `post_created` (has_photo, logged), `kudos_given` (emoji,
+  via double_tap|picker), `post_reported`, `invite_paywall_viewed`.
+  `tools/posthog_sheet.gs` not updated.
+- **Owed before release:** RELEASE_CHECKLIST.md "OPEN for the build that ships
+  the Friends feed" (CloudKit types, fields and indexes, the two-phone test,
+  the policy approval and website deploy, the App Privacy label, a written
+  moderation procedure, the NCMEC procedure, the invite product in App Store
+  Connect). Never run on real iCloud.
+- DEBUG: Friends test mode seeds photo and photo-less posts (Sam's is
+  Logged) and kudos of two kinds; `PREVIEW_TAB=friends`, `PREVIEW_KUDOS=1`
+  (`PREVIEW_KUDOS_SLOW=<n>`) replays the slam, `PREVIEW_FEED_SCROLL=<n>`,
+  `PREVIEW_POST=<n>`, `PREVIEW_SAVE=new` (a never-saved session's page),
+  `PREVIEW_INVITE_PAYWALL=Aziz` with `ONBOARDING_STEP=37`, and
+  `PREVIEW_NO_AWARDS=1` keeps unlock screens off a screenshot.

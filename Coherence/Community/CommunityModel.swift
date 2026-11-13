@@ -43,8 +43,8 @@ final class CommunityModel: ObservableObject {
     /// Loaded with every list refresh. Only ever MY blocks: nobody else's are
     /// readable (see `CommunityStore`'s header).
     @Published private(set) var blocked: [String] = []
-    /// Reactor profile names by post id.
-    @Published private(set) var reactions: [String: [String]] = [:]
+    /// Kudos by post id, oldest first (2026-11-13: one of four emoji each).
+    @Published private(set) var reactions: [String: [Reaction]] = [:]
     @Published var errorText: String?
 
     // MARK: Meditating together (see CommunityModel+Goals.swift)
@@ -356,12 +356,12 @@ final class CommunityModel: ObservableObject {
         noteFriendCount(fr.count)
         // Anything cached about them from before the block goes too.
         for id in bl { forgetBlockedPerson(id) }
-        // No feed and no reactions any more (Melvin, 2026-09-29). Posting was
-        // removed on 2026-09-27, but every open of Friends still queried the
-        // Post and Reaction types, and in a Production container where either
-        // type or its index is missing that query fails and the whole tab
-        // reads as broken. `clearMyPostsIfNeeded` still takes down anything
-        // already shared, on its own path.
+        // The feed is back (Melvin, 2026-11-13). Loaded on its own path and
+        // never allowed to break the friends list: in a Production container
+        // where the Post or Reaction type or an index is missing, that query
+        // fails, and the tab must still show friends and goals (the lesson
+        // of 2026-09-29, when it read as broken).
+        await refreshFeed(store)
         // Fetched again, not only when missing: a friend's practice summary
         // changes every time they meditate, and a refresh that kept the copy
         // from the app's launch showed old numbers until 808 was relaunched
@@ -637,27 +637,63 @@ final class CommunityModel: ObservableObject {
         } catch { errorText = Self.plain(error) }
     }
 
-    func hasReacted(to postID: String) -> Bool {
-        guard let myID else { return false }
-        return reactions[postID]?.contains(myID) ?? false
-    }
-
-    func toggleReaction(_ postID: String) async {
-        guard let store, let myID else { return }
-        let was = hasReacted(to: postID)
-        // Optimistic: the tap should feel instant.
-        var list = reactions[postID] ?? []
-        if was { list.removeAll { $0 == myID } } else { list.append(myID) }
-        reactions[postID] = list
+    /// The feed and its kudos. Failures are quiet: the friends list and the
+    /// goals load without it.
+    func refreshFeed(_ store: CommunityStore) async {
         do {
-            if was { try await store.unreact(to: postID) } else {
-                try await store.react(to: postID)
-            }
+            let posts = try await store.feed()
+            let kudos = try await store.reactions(for: posts.map(\.id))
+            feed = posts
+            reactions = kudos
+            let names = Set(posts.map(\.author) + kudos.values.flatMap { $0.map(\.author) })
+            try? await cache(names: names)
+            feedFailed = false
         } catch {
-            reactions[postID] = was ? list + [myID] : list.filter { $0 != myID }
-            errorText = Self.plain(error)
+            feedFailed = true
+            #if DEBUG
+            NSLog("Friends feed failed: %@", String(describing: error))
+            #endif
         }
     }
+
+    /// The last feed load failed (shown as one quiet line, never an alert).
+    @Published private(set) var feedFailed = false
+
+    func hasReacted(to postID: String) -> Bool { myKudos(on: postID) != nil }
+
+    /// Which kudos I gave this post, if any.
+    func myKudos(on postID: String) -> String? {
+        guard let myID else { return nil }
+        return reactions[postID]?.first { $0.author == myID }?.emoji
+    }
+
+    /// Gives kudos, or changes which one. Optimistic: the slam lands before
+    /// iCloud answers, and is taken back if it fails. Never on my own post.
+    func giveKudos(_ postID: String, emoji: String = Kudos.standard, via: String) async {
+        guard let store, let myID else { return }
+        guard feed.first(where: { $0.id == postID })?.author != myID else { return }
+        let before = reactions[postID] ?? []
+        let pick = Kudos.sanitized(emoji)
+        guard before.first(where: { $0.author == myID })?.emoji != pick else { return }
+        reactions[postID] = before.filter { $0.author != myID } + [Reaction(post: postID, author: myID, emoji: pick)]
+        Analytics.track(.kudosGiven(emoji: pick, via: via))
+        do { try await store.react(to: postID, emoji: pick) }
+        catch { reactions[postID] = before; errorText = Self.plain(error) }
+    }
+
+    /// Takes my kudos back (tapping my own chip in the row).
+    func removeKudos(_ postID: String) async {
+        guard let store, let myID, hasReacted(to: postID) else { return }
+        let before = reactions[postID] ?? []
+        reactions[postID] = before.filter { $0.author != myID }
+        do { try await store.unreact(to: postID) }
+        catch { reactions[postID] = before; errorText = Self.plain(error) }
+    }
+
+    #if DEBUG
+    /// Puts a seeded kudos in place without the network, for `PREVIEW_KUDOS`.
+    func previewSetKudos(_ list: [Reaction], on postID: String) { reactions[postID] = list }
+    #endif
 
     // MARK: - Block and report
 
@@ -723,6 +759,7 @@ final class CommunityModel: ObservableObject {
             ReportClient.send(reportID: report.id, target: target, kind: kind.rawValue, reason: reason)
             #endif
             Analytics.track(.contentReported(kind: kind.rawValue))
+            if kind == .post { Analytics.track(.postReported) }
             return true
         } catch {
             // The report sheet says it couldn't send; an alert as well would
@@ -876,37 +913,6 @@ final class CommunityModel: ObservableObject {
             UserDefaults.standard.removeObject(forKey: pendingDeletionKey)
         } catch {
             // Still pending. The next launch tries again.
-        }
-    }
-
-    // MARK: - Posting removed
-
-    /// UserDefaults key for the one-time cleanup that removes every post
-    /// this person had already shared, from the day posting was removed
-    /// (Melvin, 2026-09-27: "get rid of the feed, no more posting with
-    /// photos/videos ... big privacy policy change"). Not `private`, like
-    /// `pendingDeletionKey` above: a test needs to see it too.
-    static let postsClearedKey = "community.postsCleared.v1"
-
-    /// Deletes every post I've already shared, once. Silent on purpose:
-    /// nobody needs telling that a feed which no longer exists in the app
-    /// also stopped existing on the server. Retried on a later launch (from
-    /// `CoherenceApp`'s launch task) if this one can't reach iCloud, the same
-    /// pattern as `retryPendingDeletion`.
-    ///
-    /// Runs against whatever store this model already holds (real CloudKit,
-    /// or the in-memory one in test mode), so it needs no store of its own.
-    /// A profile is not required — `me()` only needs an iCloud account — so
-    /// this can run even for someone who never claimed a username.
-    func clearMyPostsIfNeeded() async {
-        guard FeatureFlags.friends, !UserDefaults.standard.bool(forKey: Self.postsClearedKey) else { return }
-        guard let store else { return }
-        do {
-            try await store.deleteMyPosts()
-            UserDefaults.standard.set(true, forKey: Self.postsClearedKey)
-        } catch {
-            // No iCloud account, no network, or a query missing an index in
-            // this environment: retried on the next launch.
         }
     }
 

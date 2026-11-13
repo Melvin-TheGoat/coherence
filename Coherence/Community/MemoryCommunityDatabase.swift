@@ -321,12 +321,18 @@ enum DemoCommunity {
         // shows no strip".
         _ = try? await sam.post(.init(minutes: 8, streak: 1, technique: "Silence",
                                       caption: "", practicedAt: Date().addingTimeInterval(-7_200),
-                                      title: "Quick sit", sound: "Silence"))
+                                      title: "Morning class at the studio", sound: "Own audio", logged: true))
 
         db.user = "_demo_me"
         try? await me.accept(CommunityNames.profile(user: "_demo_melvin"))
         try? await me.sendRequest(to: CommunityNames.profile(user: "_demo_lena"))
-        if let melvinPost { try? await me.react(to: melvinPost.id) }
+        if let melvinPost {
+            try? await me.react(to: melvinPost.id)
+            // More kudos, of more than one kind, so the row has chips to count.
+            db.user = "_demo_sam"
+            try? await sam.react(to: melvinPost.id, emoji: "✨")
+            db.user = "_demo_me"
+        }
         // A mix of photos and a video, so the strip's play glyph and the
         // viewer's mixed paging both get a real post to open.
         _ = try? await me.post(.init(minutes: 18, streak: 4, technique: "Counting",

@@ -613,6 +613,15 @@ struct ContentView: View {
             if ProcessInfo.processInfo.environment["PREVIEW_SAVE"] == "1", sheet == nil {
                 sheet = .save(DemoData.seedResults(in: context))
             }
+            // PREVIEW_SAVE=new: a session that was never saved, as the page
+            // opens after a real one (Friends preset, the big photo button).
+            if ProcessInfo.processInfo.environment["PREVIEW_SAVE"] == "new", sheet == nil {
+                let id = DemoData.seedResults(in: context)
+                if let r = SessionStore.reflection(for: id, in: context) { context.delete(r) }
+                for p in SessionStore.photos(for: id, in: context) { SessionStore.removePhotoItem(id: p.id, in: context) }
+                try? context.save()
+                sheet = .save(id)
+            }
             // PREVIEW_SESSION=1 opens a demo session's own page (`SessionView`,
             // 2026-09-27), the way Home's Recent rows and Profile's week log do.
             if ProcessInfo.processInfo.environment["PREVIEW_SESSION"] == "1", sheet == nil {
@@ -1368,6 +1377,10 @@ struct ContentView: View {
     }
 
     private func refreshAwards() {
+        #if DEBUG
+        // PREVIEW_NO_AWARDS=1: no unlock screens over a screen under review.
+        if ProcessInfo.processInfo.environment["PREVIEW_NO_AWARDS"] == "1" { return }
+        #endif
         let earned = AwardEngine.evaluate(
             sessions: AwardFacts.build(sessions: sessions, stats: allStats,
                                        reflections: reflections, photos: photos),
