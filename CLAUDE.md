@@ -9055,3 +9055,52 @@ sharing (`SharingDefault`, "Who can see this?") was taken whole.
   `PREVIEW_HAT_LAB_MODE=shuffle`, `PREVIEW_HAT_LAB_COLS`, `PREVIEW_HAT_LAB_STILLS=1`.
   `OttoAuraFigure` gained `stillsOnly` and takes `hatID: "none"` for bare;
   `ValleyScene` gained `auraForm`, `auraHat`, `auraStills` (nil/false = Home).
+
+## THE PAPER IS OUT OF THE COMPANIONS: `tools/paper_check.swift` (2026-11-13, Melvin)
+
+"White in the enclosed corners of the dragon's tail curl, and a lot of white
+in the corners and between the feathers of the phoenix." Stages 2 to 7 had
+been defringed with `otto_defringe --no-holes`, so the paper the image model
+painted round the drawing survived: warm-white NOTCHES in every concave
+corner between spikes and feathers, paper caught a few px inside an edge,
+stage 1's COBWEB PATCHES (opaque white page behind the web, hard straight
+edges), and a pale FRINGE on soft edges.
+
+- **The detector and the fix are one tool.** `paper_check check in.png
+  [--overlay o.png] [--verbose]` counts paper regions and fringe pixels and
+  says what it kept and why (overlay: magenta paper, yellow fringe, cyan
+  kept); `paper_check fix in.png out.png` cleans and re-checks. Distances are
+  tuned on the 2x masters and scale with the width; pass `--scale` for crops
+  (rig bodies 0.65, previews 0.5, widget 0.302, Watch 0.242).
+- **The rule** (full version in the tool's header): a whitish region
+  (darkest channel >= 196, brightest >= 235) is paper unless it is an eye
+  white or catch-light (touches true black, or a fifth of its ring is dark),
+  sits more than 4 px from the outside (every interior one on the companions
+  was drawing: highlights, toe beans, the tiger's forehead mark, the red
+  panda's face mask), sits in pale drawing (its ring 3 to 7 px out is 40%+
+  cream or under 30 levels darker: the red panda's white ear rims, the
+  tiger's ruff), or is a strand in a `--keep-strands` box (the stage-1
+  cobwebs, boxes in `tools/companion_clean.sh`). Paper goes, the cut is
+  rounded, and edge pixels are un-mixed against the art inside and the
+  paper's own WARM tone (un-mixing against pure 255 left a faint tinted
+  film that read as a dark line on the night valley).
+- **Run it twice**: clearing a notch exposes a new edge. Masters went from
+  713 paper regions (12,022 px) and 62,450 fringe px to 0 regions and 38
+  fringe px; every derived image is polished at its own scale.
+- **`tools/companion_clean.sh` re-installs everything**: previews, app,
+  widget and Watch stills, and the four `Companion<Form>.riv` files. The rigs
+  are patched WITHOUT the Rive editor by `tools/riv_images.py` (a .riv is a
+  flat object list; an embedded PNG is one length-prefixed property, and the
+  tool refuses any image of a different size and checks every other byte is
+  unchanged). Bodies and chests are re-cut on the OLD boxes
+  (`companion_cut` `BOXES_FROM`, from `mockups/companions/master-before-clean/`
+  on Melvin's Mac, untracked): cleaning drops specks round the edge, so the
+  clean art's own boxes are a few px smaller and cutting on them would move
+  every body the hats and rig numbers were measured against.
+- **Otto was checked and left alone**: his rig bodies and stills carry at
+  most a few single bright fur-tip pixels, and what the detector flags on
+  stages 5 to 7 is the drawn light (swirls, motes, the Nirvana wheel, the
+  orange rim light). The four form profile pictures (`avatar-form-*.jpg`)
+  were drawn on their pastel, never cut, and have no paper.
+- **Any new cut-out goes through `paper_check check` before it ships**, and
+  a chest patch's flags are its feathered mask crossing the paws, not paper.
