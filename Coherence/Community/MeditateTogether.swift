@@ -1144,6 +1144,9 @@ struct GoalPreviewRoot: View {
             // Invite codes (2026-10-18).
             case "invitecode":
                 InviteCodeSheet(model: model)
+            // The picture chooser, with Otto's forms locked or not.
+            case "chooser":
+                PictureChooser(mode: .create, onPicked: { _ in })
             case "entercode":
                 InviteCodeEntrySheet(model: model) { _, _ in }
             case "invitedfriends":

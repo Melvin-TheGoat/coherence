@@ -18,8 +18,22 @@ struct AvatarPreset: Identifiable, Hashable {
     /// 384 px: the largest place a portrait is drawn is 124 pt.
     var image: UIImage? { UIImage(named: "avatar-\(id).jpg") }
 
+    /// The form of Otto this picture shows, for the four that unlock.
+    var form: Companion? { Companion.forPicture(id) }
+
+    /// Locked until that form's rebirth has played on this phone.
+    func locked(announced: [Companion]) -> Bool {
+        Companion.pictureLocked(id, announced: announced)
+    }
+
     static let all: [AvatarPreset] = [
         .init(id: "otto", label: "Otto"),
+        // Otto's forms, each locked until its rebirth has played
+        // (`Companion.pictureLocked`, Melvin, 2026-11-12).
+        .init(id: "form-redpanda", label: "Otto as a red panda"),
+        .init(id: "form-tiger", label: "Otto as a tiger"),
+        .init(id: "form-phoenix", label: "Otto as a phoenix"),
+        .init(id: "form-dragon", label: "Otto as a dragon"),
         .init(id: "mountains", label: "Mountains at sunrise"),
         .init(id: "moon-lake", label: "Moon over a lake"),
         .init(id: "starry-tree", label: "A tree under the stars"),
@@ -36,7 +50,6 @@ struct AvatarPreset: Identifiable, Hashable {
         .init(id: "candle", label: "A candle"),
         .init(id: "matcha", label: "A cup of matcha"),
         .init(id: "frog", label: "A frog"),
-        .init(id: "red-panda", label: "A red panda"),
         .init(id: "turtle", label: "A turtle"),
         .init(id: "owl", label: "An owl"),
         .init(id: "cat", label: "A cat"),
@@ -108,8 +121,16 @@ struct PictureChooser: View {
     @State private var showCamera = false
     @State private var showLibrary = false
     @State private var pick: PhotosPickerItem?
-    /// The prompt shows four presets and "+17" until that is tapped.
+    /// The prompt shows four presets and "+N" (the rest) until that is tapped.
     @State private var expanded = false
+    /// The form whose locked picture was tapped last: its note shows under
+    /// the grid.
+    @State private var lockedNote: Companion?
+    @ObservedObject private var companions = CompanionStore.shared
+
+    private func isLocked(_ preset: AvatarPreset) -> Bool {
+        preset.locked(announced: companions.announced)
+    }
 
     private var hasCamera: Bool { UIImagePickerController.isSourceTypeAvailable(.camera) }
 
@@ -121,7 +142,11 @@ struct PictureChooser: View {
         onPicked(image)
     }
     private var presets: [AvatarPreset] {
-        mode == .prompt && !expanded ? Array(AvatarPreset.all.prefix(4)) : AvatarPreset.all
+        // The prompt's first four are pictures that can be chosen now: a row
+        // of three locks would be the first thing a new person sees.
+        mode == .prompt && !expanded
+            ? Array(AvatarPreset.all.filter { !isLocked($0) }.prefix(4))
+            : AvatarPreset.all
     }
 
     var body: some View {
@@ -135,6 +160,11 @@ struct PictureChooser: View {
                         .foregroundStyle(AppColor.textPrimary)
                         .padding(.top, 26)
                     grid.padding(.top, 14)
+                    if let lockedNote {
+                        lockNote(lockedNote)
+                            .padding(.top, 14)
+                            .transition(.opacity.combined(with: .move(edge: .top)))
+                    }
                 }
                 .padding(.horizontal, AppMetrics.screenPadding)
                 .padding(.top, 26)
@@ -151,6 +181,15 @@ struct PictureChooser: View {
             CameraPicker(device: .front) { picked($0, source: "camera") }.ignoresSafeArea()
         }
         .photosPicker(isPresented: $showLibrary, selection: $pick, matching: .images)
+        #if DEBUG
+        // PREVIEW_CHOOSER_NOTE=<form> (DEBUG): the note a locked form shows
+        // when tapped, for review without a tap.
+        .onAppear {
+            if let raw = ProcessInfo.processInfo.environment["PREVIEW_CHOOSER_NOTE"] {
+                lockedNote = Companion(rawValue: raw)
+            }
+        }
+        #endif
         .onChange(of: pick) { _, item in
             guard let item else { return }
             Task {
@@ -219,9 +258,18 @@ struct PictureChooser: View {
     private var grid: some View {
         LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 5), spacing: 14) {
             ForEach(presets) { preset in
-                Button { chosen = preset } label: { presetCircle(preset) }
+                let locked = isLocked(preset)
+                Button {
+                    if locked, let form = preset.form {
+                        withAnimation(.easeOut(duration: 0.2)) { lockedNote = form }
+                    } else {
+                        chosen = preset
+                        withAnimation(.easeOut(duration: 0.2)) { lockedNote = nil }
+                    }
+                } label: { presetCircle(preset, locked: locked) }
                     .buttonStyle(.tactile)
-                    .accessibilityLabel(preset.label)
+                    .accessibilityLabel(locked ? "\(preset.label), locked" : preset.label)
+                    .accessibilityHint(locked ? (preset.form?.pictureUnlockNote ?? "") : "")
                     .accessibilityAddTraits(chosen == preset ? .isSelected : [])
             }
             if mode == .prompt && !expanded {
@@ -239,7 +287,7 @@ struct PictureChooser: View {
         }
     }
 
-    private func presetCircle(_ preset: AvatarPreset) -> some View {
+    private func presetCircle(_ preset: AvatarPreset, locked: Bool) -> some View {
         Group {
             if let image = preset.image {
                 Image(uiImage: image).resizable().scaledToFill()
@@ -249,6 +297,19 @@ struct PictureChooser: View {
         }
         .frame(width: 58, height: 58)
         .clipShape(Circle())
+        .saturation(locked ? 0.55 : 1)
+        .opacity(locked ? 0.6 : 1)
+        .overlay(alignment: .bottomTrailing) {
+            if locked {
+                Image(systemName: "lock.fill")
+                    .font(.system(size: 9, weight: .black))
+                    .foregroundStyle(.white)
+                    .frame(width: 22, height: 22)
+                    .background(AppColor.textSecondary, in: Circle())
+                    .overlay(Circle().stroke(AppColor.backgroundPrimary, lineWidth: 2))
+                    .offset(x: 4, y: 4)
+            }
+        }
         .overlay {
             if chosen == preset {
                 Circle().stroke(OnboardingGreen.fill, lineWidth: 3).padding(-5)
@@ -266,6 +327,24 @@ struct PictureChooser: View {
             }
         }
         .padding(5)
+    }
+
+    /// "Unlocks when Otto becomes a red panda · 300 points", under the grid.
+    private func lockNote(_ form: Companion) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: "lock.fill")
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(AppColor.skyDeep)
+            Text(form.pictureUnlockNote)
+                .font(AppFont.callout.weight(.semibold))
+                .foregroundStyle(AppColor.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .background(AppColor.backgroundSecondary, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .accessibilityElement(children: .combine)
     }
 
     private var footer: some View {

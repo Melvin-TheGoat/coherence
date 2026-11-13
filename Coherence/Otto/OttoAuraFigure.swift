@@ -39,6 +39,15 @@ struct OttoAuraFigure: View {
     /// no change needed at the call site — `ContentView` never has to know
     /// the shop exists.
     var hatID: String? = nil
+    /// Which of Otto's forms (`Companion`, 2026-11-12). Nil draws the one he
+    /// wears (`CompanionStore`); onboarding passes `.otto`, since everyone
+    /// starts as him.
+    var form: Companion? = nil
+
+    @ObservedObject private var companions = CompanionStore.shared
+    private var shownForm: Companion { form ?? companions.effective }
+    /// The rig's `stage`: one of Otto's thirteen looks, or a form's seven.
+    private var rigLook: Int { shownForm == .otto ? (look ?? stage.look) : stage.rawValue }
 
     /// Read directly rather than threaded down from Home, since Home's own
     /// file is owned elsewhere and should not need editing for the shop to
@@ -61,9 +70,19 @@ struct OttoAuraFigure: View {
     /// figure drawn `size` tall: what a screen that puts words above his head
     /// has to leave room for (Home's bubble). Reads the art's own shape, so a
     /// flat halo is not given a beanie's room.
-    static func hatRise(_ id: String?, size: CGFloat) -> CGFloat {
+    static func hatRise(_ id: String?, size: CGFloat, form: Companion = .otto) -> CGFloat {
         guard let id else { return 0 }
         let unit = size * 0.95 / bodyShare / 744
+        if form != .otto {
+            // The same question on a form: how far the hat stands above the
+            // top of anything drawn on its head, at its tallest stage.
+            let spec = OttoAuraRig.Spec.of(form)
+            let rise = (1...7).map { stage -> CGFloat in
+                let top = CompanionHeads.head(form, stage: stage).top + CGFloat(spec.lift[stage - 1])
+                return top - (CompanionHeads.hatBox(id, form: form, stage: stage).minY + CGFloat(spec.lift[stage - 1]))
+            }.max() ?? 0
+            return max(0, rise * unit)
+        }
         // The tallest it stands above his tuft on any look, so the bubble never
         // has to move as he brightens.
         let rise = (1...13).map { look -> CGFloat in
@@ -77,7 +96,7 @@ struct OttoAuraFigure: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// The animated seven (`OttoAura.riv`). Nil until that file ships, and
     /// whenever it will not load; the stills below stand in either way.
-    @StateObject private var aura = OttoAuraRigHolder()
+    @StateObject private var aura = OttoAuraRigHolder(form: CompanionStore.shared.effective)
 
     /// The shared canvas, from `mockups/otto-v4/canvas.json`: 664 x 744, his
     /// body's bottom at 87.2% of the height, and Steady's body 82% of it.
@@ -89,6 +108,38 @@ struct OttoAuraFigure: View {
 
     var body: some View {
         let canvas = size * 0.95 / Self.bodyShare
+        Group {
+            if shownForm == .otto {
+                ottoWithHat(canvas: canvas)
+            } else {
+                formWithHat(canvas: canvas)
+            }
+        }
+            .frame(width: canvas * Self.canvasAspect, height: canvas)
+            // Hang his baseline on the bottom of the frame; the light under
+            // him (Nirvana's swirl, Radiant's motes) overflows below it.
+            .offset(y: canvas * (1 - Self.baseline))
+            .ottoJiggle(jiggle)
+            // The rig floats him itself; only the stills need lifting here.
+            // The hat, inside this same ZStack, rides along for free.
+            .offset(y: aura.rig == nil && stage.floats ? -size * (bob ? 0.085 : 0.05) : 0)
+            .frame(width: size, height: size, alignment: .bottom)
+            // The stills' lift only. With the rig this spring eased the
+            // rig's frame from wide to tall as the look crossed 9, which is
+            // big both ways halfway through, so he swelled for half a second
+            // on every pass (Melvin, 2026-09-29: "he does a little pop ...
+            // anytime you scroll it happens").
+            .animation(aura.rig == nil ? .spring(duration: 0.5, bounce: 0.2) : nil, value: stage)
+            .onAppear { setBob(); aura.use(shownForm) }
+            .onChange(of: stage) { _, _ in setBob() }
+            .onChange(of: shownForm) { _, new in aura.use(new) }
+            .accessibilityElement()
+            .accessibilityLabel("Otto\(shownForm == .otto ? "" : ", as \(shownForm.withArticle)"), "
+                                + "\(Self.mood(stage))\(effectiveHatID != nil ? ", wearing a hat" : "")")
+    }
+
+    /// Otto the sloth and his hat, as the hats were cut for him.
+    private func ottoWithHat(canvas: CGFloat) -> some View {
         ZStack(alignment: .top) {
             // A hat cut in layers (tools/hat_extract.swift --layers) sits in
             // three depths: its back behind him, his head hidden where the
@@ -115,25 +166,84 @@ struct OttoAuraFigure: View {
             hatLayer(canvas: canvas, suffix: "-over")
             hatOverlay(canvas: canvas)
         }
+    }
+
+    // MARK: - A form and its hat
+
+    /// One of Otto's other forms, with the hat he wears (2026-11-12). The
+    /// hats were cut for the sloth's head, so a form wears them in its own
+    /// three depths: the hat's back over the rig (the rig paints its glow
+    /// behind him, which would swallow a back drawn under it), his head drawn
+    /// again over that back from his still, the hat's front, then his ears,
+    /// horns or side feathers drawn again over the brim so it sits between
+    /// them. The still and the rig at rest are the same drawing on the same
+    /// canvas, so the redraws land on him exactly; on the rig they follow its
+    /// own lift and float every frame (`OttoAuraRig.pose`).
+    private func formWithHat(canvas: CGFloat) -> some View {
+        ZStack(alignment: .top) {
+            drawing
+            if let id = effectiveHatID {
+                if let rig = aura.rig {
+                    TimelineView(.animation) { _ in
+                        let p = rig.pose()
+                        formHat(id: id, canvas: canvas, dy: CGFloat(p.lift + p.bob))
+                    }
+                    .transaction { $0.animation = nil }
+                } else {
+                    formHat(id: id, canvas: canvas, dy: 0)
+                }
+            }
+        }
+        .allowsHitTesting(false)
+    }
+
+    @ViewBuilder
+    private func formHat(id: String, canvas: CGFloat, dy: CGFloat) -> some View {
+        let unit = canvas / 744
+        let s = stage.rawValue
+        let box = CompanionHeads.hatBox(id, form: shownForm, stage: s).offsetBy(dx: 0, dy: dy)
+        let still = shownForm.stillName(stage: s)
+        ZStack(alignment: .topLeading) {
+            if let back = UIImage(named: "hat-\(id)-back") {
+                boxed(Image(uiImage: back).resizable(), box: box, unit: unit)
+                formStill(still, canvas: canvas, dy: dy, clip: [box])
+            }
+            if let front = UIImage(named: "hat-\(id)-front") ?? UIImage(named: "hat-\(id)") {
+                boxed(Image(uiImage: front).resizable(), box: box, unit: unit)
+            } else {
+                boxed(HatArt(id: id, size: box.width * unit), box: box, unit: unit)
+            }
+            if CompanionHeads.earsOverBrim(id) {
+                formStill(still, canvas: canvas, dy: dy,
+                          clip: CompanionHeads.earBands(form: shownForm, stage: s).map { $0.offsetBy(dx: 0, dy: dy) })
+            }
+        }
+        .frame(width: canvas * Self.canvasAspect, height: canvas, alignment: .topLeading)
+    }
+
+    private func boxed<V: View>(_ content: V, box: CGRect, unit: CGFloat) -> some View {
+        content
+            .frame(width: box.width * unit, height: box.height * unit)
+            .position(x: box.midX * unit, y: box.midY * unit)
+    }
+
+    /// The form's still, lifted by `dy` canvas units, showing only inside
+    /// `clip` (canvas units, already lifted).
+    private func formStill(_ name: String, canvas: CGFloat, dy: CGFloat, clip: [CGRect]) -> some View {
+        let unit = canvas / 744
+        return Image(name)
+            .resizable()
             .frame(width: canvas * Self.canvasAspect, height: canvas)
-            // Hang his baseline on the bottom of the frame; the light under
-            // him (Nirvana's swirl, Radiant's motes) overflows below it.
-            .offset(y: canvas * (1 - Self.baseline))
-            .ottoJiggle(jiggle)
-            // The rig floats him itself; only the stills need lifting here.
-            // The hat, inside this same ZStack, rides along for free.
-            .offset(y: aura.rig == nil && stage.floats ? -size * (bob ? 0.085 : 0.05) : 0)
-            .frame(width: size, height: size, alignment: .bottom)
-            // The stills' lift only. With the rig this spring eased the
-            // rig's frame from wide to tall as the look crossed 9, which is
-            // big both ways halfway through, so he swelled for half a second
-            // on every pass (Melvin, 2026-09-29: "he does a little pop ...
-            // anytime you scroll it happens").
-            .animation(aura.rig == nil ? .spring(duration: 0.5, bounce: 0.2) : nil, value: stage)
-            .onAppear { setBob() }
-            .onChange(of: stage) { _, _ in setBob() }
-            .accessibilityElement()
-            .accessibilityLabel("Otto, \(Self.mood(stage))\(effectiveHatID != nil ? ", wearing a hat" : "")")
+            .offset(y: dy * unit)
+            .mask(alignment: .topLeading) {
+                Path { path in
+                    for r in clip {
+                        path.addRect(CGRect(x: r.minX * unit, y: r.minY * unit,
+                                            width: r.width * unit, height: r.height * unit))
+                    }
+                }
+                .frame(width: canvas * Self.canvasAspect, height: canvas, alignment: .topLeading)
+            }
     }
 
     // MARK: - The hat
@@ -284,7 +394,7 @@ struct OttoAuraFigure: View {
                 // the view (Aziz, 2026-09-23). So the view is wide for one and
                 // tall for the other, bottom-aligned both ways, and he is the
                 // same size and in the same place in either.
-                let tall = (look ?? stage.look) >= Self.tallFromLook
+                let tall = shownForm == .otto ? rigLook >= Self.tallFromLook : stage.floats
                 rig.viewModel.view()
                     .frame(width: geo.size.width * (tall ? 1 : Self.flightSpan),
                            height: geo.size.height * (tall ? Self.headroom : 1))
@@ -300,15 +410,16 @@ struct OttoAuraFigure: View {
             }
             // Only the drawing is wider: taps belong to whatever is on top.
             .allowsHitTesting(false)
+            // A new rig (the form changed) appears afresh and is told its look.
+            .id(ObjectIdentifier(rig))
             .onAppear {
                 rig.snap = snap
-                rig.stage = look ?? stage.look
+                rig.stage = rigLook
             }
             .onChange(of: snap) { _, new in rig.snap = new }
-            .onChange(of: stage) { _, new in rig.stage = look ?? new.look }
-            .onChange(of: look) { _, new in rig.stage = new ?? stage.look }
+            .onChange(of: rigLook) { _, new in rig.stage = new }
         } else {
-            Image(Self.asset(stage))
+            Image(shownForm.stillName(stage: stage.rawValue))
                 .resizable()
                 .scaledToFit()
         }

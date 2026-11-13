@@ -20,6 +20,8 @@ enum OttoWidgetPublisher {
             // only ever priced into the level, as on Home.
             notNow: FeatureFlags.block ? BlockController.shared.notNowWindows : [],
             since: OttoAura.glowStart(),
+            restart: OttoAura.glowRestart(),
+            form: CompanionBook.chosen(),
             member: member)
         #if DEBUG
         // OTTO_AURA=<0...100> shows a stage on a simulator with no history,

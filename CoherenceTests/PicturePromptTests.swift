@@ -45,8 +45,13 @@ final class PicturePromptTests: XCTestCase {
 
     /// Every preset ships with its picture, Otto leads, and no two share an id.
     func test_everyPresetHasItsPicture() {
-        XCTAssertEqual(AvatarPreset.all.count, 21)
+        XCTAssertEqual(AvatarPreset.all.count, 24)
         XCTAssertEqual(AvatarPreset.all.first?.id, "otto")
+        // Otto's four forms follow him; the old free red panda is gone, so
+        // the red panda is only ever the locked form.
+        XCTAssertEqual(AvatarPreset.all.prefix(5).map(\.id),
+                       ["otto", "form-redpanda", "form-tiger", "form-phoenix", "form-dragon"])
+        XCTAssertFalse(AvatarPreset.all.contains { $0.id == "red-panda" })
         XCTAssertEqual(Set(AvatarPreset.all.map(\.id)).count, AvatarPreset.all.count)
         for preset in AvatarPreset.all {
             XCTAssertNotNil(preset.image, "avatar-\(preset.id).jpg is not in the bundle")

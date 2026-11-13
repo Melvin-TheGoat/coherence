@@ -128,6 +128,9 @@ struct OttoWidgetFace: View {
     /// The still drawing of his stage, 1 to 7. Without a day to show he sits
     /// at Steady, which is how everybody meets him.
     private var stage: Int { day.map { OttoWidgetSnapshot.stage(level: $0.level) } ?? 4 }
+    /// The form a member chose (2026-11-12); Otto for everyone else, who
+    /// sees "Open 808" and never a number.
+    private var formKey: String { snapshot?.member == true ? snapshot?.formKey ?? "Otto" : "Otto" }
 
     var body: some View {
         GeometryReader { g in
@@ -159,7 +162,7 @@ struct OttoWidgetFace: View {
     private func otto(_ layout: WidgetValleyLayout) -> some View {
         let seated = layout.seated
         let canvas = seated * 0.95 / OttoStillCanvas.bodyShare
-        return Image("WidgetOtto\(stage)")
+        return Image("Widget\(formKey)\(stage)")
             .resizable()
             .tintedLikeIcons()
             .scaledToFit()

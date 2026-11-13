@@ -849,7 +849,7 @@ struct PaywallScreen: View {
             header(compact: compact)
 
             Spacer(minLength: 0)
-            OttoAuraFigure(stage: .nirvana, look: 13, size: ottoSize, rig: otto)
+            OttoAuraFigure(stage: .nirvana, look: 13, size: ottoSize, rig: otto, form: .otto)
                 .allowsHitTesting(false)
                 .accessibilityHidden(true)
             Spacer(minLength: 12)

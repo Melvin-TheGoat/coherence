@@ -35,6 +35,40 @@ final class OttoAuraRig {
     static let artboard = "OttoAura"
     static let stateMachine = "OttoAura"
 
+    /// Which rig, and where it puts him. Otto's thirteen looks, or one of his
+    /// forms' seven (2026-11-12: `Companion<Form>.riv`, built by
+    /// `tools/companion_rig_build.py` on the same 664 x 744 canvas with the
+    /// figure at (332, 649): artboard, state machine and view model all
+    /// "Companion", the same `stage` and `snap`). Read the numbers out of the
+    /// shipping files with `tools/riv_dump.py`.
+    struct Spec: Equatable {
+        let fileName: String
+        let artboard: String
+        let stateMachine: String
+        let lift: [Double]
+        let scale: [Double]
+        let floatsFrom: Int
+        let restingLook: Int
+
+        static let otto = Spec(fileName: OttoAuraRig.fileName, artboard: OttoAuraRig.artboard,
+                               stateMachine: OttoAuraRig.stateMachine, lift: OttoAuraRig.lift,
+                               scale: OttoAuraRig.scale, floatsFrom: OttoAuraRig.floatsFrom,
+                               restingLook: OttoAura.Stage.steady.look)
+
+        /// The forms' rigs: `Lift` is 0 for stages 1 to 5, -26 at 6 and -40
+        /// at 7; `Bob` is never scaled; the float (the same 0 to -10 curve as
+        /// Otto's) runs from stage 6 up. Read from all four files.
+        static let companionLift: [Double] = [0, 0, 0, 0, 0, -26, -40]
+
+        static func of(_ form: Companion) -> Spec {
+            guard form != .otto else { return .otto }
+            return Spec(fileName: "Companion\(form.key)", artboard: "Companion", stateMachine: "Companion",
+                        lift: companionLift, scale: Array(repeating: 1, count: 7), floatsFrom: 6,
+                        restingLook: OttoAura.Stage.steady.rawValue)
+        }
+    }
+
+    let spec: Spec
     let viewModel: OttoAuraRiveViewModel
     private var instance: RiveDataBindingViewModel.Instance?
 
@@ -82,10 +116,16 @@ final class OttoAuraRig {
     private var floatStart: Double?
     private var floatStop: Double?
 
+    /// A look of THIS rig at rest.
+    func restPose(_ look: Int) -> Pose {
+        let i = min(max(look, 1), spec.lift.count) - 1
+        return Pose(lift: spec.lift[i], scale: spec.scale[i], bob: 0)
+    }
+
     /// Where `Lift` and `Bob` are right now.
     func pose() -> Pose {
-        guard let shown else { return Self.rest(stage) }
-        let i = shown - 1
+        guard let shown else { return restPose(stage) }
+        let i = min(max(shown, 1), spec.lift.count) - 1
         let m = fadeLength > 0 ? min(1, (clock - fadeStart) / fadeLength) : 1
         var bob = 0.0
         if let start = floatStart {
@@ -94,8 +134,8 @@ final class OttoAuraRig {
             if let stop = floatStop { mix *= 1 - min(1, (clock - stop) / Self.floatBlend) }
             bob = mix * Self.float(t)
         }
-        return Pose(lift: fadeFrom.lift + (Self.lift[i] - fadeFrom.lift) * m,
-                    scale: fadeFrom.scale + (Self.scale[i] - fadeFrom.scale) * m,
+        return Pose(lift: fadeFrom.lift + (spec.lift[i] - fadeFrom.lift) * m,
+                    scale: fadeFrom.scale + (spec.scale[i] - fadeFrom.scale) * m,
                     bob: bob)
     }
 
@@ -140,7 +180,7 @@ final class OttoAuraRig {
             }
             shown = stage
         }
-        if stage >= Self.floatsFrom {
+        if stage >= spec.floatsFrom {
             if floatStart == nil || floatStop != nil { floatStart = before; floatStop = nil }
         } else if floatStart != nil, floatStop == nil {
             floatStop = before
@@ -149,15 +189,15 @@ final class OttoAuraRig {
     }
 
     private func poseLiftScale(at time: Double, look: Int) -> (lift: Double, scale: Double) {
-        let i = look - 1
+        let i = min(max(look, 1), spec.lift.count) - 1
         let m = fadeLength > 0 ? min(1, (time - fadeStart) / fadeLength) : 1
-        return (fadeFrom.lift + (Self.lift[i] - fadeFrom.lift) * m,
-                fadeFrom.scale + (Self.scale[i] - fadeFrom.scale) * m)
+        return (fadeFrom.lift + (spec.lift[i] - fadeFrom.lift) * m,
+                fadeFrom.scale + (spec.scale[i] - fadeFrom.scale) * m)
     }
 
     /// Which drawing, 1 to 13. Safe to set before the binding lands: it is
     /// said again on bind, as `OttoRig` does for its flags.
-    var stage: Int = OttoAura.Stage.steady.look {
+    var stage: Int = 0 {
         didSet {
             guard stage != oldValue else { return }
             instance?.numberProperty(fromPath: "stage")?.value = Float(stage)
@@ -184,46 +224,50 @@ final class OttoAuraRig {
     /// screen with Otto on it used to parse it again as it appeared, which
     /// stalled the slide onto that screen for a few frames (Aziz, 2026-09-23:
     /// the jumpy transitions). Each rig still gets its own artboard instance.
-    private static var cachedFile: RiveFile?
+    private static var cachedFiles: [String: RiveFile] = [:]
 
-    private static func parsedFile() throws -> RiveFile {
-        if let cachedFile { return cachedFile }
-        let file = try RiveFile(name: fileName, extension: ".riv", in: .main, loadCdn: false)
-        cachedFile = file
+    private static func parsedFile(_ name: String) throws -> RiveFile {
+        if let file = cachedFiles[name] { return file }
+        let file = try RiveFile(name: name, extension: ".riv", in: .main, loadCdn: false)
+        cachedFiles[name] = file
         return file
     }
 
     /// Parses the file now, while nothing is moving, so the first screen that
-    /// shows him does not pay for it mid-transition.
+    /// shows him does not pay for it mid-transition. The form he wears too.
     static func preload() {
-        guard Bundle.main.url(forResource: fileName, withExtension: "riv") != nil else { return }
-        _ = try? parsedFile()
+        for spec in Set([Spec.otto.fileName, Spec.of(CompanionBook.chosen()).fileName]) {
+            guard Bundle.main.url(forResource: spec, withExtension: "riv") != nil else { continue }
+            _ = try? parsedFile(spec)
+        }
     }
 
-    static func make() -> OttoAuraRig? {
-        guard Bundle.main.url(forResource: fileName, withExtension: "riv") != nil else { return nil }
+    static func make(_ spec: Spec = .otto) -> OttoAuraRig? {
+        guard Bundle.main.url(forResource: spec.fileName, withExtension: "riv") != nil else { return nil }
         do {
-            let model = RiveModel(riveFile: try parsedFile())
-            try model.setArtboard(artboard)
-            try model.setStateMachine(stateMachine)
-            return OttoAuraRig(model: model)
+            let model = RiveModel(riveFile: try parsedFile(spec.fileName))
+            try model.setArtboard(spec.artboard)
+            try model.setStateMachine(spec.stateMachine)
+            return OttoAuraRig(model: model, spec: spec)
         } catch {
-            NSLog("Otto aura rig failed to load: %@", String(describing: error))
-            if let file = try? RiveFile(name: fileName, extension: ".riv", in: .main, loadCdn: false) {
+            NSLog("Otto aura rig %@ failed to load: %@", spec.fileName, String(describing: error))
+            if let file = try? RiveFile(name: spec.fileName, extension: ".riv", in: .main, loadCdn: false) {
                 NSLog("Otto aura rig: the file offers artboards [%@]; this app needs '%@' with a state machine '%@'",
-                      file.artboardNames().joined(separator: ", "), artboard, stateMachine)
+                      file.artboardNames().joined(separator: ", "), spec.artboard, spec.stateMachine)
             }
             return nil
         }
     }
 
-    private init(model: RiveModel) {
+    private init(model: RiveModel, spec: Spec) {
+        self.spec = spec
+        self.stage = spec.restingLook
         viewModel = OttoAuraRiveViewModel(model,
-                                          stateMachineName: Self.stateMachine,
+                                          stateMachineName: spec.stateMachine,
                                           fit: .contain,
                                           alignment: .bottomCenter,
                                           autoPlay: true,
-                                          artboardName: Self.artboard)
+                                          artboardName: spec.artboard)
         viewModel.onAdvance = { [weak self] seconds in self?.advanced(seconds) }
         viewModel.riveModel?.enableAutoBind { [weak self] instance in
             guard let self else { return }
@@ -231,7 +275,7 @@ final class OttoAuraRig {
             instance.booleanProperty(fromPath: "snap")?.value = self.snap
             instance.numberProperty(fromPath: "stage")?.value = Float(self.stage)
             self.bound = true
-            NSLog("Otto aura rig: bound")
+            NSLog("Otto aura rig: bound (%@)", self.spec.fileName)
         }
     }
 }
@@ -246,9 +290,20 @@ final class OttoAuraRiveViewModel: RiveViewModel {
     }
 }
 
-/// Holds one aura rig for as long as the view that owns it.
+/// Holds one aura rig for as long as the view that owns it, and swaps it
+/// when the form he wears changes.
 @MainActor
 final class OttoAuraRigHolder: ObservableObject {
-    let rig: OttoAuraRig?
-    init() { rig = OttoAuraRig.make() }
+    @Published private(set) var rig: OttoAuraRig?
+    private(set) var form: Companion
+    init(form: Companion = .otto) {
+        self.form = form
+        rig = OttoAuraRig.make(.of(form))
+    }
+
+    func use(_ next: Companion) {
+        guard next != form else { return }
+        form = next
+        rig = OttoAuraRig.make(.of(next))
+    }
 }

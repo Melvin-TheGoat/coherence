@@ -63,7 +63,7 @@ struct ShopTab: View {
     private var currentStage: OttoAura.Stage {
         OttoAura.stage(from: sessions.map { OttoAura.Sit(date: $0.startedAt, seconds: $0.durationSec) },
                        notNow: FeatureFlags.block ? block.notNowWindows : [],
-                       since: OttoAura.glowStart())
+                       since: OttoAura.glowStart(), restart: OttoAura.glowRestart())
     }
 
     var body: some View {

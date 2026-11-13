@@ -81,6 +81,11 @@ enum Analytics {
         /// Otto's glow stage changed with a landed session
         /// (`OttoAura.Stage` names). Derived from session dates only.
         case glowStageChanged(from: String, to: String)
+        /// Otto was reborn into a new form (`Companion.rawValue`): the moment
+        /// played on this phone. From lifetime points, never measured.
+        case companionUnlocked(form: String)
+        /// A form chosen in Otto's forms (`Companion.rawValue`).
+        case companionChosen(form: String)
         case resultViewed
         case resultMissing                        // a measured session with no stats on this phone
         /// Apple's rating sheet was requested (it decides whether to show),
@@ -240,6 +245,8 @@ enum Analytics {
             case .sessionStartFailed: "session_start_failed"
             case .rewardViewed: "reward_viewed"
             case .glowStageChanged: "glow_stage_changed"
+            case .companionUnlocked: "companion_unlocked"
+            case .companionChosen: "companion_chosen"
             case .resultViewed: "result_viewed"
             case .resultMissing: "result_missing"
             case .ratingPrompted: "rating_prompted"
@@ -328,6 +335,7 @@ enum Analytics {
             case .sessionStartFailed(let reason): ["reason": reason]
             case .rewardViewed(let stageUp, let goals): ["stage_up": stageUp, "goals": Analytics.countBand(goals)]
             case .glowStageChanged(let from, let to): ["from": from, "to": to]
+            case .companionUnlocked(let form), .companionChosen(let form): ["form": form]
             case .ratingPrompted(let placement): ["placement": placement]
             case .paywallViewed(let placement), .paywallDismissed(let placement): ["placement": placement]
             case .planSelected(let plan, let placement), .purchaseStarted(let plan, let placement),

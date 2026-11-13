@@ -1478,7 +1478,7 @@ struct AscendScreen: View {
 
                 OttoAuraFigure(stage: OttoAura.Stage(level: Int(level)),
                                look: OttoAura.look(level: Int(level)),
-                               size: ottoSize, rig: rig, snap: true)
+                               size: ottoSize, rig: rig, snap: true, form: .otto)
                     .frame(width: ottoSize, height: ottoSize)
                     .position(x: size.width / 2,
                               y: stoneY - ottoSize * 0.06 - ottoSize / 2)

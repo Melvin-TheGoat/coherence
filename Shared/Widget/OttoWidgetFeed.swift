@@ -13,6 +13,8 @@ enum OttoWidgetFeed {
     static func snapshot(sits: [OttoAura.Sit],
                          notNow: [DateInterval] = [],
                          since: Date?,
+                         restart: Date? = nil,
+                         form: Companion = .otto,
                          member: Bool,
                          now: Date = Date(),
                          calendar: Calendar = .current) -> OttoWidgetSnapshot {
@@ -24,7 +26,8 @@ enum OttoWidgetFeed {
             guard let start = calendar.date(byAdding: .day, value: offset, to: todayStart) else { break }
             // Today as it is now; each later day as it stands at its midnight.
             let when = offset == 0 ? now : start
-            let level = OttoAura.level(from: sits, notNow: notNow, since: since, today: when, calendar: calendar)
+            let level = OttoAura.level(from: sits, notNow: notNow, since: since, restart: restart,
+                                       today: when, calendar: calendar)
             let streak = StreakCalculator.streak(from: dates, today: when, calendar: calendar)
             let practiced = dates.contains { calendar.isDate($0, inSameDayAs: when) }
             let line = OttoLines.widget(stage: OttoAura.Stage(level: level),
@@ -33,6 +36,8 @@ enum OttoWidgetFeed {
                                         streak: streak)
             days.append(.init(start: start, level: level, streak: streak.current, line: line))
         }
-        return OttoWidgetSnapshot(member: true, days: days, written: now)
+        // A non-member sees Otto and "Open 808"; a member sees the form chosen.
+        return OttoWidgetSnapshot(member: true, days: days, written: now,
+                                  form: form == .otto ? nil : form.rawValue)
     }
 }
