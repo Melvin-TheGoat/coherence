@@ -69,8 +69,8 @@ Same base launch as above (`SKIP_ONBOARDING`, `DEMO_NAME=Maya`,
 - 02 Shield: `PREVIEW_SHIELD_REPLICA=6 PREVIEW_SHIELD_LINE=0` (the stand-in
   built the way iOS builds the shield, gold palette, "bruh.")
 - 03 Friends feed: `PREVIEW_TAB=friends PREVIEW_FEED_SCROLL=2 PREVIEW_FEED_ANCHOR=0.2`
-- 04 Evolve: `OTTO_AURA=100 PREVIEW_EVOLVE=tiger`, a frame from about 20 s in
-  (the "reborn as a tiger" card), with the status bar overridden to
+- 04 Evolve: `OTTO_AURA=100 PREVIEW_EVOLVE=dragon`, a frame from about 25 s in
+  (the "reborn as a dragon" card; write `community.testMode.v1 -bool NO` first on a fresh simulator or the invite-reward sheet covers it), with the status bar overridden to
   `--batteryState discharging` or the battery reads as charging
 - 05 Shop: `PREVIEW_TAB=shop PREVIEW_COMPANION=redPanda PREVIEW_HAT=sunhat`
 - 06 Forms: write `companion.announced.v1 -array redPanda tiger phoenix` and

@@ -295,7 +295,7 @@ iPhone 17 Pro Max simulator from a Debug build with `STORE_SHOTS=1`, which
 hides the development-only test-mode cards and switches Otto's chat off as
 Release has it; how to regenerate is in `marketing/README.md`.
 
-**Captions rewritten 2026-11-16 (Melvin: "Too much Otto... hes the mascot not the entire app"): Otto is named once, in shot 1's subhead; every headline names what the app does. Same day: Block and Friends moved up to 2 and 3, and the evolution shot became the tiger rebirth reveal at 4.**
+**Captions rewritten 2026-11-16 (Melvin: "Too much Otto... hes the mascot not the entire app"): Otto is named once, in shot 1's subhead; every headline names what the app does. Same day: Block and Friends moved up to 2 and 3, and the evolution shot became the dragon rebirth reveal at 4.**
 
 **iPhone 6.9 inch (required). The listing leads with Otto, not Block**
 (Melvin, 2026-09-29: "Youre focusing too much on the blocking aspect, thats
@@ -308,7 +308,7 @@ form, the forms picker and the feed added. Upload in this order:
 | 1 | 01-otto | Home, Otto glowing at 100%, 7-day streak | Make meditation a daily habit | Your streak grows, and Otto glows a little brighter every day you meditate |
 | 2 | 02-shield | A held app's block screen ("bruh."), gold palette | Block distracting apps until you meditate | Meditate for a minute and they open for the rest of the day |
 | 3 | 03-friends | The Friends feed: Priya's "Evening meditation" with photos, Maya's own post | Meditate with friends | Post your sessions and cheer each other on |
-| 4 | 04-evolve | The rebirth reveal: "Otto was reborn as a tiger" | Unlock new forms as you meditate | Every minute brings the next one closer |
+| 4 | 04-evolve | The rebirth reveal: "Otto was reborn as a dragon" | Unlock new forms as you meditate | Every minute brings the next one closer |
 | 5 | 05-shop | The Shop, the red panda trying on the Straw Sun Hat | Earn points for every minute | Spend them on hats in the Shop |
 | 6 | 06-forms | Otto's forms: sloth, red panda (worn), tiger, phoenix, dragon at 5,500 | Five forms to collect | A sloth, a red panda, a tiger, a phoenix and a dragon |
 | 7 | 07-texts | Otto's text thread after Ask Otto | A nudge before you scroll | Open a held app and get a text asking you to meditate first |
