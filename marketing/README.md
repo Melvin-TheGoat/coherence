@@ -66,11 +66,12 @@ Same base launch as above (`SKIP_ONBOARDING`, `DEMO_NAME=Maya`,
 `STORE_SHOTS=1` Otto leads Home with his mood, not the widget or Watch how-to.
 
 - 01 Otto: `OTTO_AURA=100`
-- 02 Next form: `OTTO_AURA=100 PREVIEW_HOME_SCROLL=0.62` (scrolls Home so the
-  "Otto's next form" row sits 62% down)
-- 03 Shield: `PREVIEW_SHIELD_REPLICA=6 PREVIEW_SHIELD_LINE=0` (the stand-in
+- 02 Shield: `PREVIEW_SHIELD_REPLICA=6 PREVIEW_SHIELD_LINE=0` (the stand-in
   built the way iOS builds the shield, gold palette, "bruh.")
-- 04 Friends feed: `PREVIEW_TAB=friends PREVIEW_FEED_SCROLL=2 PREVIEW_FEED_ANCHOR=0.2`
+- 03 Friends feed: `PREVIEW_TAB=friends PREVIEW_FEED_SCROLL=2 PREVIEW_FEED_ANCHOR=0.2`
+- 04 Evolve: `OTTO_AURA=100 PREVIEW_EVOLVE=tiger`, a frame from about 20 s in
+  (the "reborn as a tiger" card), with the status bar overridden to
+  `--batteryState discharging` or the battery reads as charging
 - 05 Shop: `PREVIEW_TAB=shop PREVIEW_COMPANION=redPanda PREVIEW_HAT=sunhat`
 - 06 Forms: write `companion.announced.v1 -array redPanda tiger phoenix` and
   `companion.chosen.v1 redPanda` into the app's defaults first, then
