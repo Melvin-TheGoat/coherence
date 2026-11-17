@@ -295,6 +295,8 @@ iPhone 17 Pro Max simulator from a Debug build with `STORE_SHOTS=1`, which
 hides the development-only test-mode cards and switches Otto's chat off as
 Release has it; how to regenerate is in `marketing/README.md`.
 
+**Captions rewritten 2026-11-16 (Melvin: "Too much Otto... hes the mascot not the entire app"): Otto is named once, in shot 1's subhead; every headline names what the app does.**
+
 **iPhone 6.9 inch (required). The listing leads with Otto, not Block**
 (Melvin, 2026-09-29: "Youre focusing too much on the blocking aspect, thats
 just one feature"). **Reshot 2026-11-13 (Melvin's lineup)** for the release
@@ -303,14 +305,14 @@ form, the forms picker and the feed added. Upload in this order:
 
 | # | File | Screen | Headline | Subhead |
 |---|---|---|---|---|
-| 1 | 01-otto | Home, Otto glowing at 100%, 7-day streak | Meditate consistently with Otto | He glows brighter every day you do |
-| 2 | 02-next-form | Home scrolled to "Otto's next form" under the three tiles (red panda silhouette, 22 to go) | Otto evolves as you meditate | Every minute brings his next form closer |
-| 3 | 03-shield | A held app's block screen ("bruh."), Otto gold palette | Otto blocks your apps until you meditate | Open one too soon and he lets you know |
+| 1 | 01-otto | Home, Otto glowing at 100%, 7-day streak | Make meditation a daily habit | Your streak grows, and Otto glows a little brighter every day you meditate |
+| 2 | 02-next-form | Home scrolled to "Otto's next form" under the three tiles (red panda silhouette, 22 to go) | Unlock new forms as you meditate | Every minute brings the next one closer |
+| 3 | 03-shield | A held app's block screen ("bruh."), Otto gold palette | Block distracting apps until you meditate | Meditate for a minute and they open for the rest of the day |
 | 4 | 04-friends | The Friends feed: Priya's "Evening meditation" with photos, Maya's own post | Meditate with friends | Post your sessions and cheer each other on |
-| 5 | 05-shop | The Shop, the red panda trying on the Straw Sun Hat | Collect points, buy him hats | Every minute you meditate earns a point |
-| 6 | 06-forms | Otto's forms: sloth, red panda (worn), tiger, phoenix, dragon at 5,500 | Five forms of Otto to unlock | A red panda, a tiger, a phoenix and a dragon |
-| 7 | 07-texts | Otto's text thread after Ask Otto | Otto texts you before you scroll | Open a held app and he asks you to meditate first |
-| 8 | 08-widget | Home screen with the medium and two small widgets (unchanged from the 2026-10-13 set) | Otto on your home screen | Your streak and his glow at a glance |
+| 5 | 05-shop | The Shop, the red panda trying on the Straw Sun Hat | Earn points for every minute | Spend them on hats in the Shop |
+| 6 | 06-forms | Otto's forms: sloth, red panda (worn), tiger, phoenix, dragon at 5,500 | Five forms to collect | A sloth, a red panda, a tiger, a phoenix and a dragon |
+| 7 | 07-texts | Otto's text thread after Ask Otto | A nudge before you scroll | Open a held app and get a text asking you to meditate first |
+| 8 | 08-widget | Home screen with the medium and two small widgets (unchanged from the 2026-10-13 set) | Your streak on your home screen | Your practice at a glance, all day long |
 | 9 | 09-sounds | The plus: the Ready screen's sound list | Meditate your way | Silence, nature, tones, a guided journey or your own audio |
 | 10 | 10-watch | A measured Watch session's results | Wear an Apple Watch for more | Heart rate, stillness and breathing, after each session |
 
