@@ -143,42 +143,38 @@ review)
 Meditate consistently with Otto. He glows brighter every day you do, blocks your apps when you don't, and now lives on your home screen as a widget.
 ```
 
-**Description** (4000 max; this one is 3,927, 3,972 counting line breaks twice; Block's 1 minute, 10 points for a week with a friend and weekly goals added 2026-10-27)
+**Description** (4000 max; this one is 3,939, 3,980 counting line breaks twice; rewritten for 1.5 2026-11-17: Block and Friends lead, the feed and Otto's forms added)
 
 ```
-Meditate consistently with Otto, a sloth who meditates with you. He glows brighter every day you do and blocks your apps when you don't. Every minute earns points for his hats.
+Make meditation a daily habit. 808 blocks the apps that pull you away until you meditate, lets you meditate alongside friends, and gives you Otto, a sloth who glows brighter every day you show up.
 
-OTTO GLOWS WITH YOUR PRACTICE
-Every day you meditate, Otto glows a little brighter, and your streak grows with him. Your streak allows one rest day a week.
+BLOCK YOUR APPS UNTIL YOU MEDITATE
+Pick the apps that pull you away and when they're held: all day, during hours you set, or after a daily limit. Open one and Otto asks you to meditate first. Tap Ask Otto and he may text you or call. Meditate for 1 minute and they open for the rest of the day, or choose "Not now" for 5, 10 or 30 minutes. Block manages your own iPhone, and the apps you pick stay private to your phone.
 
-OTTO ON YOUR HOME SCREEN
-Add the 808 widget, small or medium, to see Otto, your streak and what he has to say, lit for the time of day.
+MEDITATE WITH FRIENDS
+Post a session with photos, a title and a note, and see your friends' sessions in your feed. Double tap to give kudos. Tap a friend to see their Otto, their streak and how often they meditate. Set a weekly goal together and nudge each other. Add friends by @username or invite code; a friend you invite gets their first month free. A profile is optional and public to anyone with your username.
 
-HE BLOCKS YOUR APPS UNTIL YOU MEDITATE
-Pick the apps that pull you away and choose when Otto holds them: all day, during hours you set, or once you reach a daily limit. Open one and Otto asks you to meditate first. Tap Ask Otto and he may text you or call. Meditate for 1 minute and they open for the rest of the day, or tell Otto "Not now" for 5, 10 or 30 minutes. Block manages your own iPhone, and the apps you pick stay private to your phone.
+A STREAK THAT GLOWS
+Every day you meditate, Otto glows a little brighter and your streak grows, with one rest day a week. Add the widget to see both on your home screen.
 
-COLLECT POINTS, BUY HIM HATS
-Every minute you meditate earns a point, and a week finished with a friend earns 10. Spend your points in the Shop on hats for Otto, from a beanie to a golden crown.
+UNLOCK NEW FORMS
+Every minute you meditate earns a point. Collect enough and Otto is reborn as a red panda, a tiger, a phoenix and finally a dragon. Wear whichever form you like.
+
+COLLECT POINTS, BUY HATS
+A week finished with a friend earns 10 more points. Spend them in the Shop on hats, from a beanie to a golden crown.
 
 MEDITATE YOUR WAY
-Set a timer or leave it open. Sit in silence, with rain, ocean, forest or campfire, with brainwave paced tones for delta, theta and alpha, or with traditional tunings at 432, 528, 852 and 963 Hz. Or follow a professionally narrated 25 minute guided journey.
-Like a meditation in another app? Play it there, then begin your session in 808.
-Meditated somewhere else? Record the session by hand and it counts toward your streak.
+Set a timer or leave it open. Sit in silence, with rain, ocean, forest or campfire, with brainwave paced tones, or with traditional tunings at 432, 528, 852 and 963 Hz. Or follow a narrated 25 minute guided journey.
+Or play a meditation from another app and begin your session in 808. Meditated elsewhere? Record it by hand.
 
 WITH AN APPLE WATCH, SEE WHAT YOUR BODY DID
 An Apple Watch is optional. Wear one and 808 also reads your heart rate, how still you became and your breathing, then shows you a score out of 100 and the curves behind it after the session. Each Apple Watch session is saved to Apple Health as a workout and as mindful minutes.
 
-MEDITATE WITH FRIENDS
-Add friends by @username and see how often each of them meditates: sessions and minutes this week, their streak and their total. Set a weekly goal together and nudge each other. A profile is optional, and anyone who looks up your username can see it.
-
-EVERY DAY ADDS UP
-Your streak, your week at a glance, your full history, more than sixty awards, and a written guide to different ways to meditate, easiest first.
-
 PRIVATE BY DESIGN
-Heart rate and every reading from your Watch stay on your iPhone and are never uploaded to us. Your sessions sync through your own private iCloud, which we cannot read. Our analytics are pseudonymous and never include a body measurement or anything from Screen Time. No ads. No data sales. Sign in with Apple is optional.
+Heart rate and every Watch reading stay on your iPhone, are never uploaded to us, and never appear on a post. Your sessions sync through your own private iCloud, which we cannot read. Our analytics are pseudonymous and never include a body measurement or anything from Screen Time. No ads. No data sales. Sign in with Apple is optional.
 
 HONEST SCIENCE
-The Watch readings are grounded in peer reviewed research on wrist worn motion sensing. The 432, 528, 852 and 963 Hz tunings are offered as a tradition, not as science. 808 is a wellness app, not a medical device, and does not diagnose, treat or prevent any condition.
+The 432, 528, 852 and 963 Hz tunings are offered as a tradition, not as science. 808 is a wellness app, not a medical device, and does not diagnose, treat or prevent any condition.
 
 808 MEMBERSHIP
 808 is a membership, and every feature is included in it.
@@ -186,7 +182,7 @@ The Watch readings are grounded in peer reviewed research on wrist worn motion s
 SUBSCRIPTION INFORMATION
 808 Membership Yearly: $29.99 per year.
 808 Membership Monthly: $7.99 per month.
-New members are offered Yearly or Monthly with a 7 day free trial, then $29.99 per year or $7.99 per month. If you decline the plans above, the app may offer Monthly, half price: a 7 day free trial, then $3.99 per month.
+New members are offered Yearly or Monthly with a 7 day free trial, then $29.99 per year or $7.99 per month. If you decline the plans above, the app may offer Monthly, half price: a 7 day free trial, then $3.99 per month. Someone invited by a friend may be offered Monthly with the first month free, then $7.99 per month.
 A free trial is available once per Apple Account across 808's subscriptions. Payment is charged to your Apple Account when you confirm the purchase, or when a free trial ends. Subscriptions renew automatically unless cancelled at least 24 hours before the end of the current period or free trial, and your account is charged for the renewal within the 24 hours before the period ends. Manage or cancel any time in your App Store account settings. Any unused part of a free trial ends when you buy a subscription.
 Restore, on the paywall or in Settings, brings a purchase back on a new device.
 

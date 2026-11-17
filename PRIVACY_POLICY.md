@@ -20,7 +20,8 @@ support for Apple Watch.
   choose to create one, pseudonymous usage analytics, and any report you file
   about another person. See "Friends" and "Usage analytics" below.
 - **Friends is optional.** If you create a profile, your username, name,
-  optional photo, a summary of how often you meditate, and who you have added
+  optional photo, a summary of how often you meditate, your Otto (his form,
+  hat and glow), and who you have added
   and who has added you go to a shared area of iCloud where anyone using 808
   can look them up. If you set a weekly goal with a friend, the days you
   meditated and your minutes on those days, from the day the goal began, go
@@ -256,6 +257,9 @@ profile, 808 writes nothing about you to the shared area.
   and the date and time of your last session. The app works these out from
   your session log and updates them when you open it. It is published only
   if you have a profile.
+- **Your Otto**: which form he is in, the hat he wears, and how brightly he
+  glows. The glow is worked out from your sessions alone; nothing from Block
+  or Screen Time goes into it. It is published only if you have a profile.
 - **Who you have added**, and who has added you.
 - Your **invite code**, which is public like your username, and who joined
   808 with it.
