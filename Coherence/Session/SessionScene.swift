@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 
 /// The valley Otto sits in while you meditate.
 ///
@@ -128,6 +129,10 @@ struct ValleyScene: View {
     /// load, `OttoRiveView` falls back to the still art with a scale pulse,
     /// so a bad export costs motion and never a screen.
     @StateObject private var rig = OttoRigHolder()
+    /// The form he wears. A screen that asks for a pose (the Ready screen,
+    /// the sit, an award) draws the sloth's own rig, which only he has; any
+    /// other form sits at today's stage in his place (Melvin, 2026-11-16).
+    @ObservedObject private var companions = CompanionStore.shared
 
     /// One seed per `ValleyScene` instance, not per redraw: Home's birds
     /// and a Friends band's birds fly different patterns rather than
@@ -279,6 +284,8 @@ struct ValleyScene: View {
                 } else if let aura {
                     OttoAuraFigure(stage: aura, look: auraLook, size: tall, rig: rig, jiggle: jiggle,
                                    snap: auraSnap, hatID: auraHat, form: auraForm, stillsOnly: auraStills)
+                } else if companions.effective != .otto {
+                    WornFormFigure(size: tall, rig: rig)
                 } else {
                     OttoRiveView(size: tall, pose: pose, rig: rig)
                 }
@@ -296,3 +303,31 @@ struct ValleyScene: View {
 
 #Preview("Arrive") { ValleyScene(progress: 0) }
 #Preview("Dusk") { ValleyScene(progress: 1) }
+
+
+/// The worn form, seated at today's stage, where a screen would otherwise
+/// draw the sloth in a pose. The level is worked out here, from the same
+/// sessions and rules Home uses, so the + screen and the sit show the form
+/// exactly as Home does without every caller having to pass it in.
+struct WornFormFigure: View {
+    let size: CGFloat
+    @ObservedObject var rig: OttoRigHolder
+    @Query(sort: \Session.startedAt) private var sessions: [Session]
+
+    var body: some View {
+        OttoAuraFigure(stage: OttoAura.Stage(level: level), size: size, rig: rig)
+    }
+
+    private var level: Int {
+        #if DEBUG
+        if let raw = ProcessInfo.processInfo.environment["OTTO_AURA"], let level = Int(raw) {
+            return min(max(level, 0), 100)
+        }
+        let debug = UserDefaults.standard.integer(forKey: DebugOtto.stageKey)
+        if (1...13).contains(debug) { return DebugOtto.level(forLook: debug) }
+        #endif
+        return OttoAura.level(from: sessions.map { OttoAura.Sit(date: $0.startedAt, seconds: $0.durationSec) },
+                              notNow: FeatureFlags.block ? BlockController.shared.notNowWindows : [],
+                              since: OttoAura.glowStart(), restart: OttoAura.glowRestart())
+    }
+}

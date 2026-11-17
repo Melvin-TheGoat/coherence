@@ -160,7 +160,7 @@ struct SessionActiveView: View {
     private var sit: some View {
         GeometryReader { geo in
             let ring = SitLayout.ringDiameter(in: geo.size)
-            let hat = OttoRiveView.hatRise(OttoAuraFigure.previewHat ?? prefsRows.first?.wornHatIDValue,
+            let hat = OttoAuraFigure.seatedHatRise(OttoAuraFigure.previewHat ?? prefsRows.first?.wornHatIDValue,
                                            size: SitLayout.ottoHeight(in: geo.size))
             let ringCentreY = SitLayout.ringCentreY(in: geo.size, hat: hat)
 

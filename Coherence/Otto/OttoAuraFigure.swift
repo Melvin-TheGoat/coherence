@@ -75,6 +75,14 @@ struct OttoAuraFigure: View {
     /// figure drawn `size` tall: what a screen that puts words above his head
     /// has to leave room for (Home's bubble). Reads the art's own shape, so a
     /// flat halo is not given a beanie's room.
+    /// How far the worn hat rises above whoever sits in a pose slot (the
+    /// Ready screen, the sit): the sloth's session rig, or the worn form
+    /// drawn in its place (`WornFormFigure`).
+    static func seatedHatRise(_ id: String?, size: CGFloat) -> CGFloat {
+        let form = CompanionStore.shared.effective
+        return form == .otto ? OttoRiveView.hatRise(id, size: size) : hatRise(id, size: size, form: form)
+    }
+
     static func hatRise(_ id: String?, size: CGFloat, form: Companion = .otto) -> CGFloat {
         guard let id else { return 0 }
         let unit = size * 0.95 / bodyShare / 744

@@ -311,7 +311,7 @@ struct SessionSetupView: View {
     /// How far his hat stands above his head, which his bubble (and the
     /// timer over it) rise by.
     private func hatRise(in size: CGSize) -> CGFloat {
-        OttoRiveView.hatRise(OttoAuraFigure.previewHat ?? preferences.first?.wornHatIDValue,
+        OttoAuraFigure.seatedHatRise(OttoAuraFigure.previewHat ?? preferences.first?.wornHatIDValue,
                              size: SitLayout.ottoHeight(in: size))
     }
 
