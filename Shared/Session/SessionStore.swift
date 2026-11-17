@@ -599,6 +599,25 @@ enum SessionStore {
         return row
     }
 
+    /// Attaches a session's timelapse, FIRST in its order (it is what the
+    /// feed card shows), replacing any earlier one. nil when the session
+    /// already holds `maxPhotosPerSession` other items.
+    @discardableResult
+    static func addTimelapse(sessionID: UUID, jpeg: Data, thumbnail: Data, video: Data,
+                             in context: ModelContext) -> SessionPhoto? {
+        var existing = photos(for: sessionID, in: context)
+        for old in existing where old.timelapse { context.delete(old) }
+        existing.removeAll { $0.timelapse }
+        guard existing.count < maxPhotosPerSession else { return nil }
+        let row = SessionPhoto(sessionID: sessionID, takenAt: Date(), jpeg: jpeg,
+                               thumbnail: thumbnail, video: video,
+                               order: (existing.first?.order ?? 1) - 1)
+        row.timelapse = true
+        context.insert(row)
+        try? context.save()
+        return row
+    }
+
     /// Removes every photo and video a session keeps.
     static func removePhoto(for sessionID: UUID, in context: ModelContext) {
         for p in (try? context.fetch(FetchDescriptor<SessionPhoto>(

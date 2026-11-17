@@ -33,4 +33,22 @@ enum PhotoScreen {
         return .notScreened
         #endif
     }
+
+    /// The whole of a video, not only its poster frame (a session timelapse,
+    /// 2026-11-16: a person filmed at home deserves more than one frame
+    /// checked). Same two conditions as photos.
+    static func check(videoAt url: URL) async -> Result {
+        #if canImport(SensitiveContentAnalysis)
+        let analyzer = SCSensitivityAnalyzer()
+        guard analyzer.analysisPolicy != .disabled else { return .notScreened }
+        do {
+            return try await analyzer.videoAnalysis(forFileAt: url).hasSensitiveContent().isSensitive
+                ? .sensitive : .clean
+        } catch {
+            return .notScreened
+        }
+        #else
+        return .notScreened
+        #endif
+    }
 }

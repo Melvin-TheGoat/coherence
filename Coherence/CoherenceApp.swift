@@ -37,7 +37,11 @@ struct CoherenceApp: App {
         SessionStore.repairOwnership(in: setup)                 // sessions filed under a stray bootstrap row (2026-09-29)
         OttoAura.markGlowStartIfNeeded()                        // Otto's glow counts from 1.1's first launch, at 50
         ScoreMigration.backfillIfNeeded(in: setup)              // v3 score across all history
-        _coordinator = StateObject(wrappedValue: SessionCoordinator(container: container))
+        let coordinator = SessionCoordinator(container: container)
+        _coordinator = StateObject(wrappedValue: coordinator)
+        // A filmed session becomes its timelapse once it is written, however
+        // it ended (2026-11-16).
+        TimelapseRecorder.shared.attach(coordinator: coordinator, container: container)
         ReminderScheduler.install(container: container)        // reminders replan from the store (2026-10-12)
         // The invite reward's balance lives on Preferences; the store reads it
         // to resolve per-session entitlements, the community model writes it.

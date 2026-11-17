@@ -42,6 +42,9 @@ struct SessionActiveView: View {
     /// For the hat he wears, which the ring has to clear.
     @Query(sort: \Preferences.createdAt) private var prefsRows: [Preferences]
     @State private var now = Date()
+    /// Filming a timelapse of this sit (2026-11-16): the dot and the small
+    /// self-view show only while it is.
+    @ObservedObject private var recorder = TimelapseRecorder.shared
 
     #if DEBUG
     /// `PREVIEW_LEFT_APP=1` shows the "you left" state immediately, so it
@@ -227,6 +230,17 @@ struct SessionActiveView: View {
                     }
                     .buttonStyle(.tactile)
                     .padding(.bottom, 44)
+                }
+
+                if recorder.filmingID != nil {
+                    FilmingIndicator(recorder: recorder, arriving: arriving, ink: day.ink)
+                        .padding(.leading, 22)
+                        .padding(.top, 48)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    TimelapseSelfView(recorder: recorder, ink: day.ink)
+                        .padding(.leading, 22)
+                        .padding(.bottom, 40)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
                 }
             }
             .frame(width: geo.size.width, height: geo.size.height)

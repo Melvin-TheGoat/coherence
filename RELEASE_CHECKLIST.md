@@ -1032,6 +1032,55 @@ From branch `posthog-1.4-screens`. Two things:
 - [ ] **Review notes recounted after the merge**: under 4,000 counting line
       breaks twice (`marketing/APP_STORE_PASTE.md`).
 - [ ] New archive (this is on `block`, after 1.4).
+## OPEN for the build that ships Session Timelapse (2026-11-16, branch `timelapse`)
+
+Film yourself while you meditate; 808 makes a 6 to 30 second timelapse that
+sits on the session's page, saves to Photos, shares to Instagram, and plays
+silently in the Friends feed when posted. Built on `integrate`. Capture has
+never run on a real phone: the simulator has no camera.
+
+- [ ] **On-device capture test, front AND back camera**: a 5, 20 and 60
+      minute filmed session. The clip is upright, portrait, mirrored on the
+      front lens only, covers the whole session evenly, and the speed line
+      reads right ("20 min in 30 s"). If a clip comes out sideways, run with
+      `TIMELAPSE_DEBUG=1` and read `Documents/TimelapseDebug/facts.txt` off
+      the phone (`devicectl device copy from --domain-type appDataContainer`)
+      before changing any rotation code: trust the pixels, not the angle.
+- [ ] **Battery and heat, measured**: a 30 and a 60 minute filmed session,
+      battery before and after, and whether the phone gets warm. Watch for
+      `system pressure` lines in the log (category `Timelapse`): serious
+      halves the sampling, critical stops filming.
+- [ ] **Leaving and locking**: leave 808 for 5 s (filming resumes, a few
+      frames missing) and for 15 s (the session is voided and the frames are
+      deleted, no clip, nothing on the page).
+- [ ] **A measured session** (With Apple Watch, started here) also films, and
+      the clip lands after the Watch payload.
+- [ ] **Privacy policy, approved by the founders**, then `python3
+      tools/legal_pages.py` and deploy the website before release: 808 can
+      film a timelapse of your session with the camera you choose; it stays on
+      the iPhone (and the person's private iCloud with the session's photos)
+      unless posted to friends or shared; the BACK camera may film other
+      people in the room, and the person is responsible for that before
+      posting; posted clips are screened on device (Sensitive Content
+      Analysis, whole video) where the person has it on.
+- [ ] **App Privacy label check** in App Store Connect: Photos or Videos is
+      already declared for Friends posts; confirm a posted timelapse is
+      covered, and that nothing new (no audio: there is no microphone) needs
+      a row. `PrivacyInfo.xcprivacy` unchanged.
+- [ ] **CloudKit, Development to Production**: the new `SessionPhoto.timelapse`
+      field (`CD_timelapse`, synced store). Run the schema primer from
+      Settings > CloudKit (debug) first; it now writes the field.
+- [ ] **Review notes**: Timelapse is optional, asks for the camera only when
+      switched on, has no microphone, and nothing is posted without Post.
+- [ ] **Meta app ID** still empty (`InstagramShare.metaAppID`). Until it
+      exists, Instagram Reel and Story save the clip to Photos and open
+      Instagram. With it, check the direct handoff on a phone: the
+      `instagram-reels://share` and `instagram-stories://share` pasteboard
+      keys are Meta's documented ones and have never been run against
+      Instagram. Meta requires the app to be Live.
+- [ ] **The art**: the Timelapse pill draws an SF Symbol stand-in until
+      Melvin's clay camera on a stone lands as image set `sit-timelapse`.
+
 ## OPEN for the build that ships the Friends feed (2026-11-13, branch `friends-feed`)
 
 Built from `mockups/friends-v3.html`: the tab bar is Home · Friends · + ·

@@ -43,6 +43,11 @@ final class SessionPhoto {
     /// (the single-item callers: the calendar dot, `EvidenceRow`, the results
     /// screen) reads whichever item has the lowest order.
     var order: Int = 0
+    /// The session's own timelapse (2026-11-16), filmed while it ran: always
+    /// with a `video`, drawn as its own card on the session's page, and the
+    /// one kind of video a Friends post carries as a video (other videos go
+    /// up as their still). Defaulted, so every row before it reads false.
+    var timelapse: Bool = false
     var createdAt: Date = Date()
 
     init(id: UUID = UUID(), sessionID: UUID? = nil, takenAt: Date = Date(),

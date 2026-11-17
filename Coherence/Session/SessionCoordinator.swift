@@ -437,6 +437,9 @@ final class SessionCoordinator: NSObject, ObservableObject {
     /// is the chime that says so.
     private func finishPhoneSession(early: Bool) {
         guard let current = active, current.engine == .phone else { return }
+        // Written (or discarded) in this turn: a timelapse waiting on it
+        // need not wait for a Watch payload.
+        SessionCoordinatorLookup.phoneEnded.insert(current.id)
         // Covers every way this can be reached: on time, an early End, and
         // the too-short discard below all funnel through here.
         UIApplication.shared.isIdleTimerDisabled = false
@@ -592,6 +595,7 @@ final class SessionCoordinator: NSObject, ObservableObject {
     func discardLeftAppSession() {
         guard let current = active, leftAppPrompt?.id == current.id else { return }
         leftAppPrompt = nil
+        SessionCoordinatorLookup.phoneEnded.insert(current.id)
         UIApplication.shared.isIdleTimerDisabled = false
         phoneFinishTask?.cancel()
         phoneFinishTask = nil

@@ -543,6 +543,22 @@ private struct SettingsForm: View {
                 }
                 .onChange(of: musicOn) { _, _ in AppAudio.shared.reconcile() }
 
+                // Session timelapse (2026-11-16): off until the first manual
+                // Save offers it, and switchable here any time after.
+                GrassHeading(title: "Timelapse")
+                settingsCard {
+                    row(icon: "video", title: "Save timelapses to Photos") {
+                        Toggle("", isOn: Binding(
+                            get: { TimelapseAutoSave.load().savesAutomatically },
+                            set: { on in
+                                var auto = TimelapseAutoSave.load()
+                                auto.answer(on)
+                                auto.store()
+                            }))
+                            .labelsHidden().tint(AppColor.calmAccent)
+                    }
+                }
+
                 GrassHeading(title: "Membership")
                 settingsCard {
                     // Apple's own page (Melvin, 2026-09-29): the paywall's

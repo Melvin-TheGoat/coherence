@@ -664,6 +664,20 @@ struct ContentView: View {
                 try? context.save()
                 sheet = .save(id)
             }
+            // PREVIEW_TIMELAPSE=1 opens a demo session's page while its
+            // timelapse is made from synthetic frames (the simulator has no
+            // camera), so "Making your timelapse" and then the clip can be
+            // reviewed; `=share` also opens its share sheet once it lands.
+            if let mode = ProcessInfo.processInfo.environment["PREVIEW_TIMELAPSE"], sheet == nil {
+                let id = DemoData.seedResults(in: context)
+                if let r = SessionStore.reflection(for: id, in: context) { context.delete(r) }
+                for p in SessionStore.photos(for: id, in: context) { SessionStore.removePhotoItem(id: p.id, in: context) }
+                try? context.save()
+                let seconds = Double(sessions.first { $0.id == id }?.durationSec ?? 600)
+                TimelapseRecorder.shared.makeDemo(sessionID: id, sessionSeconds: seconds)
+                TimelapsePreviewFlags.openShare = mode == "share"
+                sheet = .save(id)
+            }
             // PREVIEW_SESSION=1 opens a demo session's own page (`SessionView`,
             // 2026-09-27), the way Home's Recent rows and Profile's week log do.
             if ProcessInfo.processInfo.environment["PREVIEW_SESSION"] == "1", sheet == nil {

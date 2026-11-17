@@ -9148,3 +9148,85 @@ edges), and a pale FRINGE on soft edges.
   were drawn on their pastel, never cut, and have no paper.
 - **Any new cut-out goes through `paper_check check` before it ships**, and
   a chest patch's flags are its feathered mask crossing the paws, not paper.
+
+## SESSION TIMELAPSE (2026-11-16, Melvin, branch `timelapse`)
+
+Film yourself while you meditate and 808 makes a short timelapse that sits
+on the session's page. Design: the "Session Timelapse" mockup
+(`record-session.html`), with Melvin's answers to its open decisions, which
+override it where they differ. Code: `Coherence/Session/Timelapse/`.
+
+- **Always a timelapse, never real speed.** One second of clip per 30
+  seconds meditated, clamped **6 to 30 s** (the mockup said 20): 5 min is
+  10 s, 10 min is 20 s, 15 min and longer is 30 s. The speed line reads
+  "20 min in 30 s", in the measured blue. `TimelapseRule`, pinned by
+  `TimelapseRulesTests`.
+- **Front or back camera, the person's choice**, a flip on the viewfinder,
+  remembered (`TimelapseLens`). The front lens is mirrored, like the selfie
+  camera; the back is not.
+- **The switch is a pill sharing Silence notifications' row (1A).** Both
+  are half-width tap-to-toggle pills now ("Silence / Do Not Disturb",
+  "Timelapse / Film yourself"); on, the line reads "✓ On" and the pill
+  takes a sage outline. Remembered between sessions, but **the viewfinder
+  shows every time it is on** (a state of the Ready screen, Otto in the
+  corner asking to be propped up), stays up through the countdown, and a
+  length chip under it tucks it away to reach the tape. The camera is asked
+  for only when the pill is turned on, never at launch.
+- **During the sit (2B):** a red dot with "Filming" (the word fades with the
+  opening lines), and a small round self-view bottom left that a tap hides;
+  a tap on the dot brings it back. Hidden-or-shown is remembered. My call:
+  it starts shown rather than hiding itself after nine seconds.
+- **Leaving keeps today's rule.** Over 10 s away voids the session and its
+  frames are deleted; capture stops in the background anyway, so a short
+  absence is a few missing frames.
+- **The reel:** one `AVCaptureSession` on its own queue
+  (`TimelapseCamera`, modelled on `FrontCameraEngine`), frames from
+  `AVCaptureVideoDataOutput` at 5 fps while filming, kept as 720 by 1280
+  JPEGs in temp. A timed session picks the exact gap; an open one starts at
+  0.5 s and **thins by half at 1,200 frames, doubling the gap**
+  (`TimelapseReelPlan`). The gap runs on a fixed beat: measuring from each
+  late arrival lost 10 percent of the frames. No microphone, ever.
+- **The clip:** `AVAssetWriter`, H.264, 30 fps, 4 Mbps, 1080 by 1920 (frames
+  upscaled from 720), written once the session row exists (the recorder
+  listens to `coordinator.$active` going nil and waits up to 90 s for a
+  Watch payload), stored as an ordinary `SessionPhoto` with a video and the
+  new **`timelapse = true`** field, first in order, its first frame as the
+  poster. About 3 to 15 MB, inside the 40 MB every kept video is held to.
+- **The page:** "Making your timelapse" with honest progress (frames written
+  over frames needed), then the clip looping silent with ✕, **Save to
+  Photos** and **Share**. Its sheets live on `TimelapseCard`, not the page:
+  the page already stacks several and a third did not present.
+- **Posting:** attached automatically, posted only by Post; Friends stays
+  the default. A timelapse is the one video a post carries as a video (other
+  videos still go up as their still), screened **whole** with
+  `SCSensitivityAnalyzer.videoAnalysis` (`PhotoScreen.check(videoAt:)`).
+  Post waits on the page for a clip still being made.
+- **The feed (4A):** a posted video is a timelapse, so the card plays any
+  video by itself, muted and looping (`LoopingClip`, seek-to-zero, not
+  `AVPlayerLooper`), only on screen, never in Low Power Mode.
+- **The copy that leaves the phone** carries two small marks, the speed line
+  top left and "808 Meditate" bottom right, inside Instagram's safe area;
+  drawn as a bitmap (`TimelapseMarks`), composited by re-encoding. The clip
+  in the app plays clean.
+- **Share (5B):** Instagram Reel, Instagram Story, More (the system sheet
+  with the file). **No Meta app ID yet**, so Reel and Story save to Photos
+  and open Instagram (Story on its story camera); a non-empty
+  `InstagramShare.metaAppID` switches both to the direct pasteboard handoff
+  (`instagram-reels://share`, `instagram-stories://share`), unverified.
+- **Auto-save to Photos** is off until the first manual Save, which offers
+  it once ("Save them all automatically?"); Settings > Timelapse switches it
+  after. Add-only Photos access. `TimelapseAutoSave`, this phone only.
+- **Hand-logged sessions never film** (they never pass Begin).
+- **Art:** the pill draws an SF Symbol until an image set named
+  `sit-timelapse` exists (`SitArt.standIns`); dropping in Melvin's clay
+  camera on a stone is the whole swap.
+- **Not done:** recovering a reel after iOS kills 808 mid-session (stale
+  reels are deleted at launch), and a "First 34 min in 30 s" badge when heat
+  stopped the filming early.
+- DEBUG: `PREVIEW_TIMELAPSE=1` opens a demo session's page while a clip is
+  made from synthetic frames (`SyntheticReel`; `=share` also opens the share
+  sheet); `PREVIEW_SETUP=1 PREVIEW_TIMELAPSE_ON=1` opens the Ready screen
+  framing; on the simulator, filming makes synthetic frames too.
+  `TIMELAPSE_DEBUG=1` on a phone writes the first raw frame and what the
+  connection claimed to Documents/TimelapseDebug. **Capture, rotation,
+  battery and heat can only be checked on a phone** (RELEASE_CHECKLIST.md).

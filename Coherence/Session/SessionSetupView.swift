@@ -81,6 +81,13 @@ struct SessionSetupView: View {
     /// only when it is chosen AND connected: a Watch that is not connected
     /// today never takes a sit, whatever was chosen.
     @ObservedObject private var watchLink = WatchLink.shared
+    /// Session timelapse (2026-11-16): the pill beside Silence, and the
+    /// viewfinder that takes the sky while it is on.
+    @ObservedObject private var recorder = TimelapseRecorder.shared
+    /// The viewfinder put away to reach the length tape. Comes back out at
+    /// Begin, so framing is checked through the countdown.
+    @State private var finderTucked = false
+    @State private var cameraRefused = false
     /// Whether Otto's line is the Watch one or the YouTube one. They take
     /// turns, one per opening (`ready.lineTurn`), so neither goes missing
     /// for long.
@@ -101,6 +108,12 @@ struct SessionSetupView: View {
     @State private var loggedID: LoggedSession?
     @Environment(\.modelContext) private var context
     private var aside: Bool { choosingSound || choosingKind || logging }
+    /// Timelapse is on and its viewfinder is up: Otto moves to the corner and
+    /// asks, the viewfinder takes the sky (mockup 1C, a state of the screen,
+    /// never a sheet).
+    private var framing: Bool {
+        recorder.enabled && !aside && !hosting && (countdown != nil || settling || !finderTucked)
+    }
 
     /// The two heights `ottoLift` is worked out from, measured as laid out.
     /// Seeded with what an iPhone 17 Pro measures, so the first frame is
@@ -116,7 +129,7 @@ struct SessionSetupView: View {
                 // ONE scene, for both states. Never rebuilt, never replaced:
                 // it owns the Rive rig, and swapping it would restart him.
                 ValleyScene(progress: 0, pose: settling ? .meditating : .greeting, clock: true,
-                            ottoInCorner: aside, ottoLift: lift)
+                            ottoInCorner: aside || framing, ottoLift: lift)
 
                 if choosingKind {
                     asking("How are we meditating?", day: day, in: geo.size)
@@ -149,6 +162,18 @@ struct SessionSetupView: View {
                         choosingSound = false
                     }
                     .transition(.move(edge: .bottom).combined(with: .opacity))
+                } else if framing {
+                    asking(countdown == nil ? "Prop your phone up so I can see all of you." : "Get comfortable.",
+                           day: day, in: geo.size)
+                    finder(in: geo.size, day: day)
+                        .transition(.opacity)
+                    if countdown != nil {
+                        countdownCancel
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                    } else {
+                        readyControls(day: day, compact: Self.compact(in: geo.size))
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                    }
                 } else {
                     greeting(day: day, in: geo.size, lift: lift)
                     if let countdown {
@@ -172,6 +197,7 @@ struct SessionSetupView: View {
             .animation(.spring(response: 0.42, dampingFraction: 0.86), value: choosingKind)
             .animation(.spring(response: 0.42, dampingFraction: 0.86), value: logging)
             .animation(.spring(response: 0.42, dampingFraction: 0.86), value: countdown == nil)
+            .animation(.spring(response: 0.42, dampingFraction: 0.86), value: framing)
         }
         .ignoresSafeArea()
         .overlay(alignment: .topLeading) {
@@ -248,6 +274,21 @@ struct SessionSetupView: View {
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { watchLink.refresh() }
         }
+        // The camera runs only while this screen frames or films.
+        .task {
+            #if DEBUG
+            if ProcessInfo.processInfo.environment["PREVIEW_TIMELAPSE_ON"] == "1" { recorder.enabled = true }
+            #endif
+            if recorder.enabled { await recorder.openViewfinder() }
+        }
+        .alert("808 can't use the camera", isPresented: $cameraRefused) {
+            Button("Open Settings") {
+                if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) }
+            }
+            Button("Not now", role: .cancel) {}
+        } message: {
+            Text("To film a timelapse of your session, allow Camera for 808 in Settings.")
+        }
         // The music under the app fades over the five seconds of the count,
         // so the first thing the sit gives is quiet (`AppAudio`). The
         // session's own hold takes over when it begins.
@@ -260,6 +301,7 @@ struct SessionSetupView: View {
             countdownTask?.cancel()
             countdownTask = nil
             AppAudio.shared.set(.countdown, false)
+            recorder.closeViewfinder()
         }
     }
 
@@ -358,6 +400,106 @@ struct SessionSetupView: View {
         }
     }
 
+    /// Silence and Timelapse share a row (mockup 1A, Melvin's pick): both set
+    /// up the room before you sit. At half width a switch no longer fits
+    /// beside the words, so both are tap-to-toggle pills whose line reads
+    /// "On" with a tick and a sage outline when on.
+    @ViewBuilder
+    private func roomControls(compact: Bool) -> some View {
+        if FocusShortcut.isConfigured {
+            HStack(spacing: 10) {
+                Button {
+                    Task {
+                        guard focus.installed else { showFocusSetup = true; return }
+                        if focus.silenced { await focus.turnOff() }
+                        else { await focus.silence() }
+                    }
+                } label: {
+                    SitPill(art: "sit-silence", label: "Silence",
+                            subtitle: compact ? nil : (focus.silenced ? "\u{2713} On" : "Do Not Disturb"),
+                            compact: compact, half: true) { EmptyView() }
+                        .overlay(onOutline(focus.silenced, compact: compact))
+                }
+                .buttonStyle(.tactile)
+                .accessibilityLabel("Silence notifications")
+                .accessibilityValue(focus.silenced ? "On" : "Off")
+                timelapsePill(compact: compact)
+            }
+        } else {
+            VStack(spacing: 8) {
+                timelapsePill(compact: compact)
+                silenceControl(ink: AppColor.textPrimary, compact: compact)
+            }
+        }
+    }
+
+    private func onOutline(_ on: Bool, compact: Bool) -> some View {
+        RoundedRectangle(cornerRadius: compact ? 18 : 22, style: .continuous)
+            .strokeBorder(AppColor.calmAccent, lineWidth: on ? 2 : 0)
+    }
+
+    private func timelapsePill(compact: Bool) -> some View {
+        let clip = TimelapseRule.clipSeconds(forSessionSeconds: Double((lengthMinutes ?? 20) * 60))
+        let line = recorder.enabled
+            ? (lengthMinutes == nil ? "\u{2713} On" : "\u{2713} On \u{00B7} \(clip) s clip")
+            : "Film yourself"
+        return Button {
+            Task {
+                let on = !recorder.enabled
+                let turned = await recorder.setEnabled(on)
+                if on, !turned { cameraRefused = true }
+                if on, turned { finderTucked = false }
+            }
+        } label: {
+            SitPill(art: "sit-timelapse", label: "Timelapse", subtitle: compact ? nil : line,
+                    compact: compact, half: true) { EmptyView() }
+                .overlay(onOutline(recorder.enabled, compact: compact))
+        }
+        .buttonStyle(.tactile)
+        .accessibilityLabel("Timelapse, film yourself")
+        .accessibilityValue(recorder.enabled ? "On" : "Off")
+    }
+
+    /// The viewfinder in the sky, and under it the length, which a tap puts
+    /// the viewfinder away to change (or, counting in, the count itself).
+    private func finder(in size: CGSize, day: DayLight) -> some View {
+        let top: CGFloat = 158
+        let pillsTop = size.height - Self.controlsBottom - controlsHeight
+        let below: CGFloat = 54
+        let room = max(160, pillsTop - top - below - 12)
+        let height = min(room, size.width * 0.66 * 16 / 9)
+        let width = height * 9 / 16
+        return VStack(spacing: 12) {
+            TimelapseViewfinder(recorder: recorder, width: width, showsFlip: countdown == nil)
+            if let countdown {
+                Text("\(max(countdown, 1))")
+                    .font(DisplayFont.display(34, .heavy))
+                    .monospacedDigit()
+                    .onValley(day)
+                    .contentTransition(.numericText(countsDown: true))
+                    .accessibilityLabel("Starting in \(max(countdown, 1))")
+            } else {
+                Button { finderTucked = true } label: {
+                    Text(lengthChip)
+                        .font(AppFont.callout.weight(.bold))
+                        .foregroundStyle(AppColor.textPrimary)
+                        .padding(.horizontal, 16).padding(.vertical, 8)
+                        .background(AppColor.backgroundPrimary.opacity(0.94), in: Capsule())
+                        .shadow(color: .black.opacity(0.12), radius: 6, y: 2)
+                }
+                .buttonStyle(.tactile)
+                .accessibilityHint("Shows the length")
+            }
+        }
+        .position(x: size.width / 2, y: top + (height + below) / 2)
+    }
+
+    /// "10 min", or "Open", with a chevron.
+    private var lengthChip: String {
+        guard let m = lengthMinutes else { return "Open \u{203A}" }
+        return "\(m) min \u{203A}"
+    }
+
     /// Cancelling with 808's own silence still on would leave the phone quiet
     /// for a sit that never happened.
     private func cancel() {
@@ -451,7 +593,7 @@ struct SessionSetupView: View {
                     .buttonStyle(.tactile)
                 }
 
-                silenceControl(ink: day.ink, compact: compact)
+                roomControls(compact: compact)
 
                 Button("Begin", action: begin)
                     .buttonStyle(PrimaryButtonStyle())
@@ -523,6 +665,7 @@ struct SessionSetupView: View {
 
     private func begin() {
         countdownTask?.cancel()
+        finderTucked = false
         let timed = lengthMinutes != nil
         countdownTask = Task { @MainActor in
             // A timed sit ends with a notification, so this is the one moment
@@ -575,6 +718,11 @@ struct SessionSetupView: View {
                                   hapticsEnabled: haptics,
                                   soundID: id)
             }
+        }
+        // Filming starts with the session it films. Never a hand-logged one:
+        // those never pass Begin.
+        if recorder.enabled, let id = coordinator.active?.id {
+            recorder.startFilming(sessionID: id, plannedSeconds: planned)
         }
         // A phone start runs in the same turn; if nothing began, close as
         // before rather than leave the Ready screen stuck.
@@ -813,10 +961,23 @@ struct SitArt: View {
     let name: String
     let size: CGFloat
 
+    /// SF Symbols standing in for objects whose clay art has not arrived.
+    /// `sit-timelapse` wants a clay camera on a stone from Melvin's sheet
+    /// (2026-11-16); an image set of that name replaces this at once.
+    static let standIns: [String: String] = ["sit-timelapse": "video.fill"]
+
     var body: some View {
         Group {
             if let image = UIImage(named: name) {
                 Image(uiImage: image).resizable().interpolation(.high).scaledToFit()
+            } else if let symbol = Self.standIns[name] {
+                // Until its art lands: the same slot, so adding the image
+                // set with this name is the whole swap.
+                Image(systemName: symbol)
+                    .resizable().scaledToFit()
+                    .fontWeight(.semibold)
+                    .foregroundStyle(AppColor.skyDeep)
+                    .padding(size * 0.12)
             } else {
                 Color.clear
             }

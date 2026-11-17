@@ -107,6 +107,8 @@ enum CloudSchemaPrimer {
         // Optional, so a nil never writes the field; 1.1's videos need it in
         // Production (2026-09-30).
         photo.video = Data([0xFF])
+        // The timelapse marker (2026-11-16) must reach Production too.
+        photo.timelapse = true
         context.insert(photo)
 
         try? context.save()

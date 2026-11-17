@@ -196,6 +196,19 @@ enum Analytics {
         case profileCreated(photo: Bool)
         case friendsIntroShown               // the one-time prompt for pre-Friends users
 
+        // Session timelapse (2026-11-16). Choices only: never the clip, a
+        // frame, a length or anything about who is in it.
+        /// The Ready screen's Timelapse pill.
+        case timelapseToggled(on: Bool)
+        /// `lens`: "front" or "back", after the flip.
+        case timelapseLensFlipped(lens: String)
+        /// Save, on the session's page (not the automatic save).
+        case timelapseSaved
+        /// `to`: "reel", "story" or "more".
+        case timelapseShared(to: String)
+        /// The one-time "Save them all automatically?" was answered.
+        case timelapseAutoSaveAnswered(on: Bool)
+
         // Meditating together (1.4, 2026-10-14): shared weekly goals with a
         // friend. Never who, never a day, never minutes: the goal's target
         // is a choice of 1 to 7, the rest are what was tapped.
@@ -310,6 +323,11 @@ enum Analytics {
             case .invitePaywallViewed: "invite_paywall_viewed"
             case .inviteRewarded: "invite_rewarded"
             case .profileCreated: "profile_created"
+            case .timelapseToggled: "timelapse_toggled"
+            case .timelapseLensFlipped: "timelapse_lens_flipped"
+            case .timelapseSaved: "timelapse_saved"
+            case .timelapseShared: "timelapse_shared"
+            case .timelapseAutoSaveAnswered: "timelapse_autosave_answered"
             case .friendsIntroShown: "friends_intro_shown"
             case .goalStartOpened: "goal_start_opened"
             case .goalInvited: "goal_invited"
@@ -376,6 +394,9 @@ enum Analytics {
             case .postCreated(let hasPhoto, let logged): ["has_photo": hasPhoto, "logged": logged]
             case .kudosGiven(let emoji, let via): ["emoji": emoji, "via": via]
             case .profileCreated(let photo): ["photo": photo ? "yes" : "no"]
+            case .timelapseToggled(let on), .timelapseAutoSaveAnswered(let on): ["on": on]
+            case .timelapseLensFlipped(let lens): ["lens": lens]
+            case .timelapseShared(let to): ["to": to]
             case .friendsOpened(let source, let news): ["source": source, "news": news]
             case .goalStartOpened(let source): ["source": source]
             case .goalInvited(let target): ["target": target]

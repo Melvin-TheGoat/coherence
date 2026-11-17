@@ -85,6 +85,12 @@ struct SaveSessionView: View {
     @State private var playingItem: SessionPhoto?
     @State private var showResults = false
     @State private var problem: String?
+    /// The session's timelapse (2026-11-16): made while the reward played,
+    /// shown as its own card, played full screen, shared.
+    @ObservedObject private var recorder = TimelapseRecorder.shared
+    @State private var confirmRemoveTimelapse = false
+    /// Post waits here for a clip still being made, saying so.
+    @State private var finishingClip = false
 
     /// Which field holds the keyboard, so Done can put it away.
     @FocusState private var focused: Field?
@@ -105,7 +111,19 @@ struct SaveSessionView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     // Posting is the default (2026-11-13, mockup section 5a):
                     // the big photo button and who can see it lead the page.
-                    if mediaItems.isEmpty { bigPhotoButton } else { mediaSection.whiteCard(radius: 18) }
+                    if hasTimelapse {
+                        TimelapseCard(recorder: recorder, sessionID: sessionID, item: timelapseItem,
+                                      sessionSeconds: sessionSeconds,
+                                      onRemove: { confirmRemoveTimelapse = true })
+                            .whiteCard(radius: 18)
+                    }
+                    // With a timelapse, "Add a photo" still adds stills beside
+                    // it, as a smaller row (mockup 3B).
+                    if otherMedia.isEmpty {
+                        if hasTimelapse { smallPhotoRow } else { bigPhotoButton }
+                    } else {
+                        mediaSection.whiteCard(radius: 18)
+                    }
                     feelSection.whiteCard(radius: 18)
                     whatSection.whiteCard(radius: 18)
                     if shareWithFriends { friendsNoteSection.whiteCard(radius: 18) }
@@ -136,6 +154,17 @@ struct SaveSessionView: View {
         .fullScreenCover(isPresented: $showCamera) { SelfieCamera { image in addPhoto(image, video: nil) } }
         .sheet(item: $playingItem) { item in
             if let data = item.video { VideoSheet(data: data) }
+        }
+        .confirmationDialog("Remove the timelapse?", isPresented: $confirmRemoveTimelapse, titleVisibility: .visible) {
+            Button("Remove", role: .destructive) {
+                if let item = timelapseItem { removeItem(item) }
+            }
+        } message: {
+            Text("It is deleted from this session. Copies you saved to Photos stay there.")
+        }
+        // A clip made while this page was already open.
+        .onChange(of: recorder.landed) { _, id in
+            if id == sessionID { mediaItems = SessionStore.photos(for: sessionID, in: context) }
         }
         .fullScreenCover(isPresented: $showResults) {
             SessionResultsView(sessionID: sessionID)
@@ -507,12 +536,47 @@ struct SaveSessionView: View {
         }
     }
 
+    // MARK: - The timelapse
+
+    private var timelapseItem: SessionPhoto? { mediaItems.first { $0.timelapse } }
+    /// Everything but the timelapse, which has its own card.
+    private var otherMedia: [SessionPhoto] { mediaItems.filter { !$0.timelapse } }
+    private var sessionSeconds: Double { Double(session?.durationSec ?? 0) }
+    private var hasTimelapse: Bool {
+        timelapseItem != nil || recorder.making[sessionID] != nil || recorder.failed.contains(sessionID)
+    }
+
+    /// "Add a photo" and the library, beside a timelapse.
+    private var smallPhotoRow: some View {
+        HStack(spacing: 10) {
+            Button { showCamera = true } label: {
+                Label("Add a photo", systemImage: "plus")
+                    .font(AppFont.callout.weight(.bold))
+                    .foregroundStyle(AppColor.skyDeep)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(AppColor.skyWash))
+            }
+            .buttonStyle(.tactile)
+            PhotosPicker(selection: $pickedItems, maxSelectionCount: remainingSlots,
+                         matching: .any(of: [.images, .videos]), preferredItemEncoding: .current) {
+                Label("Library", systemImage: "photo.on.rectangle")
+                    .font(AppFont.callout.weight(.bold))
+                    .foregroundStyle(AppColor.skyDeep)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 14)
+                    .background(RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .fill(AppColor.backgroundSecondary))
+            }
+        }
+    }
+
     private var mediaSection: some View {
         VStack(alignment: .leading, spacing: 0) {
             sectionHeader("Photos and video")
             ScrollView(.horizontal) {
                 HStack(spacing: 10) {
-                    ForEach(mediaItems, id: \.id) { item in
+                    ForEach(otherMedia, id: \.id) { item in
                         mediaThumb(item)
                     }
                     if mediaItems.count < SessionStore.maxPhotosPerSession {
@@ -611,7 +675,8 @@ struct SaveSessionView: View {
             HStack(spacing: 10) {
                 if FeatureFlags.friends { audienceChip }
                 Button { save() } label: {
-                    Text(saving ? "Saving…" : (shareWithFriends && !wasShared ? "Post" : "Save"))
+                    Text(finishingClip ? "Finishing your timelapse…"
+                         : saving ? "Saving…" : (shareWithFriends && !wasShared ? "Post" : "Save"))
                 }
                 // Sky blue on Friends, because it reaches friends; gold on Only me.
                 .buttonStyle(shareWithFriends ? TogetherStyle.blue : PrimaryButtonStyle())
@@ -807,6 +872,13 @@ struct SaveSessionView: View {
             row.rating = rating
             try? context.save()
             if shareWithFriends {
+                // A clip still being made goes up with the post: wait for it.
+                if recorder.making[sessionID] != nil {
+                    finishingClip = true
+                    await recorder.waitForClip(sessionID)
+                    finishingClip = false
+                    mediaItems = SessionStore.photos(for: sessionID, in: context)
+                }
                 guard await share(session: session, title: finalTitle) else {
                     saving = false
                     return
@@ -845,6 +917,16 @@ struct SaveSessionView: View {
             }
             return false
         }
+        // A timelapse is screened whole, not only by its poster frame: a
+        // person filmed at home deserves more than one frame checked.
+        if !blocked, let clip = timelapseItem?.video, let file = SessionVideo.tempFile(clip) {
+            let verdict = await PhotoScreen.check(videoAt: file)
+            try? FileManager.default.removeItem(at: file)
+            if verdict == .sensitive {
+                problem = CommunityError.photoBlocked.localizedDescription
+                return false
+            }
+        }
         if blocked {
             problem = CommunityError.photoBlocked.localizedDescription
             return false
@@ -868,7 +950,9 @@ struct SaveSessionView: View {
         // Photos only on a post for now (mockup open question, 2026-11-13):
         // a kept video goes up as its still, which keeps the public
         // database's quota and screening to pictures.
-        let media = mediaItems.compactMap { PostMediaPrep.Source($0, includingVideo: false) }
+        // The one exception is the session's own timelapse, which goes up
+        // as a video and plays silently in the feed (2026-11-16).
+        let media = mediaItems.compactMap { PostMediaPrep.Source($0, includingVideo: $0.timelapse) }
         let sid = sessionID, note = publicNote, privateNote = privateNote
         let technique = technique, techniqueNote = techniqueNote, context = context
         community.postInBackground(draft, media: media) {

@@ -469,7 +469,9 @@ struct PostCard: View {
                 // Never more than twice the words above it (Melvin,
                 // 2026-11-13): a tall selfie made every post enormous.
                 PostPhotoView(item: first, extra: post.media.count - 1,
-                              maxHeight: max(140, aboveHeight * 2))
+                              maxHeight: max(140, aboveHeight * 2),
+                              speedLine: first.kind == .video
+                                ? TimelapseRule.speedLine(sessionSeconds: Double(post.minutes * 60)) : nil)
                     .padding(.horizontal, Self.inset).padding(.top, 14)
             }
             KudosRow(post: post, model: model, context: "feed")
@@ -656,6 +658,8 @@ struct PostPhotoView: View {
     var full = false
     /// The tallest the photo may be in the feed; it crops to fill instead.
     var maxHeight: CGFloat? = nil
+    /// "20 min in 30 s" on a timelapse in the feed (2026-11-16).
+    var speedLine: String? = nil
     @State private var image: UIImage?
     @State private var width: CGFloat = 0
 
@@ -671,7 +675,25 @@ struct PostPhotoView: View {
             .overlay {
                 if let image { Image(uiImage: image).resizable().scaledToFill() }
             }
+            // A posted video is a session timelapse (other videos go up as
+            // their still), and it plays on its own in the card: silent,
+            // looping, only while on screen, not in Low Power Mode (4A).
+            .overlay {
+                if item.kind == .video, !full, let url = item.url, LoopingClip.allowed {
+                    LoopingClip(url: url)
+                }
+            }
             .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(alignment: .topLeading) {
+                if let speedLine {
+                    Text(speedLine)
+                        .font(.system(size: 12.5, weight: .heavy, design: .rounded))
+                        .foregroundStyle(AppColor.measureInk)
+                        .padding(.horizontal, 10).padding(.vertical, 4)
+                        .background(AppColor.measure, in: Capsule())
+                        .padding(10)
+                }
+            }
             .overlay(alignment: .bottomTrailing) {
                 if extra > 0 {
                     Text("+\(extra)")
