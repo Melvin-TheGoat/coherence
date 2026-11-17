@@ -373,18 +373,17 @@ against the code 2026-09-30 in a third review pass; the Block sentence
 reworded 2026-10-13 for the required app pick; Friends gained invite codes,
 weekly goals and nudges 2026-10-18; Block's one minute, the rest of the
 day, and "Not now" for 5, 10 or 30 corrected 2026-10-27; goals from a
-minute 2026-10-27; the free-trial screens 2026-11-12, 3,971 counted with line breaks twice). Count again after any edit.
+minute 2026-10-27; the free-trial screens 2026-11-12; Friends feed and Otto's forms for 1.5 2026-11-17, 3,994 counted with line breaks twice). Count again after any edit.
 
 ```
 808 is a meditation app for iPhone with an optional Apple Watch app. No part of this review needs an Apple Watch.
 
 SUBSCRIPTION
-Nothing past the paywall opens without buying or restoring. In-app purchases are attached; use a sandbox account with no active 808 subscription.
+Nothing past the paywall opens without buying or restoring. Use a sandbox account with no active 808 subscription.
 In onboarding, on "Ready to take control?", hold the round button about three seconds until "Let's go!" appears, then tap Continue. Two screens follow; "Continue for FREE" asks for notifications; any answer works. Then the paywall.
 It sells Yearly ($29.99, preselected) and Monthly ($7.99), each with a 7 day free trial, plus Restore, Privacy Policy and Terms of Use. "No, I don't want to pay", or cancelling the purchase sheet, raises a banner: Monthly, half price ($3.99 a month after a 7 day free trial), with its renewal terms and legal links. "Claim half price" opens the purchase sheet; "No thanks" closes it.
 An account that already had a trial skips those screens and sees no trials; half price charges from the first month.
-"Plans aren't loading" means the sandbox returned no products.
-People updating from 1.0 without a subscription meet the paywall at launch, with an Account link (Manage subscription, Redeem a code, Restore, Sign out, Delete account). Subscribers and Lifetime owners keep full access.
+Members updating keep full access; others meet the paywall at launch, with an Account link (Restore, Sign out, Delete account).
 
 BLOCK (part of 808 Membership)
 Family Controls with individual authorization: a person manages their own iPhone, not a parental control. After the paywall, onboarding asks for Screen Time permission. Declining continues; once allowed, at least one app is picked in Apple's picker. A held app shows Apple's shield. "Ask Otto" sends a notification that opens a short screen from Otto, ending in a meditation (one minute or more opens the apps for the rest of the day) or "Not now" for 5, 10 or 30 minutes. If notifications are off, the shield says to open 808, and Otto appears there. Nothing from Screen Time leaves the device.
@@ -392,22 +391,21 @@ Family Controls with individual authorization: a person manages their own iPhone
 SESSIONS
 Tap the plus, then the first button ("Meditate") to choose:
 - Meditate: a timer on the iPhone. Nothing is measured.
-- With Apple Watch: dimmed unless a Watch is paired; it wakes the Watch app to measure.
+- With Apple Watch: dimmed unless a Watch is paired.
 - Record one: logs a session done elsewhere.
 Sessions count from one minute. Keep 808 open during an iPhone session: after 10 seconds away, including a locked screen, 808 says it won't count, and "I was still meditating" keeps it.
-"Silence notifications" runs two Shortcuts, "808 Silence" and "808 Restore", added once from iCloud links (tap Add Shortcut, return to 808, then the second). When a session ends 808 briefly opens Shortcuts to run 808 Restore. 808 never changes Focus itself.
+"Silence notifications" runs two Shortcuts, "808 Silence" and "808 Restore", added once from iCloud links (tap Add Shortcut, return to 808, then the second). At the end 808 briefly opens Shortcuts to run 808 Restore. 808 never changes Focus itself.
 
-POINTS AND THE SHOP
-Each whole minute meditated earns one point, spent in the Shop tab on hats for Otto. Recorded sessions earn none and never open Block's apps. Points cannot be bought and have no cash value.
+POINTS, FORMS AND THE SHOP
+A meditated minute earns a point; a week finished with a friend earns 10. Points buy hats in the Shop (the circle at the top right of Home). Lifetime points also unlock Otto's other forms: a red panda at 300, a tiger at 800, a phoenix at 2,200, a dragon at 5,500; the person picks which to wear. Recorded sessions earn none and never open Block's apps. Points can't be bought and have no cash value.
 
 FRIENDS
-Opens from the circle at the top right of Home; needs iCloud. No posts, comments or typed messages. A profile shows a name, @username, optional photo, practice summary and friends, visible to anyone who looks up the username. Optional; it requires agreeing to the community rules.
-Friends are added by @username or invite code. Two friends can share a weekly goal (days a week, from sessions of a minute or more) and nudge each other once a day.
-Other people's profiles carry Report and Block (... menu); reports reach our inbox at once, and a reported profile or photo is removed within 24 hours. Seeing another person takes a second device on another iCloud account.
-Delete account (Profile tab, gear icon, or the launch paywall's Account link) removes the Friends profile, username, invite code, goals and connections.
+The Friends tab; needs iCloud. Friends are added by @username or invite code. A session's page can post it to friends with optional photos or videos, a title and a note; "Only me" keeps it private. A post shows time, streak and sound, never a score or heart rate. Friends give kudos (double tap or one of four emoji); no comments or typed messages. Media is screened on the device (Sensitive Content Analysis) before posting.
+Posts and profiles from others carry Report and Block (... menu); reports reach our inbox at once, and reported content is removed within 24 hours. Friends can share a weekly goal and nudge once a day. An invite code can open a paywall offering the first month free. Seeing another person needs a second iCloud account.
+Delete account (Profile tab, gear icon) removes the profile, username, invite code, posts, kudos, goals and connections.
 
 HEALTH DATA
-Heart rate is read only during a session measured by an Apple Watch. Results stay on the device, excluded from iCloud sync and backup (5.1.3(ii)). Each Watch session is saved to Apple Health as a workout and mindful minutes. Analytics never include a health value.
+Heart rate is read only during a session measured by an Apple Watch. Results stay on the device, out of iCloud sync and backup (5.1.3(ii)). Each Watch session is saved to Apple Health as a workout and mindful minutes. Analytics never include a health value.
 ```
 
 ---
