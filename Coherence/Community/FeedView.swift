@@ -67,31 +67,6 @@ enum YourTurn {
     }
 }
 
-/// A friend's Otto on their avatar: which of the seven glow stills, and
-/// whether its ring is lit, from what their profile publishes about how
-/// often they meditate. Only sessions, never a score.
-enum FeedBadge {
-    /// Plain values rather than `PracticeStats`, which the test target
-    /// compiles a second copy of (the Shared/ trap).
-    static func stage(sessions7d: Int, lastSessionAt: Date?, now: Date = Date()) -> Int {
-        guard let last = lastSessionAt else { return 3 }
-        if now.timeIntervalSince(last) > 3 * 86_400 { return 2 }
-        switch sessions7d {
-        case 0: return 3
-        case 1...2: return 4
-        case 3...4: return 5
-        case 5...6: return 6
-        default: return 7
-        }
-    }
-
-    /// Meditated in the last day and a half.
-    static func glowing(lastSessionAt: Date?, now: Date = Date()) -> Bool {
-        guard let last = lastSessionAt else { return false }
-        return now.timeIntervalSince(last) < 36 * 3_600
-    }
-}
-
 /// Who gave kudos, in words: "You, Aziz and Melvin".
 enum KudosLine {
     static func text(names: [String], mine: Bool, isMyPost: Bool) -> String {
@@ -617,32 +592,15 @@ struct PostStats: View {
     }
 }
 
-/// Their face, with their Otto as a small badge, ringed in glow when they
-/// have meditated lately (the mockup's "bright gold when they are glowing,
-/// faint when they are not").
+/// Their face. (A small Otto badge sat on its corner until 2026-11-17;
+/// Melvin cut it: nobody could tell what it was for. Their Otto now lives on
+/// their person page instead.)
 struct FeedAvatar: View {
     let profile: Profile?
     var size: CGFloat = 44
 
     var body: some View {
-        let practice = profile?.practice ?? .empty
-        let glowing = FeedBadge.glowing(lastSessionAt: practice.lastSessionAt)
-        let badge = size * 0.48
         ProfilePortrait(photoURL: profile?.avatarURL, size: size)
-            .overlay(alignment: .bottomTrailing) {
-                ZStack {
-                    Circle().fill(AppColor.sky)
-                    SitArt(name: "OttoAura\(FeedBadge.stage(sessions7d: practice.sessions7d, lastSessionAt: practice.lastSessionAt))", size: badge * 1.05)
-                        .offset(y: badge * 0.12)
-                }
-                .frame(width: badge, height: badge)
-                .clipShape(Circle())
-                .overlay(Circle().stroke(glowing ? AppColor.accentGold : AppColor.hairline,
-                                         lineWidth: glowing ? 2.2 : 1.5))
-                .shadow(color: glowing ? AppColor.accentGold.opacity(0.55) : .clear, radius: 4)
-                .offset(x: badge * 0.28, y: badge * 0.2)
-            }
-            .padding(.trailing, badge * 0.28)
             .accessibilityHidden(true)
     }
 }

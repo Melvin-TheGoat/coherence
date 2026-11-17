@@ -313,7 +313,8 @@ struct Profile: Identifiable, Equatable {
 /// `CommunityStore.updatePracticeStats`. **New CloudKit fields — must be
 /// promoted Development → Production before release** (see CLAUDE.md,
 /// "ORG-ACCOUNT-DAY CHECKLIST"): `sessions7d`, `minutes7d`, `currentStreak`,
-/// `totalSessions`, `lastSessionAt`.
+/// `totalSessions`, `lastSessionAt`, and since 1.5 `ottoForm` (String),
+/// `ottoLevel` (Int64), `ottoHat` (String), `ottoAt` (Date/Time).
 extension PracticeStats {
     init(record: CKRecord) {
         self.init(sessions7d: record["sessions7d"] as? Int ?? 0,
@@ -321,6 +322,10 @@ extension PracticeStats {
                   currentStreak: record["currentStreak"] as? Int ?? 0,
                   totalSessions: record["totalSessions"] as? Int ?? 0,
                   lastSessionAt: record["lastSessionAt"] as? Date)
+        ottoForm = record["ottoForm"] as? String
+        ottoLevel = record["ottoLevel"] as? Int
+        ottoHat = record["ottoHat"] as? String
+        ottoAt = record["ottoAt"] as? Date
     }
 
     func apply(to record: CKRecord) {
@@ -329,6 +334,10 @@ extension PracticeStats {
         record["currentStreak"] = currentStreak
         record["totalSessions"] = totalSessions
         record["lastSessionAt"] = lastSessionAt
+        record["ottoForm"] = ottoForm
+        record["ottoLevel"] = ottoLevel
+        record["ottoHat"] = ottoHat
+        record["ottoAt"] = ottoAt
     }
 }
 

@@ -59,6 +59,11 @@ struct CoherenceApp: App {
             let d = FetchDescriptor<Session>()
             return ((try? mainContext.fetch(d)) ?? []).map { ($0.startedAt, $0.durationSec) }
         }
+        community.wornHat = {
+            var d = FetchDescriptor<Preferences>(sortBy: [SortDescriptor(\.createdAt)])
+            d.fetchLimit = 1
+            return (try? mainContext.fetch(d))?.first?.wornHatIDValue
+        }
         // The same sessions with whether each was logged by hand: a shared
         // goal counts only measured sessions of 5 minutes or more
         // (`GoalDay.qualifying`, Meditating together, 2026-10-14).

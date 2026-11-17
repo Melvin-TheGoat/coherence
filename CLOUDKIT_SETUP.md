@@ -626,3 +626,13 @@ Same indexes as above (`Post.author` QUERYABLE, `Post.practicedAt` SORTABLE,
 `Reaction.post` and `Reaction.author` QUERYABLE), same security roles. The
 two-phone check is in `RELEASE_CHECKLIST.md`, "OPEN for the build that ships
 the Friends feed".
+
+## Their Otto on a person page (added 2026-11-17, 1.5)
+
+Four new fields on `Profile`, written with the practice stats
+(`PracticeStats.apply`): `ottoForm` (String), `ottoLevel` Int(64),
+`ottoHat` (String), `ottoAt` (Date/Time). No index. Development creates them
+the first time a 1.5 beta publishes its stats (open Friends after a
+session); they must be in the Production deploy or the person page shows the
+plain sky band for everyone. The level is worked out from sessions only,
+never Block's "Not now" windows (Screen Time data never leaves the phone).

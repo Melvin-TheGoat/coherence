@@ -28,6 +28,16 @@ struct PracticeStats: Equatable, Codable {
     /// When the most recent session started, nil for nobody yet.
     var lastSessionAt: Date?
 
+    /// Their Otto, for the person page (Melvin, 2026-11-17): the form worn
+    /// (`Companion` raw value), the glow level 0 to 100 worked out from
+    /// SESSIONS ONLY (never Block's "Not now" windows, which are Screen Time
+    /// data and never leave the phone), the hat worn, and the day the level
+    /// was worked out. Nil on a profile written before 1.5.
+    var ottoForm: String? = nil
+    var ottoLevel: Int? = nil
+    var ottoHat: String? = nil
+    var ottoAt: Date? = nil
+
     static let empty = PracticeStats(sessions7d: 0, minutes7d: 0, currentStreak: 0,
                                      totalSessions: 0, lastSessionAt: nil)
 
@@ -48,6 +58,30 @@ struct PracticeStats: Equatable, Codable {
                              currentStreak: streak,
                              totalSessions: sessions.count,
                              lastSessionAt: sessions.map(\.startedAt).max())
+    }
+
+    /// Their glow as it stands at `now` for someone reading it. The level
+    /// was published on the day `ottoAt`, and nothing updates it while they
+    /// stay away, so each day that has ended since without a session takes
+    /// what a missed day costs (`OttoAura.missCost`), the first missed day
+    /// taken as their rest day.
+    func ottoLevelSeen(now: Date = Date(), calendar: Calendar = .current) -> Int? {
+        guard let level = ottoLevel else { return nil }
+        guard let at = ottoAt else { return level }
+        let today = calendar.startOfDay(for: now)
+        let from = calendar.startOfDay(for: at)
+        let lastDay = calendar.startOfDay(for: lastSessionAt ?? calendar.date(byAdding: .day, value: -1, to: from) ?? from)
+        var shown = level
+        var day = from
+        while day < today {
+            if day > lastDay {
+                let run = calendar.dateComponents([.day], from: lastDay, to: day).day ?? 0
+                if run > 1 { shown -= OttoAura.missCost(run: run) }
+            }
+            guard let next = calendar.date(byAdding: .day, value: 1, to: day) else { break }
+            day = next
+        }
+        return min(max(shown, 0), 100)
     }
 
     /// These numbers as they stand at `now` for someone READING them: they

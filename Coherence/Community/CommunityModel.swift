@@ -110,6 +110,9 @@ final class CommunityModel: ObservableObject {
     /// hand-logged), for the practice stats published on my profile
     /// (`syncPracticeStats`). Supplied by the app, which owns SwiftData.
     var allSessions: (() -> [(startedAt: Date, durationSec: Int)])?
+    /// The hat I wear (`Preferences.wornHatIDValue`), for my Otto on my
+    /// person page. Supplied by the app, which owns SwiftData.
+    var wornHat: (() -> String?)?
     /// Told when one of my posts is deleted from the feed, so the session it
     /// belonged to stops saying "Friends can see this". Receives the session
     /// id. Supplied by the app, which owns SwiftData.
@@ -262,7 +265,17 @@ final class CommunityModel: ObservableObject {
               !defaults.bool(forKey: Self.pendingDeletionKey) else { return }
         if !force, let last = lastPracticeStatsAttemptAt, Date().timeIntervalSince(last) < 180 { return }
         lastPracticeStatsAttemptAt = Date()
-        let stats = PracticeStats.compute(from: allSessions())
+        let sessions = allSessions()
+        var stats = PracticeStats.compute(from: sessions)
+        // My Otto as friends see him: form, glow from sessions only (Block's
+        // windows are Screen Time data and stay on the phone), hat, and the
+        // day it was worked out, so it is written at most once a day unless
+        // it changes.
+        stats.ottoForm = CompanionStore.shared.chosen.rawValue
+        stats.ottoLevel = OttoAura.level(from: sessions.map { OttoAura.Sit(date: $0.startedAt, seconds: $0.durationSec) },
+                                         since: OttoAura.glowStart(), restart: OttoAura.glowRestart())
+        stats.ottoHat = wornHat?()
+        stats.ottoAt = Calendar.current.startOfDay(for: Date())
         // The days each shared goal counts, on my halves of them. When a
         // session just landed, the goals are fetched again first, so a week
         // the session finished is seen against the friend's latest days

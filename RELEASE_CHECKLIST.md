@@ -1086,6 +1086,16 @@ friend's invite code opens a paywall with a free month. Reverses the
       under the ⋯ on a post. No score or heart rate is ever on a post.
 - [ ] **Store screenshots:** retake the Friends screenshot with the feed.
 
+## OPEN for 1.5 (2026-11-17): their Otto on a person page
+
+- [ ] **CloudKit:** `Profile.ottoForm`, `ottoLevel`, `ottoHat`, `ottoAt` are
+      in Development (open Friends on the 1.5 beta after a session) and go
+      out with the same Development to Production deploy as the feed
+      (`CLOUDKIT_SETUP.md`, "Their Otto on a person page").
+- [ ] **Two phones:** A's page on B's phone shows A's form, glow and hat.
+- [ ] **Privacy policy:** the public profile now also shows which form a
+      person's Otto is, his glow and his hat.
+
 ## OPEN for 1.4 (2026-10-18): Meditating together, invite codes, profile pictures
 
 1.4 = weekly goals with friends and nudges, invite codes, a required profile

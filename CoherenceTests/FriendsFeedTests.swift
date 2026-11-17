@@ -132,13 +132,23 @@ final class FriendsFeedTests: XCTestCase {
         XCTAssertNil(YourTurn.pick([goal(mine: [], theirs: [today], state: .waitingForMe)], today: today))
     }
 
-    func test_feedBadgeGlowsOnlyForRecentPractice() {
-        let now = Date()
-        XCTAssertFalse(FeedBadge.glowing(lastSessionAt: nil, now: now))
-        let recent = now.addingTimeInterval(-3600)
-        XCTAssertTrue(FeedBadge.glowing(lastSessionAt: recent, now: now))
-        XCTAssertEqual(FeedBadge.stage(sessions7d: 7, lastSessionAt: recent, now: now), 7)
-        XCTAssertEqual(FeedBadge.stage(sessions7d: 0, lastSessionAt: now.addingTimeInterval(-5 * 86_400), now: now), 2)
+    /// A friend's published glow fades the way their own would while they
+    /// stay away: the first missed day is their rest day, then each missed
+    /// day costs what `OttoAura.missCost` says.
+    func test_publishedGlowFadesWhileTheyStayAway() {
+        let cal = Calendar(identifier: .gregorian)
+        let day0 = cal.date(from: DateComponents(year: 2026, month: 11, day: 10, hour: 9))!
+        var stats = PracticeStats.empty
+        stats.lastSessionAt = day0
+        stats.ottoLevel = 80
+        stats.ottoAt = cal.startOfDay(for: day0)
+        func at(_ d: Int) -> Date { cal.date(byAdding: .day, value: d, to: day0)! }
+        XCTAssertEqual(stats.ottoLevelSeen(now: at(0), calendar: cal), 80)
+        XCTAssertEqual(stats.ottoLevelSeen(now: at(1), calendar: cal), 80)
+        XCTAssertEqual(stats.ottoLevelSeen(now: at(2), calendar: cal), 80)
+        XCTAssertEqual(stats.ottoLevelSeen(now: at(3), calendar: cal), 80 - OttoAura.missCost(run: 2))
+        XCTAssertEqual(stats.ottoLevelSeen(now: at(30), calendar: cal), 0)
+        XCTAssertNil(PracticeStats.empty.ottoLevelSeen())
     }
 
     /// The slam's landmarks: huge at the start, at the row on impact,

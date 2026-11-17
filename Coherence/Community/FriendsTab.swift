@@ -1215,7 +1215,7 @@ struct PersonView: View {
                 VStack(spacing: 0) {
                     // Their portrait on the seam of the valley, the way your
                     // own sits on Profile.
-                    FriendsSky(height: proxy.safeAreaInsets.top + 86) { EmptyView() }
+                    band(top: proxy.safeAreaInsets.top)
                         .overlay(alignment: .bottom) {
                             ProfilePortrait(photoURL: profile?.avatarURL, size: Self.portrait)
                                 .overlay(Circle().stroke(AppColor.backgroundSecondary, lineWidth: 4))
@@ -1282,6 +1282,29 @@ struct PersonView: View {
         }
         .task { await reload(); await model.loadFriendCount(id) }
         .refreshesWhileShown { await reload(); await model.loadFriendCount(id) }
+    }
+
+    /// Their Otto, sitting in the valley above their portrait (Melvin,
+    /// 2026-11-17): whichever form they wear, at the glow their profile
+    /// says, in their hat. A profile from before 1.5 publishes none of it,
+    /// and gets the plain sky band it always had.
+    @ViewBuilder private func band(top: CGFloat) -> some View {
+        let practice = profile?.practice
+        if !blocked, let practice, let raw = practice.ottoForm, let form = Companion(rawValue: raw),
+           let level = practice.ottoLevelSeen() {
+            let isOtto = form == .otto
+            ValleyScene(progress: 0, aura: OttoAura.Stage(level: level),
+                        auraLook: isOtto ? OttoAura.look(level: level) : nil,
+                        clock: true, auraForm: form, auraHat: practice.ottoHat ?? "none")
+                .frame(height: top + 380)
+                .frame(maxWidth: .infinity)
+                .clipped()
+                .fadesIntoMeadow()
+                .accessibilityElement()
+                .accessibilityLabel("Their Otto, a \(form.creature), at \(level)% glow")
+        } else {
+            FriendsSky(height: top + 86) { EmptyView() }
+        }
     }
 
     private func reload() async {

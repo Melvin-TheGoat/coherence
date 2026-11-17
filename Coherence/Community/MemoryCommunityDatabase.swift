@@ -272,7 +272,8 @@ enum DemoCommunity {
         // How often Melvin meditates, so the friends list and his page have
         // something real to show (Melvin, 2026-09-27: practice stats).
         try? await melvin.updatePracticeStats(.init(sessions7d: 4, minutes7d: 62, currentStreak: 9,
-                                                     totalSessions: 41, lastSessionAt: Date().addingTimeInterval(-3_600)))
+                                                     totalSessions: 41, lastSessionAt: Date().addingTimeInterval(-3_600))
+            .withOtto(.dragon, 92, "wizardhat"))
         // One photo (the ordinary case).
         let melvinPost = try? await melvin.post(.init(minutes: 14, streak: 9, technique: "Slow breathing",
                                                        caption: "Cold enough to see my breath.",
@@ -316,7 +317,8 @@ enum DemoCommunity {
         try? await sam.accept(CommunityNames.profile(user: "_demo_me"))
         try? await sam.markFirstSession(at: Date().addingTimeInterval(1))
         try? await sam.updatePracticeStats(.init(sessions7d: 1, minutes7d: 8, currentStreak: 1,
-                                                  totalSessions: 2, lastSessionAt: Date().addingTimeInterval(-7_200)))
+                                                  totalSessions: 2, lastSessionAt: Date().addingTimeInterval(-7_200))
+            .withOtto(.otto, 55, nil))
         // A phone sit: no media, so the feed reviews "a post with no media
         // shows no strip".
         _ = try? await sam.post(.init(minutes: 8, streak: 1, technique: "Silence",
@@ -383,7 +385,8 @@ enum DemoCommunity {
                             "_demo_jonas": "wave", "_demo_mei": "lotus", "_demo_noah": "misty-pines"]
             let more: [(String, String, String, PracticeStats)] = [
                 ("_demo_theo", "theo", "Theo", .init(sessions7d: 7, minutes7d: 118, currentStreak: 21,
-                                                     totalSessions: 64, lastSessionAt: Date().addingTimeInterval(-5_400))),
+                                                     totalSessions: 64, lastSessionAt: Date().addingTimeInterval(-5_400))
+                                                     .withOtto(.phoenix, 80, "sunhat")),
                 ("_demo_ana", "ana.m", "Ana", .init(sessions7d: 5, minutes7d: 70, currentStreak: 5,
                                                    totalSessions: 23, lastSessionAt: Date().addingTimeInterval(-10_800))),
                 ("_demo_dan", "dan.r", "Daniel", .init(sessions7d: 3, minutes7d: 36, currentStreak: 2,
@@ -409,6 +412,19 @@ enum DemoCommunity {
             db.user = "_demo_me"
         }
         return me
+    }
+}
+#endif
+
+
+#if DEBUG
+extension PracticeStats {
+    /// A demo person's Otto, for reviewing the person page.
+    func withOtto(_ form: Companion, _ level: Int, _ hat: String?) -> PracticeStats {
+        var s = self
+        s.ottoForm = form.rawValue; s.ottoLevel = level; s.ottoHat = hat
+        s.ottoAt = Calendar.current.startOfDay(for: Date())
+        return s
     }
 }
 #endif
