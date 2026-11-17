@@ -255,7 +255,10 @@ final class CommunityModel: ObservableObject {
         // A claimed handle, not just a ready tab: Friends is optional
         // (Melvin, 2026-09-29), and nothing about how often somebody
         // meditates is published for a person who never made a profile.
-        guard FeatureFlags.friends, let store, phase == .ready, hasProfile, let allSessions else { return }
+        guard FeatureFlags.friends, let store, phase == .ready, hasProfile, let allSessions else {
+            NSLog("PracticeStats: skipped (phase \(phase), profile \(hasProfile), sessions \(allSessions != nil))")
+            return
+        }
         // Nothing while the person who made this profile has signed out or
         // deleted their account (`publishingPausedKey`), and nothing while a
         // deletion is unfinished: a save now would put back the profile
@@ -281,8 +284,13 @@ final class CommunityModel: ObservableObject {
         // the session finished is seen against the friend's latest days
         // (`refreshGoals` publishes mine at its end).
         if force { await refreshGoals(store) } else { await publishGoalDays() }
-        guard stats != lastSyncedPracticeStats else { return }
-        guard let updated = try? await store.updatePracticeStats(stats) else { return }
+        guard stats != lastSyncedPracticeStats else { NSLog("PracticeStats: unchanged"); return }
+        let updated: Profile
+        do { updated = try await store.updatePracticeStats(stats) } catch {
+            NSLog("PracticeStats: save failed: \(error)")
+            return
+        }
+        NSLog("PracticeStats: saved (form \(stats.ottoForm ?? "-"), level \(stats.ottoLevel ?? -1), hat \(stats.ottoHat ?? "-"))")
         lastSyncedPracticeStats = stats
         profile = updated
         people[updated.id] = updated
